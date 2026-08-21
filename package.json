@@ -1,0 +1,44 @@
+{
+  "name": "foodedo-v2",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --webpack",
+    "build:ios:web": "CAPACITOR_BUILD=true next build --webpack",
+    "start": "next start",
+    "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "cap:sync:ios": "pnpm build:ios:web && pnpm exec cap sync ios",
+    "cap:open:ios": "pnpm exec cap open ios",
+    "cap:run:ios:live": "pnpm exec cap run ios --live-reload"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@playwright/test": "^1.62.1",
+    "@serwist/next": "^9.5.12",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "serwist": "^9.5.12",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.14.0"
+}
