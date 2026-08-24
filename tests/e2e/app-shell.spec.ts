@@ -11,7 +11,7 @@ test("serves the Foodedo app shell", async ({ page }) => {
   );
 });
 
-test("exposes a valid install manifest and icons", async ({ request }) => {
+test("exposes valid home-screen metadata and icons", async ({ request }) => {
   const response = await request.get("/manifest.webmanifest");
   expect(response.ok()).toBeTruthy();
 
@@ -39,15 +39,4 @@ test("exposes a valid install manifest and icons", async ({ request }) => {
     expect(iconResponse.ok()).toBeTruthy();
     expect(iconResponse.headers()["content-type"]).toContain("image/png");
   }
-});
-
-test("registers the production service worker", async ({ page }) => {
-  await page.goto("/");
-
-  const scriptURL = await page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.ready;
-    return registration.active?.scriptURL;
-  });
-
-  expect(scriptURL).toBe(`${page.url()}sw.js`);
 });

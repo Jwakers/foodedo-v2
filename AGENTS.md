@@ -28,6 +28,7 @@ Existing V2 code is **not** authoritative when it conflicts with (1)–(4). V1 c
 - Package manager: pnpm.
 - iOS only for Capacitor; no Android.
 - Shared native routes must remain compatible with the Capacitor static-export build. Do not add a server-only Next.js dependency to one without an explicit architecture decision and a native alternative.
+- Guest access does not authorize personal Convex writes or anonymous backend users. Keep guest drafts local and follow `knowledge/architecture/identity-and-guest.md`.
 
 ## Skills
 
@@ -43,4 +44,4 @@ Use skills **selectively**. See `knowledge/skills/README.md`.
 
 TypeScript strict, Server Components by default, feature folders for jobs, domain logic free of React/Capacitor. Format with Prettier. Lint and typecheck must stay green. Follow Convex workspace rules once `convex/` exists (validators, awaits, indexes, no `Date.now()` in queries, schedule `internal` only).
 
-Run both `pnpm build` and `pnpm build:ios:web` when changing routing, rendering, or data access. The first verifies Vercel/PWA; the second verifies the bundle Capacitor ships.
+Run both `pnpm build` and `pnpm build:ios:web` when changing routing, rendering, or data access. The first verifies the Vercel web build; the second verifies the bundle Capacitor ships.

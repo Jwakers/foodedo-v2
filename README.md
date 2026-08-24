@@ -12,7 +12,7 @@ Reduce thinking, organising, and repetitive decision-making about what to eat an
 
 ## What's here now
 
-A Next.js 16 App Router shell (TypeScript, Tailwind v4, PWA via Serwist, Capacitor 8 configured for iOS). Vercel uses the normal Next.js build; the iOS app packages a dedicated static export. Placeholder home page only. No auth, no Convex, no product features.
+A Next.js 16 App Router shell (TypeScript, Tailwind v4, web manifest, Capacitor 8 configured for iOS). Vercel uses the normal Next.js build; the iOS app packages a dedicated static export. Placeholder home page only. No auth, no Convex, no product features.
 
 ## Run
 
@@ -32,7 +32,7 @@ pnpm build:ios:web
 pnpm test:e2e
 ```
 
-PWA: installability is for production builds (service worker disabled in `next dev`). Icons in `public/` are placeholders.
+Web: the manifest, icons, and Apple metadata support optional Add to Home Screen. There is deliberately no service worker or offline-web promise. Icons in `public/` are placeholders.
 
 iOS: see [`docs/foundation-setup.md`](docs/foundation-setup.md). With Xcode installed, `pnpm cap:sync:ios` builds the static web bundle and copies it into the native project; then run `pnpm cap:open:ios`. `server.url` is never used for production.
 
@@ -41,5 +41,6 @@ iOS: see [`docs/foundation-setup.md`](docs/foundation-setup.md). With Xcode inst
 - [`docs/technical-spec.md`](docs/technical-spec.md)
 - [`docs/testing.md`](docs/testing.md)
 - [`docs/foundation-setup.md`](docs/foundation-setup.md)
+- [`knowledge/architecture/identity-and-guest.md`](knowledge/architecture/identity-and-guest.md) — guest/account boundary and auth evaluation
 - [`knowledge/`](knowledge/) — principles, JTBD, UX, architecture, ADRs
 - [`AGENTS.md`](AGENTS.md) — how agents should work in this repo

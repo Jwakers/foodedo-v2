@@ -10,14 +10,13 @@ When a bug is found, add a regression test at the cheapest correct layer: domain
 
 ## Now
 
-Playwright is installed with a Chromium production smoke suite in `tests/e2e/pwa.spec.ts`. It verifies:
+Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 
 - the placeholder shell renders with its accessible heading and title
 - the web manifest is linked and contains the required app identity and icons
 - every declared icon is served as PNG
-- the production service worker registers and becomes active
 
-CI (`.github/workflows/ci.yml`) runs formatting, linting, typechecking, the iOS static-export build, the regular Vercel/PWA build, and the Chromium smoke suite on push/PR.
+CI (`.github/workflows/ci.yml`) runs formatting, linting, typechecking, the iOS static-export build, the regular Vercel web build, and the Chromium smoke suite on push/PR.
 
 Local setup:
 
@@ -31,6 +30,11 @@ The Playwright web server runs `next start`, so the regular production build mus
 
 ## Upcoming
 
+- Guest can reach a useful Decide result without authentication.
+- Guest draft survives refresh locally but is clearly marked temporary.
+- Keep/save prompts for authentication without discarding the draft.
+- Claiming after sign-in is idempotent, survives retry, and never overwrites existing account data silently.
+- Unauthenticated clients cannot read or mutate personal Convex data.
 - Grow tests with each job slice, not with implementation details.
 - Add WebKit coverage when native/WebKit-specific behavior exists.
 

@@ -4,15 +4,27 @@ Not implemented. There is no `convex/schema.ts` yet. Documents stay **flat and r
 
 Orient around jobs, not V1 tables.
 
+Guest access does not create backend documents. Its bounded, versioned draft lives locally until an authenticated user explicitly keeps it. See [identity-and-guest.md](./identity-and-guest.md).
+
 ## Core entities
 
 ### users
 
-Account record once auth exists. Identity provider subject stored as an unguessable external id. Preferences as a small nested object (allergies, excluded proteins, default servings) — not a configuration product.
+Account record once auth exists. Identity provider subject stored as an unguessable `authSubject`; if the selected integration already owns the canonical Convex user table, reference that identity rather than duplicating it. Preferences are a small nested object (allergies, excluded proteins, default servings) — not a configuration product.
 
-**Indexes:** `by_externalId`
+There are no anonymous/guest `users` rows. Create this record only from verified `ctx.auth` identity.
+
+**Index:** `by_auth_subject` when Foodedo owns the user mapping.
 
 **Deferred:** subscription fields, super-user flags, household membership.
+
+### catalogue meals (standard content)
+
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. The initial implementation may be a versioned bundle with stable catalogue IDs; move it to explicit public, non-personal backend reads only when scale or update frequency requires that.
+
+An early catalogue can be small because the product is early. Do not model a separate guest subset or use authentication to gate standard meals.
+
+Premium meals and subscription entitlements are deferred. When implemented, premium content must be delivered only after server-side authentication and entitlement checks; do not rely on a client-only visibility flag.
 
 ### recipes (saved dishes)
 
@@ -20,7 +32,7 @@ The Capture unit: something the user wants to cook.
 
 - `userId`
 - `title`
-- `sourceUrl` / `sourceType` (`import` | `share` | `manual` | `photo` — extend later)
+- `sourceUrl` / `sourceType` (`catalogue` | `import` | `share` | `manual` | `photo` — extend later)
 - `ingredients`: small array of `{ name, amount?, unit?, note? }` until we prove a catalog is needed
 - `steps`: array of `{ text }`
 - `serves?`, `prepMinutes?`, `cookMinutes?`, `imageStorageId?`
@@ -67,6 +79,18 @@ Signals so Decide can surface neglected food.
 
 Last cooked = latest `cooked` event. Neglect = saved/cooked gap. Do not start with V1 `recipeBehaviourStats` suggested/swapped/removed counters unless Decide needs them.
 
+### guestClaims
+
+Idempotency records for moving a local guest draft into an authenticated account.
+
+- `userId`
+- `claimKey` (random client-generated key, validated and bounded)
+- `claimedAt`
+
+**Index:** `by_user_and_claim_key`
+
+The claim mutation derives `userId` from `ctx.auth`, checks this index before writing, validates the complete bounded payload, copies referenced standard catalogue meals, and creates the user's plan/preferences. It records the claim in the same mutation. No guest payload is trusted as an owner reference.
+
 ## Relationships (summary)
 
 ```
@@ -74,6 +98,7 @@ users 1—* recipes
 users 1—* mealSlots *—1 recipes
 users 1—* shoppingLists 1—* shoppingListItems
 users 1—* recipeEvents *—1 recipes
+users 1—* guestClaims
 ```
 
 Cook is **not** a table. It is a cooking-mode view of `recipes`.
@@ -85,10 +110,12 @@ Cook is **not** a table. It is a cooking-mode view of `recipes`.
 | households, members, invites      | Premium-later                                         |
 | chalkboardItems                   | Not first-class; only if Shop needs a quick add-inbox |
 | ingredients catalog + food groups | Later, if merge quality requires it                   |
-| public recipes / CMS / slugs      | Out of personal engine                                |
+| public user recipes / CMS / slugs | Out of personal engine                                |
 | mealPlans generation metadata     | Don't migrate as a product surface                    |
-| subscriptions / ads               | Not initial build                                     |
+| premium meals / subscriptions     | Later; authenticated, server-verified entitlement     |
+| ads                               | Not initial build                                     |
 | Discover feed                     | Emerges from Remember + context                       |
+| anonymous backend users           | No; guest drafts remain device-local                  |
 
 ## Indexes reminder
 

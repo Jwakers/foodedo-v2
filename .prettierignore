@@ -4,8 +4,6 @@ out
 build
 pnpm-lock.yaml
 ios
-public/sw.js
-public/swe-worker-*.js
 coverage
 playwright-report
 test-results

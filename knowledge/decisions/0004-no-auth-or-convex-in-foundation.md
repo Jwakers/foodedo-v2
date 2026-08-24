@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The foundation must be a runnable Next.js PWA/iOS shell with documentation. Auth and Convex would force product decisions (Clerk vs Convex Auth, schema freeze) before jobs exist.
+The foundation must be a runnable Next.js web/iOS shell with documentation. Auth and Convex would force product decisions (Clerk vs Convex Auth, schema freeze) before jobs exist.
 
 ## Decision
 
@@ -16,4 +16,4 @@ The foundation includes neither authentication nor a Convex deployment (`npx con
 
 - Placeholder UI only; no fake logged-in dashboard.
 - Agents must not add Convex “just to be ready.”
-- First feature vertical slice waits on Convex + auth.
+- Persistent personal-data slices wait on Convex + auth. A bounded guest activation slice may prove Decide → Plan locally first, following ADR 0006.

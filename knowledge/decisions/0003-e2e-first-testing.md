@@ -13,7 +13,7 @@ A solo developer needs a safety net that fails when user jobs break, not when im
 - Primary net: Playwright E2E against real jobs (Decide, Plan, Capture, Shop, Cook).
 - Unit/integration tests only for domain logic in `src/lib/domain` (and later Convex pure helpers).
 - Bugs get a regression test at the cheapest correct layer.
-- CI enforces format, lint, typecheck, both production builds, and a Chromium PWA smoke now. Job-oriented E2E grows with each feature slice.
+- CI enforces format, lint, typecheck, both production builds, and a Chromium web-shell/manifest smoke now. Job-oriented E2E grows with each feature slice.
 
 ## Consequences
 

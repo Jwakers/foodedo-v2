@@ -4,6 +4,16 @@ V2 builds around **Capture → Decide → Plan → Shop → Cook → Remember**.
 
 Each job below is a user situation, not a screen name.
 
+## Activation: try before account
+
+**Situation:** “I want to know whether Foodedo is useful before I sign up.”
+
+**Success:** The visitor reaches a credible Decide result, can shape a short draft plan, and understands what an account would preserve.
+
+**Do:** Use the same standard Foodedo meal catalogue available to account holders, ask only lightweight context, and invite the user to **Keep this plan** after value appears. The early catalogue may be small because the product is early, never because the visitor is a guest.
+
+**Don't:** Put an auth wall before the first useful decision. Do not pretend temporary device data is safely saved or turn activation into a generic Discover feed.
+
 ## Decide
 
 **Job:** “I need to decide what we're eating.”
@@ -76,6 +86,8 @@ Each job below is a user situation, not a screen name.
 
 This should emerge from Remember plus preferences and context — not from a premature content feed or CMS. Documented, not in the first vertical slices.
 
+Guest activation is not Discover. Standard catalogue meals enable the decision loop; they are not an auth-gated teaser or a reason to turn activation into a browsing product.
+
 ## Explicitly out of early V2
 
-Households, invites, public recipe slugs, ads, subscriptions, social, and a publishing CMS. Premium-later, not foundation.
+Households, invites, public recipe slugs, ads, subscriptions, premium meal delivery, social, and a publishing CMS. Future premium meals require an authenticated subscriber, but that entitlement is not foundation scope and must not restrict the standard catalogue.

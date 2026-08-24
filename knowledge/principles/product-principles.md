@@ -34,6 +34,12 @@ Each screen has a primary purpose. Visual hierarchy should point at the next use
 
 Do not require an elaborate personal database before value appears. Onboarding should be short. Empty states should move people toward Capture or Decide, not explain architecture.
 
+### Earn the account
+
+Let people experience the decision loop before asking them to identify themselves. Request sign-in at a clear value boundary—keeping a plan, saving personal food, retaining preferences/history, or syncing—and preserve the work they have just done. Guest access must remain honest about what is temporary.
+
+Authentication protects persistence, identity, and paid entitlements. It must not be used to hide the standard Foodedo meal catalogue from guests.
+
 ## Mobile is the primary interaction environment
 
 Design for thumb reach, sheets and drawers, swipe, haptics, safe areas, the software keyboard, camera, share-in, notifications, offline-resilient behaviour, large touch targets, and one-handed use. Desktop matters; mobile drives the interaction model.
@@ -48,8 +54,8 @@ Recommendations should be understandable and reversible. Do not use AI for its o
 
 ## Free should be genuinely useful
 
-Do not ship a deliberately broken core. Premium, when it exists later, is automation, convenience, intelligence, power-user tools, advanced import, household, and removal of commercial content — not unlocking the reason the app exists.
+Do not ship a deliberately broken core. The complete standard meal catalogue and core decision loop remain genuinely useful without payment. Premium, when it exists later, may include explicitly premium meals or collections alongside automation, convenience, intelligence, power-user tools, advanced import, household, and removal of commercial content. It must not relabel or remove standard meals to manufacture a paywall.
 
 ## Monetisation is not an initial-build requirement
 
-Do not prematurely build subscriptions or ads. They are not part of the foundation and must not shape the first vertical slices.
+Do not prematurely build subscriptions, premium content delivery, or ads. They are not part of the foundation and must not shape the first vertical slices. When premium meals are introduced, require both authentication and a server-verified active subscription.

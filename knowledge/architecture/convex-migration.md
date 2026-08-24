@@ -34,4 +34,4 @@ Create a new Convex project when ready. Local agents use `npx convex dev` on **t
 
 ## Auth mapping
 
-V1 users are keyed by Clerk `externalId`. V2 auth is undecided and not in the foundation. Migration must remap identity in a dedicated step, not by copying Clerk configuration into this repo prematurely.
+V1 users are keyed by Clerk `externalId`. V2 auth remains undecided pending the cross-platform spike in [identity-and-guest.md](./identity-and-guest.md). Migration must remap identity in a dedicated step, not by copying Clerk configuration into this repo prematurely.

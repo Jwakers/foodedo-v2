@@ -43,10 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# serwist generated
-/public/sw.js
-/public/swe-worker-*.js
-
 # capacitor / ios derived
 /ios/App/Pods
 /ios/App/App/public

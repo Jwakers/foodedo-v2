@@ -10,6 +10,12 @@ One clear primary action per screen. Secondary actions sit in sheets, menus, or 
 
 Sensible defaults should make the common path zero-config. Progressive disclosure hides rarity. Forms should ask for as little as possible; Capture especially should prefer import over typing.
 
+## Account boundaries
+
+Do not lead with sign-in. Let a guest reach a useful Decide/Plan result, then ask them to **Keep this plan** or **Save this recipe**. Explain in one sentence that guest work is temporary on this device and an account makes it durable and synced.
+
+Preserve the draft through sign-in. If claiming or merging fails, keep the local copy and provide retry. Never surprise an existing account by silently replacing its plan or preferences.
+
 ## Sheets, gestures, context
 
 Use sheets and drawers for contextual actions (swap, servings, add to plan). Gestures (swipe to cook, swipe to defer) enhance; they must never be the only way to complete a job. Maintain user context: returning from a sheet should not reset the Decide flow.
