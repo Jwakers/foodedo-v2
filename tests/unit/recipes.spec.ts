@@ -4,6 +4,10 @@ import {
   prepareStandardCatalogue,
   RecipeValidationError,
 } from "../../src/lib/domain/recipes";
+import {
+  findStandardCatalogueMeal,
+  standardCatalogue,
+} from "../../src/lib/domain/standard-catalogue";
 
 const validRecipe = {
   title: "  Tomato pasta  ",
@@ -102,4 +106,23 @@ test("validates versioned catalogue content and stable meal identifiers", () => 
       ],
     }),
   ).toThrow("Catalogue meal IDs must be unique.");
+});
+
+test("exposes only meals from the current standard catalogue version", () => {
+  expect(standardCatalogue.meals.length).toBeGreaterThan(0);
+  expect(
+    findStandardCatalogueMeal("tomato-lentil-pasta", standardCatalogue.version),
+  ).toMatchObject({
+    id: "tomato-lentil-pasta",
+    title: "Tomato and lentil pasta",
+  });
+  expect(
+    findStandardCatalogueMeal(
+      "tomato-lentil-pasta",
+      standardCatalogue.version + 1,
+    ),
+  ).toBeNull();
+  expect(
+    findStandardCatalogueMeal("missing", standardCatalogue.version),
+  ).toBeNull();
 });

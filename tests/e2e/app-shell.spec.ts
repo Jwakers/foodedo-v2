@@ -11,12 +11,16 @@ test("serves the Foodedo app shell", async ({ page }) => {
   );
   await expect(
     page
-      .getByRole("button", { name: "Sign in" })
-      .or(
-        page.getByText(
-          "Authentication is ready for V2 environment configuration.",
-        ),
-      ),
+      .getByRole("button", { name: "Sign in", exact: true })
+      .or(page.getByText("Account unavailable", { exact: true })),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "A few good answers to “what shall we eat?”",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tomato and lentil pasta" }),
   ).toBeVisible();
 });
 

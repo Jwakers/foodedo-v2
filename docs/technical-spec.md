@@ -29,13 +29,13 @@ Authoritative product writing:
 | CI              | Format, lint, typecheck, both builds, Chromium web smoke     |
 | Hosting (web)   | Vercel (when deployed)                                       |
 
-The original shell and auth foundations are complete. The recipe kernel adds private authenticated recipe persistence and platform-independent recipe contracts without adding a recipe-management interface, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
+The original shell and auth foundations are complete. The recipe kernel now adds private authenticated persistence, platform-independent recipe contracts, and a small guest-visible standard catalogue with an authenticated save proof. It does not add manual recipe management, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
 
 ## 3. In vs later
 
-**Now:** placeholder web shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration scaffold, user synchronization, docs, CI, folder conventions.
+**Now:** focused product shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration, user synchronization, recipe foundation, docs, CI, and folder conventions.
 
-**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, private ownership, authenticated persistence, and domain tests now exist. Next, expose that kernel through the smallest useful catalogue-view/save proof before building the guest plan-claim slice.
+**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, authenticated idempotent catalogue saving, and domain tests now exist. Next, use these contracts in the guest Decide draft and account-claim slice.
 
 **Later product:** Capture → Decide → Plan → Shop → Cook → Remember. Discover after Remember has signal.
 

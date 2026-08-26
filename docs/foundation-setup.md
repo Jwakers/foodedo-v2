@@ -76,9 +76,9 @@ This is the historical record of the original shell foundation: a runnable Next.
 - **Bundle ID collision** with any existing Foodedo iOS app.
 - **Native compilation:** the web bundle and Capacitor sync are automated, but a full simulator/archive build still requires Xcode and signing validation.
 
-## Recommended first feature step
+## Feature direction after the original shell
 
-First establish the **recipe kernel** used by every later job: bounded recipe content, lossless ingredient lines, provenance, and private authenticated persistence. Keep catalogue content separate from personal recipes and defer canonical taxonomy and publishing. See [`recipes-and-ingredients.md`](../knowledge/architecture/recipes-and-ingredients.md).
+The **recipe kernel** is now established: bounded recipe content, lossless ingredient lines, provenance, private authenticated persistence, and a small versioned catalogue with retry-safe saving. Catalogue content remains separate from personal recipes; canonical taxonomy and publishing remain deferred. See [`recipes-and-ingredients.md`](../knowledge/architecture/recipes-and-ingredients.md).
 
 Then prove a **guest → account identity slice**: a visitor reaches a useful Decide/Plan result from the same standard meal catalogue available to account holders, chooses to keep it, authenticates, and sees the same draft safely claimed into V2. The early catalogue may be small and bundled, but it is not a guest access tier. See [`identity-and-guest.md`](../knowledge/architecture/identity-and-guest.md).
 
@@ -98,7 +98,7 @@ pnpm install
 pnpm dev
 ```
 
-[http://localhost:3000](http://localhost:3000) — product name + North Star only.
+[http://localhost:3000](http://localhost:3000) — product introduction and the standard recipe catalogue.
 
 ```bash
 pnpm lint

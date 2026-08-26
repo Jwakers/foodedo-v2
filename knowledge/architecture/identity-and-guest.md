@@ -81,8 +81,8 @@ The provider decision is recorded in [ADR 0008](../decisions/0008-convex-and-cle
 
 Build the recipe prerequisite, then one identity vertical slice:
 
-1. **Recipe kernel — foundation complete:** bounded recipe content and `CatalogueMeal`, lossless ingredient lines, private authenticated create/read/list operations, and owner indexes now exist. A product-facing recipe interaction remains deliberately unbuilt.
-2. **Guest contract:** define `GuestDraftV1`, a versioned standard catalogue shared across access states, and a platform storage interface with an IndexedDB implementation. It may be small and bundled initially, but it is never a guest-only subset. Keep rendering work minimal until the interaction is designed.
+1. **Recipe kernel — foundation complete:** bounded recipe content and `CatalogueMeal`, lossless ingredient lines, private authenticated create/read/list operations, owner indexes, and a catalogue-view/save proof now exist.
+2. **Guest contract:** define `GuestDraftV1` and a platform storage interface with an IndexedDB implementation around the existing versioned catalogue. The catalogue is never a guest-only subset. Keep rendering work focused on the Decide interaction.
 3. **New Convex project — complete:** V2 has a separate project and development deployment; no V1 keys or deployments are shared.
 4. **Minimum schema:** keep `users` and `recipes`; add `mealSlots` and `guestClaims` only with the claim slice. Defer shopping persistence and Remember events.
 5. **Authorization boundary:** derive every owner from `ctx.auth` and use owner indexes from the first personal operation.

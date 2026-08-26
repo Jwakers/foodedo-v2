@@ -20,7 +20,7 @@ There are no anonymous/guest `users` rows. A verified Clerk webhook creates or u
 
 ### catalogue meals (standard content)
 
-Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. The initial implementation may be a versioned bundle with stable catalogue IDs; move it to explicit public, non-personal backend reads only when scale or update frequency requires that.
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a small versioned bundle with stable catalogue IDs; move it to explicit public, non-personal backend reads only when scale or update frequency requires that.
 
 An early catalogue can be small because the product is early. Do not model a separate guest subset or use authentication to gate standard meals.
 
@@ -32,7 +32,7 @@ The private Capture unit: something an account wants to cook. `ownerSubject` is 
 
 Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
-**Index:** `by_owner_and_updated_at`.
+**Indexes:** `by_owner_and_updated_at`, `by_owner_and_catalogue_source`. The latter makes catalogue saving idempotent for an owner and catalogue revision.
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 

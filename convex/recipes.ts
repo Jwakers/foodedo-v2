@@ -14,6 +14,7 @@ import {
   prepareRecipeContent,
   RecipeValidationError,
 } from "../src/lib/domain/recipes";
+import { findStandardCatalogueMeal } from "../src/lib/domain/standard-catalogue";
 
 const maximumPageSize = 50;
 
@@ -30,6 +31,59 @@ export const create = mutation({
       source: { type: "manual" },
       updatedAt: Date.now(),
     });
+  },
+});
+
+export const saveCatalogueMeal = mutation({
+  args: {
+    catalogueMealId: v.string(),
+    catalogueVersion: v.number(),
+  },
+  returns: v.object({
+    recipeId: v.id("recipes"),
+    created: v.boolean(),
+  }),
+  handler: async (ctx, { catalogueMealId, catalogueVersion }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const catalogueMeal = findStandardCatalogueMeal(
+      catalogueMealId,
+      catalogueVersion,
+    );
+
+    if (catalogueMeal === null) {
+      throw new ConvexError({
+        code: "CATALOGUE_MEAL_NOT_FOUND",
+        message: "This catalogue meal is unavailable or out of date.",
+      });
+    }
+
+    const existing = await ctx.db
+      .query("recipes")
+      .withIndex("by_owner_and_catalogue_source", (q) =>
+        q
+          .eq("ownerSubject", ownerSubject)
+          .eq("source.catalogueMealId", catalogueMealId)
+          .eq("source.catalogueVersion", catalogueVersion),
+      )
+      .unique();
+
+    if (existing !== null) {
+      return { recipeId: existing._id, created: false };
+    }
+
+    const content = prepareRecipeOrThrow(catalogueMeal);
+    const recipeId = await ctx.db.insert("recipes", {
+      ownerSubject,
+      ...content,
+      source: {
+        type: "catalogue",
+        catalogueMealId,
+        catalogueVersion,
+      },
+      updatedAt: Date.now(),
+    });
+
+    return { recipeId, created: true };
   },
 });
 

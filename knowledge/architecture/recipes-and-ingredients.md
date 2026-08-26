@@ -33,5 +33,7 @@ Implement now:
 - Private authenticated recipe persistence and owner indexes.
 - Manual provenance plus the versioned `CatalogueMeal` contract.
 - Create, read, and paginated-list operations that derive ownership from verified auth.
+- A small versioned catalogue rendered equally for guests and accounts.
+- An authenticated, retry-safe save that resolves trusted catalogue content on the server and creates or reuses a private snapshot.
 
 Defer canonical ingredients, unit conversion, allergens, import, images, editing, search, publishing, social relationships, and feeds until a product slice needs them.

@@ -20,7 +20,8 @@ They cover bounded recipe/catalogue validation, stable line IDs, and preservatio
 
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 
-- the placeholder shell renders with its accessible heading and title
+- the app renders with its accessible heading and title
+- the standard catalogue is visible without authentication
 - the web manifest is linked and contains the required app identity and icons
 - every declared icon is served as PNG
 - the shell renders either the sign-in entry point or an honest configuration state without requiring CI secrets
