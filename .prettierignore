@@ -4,6 +4,7 @@ out
 build
 pnpm-lock.yaml
 ios
+convex/_generated
 coverage
 playwright-report
 test-results

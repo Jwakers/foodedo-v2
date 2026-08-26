@@ -4,7 +4,7 @@ V2 **must** use a **separate Convex project** from V1. Do not run `npx convex` a
 
 V1 lives at `/Users/jackwakeham/Documents/Projects/foodedo` and remains a live product. `foodedo-cms` and V1's Convex backend are off-limits.
 
-This document is planning only. There is no `convex/` directory in V2 yet.
+V2 now has its own `foodedo-v2` Convex project and development deployment in Europe (Ireland), plus a committed `convex/` workspace. The deployment is linked through ignored `.env.local` values; no V1 deployment or key is reused.
 
 ## Ownership
 
@@ -20,18 +20,18 @@ V1 grew a taxonomy-heavy `recipes` document, a global `ingredients` catalog, hou
 
 1. **Snapshot** — Export V1 data the user actually needs (their recipes, ingredients on those recipes, cook/save signals if recoverable). Do not import the entire public/CMS corpus as a prerequisite.
 2. **Import** — Load into V2 tables with a loose, optional-heavy schema and an `externalV1Id` (or similar) on migrated documents. Additive fields only at this stage.
-3. **Transform** — Map V1 fields into V2 job-oriented shapes in internal mutations. Drop unused taxonomy. Flatten nested arrays that should be relations only when queries need them.
+3. **Transform** — Map V1 fields into V2 job-oriented shapes in internal mutations. Preserve authored ingredient wording and source attribution, but do not require canonical ingredient matches. Drop unused taxonomy. Flatten nested arrays that should be relations only when queries need them.
 4. **Verify** — Spot-check counts, a sample of recipes through Capture/Decide/Shop, and that no V1 deployment was written.
 5. **Tighten schema** — Make required fields required only after backfill. Follow Convex migration practice: optional → backfill → required. Indexes for `userId` and job lookups from the start.
 
 Convex does not auto-migrate documents. Safe: optional fields, new tables, new indexes. Breaking: required fields, type changes, renames — those need explicit migrations (`@convex-dev/migrations` when Convex is added).
 
-When Convex is introduced, use the official **migration-helper** skill. Do not install Convex AI files until that milestone.
+When migration work begins, use the official **migration-helper** skill if available. Convex AI files are deliberately not installed; this repository's existing agent rules remain authoritative.
 
 ## Environments
 
-Create a new Convex project when ready. Local agents use `npx convex dev` on **this** repo only. Never `npx convex deploy` from development. Cloud coding agents may use Convex agent mode; local development does not need it.
+The separate V2 project has been created. Local agents use `pnpm dev:convex` or `pnpm exec convex dev` on **this** repo only. Never use `npx convex deploy` from development. Cloud coding agents may use Convex agent mode; local development does not need it.
 
 ## Auth mapping
 
-V1 users are keyed by Clerk `externalId`. V2 auth remains undecided pending the cross-platform spike in [identity-and-guest.md](./identity-and-guest.md). Migration must remap identity in a dedicated step, not by copying Clerk configuration into this repo prematurely.
+V1 users are keyed by Clerk `externalId`. V2 also uses Clerk, but its application configuration and Convex project remain separate. Migration must remap identities in a dedicated, verified step; do not copy V1 Clerk secrets or assume IDs belong to the V2 Clerk instance.

@@ -1,6 +1,6 @@
 # Foundation setup
 
-What landed in Foodedo V2: a runnable Next.js web shell, Capacitor iOS config, and durable docs. No product features, no auth, no Convex.
+This is the historical record of the original shell foundation: a runnable Next.js web shell, Capacitor iOS config, and durable docs. It initially contained no product features, auth, or Convex. The subsequent Convex + Clerk milestone is documented in [auth-and-backend-setup.md](./auth-and-backend-setup.md) and [ADR 0008](../knowledge/decisions/0008-convex-and-clerk.md).
 
 ## Files created
 
@@ -42,7 +42,7 @@ What landed in Foodedo V2: a runnable Next.js web shell, Capacitor iOS config, a
 - `knowledge/product/vision.md`, `knowledge/product/jobs-to-be-done.md`
 - `knowledge/ux/interaction-principles.md`
 - `knowledge/architecture/convex-migration.md`, `knowledge/architecture/data-model.md`
-- `knowledge/decisions/0001`–`0007`
+- `knowledge/decisions/0001`–`0008`
 - `knowledge/skills/README.md`, `knowledge/research/README.md`
 - `.cursor/skills/frontend-design/SKILL.md` (copied from V1 for V2 agents)
 
@@ -56,7 +56,7 @@ What landed in Foodedo V2: a runnable Next.js web shell, Capacitor iOS config, a
 | Capacitor 8, iOS only, `webDir: out`, no production `server.url`        | Follows Capacitor's production asset workflow. Remote URLs are for development live reload only.                                                |
 | Bundle ID `com.foodedo.app`                                             | Reverse-DNS for the consumer product. V2 is a rewrite, not a side-by-side “v2” app. Confirm vs any existing App Store ID before native release. |
 | Orientation remains unlocked                                            | Web manifest and iOS agree; rotation remains available for accessibility until product UX justifies a constraint.                               |
-| No Convex, no auth, no shadcn                                           | Foundation only. Convex will be a **new** project later.                                                                                        |
+| No Convex, no auth, no shadcn                                           | Original foundation scope. The later backend milestone created a **new** V2 project and selected Clerk.                                         |
 | Playwright web-shell smoke + complete CI checks                         | Protect the shell, metadata, and both deployment modes before feature E2E tests exist.                                                          |
 | pnpm                                                                    | Matches V1 and sibling projects.                                                                                                                |
 
@@ -78,7 +78,9 @@ What landed in Foodedo V2: a runnable Next.js web shell, Capacitor iOS config, a
 
 ## Recommended first feature step
 
-First prove a **guest → account identity slice**: a visitor reaches a useful Decide/Plan result from the same standard meal catalogue available to account holders, chooses to keep it, authenticates, and sees the same draft safely claimed into a new V2 Convex account. The early catalogue may be small and bundled, but it is not a guest access tier. See [`identity-and-guest.md`](../knowledge/architecture/identity-and-guest.md).
+First establish the **recipe kernel** used by every later job: bounded recipe content, lossless ingredient lines, provenance, and private authenticated persistence. Keep catalogue content separate from personal recipes and defer canonical taxonomy and publishing. See [`recipes-and-ingredients.md`](../knowledge/architecture/recipes-and-ingredients.md).
+
+Then prove a **guest → account identity slice**: a visitor reaches a useful Decide/Plan result from the same standard meal catalogue available to account holders, chooses to keep it, authenticates, and sees the same draft safely claimed into V2. The early catalogue may be small and bundled, but it is not a guest access tier. See [`identity-and-guest.md`](../knowledge/architecture/identity-and-guest.md).
 
 Then ship the first personal **Capture → Decide** vertical slice — not settings, households, discovery, or a dashboard.
 
@@ -149,5 +151,5 @@ Do not add Android. Native plugins (camera, photos, share, haptics, push, deep l
 - `pnpm test:e2e` — Chromium verifies the shell, manifest, and icons
 - `pnpm cap:sync:ios` — copies the static export; generated native config has no `server.url`
 - V1 git status — clean
-- No Convex project created
+- No Convex project existed at the original foundation checkpoint; a separate V2 project now exists under ADR 0008
 - Full Xcode simulator build — dependencies resolve, but this Mac needs its Xcode platform/CoreSimulator components updated before it has an eligible simulator destination

@@ -9,6 +9,15 @@ test("serves the Foodedo app shell", async ({ page }) => {
     "href",
     "/manifest.webmanifest",
   );
+  await expect(
+    page
+      .getByRole("button", { name: "Sign in" })
+      .or(
+        page.getByText(
+          "Authentication is ready for V2 environment configuration.",
+        ),
+      ),
+  ).toBeVisible();
 });
 
 test("exposes valid home-screen metadata and icons", async ({ request }) => {

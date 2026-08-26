@@ -20,6 +20,8 @@ Authoritative product writing:
 | --------------- | ------------------------------------------------------------ |
 | App             | Next.js 16 App Router, React 19, TypeScript (strict), `src/` |
 | Styling         | Tailwind CSS v4                                              |
+| Backend         | Convex 1.x, separate V2 project                              |
+| Authentication  | Clerk client auth + Convex JWT validation                    |
 | Web metadata    | Manifest + icons; no service worker or offline-web promise   |
 | Native          | Capacitor 8, **iOS only**, packages a Next.js static export  |
 | Package manager | pnpm                                                         |
@@ -27,13 +29,13 @@ Authoritative product writing:
 | CI              | Format, lint, typecheck, both builds, Chromium web smoke     |
 | Hosting (web)   | Vercel (when deployed)                                       |
 
-**Not in the foundation:** Convex runtime, `schema.ts`, auth, shadcn, product features, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
+The original shell and auth foundations are complete. The recipe kernel adds private authenticated recipe persistence and platform-independent recipe contracts without adding a recipe-management interface, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
 
 ## 3. In vs later
 
-**Now:** placeholder web shell, home-screen metadata, Capacitor config, docs, CI, folder conventions.
+**Now:** placeholder web shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration scaffold, user synchronization, docs, CI, folder conventions.
 
-**Next product/backend milestone:** a guest-first identity slice: a versioned standard meal catalogue shared by guests and account holders, a local draft, a **new** Convex project, an auth-provider spike across web and iOS builds, authenticated ownership helpers, and idempotent guest-draft claiming.
+**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, private ownership, authenticated persistence, and domain tests now exist. Next, expose that kernel through the smallest useful catalogue-view/save proof before building the guest plan-claim slice.
 
 **Later product:** Capture → Decide → Plan → Shop → Cook → Remember. Discover after Remember has signal.
 
@@ -52,7 +54,9 @@ Authoritative product writing:
 - **Small composable components** when UI exists. No design-system install in the foundation.
 - **Existing V2 code is not more authoritative than principles.** V1 is migration insight only.
 
-Convex is the planned backend: queries/mutations/actions, indexes, custom authed functions — in a **separate project** from V1. See [convex-migration.md](../knowledge/architecture/convex-migration.md) and [data-model.md](../knowledge/architecture/data-model.md).
+Convex is the backend: queries/mutations/actions, indexes, custom authenticated functions—in a **separate project** from V1. Clerk provides identity; Convex validates its JWT and remains responsible for authorization. See [convex-migration.md](../knowledge/architecture/convex-migration.md), [data-model.md](../knowledge/architecture/data-model.md), and [the setup guide](./auth-and-backend-setup.md).
+
+Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
 
@@ -63,6 +67,8 @@ Guest mode is not unauthenticated personal storage. The initial standard catalog
 3. Production iOS: `pnpm build:ios:web` sets `CAPACITOR_BUILD=true`, enabling Next.js `output: 'export'` and generating `out/`. Capacitor packages those compiled assets through `webDir: 'out'`. It does not load the deployed website through `server.url`.
 
 The dual build is deliberate. The Vercel build can use server-capable Next.js features; any route shipped inside iOS must also pass the static-export build. Dynamic native data should come from client-side Convex calls or an explicit external API. Cookies, Server Actions, request-dependent Route Handlers, and dynamic routes without `generateStaticParams` cannot be introduced into shared native routes accidentally.
+
+The packaged iOS origin is `capacitor://localhost`. Clerk's web SDK remains in standard-browser mode inside the cookie-capable `WKWebView`, and the Clerk instance requires that origin in `allowed_origins`. `standardBrowser=false` is reserved for a client with a native token/request adapter and is not a standalone Capacitor switch. For social/SSO, the Capacitor build injects one isolated Clerk OAuth transport: a narrow local Capacitor plugin presents Apple's `ASWebAuthenticationSession`, Clerk returns to an allowlisted HTTPS Convex HTTP action, and that bridge opens `com.foodedo.app://callback` for the authentication session to capture and dismiss automatically. The HTTPS bridge is required while Foodedo uses Clerk's browser-mode React SDK because that flow rejects a custom-scheme callback directly; registering the iOS app in Clerk does not change the SDK mode. The app scheme must be registered in Xcode, and the bridge URL must be registered in Clerk's mobile SSO redirect allowlist.
 
 Scripts: `build:ios:web`, `cap:sync:ios`, `cap:open:ios`, and development-only `cap:run:ios:live`. Android is not added. `server.url` may be supplied temporarily by Capacitor's live-reload CLI but must not be committed or shipped.
 
@@ -105,7 +111,7 @@ out/                     Generated native web bundle (gitignored)
 - Await all promises in future Convex functions; validators on public functions; no `Date.now()` in queries.
 - Never schedule public `api` functions — internal only, when Convex exists.
 - Keep shared native routes static-export compatible; run both production builds after routing or data-access changes.
-- Use `npx convex dev` for Convex development; `deploy` is production only — and only for the **V2** project.
+- Use `pnpm exec convex dev` for Convex development; `deploy` is production only—and only for the **V2** project.
 
 ## 11. Related ADRs
 
@@ -116,3 +122,4 @@ out/                     Generated native web bundle (gitignored)
 - [0005 Data model is not a V1 clone](../knowledge/decisions/0005-v2-data-model-not-v1-clone.md)
 - [0006 Guest-first account boundary](../knowledge/decisions/0006-guest-first-account-boundary.md)
 - [0007 Standard meals and future premium entitlement](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md)
+- [0008 Convex and Clerk](../knowledge/decisions/0008-convex-and-clerk.md)

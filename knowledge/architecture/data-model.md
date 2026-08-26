@@ -1,6 +1,6 @@
-# V2 data model (proposed)
+# V2 data model
 
-Not implemented. There is no `convex/schema.ts` yet. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays only for small bounded lists.
+Partially implemented. `users` and private `recipes` are the current foundation; the remaining entities below are proposed. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays are reserved for small bounded recipe content.
 
 Orient around jobs, not V1 tables.
 
@@ -10,11 +10,11 @@ Guest access does not create backend documents. Its bounded, versioned draft liv
 
 ### users
 
-Account record once auth exists. Identity provider subject stored as an unguessable `authSubject`; if the selected integration already owns the canonical Convex user table, reference that identity rather than duplicating it. Preferences are a small nested object (allergies, excluded proteins, default servings) — not a configuration product.
+Account record synchronised from Clerk webhooks. The Clerk JWT subject is stored as the unguessable `authSubject`, with only the profile fields Foodedo currently needs: nullable email and name plus Clerk creation/update timestamps. Preferences will be added only with the product slice that uses them—not as a configuration product.
 
-There are no anonymous/guest `users` rows. Create this record only from verified `ctx.auth` identity.
+There are no anonymous/guest `users` rows. A verified Clerk webhook creates or updates the profile record; personal Convex functions independently derive the caller from verified `ctx.auth` identity and never accept an owner ID from the client.
 
-**Index:** `by_auth_subject` when Foodedo owns the user mapping.
+**Index:** `by_auth_subject`.
 
 **Deferred:** subscription fields, super-user flags, household membership.
 
@@ -28,42 +28,36 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 ### recipes (saved dishes)
 
-The Capture unit: something the user wants to cook.
+The private Capture unit: something an account wants to cook. `ownerSubject` is always derived from the verified Clerk identity; it is never accepted from a client and does not depend on webhook timing.
 
-- `userId`
-- `title`
-- `sourceUrl` / `sourceType` (`catalogue` | `import` | `share` | `manual` | `photo` — extend later)
-- `ingredients`: small array of `{ name, amount?, unit?, note? }` until we prove a catalog is needed
-- `steps`: array of `{ text }`
-- `serves?`, `prepMinutes?`, `cookMinutes?`, `imageStorageId?`
-- `createdAt`, `updatedAt`
+Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
-**Indexes:** `by_user`, `by_user_and_updatedAt`
+**Index:** `by_owner_and_updated_at`.
 
-**Deferred vs V1:** categories, cuisine unions, complexity tiers, generator flags, public slugs, search indexes, hero-image origin enums, nested method/ingredient ref graphs. Add search when Decide needs it.
+Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
-A global ingredients catalog is **not** a V2 day-one requirement. Parse names on the recipe; introduce canonical ingredients when Shop merge quality demands it.
+**Deferred vs V1:** canonical ingredients, categories, cuisine unions, generator flags, images, search, import, public slugs, publishers, and social relationships.
 
 ### mealSlots (short-horizon plan)
 
 Plan is a few days of decided eats, not a generated week object with seed/version/leftover snapshots.
 
-- `userId`
+- `ownerSubject`
 - `date` (start of local day as a number the client passes in; queries must not use `Date.now()`)
 - `recipeId`
 - `order?`
 - `status`: `planned` | `cooked` | `skipped`
 
-**Indexes:** `by_user_and_date`, `by_recipe`
+**Indexes:** `by_owner_and_date`, `by_recipe`
 
 ### shoppingLists / shoppingListItems
 
 Derived from decided meals, then editable.
 
-- List: `userId`, `status` (`active` | `completed`), `createdAt`
+- List: `ownerSubject`, `status` (`active` | `completed`), `createdAt`
 - Item: `shoppingListId`, `name`, `amount?`, `unit?`, `checked`, `order`, optional `recipeId`
 
-**Indexes:** `by_user_and_status`, `by_shopping_list`
+**Indexes:** `by_owner_and_status`, `by_shopping_list`
 
 **Deferred vs V1:** leftover include modes, chalkboard linkage, household privacy, serving-scale metadata forests. Add scaling when Cook/Shop prove it.
 
@@ -71,11 +65,11 @@ Derived from decided meals, then editable.
 
 Signals so Decide can surface neglected food.
 
-- `userId`, `recipeId`
+- `ownerSubject`, `recipeId`
 - `type`: `saved` | `cooked` | `suggested` | `dismissed`
 - `at`
 
-**Indexes:** `by_user_and_recipe`, `by_user_and_at`, `by_recipe_and_at`
+**Indexes:** `by_owner_and_recipe`, `by_owner_and_at`, `by_recipe_and_at`
 
 Last cooked = latest `cooked` event. Neglect = saved/cooked gap. Do not start with V1 `recipeBehaviourStats` suggested/swapped/removed counters unless Decide needs them.
 
@@ -83,40 +77,40 @@ Last cooked = latest `cooked` event. Neglect = saved/cooked gap. Do not start wi
 
 Idempotency records for moving a local guest draft into an authenticated account.
 
-- `userId`
+- `ownerSubject`
 - `claimKey` (random client-generated key, validated and bounded)
 - `claimedAt`
 
-**Index:** `by_user_and_claim_key`
+**Index:** `by_owner_and_claim_key`
 
-The claim mutation derives `userId` from `ctx.auth`, checks this index before writing, validates the complete bounded payload, copies referenced standard catalogue meals, and creates the user's plan/preferences. It records the claim in the same mutation. No guest payload is trusted as an owner reference.
+The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete bounded payload, copies referenced standard catalogue meals, and creates the user's plan/preferences. It records the claim in the same mutation. No guest payload is trusted as an owner reference.
 
 ## Relationships (summary)
 
 ```
-users 1—* recipes
-users 1—* mealSlots *—1 recipes
-users 1—* shoppingLists 1—* shoppingListItems
-users 1—* recipeEvents *—1 recipes
-users 1—* guestClaims
+authenticated identity 1—* recipes
+authenticated identity 1—* mealSlots *—1 recipes
+authenticated identity 1—* shoppingLists 1—* shoppingListItems
+authenticated identity 1—* recipeEvents *—1 recipes
+authenticated identity 1—* guestClaims
 ```
 
 Cook is **not** a table. It is a cooking-mode view of `recipes`.
 
 ## Explicitly deferred
 
-| V1 concept                        | V2 stance                                             |
-| --------------------------------- | ----------------------------------------------------- |
-| households, members, invites      | Premium-later                                         |
-| chalkboardItems                   | Not first-class; only if Shop needs a quick add-inbox |
-| ingredients catalog + food groups | Later, if merge quality requires it                   |
-| public user recipes / CMS / slugs | Out of personal engine                                |
-| mealPlans generation metadata     | Don't migrate as a product surface                    |
-| premium meals / subscriptions     | Later; authenticated, server-verified entitlement     |
-| ads                               | Not initial build                                     |
-| Discover feed                     | Emerges from Remember + context                       |
-| anonymous backend users           | No; guest drafts remain device-local                  |
+| V1 concept                         | V2 stance                                             |
+| ---------------------------------- | ----------------------------------------------------- |
+| households, members, invites       | Premium-later                                         |
+| chalkboardItems                    | Not first-class; only if Shop needs a quick add-inbox |
+| ingredients catalog + food groups  | Later, if merge quality requires it                   |
+| public recipes / publishers / feed | Later, separate from private recipe ownership         |
+| mealPlans generation metadata      | Don't migrate as a product surface                    |
+| premium meals / subscriptions      | Later; authenticated, server-verified entitlement     |
+| ads                                | Not initial build                                     |
+| Discover feed                      | Emerges from Remember + context                       |
+| anonymous backend users            | No; guest drafts remain device-local                  |
 
 ## Indexes reminder
 
-Always index `userId` and join keys. Prefer `withIndex` over `filter`. Paginate unbounded lists (recipe library, events).
+Always index owner and join keys. Prefer `withIndex` over `filter`. Paginate unbounded lists such as the recipe library and events.

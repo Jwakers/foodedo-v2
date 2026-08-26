@@ -1,0 +1,8 @@
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests/unit",
+  fullyParallel: true,
+  forbidOnly: Boolean(process.env.CI),
+  reporter: process.env.CI ? "github" : "list",
+});

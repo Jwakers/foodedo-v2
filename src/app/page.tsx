@@ -1,3 +1,5 @@
+import { AuthControls } from "@/components/auth-controls";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-full w-full max-w-lg flex-col justify-center px-6 py-16">
@@ -8,6 +10,7 @@ export default function Home() {
         A decision-making engine for food — so you think less about what to eat
         and how to make it happen.
       </p>
+      <AuthControls />
     </main>
   );
 }
