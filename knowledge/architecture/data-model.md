@@ -20,7 +20,9 @@ There are no anonymous/guest `users` rows. A verified Clerk webhook creates or u
 
 ### catalogue meals (standard content)
 
-Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a small versioned bundle with stable catalogue IDs; move it to explicit public, non-personal backend reads only when scale or update frequency requires that.
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a small versioned bundle with stable catalogue IDs; this is a foundation-stage delivery choice rather than the final catalogue authoring architecture.
+
+Move catalogue content to explicit public, non-personal Convex reads before introducing generation, administration, frequent independent updates, or substantial catalogue growth. Persist authoring candidates separately from immutable published revisions: generation creates a draft, validation and review promote it, and only published standard revisions are returned to guests. Saving continues to copy the trusted published revision into a private recipe snapshot.
 
 An early catalogue can be small because the product is early. Do not model a separate guest subset or use authentication to gate standard meals.
 

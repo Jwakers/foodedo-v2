@@ -9,9 +9,17 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 - Saving catalogue content creates or reuses a personal recipe with its source recorded. Plans and history reference the personal recipe, so later catalogue changes cannot silently alter them.
 - Future public publishing is a separate concern. Do not represent it with a nullable owner or an `isPublic` flag on a personal recipe.
 
+## Catalogue lifecycle
+
+The current versioned code bundle is a deliberate foundation-stage delivery choice, not the intended permanent authoring system. Move standard catalogue content to public, non-personal Convex reads before adding generation, catalogue administration, frequent independent releases, or enough content that bundling becomes costly.
+
+Generation must create a candidate, not publish directly. A future workflow validates and reviews the candidate before publishing an immutable catalogue revision. Guests can read published standard revisions without authentication; premium delivery remains a separate, server-entitled concern. Saving still resolves the trusted published revision on the server and creates a personal snapshot, so the client contract and provenance model can remain stable when storage moves.
+
 ## Ingredient lines
 
-The authored line remains the source of truth. Keep a stable line ID, ingredient name, human-readable quantity, optional unit, and optional note. Preserve expressions such as “1 × 400g tin” or “to taste”; structured interpretation must not destroy the original meaning.
+The authored line remains the source of truth. Keep a stable line ID, ingredient name, human-readable quantity, optional unit, and optional note. The note currently preserves preparation and qualifiers such as “finely chopped”, “drained”, or “at room temperature”; this information has not been discarded. Preserve expressions such as “1 × 400g tin” or “to taste”; structured interpretation must not destroy the original meaning.
+
+Do not require a separate structured `preparation` field until Capture, import, Cook, or Shop needs to distinguish preparation reliably from other qualifiers. If that need appears, add optional enrichment or split the preserved note through a migration; do not make recipe entry harder or lose the original wording in anticipation.
 
 A canonical ingredient catalogue may be introduced when Shop or allergy assistance proves the need. Resolution must be optional enrichment: unresolved lines remain valid, and arbitrary user input must never create global taxonomy records automatically.
 
