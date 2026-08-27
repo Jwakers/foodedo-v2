@@ -4,9 +4,11 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 
 ## Content boundaries
 
-- A `CatalogueMeal` is versioned Foodedo product content available equally to guests and accounts.
+- A `CatalogueMeal` is versioned Foodedo product content available equally to guests and accounts. Its stable internal ID is separate from its unique, human-readable catalogue URL slug.
 - A `Recipe` is a private, mutable snapshot owned by an authenticated account.
-- Saving catalogue content creates or reuses a personal recipe with its source recorded. Plans and history reference the personal recipe, so later catalogue changes cannot silently alter them.
+- Plans may create a private snapshot for referential integrity without presenting it as explicitly saved.
+- Saving catalogue content creates or reuses a personal recipe, records `savedAt`, and preserves its source. Plans and history reference the personal recipe, so later catalogue changes cannot silently alter them.
+- **Save recipe** is the only initial library action. Favouriting is a separate preference signal and remains deferred until it serves recommendations or another proven job.
 - Future public publishing is a separate concern. Do not represent it with a nullable owner or an `isPublic` flag on a personal recipe.
 
 ## Catalogue lifecycle
@@ -42,6 +44,6 @@ Implement now:
 - Manual provenance plus the versioned `CatalogueMeal` contract.
 - Create, read, and paginated-list operations that derive ownership from verified auth.
 - A small versioned catalogue rendered equally for guests and accounts.
-- An authenticated, retry-safe save that resolves trusted catalogue content on the server and creates or reuses a private snapshot.
+- An authenticated, retry-safe save that resolves trusted catalogue content on the server, creates or reuses a private snapshot, and explicitly adds it to the user's library.
 
 Defer canonical ingredients, unit conversion, allergens, import, images, editing, search, publishing, social relationships, and feeds until a product slice needs them.

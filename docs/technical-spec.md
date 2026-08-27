@@ -20,6 +20,7 @@ Authoritative product writing:
 | --------------- | ------------------------------------------------------------ |
 | App             | Next.js 16 App Router, React 19, TypeScript (strict), `src/` |
 | Styling         | Tailwind CSS v4                                              |
+| Iconography     | Lucide React                                                 |
 | Backend         | Convex 1.x, separate V2 project                              |
 | Authentication  | Clerk client auth + Convex JWT validation                    |
 | Web metadata    | Manifest + icons; no service worker or offline-web promise   |
@@ -35,7 +36,7 @@ The original shell and auth foundations are complete. The recipe kernel now adds
 
 **Now:** focused product shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration, user synchronization, recipe foundation, docs, CI, and folder conventions.
 
-**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, authenticated idempotent catalogue saving, and domain tests now exist.
+**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, explicit library membership, authenticated idempotent catalogue saving, and domain tests now exist. Plan-only snapshots do not appear in **My recipes** unless the user deliberately saves them.
 
 **Guest Plan claim — foundation complete:** `GuestDraftV1` holds seven consecutive dated choices in IndexedDB. Guests can swap or shuffle meals, then **Keep this plan** persists an idempotent intent before sign-in. Authenticated app state first hydrates the current Convex plan, preventing a second device from submitting an already-saved date range. Otherwise it resumes one atomic claim that creates a minimal `mealPlans` parent, private recipe snapshots, and independently editable dated slots without overwriting occupied dates. Matching local state is deleted only after server confirmation; different unsaved state is retained and disclosed. Catalogue recipe saving uses the same persisted sign-in-continuation and post-save cleanup pattern.
 
@@ -62,6 +63,8 @@ Convex is the backend: queries/mutations/actions, indexes, custom authenticated 
 
 Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
 
+The current catalogue uses real `/recipes/[slug]` pages. A catalogue slug is a unique, human-readable URL value distinct from the stable internal catalogue ID used by plans and saved snapshots. Every bundled slug is generated at build time, so the same URLs work on Vercel and in Capacitor's static iOS bundle without a query-string router. Routes for future user-created recipes will be designed with duplicate handling and that native static-export constraint when Capture adds them; they are not simulated ahead of the data source.
+
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
@@ -86,7 +89,7 @@ Fast, mobile-first, accessible (semantic HTML, contrast, 44px targets, safe area
 
 ## 7. Testing
 
-See [testing.md](./testing.md). Playwright currently checks the production web shell, manifest, and icons in Chromium. Grow E2E coverage with real jobs; keep unit tests for domain logic only. Bug-driven tests thereafter.
+See [testing.md](./testing.md). Playwright checks durable production behaviour in Chromium. Keep E2E assertions centred on navigation and real jobs rather than transient copy; keep unit tests for domain logic only. Bug-driven tests thereafter.
 
 ## 8. V2 scope discipline
 
@@ -99,7 +102,7 @@ Do not touch `/Users/jackwakeham/Documents/Projects/foodedo` (V1), `foodedo-cms`
 ## 9. Folder conventions
 
 ```
-src/app/                 App Router (only `/` in the foundation)
+src/app/                 App Router routes (`/`, `/recipes`, `/recipes/[slug]`)
 src/components/          Shared UI later
 src/features/            Job modules later
 src/lib/domain/          Platform-independent logic
@@ -117,6 +120,7 @@ out/                     Generated native web bundle (gitignored)
 - Await all promises in future Convex functions; validators on public functions; no `Date.now()` in queries.
 - Never schedule public `api` functions — internal only, when Convex exists.
 - Keep shared native routes static-export compatible; run both production builds after routing or data-access changes.
+- Fail Next.js startup/build when required public Clerk or Convex configuration is missing; product components assume their providers exist.
 - Use `pnpm exec convex dev` for Convex development; `deploy` is production only—and only for the **V2** project.
 
 ## 11. Related ADRs

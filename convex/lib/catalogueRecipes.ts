@@ -11,10 +11,12 @@ export async function getOrCreateCatalogueRecipe(
     ownerSubject,
     catalogueMealId,
     catalogueVersion,
+    saveToLibrary,
   }: {
     ownerSubject: string;
     catalogueMealId: string;
     catalogueVersion: number;
+    saveToLibrary: boolean;
   },
 ) {
   const catalogueMeal = findStandardCatalogueMeal(
@@ -37,6 +39,10 @@ export async function getOrCreateCatalogueRecipe(
     .unique();
 
   if (existing !== null) {
+    if (saveToLibrary && existing.savedAt === undefined) {
+      const savedAt = Date.now();
+      await ctx.db.patch(existing._id, { savedAt, updatedAt: savedAt });
+    }
     return { recipeId: existing._id, created: false } as const;
   }
 
@@ -52,6 +58,7 @@ export async function getOrCreateCatalogueRecipe(
     throw error;
   }
 
+  const createdAt = Date.now();
   const recipeId = await ctx.db.insert("recipes", {
     ownerSubject,
     ...content,
@@ -60,7 +67,8 @@ export async function getOrCreateCatalogueRecipe(
       catalogueMealId,
       catalogueVersion,
     },
-    updatedAt: Date.now(),
+    ...(saveToLibrary ? { savedAt: createdAt } : {}),
+    updatedAt: createdAt,
   });
 
   return { recipeId, created: true } as const;

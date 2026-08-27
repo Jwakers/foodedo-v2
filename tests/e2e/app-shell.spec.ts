@@ -4,26 +4,25 @@ test("serves the Foodedo app shell", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Foodedo");
-  await expect(page.getByRole("heading", { name: "Foodedo" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Foodedo" })).toBeVisible();
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
     "href",
     "/manifest.webmanifest",
   );
   await expect(
-    page
-      .getByRole("button", { name: "Sign in", exact: true })
-      .or(page.getByText("Account unavailable", { exact: true })),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", {
-      name: "A few good answers to “what shall we eat?”",
-    }),
-  ).toBeVisible();
-  await expect(
-    page
-      .locator('section[aria-labelledby="catalogue-heading"]')
-      .getByRole("heading", { name: "Tomato and lentil pasta" }),
-  ).toBeVisible();
+    page.getByRole("link", { name: "Recipes" }).first(),
+  ).toHaveAttribute("href", "/recipes");
+});
+
+test("navigates from the catalogue to a recipe page", async ({ page }) => {
+  await page.goto("/recipes");
+
+  const recipeLink = page.locator('a[href="/recipes/tomato-and-lentil-pasta"]');
+  await expect(recipeLink).toBeVisible();
+  await recipeLink.click();
+
+  await expect(page).toHaveURL(/\/recipes\/tomato-and-lentil-pasta$/);
+  await expect(page.locator("main article")).toBeVisible();
 });
 
 test("exposes valid home-screen metadata and icons", async ({ request }) => {

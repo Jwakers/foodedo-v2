@@ -2,7 +2,7 @@ import type { ClerkProviderProps } from "@clerk/react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
 const clerkOAuthCallbackUrl = "com.foodedo.app://callback";
-const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL?.trim();
+const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL!;
 
 type OAuthTransport = NonNullable<
   ClerkProviderProps["__internal_oauthTransport"]
@@ -21,12 +21,6 @@ const clerkOAuthPlugin = registerPlugin<ClerkOAuthPlugin>("ClerkOAuth");
  */
 export const capacitorClerkOAuthTransport: OAuthTransport = {
   getRedirectUrl: () => {
-    if (!convexSiteUrl) {
-      throw new Error(
-        "NEXT_PUBLIC_CONVEX_SITE_URL is required for iOS social sign-in.",
-      );
-    }
-
     // Browser-mode Clerk accepts HTTP(S), not the app scheme. This bridge
     // forwards Clerk's rotating callback parameters to the native session.
     return new URL("/clerk-oauth-callback", convexSiteUrl).toString();

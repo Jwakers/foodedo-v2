@@ -2,31 +2,10 @@
 
 import { useCatalogueSaveState } from "./catalogue-save-state";
 
-const isSaveConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() &&
-  process.env.NEXT_PUBLIC_CONVEX_URL?.trim(),
-);
 const buttonClassName =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-foreground px-5 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:hover:bg-transparent disabled:hover:text-muted-foreground";
 
 export function SaveCatalogueMealButton({
-  catalogueMealId,
-}: {
-  catalogueMealId: string;
-  catalogueVersion: number;
-}) {
-  if (!isSaveConfigured) {
-    return (
-      <button type="button" className={buttonClassName} disabled>
-        Saving unavailable
-      </button>
-    );
-  }
-
-  return <ConfiguredSaveButton catalogueMealId={catalogueMealId} />;
-}
-
-function ConfiguredSaveButton({
   catalogueMealId,
 }: {
   catalogueMealId: string;

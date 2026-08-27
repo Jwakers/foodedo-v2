@@ -2,6 +2,8 @@
 
 The code integration contains no secrets. V2 uses its own Convex project and must use V2 Clerk configuration; never copy V1 deployment values or secret keys.
 
+Clerk and Convex are required infrastructure. Next.js refuses to start or build without `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NEXT_PUBLIC_CONVEX_URL`; Capacitor builds additionally require `NEXT_PUBLIC_CONVEX_SITE_URL`. Product components therefore assume their providers exist instead of maintaining an unconfigured runtime mode.
+
 ## Architecture
 
 - Clerk's framework-neutral React SDK owns identity and the client sign-in session.

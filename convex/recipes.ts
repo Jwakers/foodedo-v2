@@ -26,12 +26,14 @@ export const create = mutation({
   handler: async (ctx, { recipe }) => {
     const ownerSubject = await requireAuthSubject(ctx);
     const content = prepareRecipeOrThrow(recipe);
+    const savedAt = Date.now();
 
     return await ctx.db.insert("recipes", {
       ownerSubject,
       ...content,
       source: { type: "manual" },
-      updatedAt: Date.now(),
+      savedAt,
+      updatedAt: savedAt,
     });
   },
 });
@@ -59,20 +61,62 @@ export const saveCatalogueMeal = mutation({
       ownerSubject,
       catalogueMealId,
       catalogueVersion,
+      saveToLibrary: true,
     });
     return { status: "saved", ...savedRecipe } as const;
   },
 });
 
 export const getMine = query({
-  args: { recipeId: v.id("recipes") },
+  args: { recipeId: v.string() },
   returns: v.union(recipeViewValidator, v.null()),
   handler: async (ctx, { recipeId }) => {
     const ownerSubject = await requireAuthSubject(ctx);
-    const recipe = await ctx.db.get(recipeId);
+    const normalisedRecipeId = ctx.db.normalizeId("recipes", recipeId);
+    if (normalisedRecipeId === null) return null;
+
+    const recipe = await ctx.db.get(normalisedRecipeId);
 
     if (recipe === null || recipe.ownerSubject !== ownerSubject) return null;
     return toRecipeView(recipe);
+  },
+});
+
+export const removeMineFromLibrary = mutation({
+  args: { recipeId: v.string() },
+  returns: v.union(
+    v.object({ status: v.literal("removed") }),
+    v.object({ status: v.literal("not_found") }),
+  ),
+  handler: async (ctx, { recipeId }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const normalisedRecipeId = ctx.db.normalizeId("recipes", recipeId);
+    if (normalisedRecipeId === null) return { status: "not_found" } as const;
+
+    const recipe = await ctx.db.get(normalisedRecipeId);
+    if (
+      recipe === null ||
+      recipe.ownerSubject !== ownerSubject ||
+      recipe.savedAt === undefined
+    ) {
+      return { status: "not_found" } as const;
+    }
+
+    const referencedSlot = await ctx.db
+      .query("mealSlots")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
+      .first();
+
+    if (referencedSlot === null) {
+      await ctx.db.delete(recipe._id);
+    } else {
+      await ctx.db.patch(recipe._id, {
+        savedAt: undefined,
+        updatedAt: Date.now(),
+      });
+    }
+
+    return { status: "removed" } as const;
   },
 });
 
@@ -105,7 +149,9 @@ export const listSavedCatalogueMealIds = query({
     }
 
     return recipes.flatMap((recipe) =>
-      recipe.source.type === "catalogue" ? [recipe.source.catalogueMealId] : [],
+      recipe.savedAt !== undefined && recipe.source.type === "catalogue"
+        ? [recipe.source.catalogueMealId]
+        : [],
     );
   },
 });
@@ -121,8 +167,8 @@ export const listMine = query({
     };
     const result = await ctx.db
       .query("recipes")
-      .withIndex("by_owner_and_updated_at", (q) =>
-        q.eq("ownerSubject", ownerSubject),
+      .withIndex("by_owner_and_saved_at", (q) =>
+        q.eq("ownerSubject", ownerSubject).gt("savedAt", 0),
       )
       .order("desc")
       .paginate(boundedPaginationOpts);
@@ -168,6 +214,7 @@ function toRecipeView(recipe: Doc<"recipes">) {
       ? {}
       : { cookMinutes: recipe.cookMinutes }),
     source: recipe.source,
+    ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),
     updatedAt: recipe.updatedAt,
   };
 }

@@ -6,6 +6,7 @@ import {
 } from "../../src/lib/domain/recipes";
 import {
   findStandardCatalogueMeal,
+  findStandardCatalogueMealBySlug,
   standardCatalogue,
 } from "../../src/lib/domain/standard-catalogue";
 
@@ -90,28 +91,51 @@ test("validates versioned catalogue content and stable meal identifiers", () => 
   expect(
     prepareStandardCatalogue({
       version: 1,
-      meals: [{ id: "tomato-pasta", ...validRecipe }],
+      meals: [{ id: "catalogue-meal-1", slug: "tomato-pasta", ...validRecipe }],
     }),
   ).toMatchObject({
     version: 1,
-    meals: [{ id: "tomato-pasta", title: "Tomato pasta" }],
+    meals: [
+      {
+        id: "catalogue-meal-1",
+        slug: "tomato-pasta",
+        title: "Tomato pasta",
+      },
+    ],
   });
 
   expect(() =>
     prepareStandardCatalogue({
       version: 1,
       meals: [
-        { id: "same-meal", ...validRecipe },
-        { id: "same-meal", ...validRecipe },
+        { id: "same-meal", slug: "first-meal", ...validRecipe },
+        { id: "same-meal", slug: "second-meal", ...validRecipe },
       ],
     }),
   ).toThrow("Catalogue meal IDs must be unique.");
+
+  expect(() =>
+    prepareStandardCatalogue({
+      version: 1,
+      meals: [
+        { id: "meal-1", slug: "same-meal", ...validRecipe },
+        { id: "meal-2", slug: "same-meal", ...validRecipe },
+      ],
+    }),
+  ).toThrow("Catalogue meal slugs must be unique.");
 });
 
 test("exposes only meals from the current standard catalogue version", () => {
   expect(standardCatalogue.meals.length).toBeGreaterThan(0);
   expect(
     findStandardCatalogueMeal("tomato-lentil-pasta", standardCatalogue.version),
+  ).toMatchObject({
+    id: "tomato-lentil-pasta",
+    slug: "tomato-and-lentil-pasta",
+    title: "Tomato and lentil pasta",
+  });
+  expect(
+    findStandardCatalogueMealBySlug("tomato-and-lentil-pasta"),
   ).toMatchObject({
     id: "tomato-lentil-pasta",
     title: "Tomato and lentil pasta",
@@ -125,4 +149,5 @@ test("exposes only meals from the current standard catalogue version", () => {
   expect(
     findStandardCatalogueMeal("missing", standardCatalogue.version),
   ).toBeNull();
+  expect(findStandardCatalogueMealBySlug("missing")).toBeNull();
 });

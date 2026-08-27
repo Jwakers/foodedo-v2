@@ -3,6 +3,7 @@ export const RECIPE_LIMITS = {
   description: 1_000,
   catalogueMeals: 1_000,
   catalogueMealId: 64,
+  catalogueMealSlug: 160,
   ingredientLines: 100,
   ingredientLineId: 64,
   ingredientName: 160,
@@ -49,6 +50,7 @@ export type RecipeSource =
 
 export type CatalogueMeal = RecipeContent & {
   id: string;
+  slug: string;
 };
 
 export type StandardCatalogue = {
@@ -110,11 +112,16 @@ export function prepareStandardCatalogue(
 
   boundedList(input.meals, "Catalogue meals", 1, RECIPE_LIMITS.catalogueMeals);
   uniqueIds(input.meals, "Catalogue meal");
+  uniqueValues(
+    input.meals.map((meal) => meal.slug),
+    "Catalogue meal slugs",
+  );
 
   return {
     version: input.version,
-    meals: input.meals.map(({ id, ...content }) => ({
+    meals: input.meals.map(({ id, slug, ...content }) => ({
       id: requiredText(id, "Catalogue meal ID", RECIPE_LIMITS.catalogueMealId),
+      slug: requiredSlug(slug),
       ...prepareRecipeContent(content),
     })),
   };
@@ -215,6 +222,20 @@ function optionalWholeNumber(
   return value;
 }
 
+function requiredSlug(value: string) {
+  const slug = requiredText(
+    value,
+    "Catalogue meal slug",
+    RECIPE_LIMITS.catalogueMealSlug,
+  );
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw new RecipeValidationError(
+      "Catalogue meal slug must contain only lowercase letters, numbers, and single hyphens.",
+    );
+  }
+  return slug;
+}
+
 function boundedList(
   values: unknown[],
   label: string,
@@ -229,12 +250,14 @@ function boundedList(
 }
 
 function uniqueIds(values: Array<{ id: string }>, label: string) {
-  const ids = new Set<string>();
-  for (const value of values) {
-    const id = value.id.trim();
-    if (ids.has(id)) {
-      throw new RecipeValidationError(`${label} IDs must be unique.`);
-    }
-    ids.add(id);
+  uniqueValues(
+    values.map((value) => value.id.trim()),
+    `${label} IDs`,
+  );
+}
+
+function uniqueValues(values: string[], label: string) {
+  if (new Set(values).size !== values.length) {
+    throw new RecipeValidationError(`${label} must be unique.`);
   }
 }

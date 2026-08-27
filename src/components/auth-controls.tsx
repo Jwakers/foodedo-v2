@@ -9,25 +9,10 @@ import {
   SignOutButton,
 } from "@clerk/react";
 
-const isAuthConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() &&
-  process.env.NEXT_PUBLIC_CONVEX_URL?.trim(),
-);
-
 const buttonClassName =
   "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-foreground underline decoration-border-strong underline-offset-4 transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
 
 export function AuthControls() {
-  if (!isAuthConfigured) {
-    return (
-      <p className="py-3 text-sm text-muted-foreground">Account unavailable</p>
-    );
-  }
-
-  return <ConfiguredAuthControls />;
-}
-
-function ConfiguredAuthControls() {
   return (
     <div className="flex items-center">
       <ClerkLoading>

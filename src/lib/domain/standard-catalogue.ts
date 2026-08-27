@@ -5,6 +5,7 @@ export const standardCatalogue = prepareStandardCatalogue({
   meals: [
     {
       id: "tomato-lentil-pasta",
+      slug: "tomato-and-lentil-pasta",
       title: "Tomato and lentil pasta",
       description:
         "A dependable tomato pasta with red lentils cooked into the sauce.",
@@ -67,6 +68,7 @@ export const standardCatalogue = prepareStandardCatalogue({
     },
     {
       id: "ginger-chicken-rice",
+      slug: "ginger-chicken-rice-bowls",
       title: "Ginger chicken rice bowls",
       description:
         "Sticky ginger chicken with crisp vegetables and steamed rice.",
@@ -130,6 +132,7 @@ export const standardCatalogue = prepareStandardCatalogue({
     },
     {
       id: "chickpea-coconut-curry",
+      slug: "chickpea-coconut-curry",
       title: "Chickpea coconut curry",
       description:
         "A gently spiced cupboard curry finished with spinach and lime.",
@@ -201,4 +204,10 @@ export function findStandardCatalogueMeal(
   return (
     standardCatalogue.meals.find((meal) => meal.id === catalogueMealId) ?? null
   );
+}
+
+export function findStandardCatalogueMealBySlug(
+  slug: string,
+): CatalogueMeal | null {
+  return standardCatalogue.meals.find((meal) => meal.slug === slug) ?? null;
 }

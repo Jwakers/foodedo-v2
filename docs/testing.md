@@ -20,12 +20,13 @@ They cover bounded recipe/catalogue validation, stable line IDs, preservation of
 
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 
-- the app renders with its accessible heading and title
-- the standard catalogue is visible without authentication
+- the app shell renders and exposes its primary navigation
+- catalogue links open real recipe routes
 - a guest receives seven dated meals, can swap or shuffle them, and reload without losing the temporary plan
 - the web manifest is linked and contains the required app identity and icons
 - every declared icon is served as PNG
-- the shell renders either the sign-in entry point or an honest configuration state without requiring CI secrets
+
+Do not assert transient headings, marketing copy, or visual composition merely because they are currently on screen. Add an E2E assertion when it proves a durable route or user job; add a unit test only when deterministic domain behaviour would otherwise be easy to regress.
 
 CI (`.github/workflows/ci.yml`) runs formatting, linting, typechecking, unit tests, the iOS static-export build, the regular Vercel web build, and the Chromium smoke suite on push/PR.
 
@@ -38,6 +39,8 @@ pnpm test:e2e
 ```
 
 The Playwright web server runs `next start`, so the regular production build must exist first.
+
+CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. A missing value fails the relevant Next.js build before tests run.
 
 ## Upcoming
 

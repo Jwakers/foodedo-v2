@@ -39,5 +39,6 @@ export const recipeViewValidator = v.object({
   _creationTime: v.number(),
   ...recipeContentFields,
   source: recipeSourceValidator,
+  savedAt: v.optional(v.number()),
   updatedAt: v.number(),
 });

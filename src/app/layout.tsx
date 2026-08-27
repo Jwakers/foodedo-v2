@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
+import { AppShell } from "@/components/app-shell";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
 
@@ -24,11 +26,13 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en-GB" className="h-full antialiased">
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <AppShell>{children}</AppShell>
+        </AppProviders>
       </body>
     </html>
   );

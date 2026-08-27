@@ -5,6 +5,7 @@
   --foreground: #1e2820;
   --muted-foreground: #657166;
   --surface: #ebe4d7;
+  --surface-raised: #fffaf1;
   --border: #d5d0c3;
   --border-strong: #aaa99c;
   --accent: #a2432e;
@@ -17,6 +18,7 @@
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
@@ -34,6 +36,7 @@
     --foreground: #f1eee5;
     --muted-foreground: #aeb6ad;
     --surface: #222a24;
+    --surface-raised: #202720;
     --border: #3a443b;
     --border-strong: #677168;
     --accent: #e48b70;
@@ -47,9 +50,18 @@ html {
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: radial-gradient(
+    circle at 82% 3%,
+    color-mix(in srgb, var(--accent) 8%, transparent),
+    transparent 26rem
+  );
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 button,

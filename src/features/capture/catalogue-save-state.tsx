@@ -21,11 +21,6 @@ import {
 import { findStandardCatalogueMeal } from "@/lib/domain/standard-catalogue";
 import { createCatalogueSaveIntentStore } from "@/lib/platform/auth-intent-store";
 
-const isSaveConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() &&
-  process.env.NEXT_PUBLIC_CONVEX_URL?.trim(),
-);
-
 type CatalogueSaveState = {
   isLoading: boolean;
   isSignedIn: boolean;
@@ -51,22 +46,6 @@ const CatalogueSaveStateContext = createContext<CatalogueSaveState>({
 });
 
 export function CatalogueSaveStateProvider({
-  catalogueVersion,
-  children,
-}: {
-  catalogueVersion: number;
-  children: ReactNode;
-}) {
-  if (!isSaveConfigured) return children;
-
-  return (
-    <ConfiguredCatalogueSaveStateProvider catalogueVersion={catalogueVersion}>
-      {children}
-    </ConfiguredCatalogueSaveStateProvider>
-  );
-}
-
-function ConfiguredCatalogueSaveStateProvider({
   catalogueVersion,
   children,
 }: {

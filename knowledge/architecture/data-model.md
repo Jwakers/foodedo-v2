@@ -28,13 +28,15 @@ An early catalogue can be small because the product is early. Do not model a sep
 
 Premium meals and subscription entitlements are deferred. When implemented, premium content must be delivered only after server-side authentication and entitlement checks; do not rely on a client-only visibility flag.
 
-### recipes (saved dishes)
+### recipes (private snapshots)
 
 The private Capture unit: something an account wants to cook. `ownerSubject` is always derived from the verified Clerk identity; it is never accepted from a client and does not depend on webhook timing.
 
-Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
+Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
-**Indexes:** `by_owner_and_updated_at`, `by_owner_and_catalogue_source`, and `by_owner_and_catalogue_version`. The source index makes one meal revision idempotent; the version index hydrates saved state for the visible catalogue without scanning a user's recipe library.
+`savedAt` is explicit library membership. Manual creation sets it immediately; choosing **Save recipe** sets it on a catalogue snapshot. A meal plan may create the same private snapshot solely to preserve what was planned without adding it to **My recipes**. Removing a recipe from the library clears `savedAt` rather than deleting a snapshot still referenced by a plan.
+
+**Indexes:** `by_owner_and_updated_at`, `by_owner_and_saved_at`, `by_owner_and_catalogue_source`, and `by_owner_and_catalogue_version`. The saved index paginates explicit library membership; the source index makes one meal revision idempotent; the version index hydrates saved state for the visible catalogue without scanning a user's recipe library.
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 

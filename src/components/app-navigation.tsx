@@ -1,0 +1,77 @@
+"use client";
+
+import { BookOpen, CalendarDays } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const navigationItems = [
+  { href: "/", label: "Plan", section: "plan" },
+  { href: "/recipes", label: "Recipes", section: "recipes" },
+] as const;
+
+export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
+  const pathname = usePathname();
+
+  if (placement === "header") {
+    return (
+      <nav aria-label="Primary" className="hidden items-center gap-7 sm:flex">
+        {navigationItems.map((item) => {
+          const isCurrent = isCurrentSection(pathname, item.section);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isCurrent ? "page" : undefined}
+              className={`border-b py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${
+                isCurrent
+                  ? "border-accent text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+    );
+  }
+
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
+    >
+      <div className="mx-auto grid max-w-sm grid-cols-2 px-3">
+        {navigationItems.map((item) => {
+          const isCurrent = isCurrentSection(pathname, item.section);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isCurrent ? "page" : undefined}
+              className={`flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-accent ${
+                isCurrent ? "text-accent" : "text-muted-foreground"
+              }`}
+            >
+              <NavigationMark section={item.section} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function isCurrentSection(pathname: string, section: "plan" | "recipes") {
+  if (section === "plan") return pathname === "/";
+  return pathname.startsWith("/recipes");
+}
+
+function NavigationMark({ section }: { section: "plan" | "recipes" }) {
+  if (section === "plan") {
+    return <CalendarDays aria-hidden="true" className="size-5" />;
+  }
+
+  return <BookOpen aria-hidden="true" className="size-5" />;
+}

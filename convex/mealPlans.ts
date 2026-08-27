@@ -194,6 +194,7 @@ export const claimGuestDraft = mutation({
           ownerSubject,
           catalogueMealId: choice.catalogueMealId,
           catalogueVersion,
+          saveToLibrary: false,
         });
         recipeId = recipe.recipeId;
         recipeIdByCatalogueMeal.set(choice.catalogueMealId, recipeId);

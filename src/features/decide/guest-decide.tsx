@@ -3,6 +3,7 @@
 import { useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
+import { CircleCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import {
@@ -23,10 +24,6 @@ const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
 const mealById = new Map(
   standardCatalogue.meals.map((meal) => [meal.id, meal]),
 );
-const isAccountSyncConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() &&
-  process.env.NEXT_PUBLIC_CONVEX_URL?.trim(),
-);
 const primaryButtonClassName =
   "inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-bold text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-55";
 const secondaryButtonClassName =
@@ -43,16 +40,6 @@ type ClaimFailure =
   | { reason: "unexpected" };
 
 export function GuestDecide() {
-  if (!isAccountSyncConfigured) {
-    return (
-      <GuestDecideContent currentPlan={null} isCurrentPlanLoading={false} />
-    );
-  }
-
-  return <ConfiguredGuestDecide />;
-}
-
-function ConfiguredGuestDecide() {
   const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
@@ -251,7 +238,7 @@ function GuestDecideContent({
     (currentPlan === null && draft === null);
 
   return (
-    <section aria-labelledby="decide-heading" className="mt-14">
+    <section aria-labelledby="decide-heading">
       <div className="max-w-2xl">
         <p className="text-xs font-bold tracking-[0.18em] text-accent uppercase">
           Decide · Next 7 days
@@ -286,12 +273,7 @@ function GuestDecideContent({
           <article className="px-6 py-8 sm:px-0">
             {isSaved ? (
               <div className="mb-7 flex items-center gap-3 text-accent">
-                <span
-                  className="flex size-8 items-center justify-center rounded-full border border-current text-lg"
-                  aria-hidden="true"
-                >
-                  ✓
-                </span>
+                <CircleCheck aria-hidden="true" className="size-8" />
                 <p className="text-sm font-bold">Saved to your account</p>
               </div>
             ) : null}
@@ -406,12 +388,7 @@ function SavedAccountPlan({
   return (
     <article className="px-6 py-8 sm:px-0">
       <div className="mb-7 flex items-center gap-3 text-accent">
-        <span
-          className="flex size-8 items-center justify-center rounded-full border border-current text-lg"
-          aria-hidden="true"
-        >
-          ✓
-        </span>
+        <CircleCheck aria-hidden="true" className="size-8" />
         <p className="text-sm font-bold">Saved to your account</p>
       </div>
 
@@ -464,35 +441,6 @@ function SavedAccountPlan({
 }
 
 function KeepPlanAction({
-  draft,
-  disabled,
-  onDraftChange,
-  onClaimAcknowledged,
-}: {
-  draft: GuestDraftV1;
-  disabled: boolean;
-  onDraftChange: (draft: GuestDraftV1) => Promise<boolean>;
-  onClaimAcknowledged: (draft: GuestDraftV1) => Promise<void>;
-}) {
-  if (!isAccountSyncConfigured) {
-    return (
-      <button type="button" className={primaryButtonClassName} disabled>
-        Account saving unavailable
-      </button>
-    );
-  }
-
-  return (
-    <ConfiguredKeepPlanAction
-      draft={draft}
-      disabled={disabled}
-      onDraftChange={onDraftChange}
-      onClaimAcknowledged={onClaimAcknowledged}
-    />
-  );
-}
-
-function ConfiguredKeepPlanAction({
   draft,
   disabled,
   onDraftChange,
