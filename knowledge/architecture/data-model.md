@@ -1,6 +1,6 @@
 # V2 data model
 
-Partially implemented. `users` and private `recipes` are the current foundation; the remaining entities below are proposed. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays are reserved for small bounded recipe content.
+Partially implemented. `users`, private `recipes`, `mealPlans`, `mealSlots`, and `guestClaims` are the current foundation; the remaining entities below are proposed. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays are reserved for small bounded content.
 
 Orient around jobs, not V1 tables.
 
@@ -34,23 +34,41 @@ The private Capture unit: something an account wants to cook. `ownerSubject` is 
 
 Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
-**Indexes:** `by_owner_and_updated_at`, `by_owner_and_catalogue_source`. The latter makes catalogue saving idempotent for an owner and catalogue revision.
+**Indexes:** `by_owner_and_updated_at`, `by_owner_and_catalogue_source`, and `by_owner_and_catalogue_version`. The source index makes one meal revision idempotent; the version index hydrates saved state for the visible catalogue without scanning a user's recipe library.
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
 **Deferred vs V1:** canonical ingredients, categories, cuisine unions, generator flags, images, search, import, public slugs, publishers, and social relationships.
 
-### mealSlots (short-horizon plan)
+### mealPlans
 
-Plan is a few days of decided eats, not a generated week object with seed/version/leftover snapshots.
+The durable identity of a plan. Foodedo normally plans around seven days, but the plan is not forced to be an exact calendar week.
 
 - `ownerSubject`
-- `date` (start of local day as a number the client passes in; queries must not use `Date.now()`)
-- `recipeId`
-- `order?`
-- `status`: `planned` | `cooked` | `skipped`
+- `startDate`, `endDate` (`YYYY-MM-DD`)
+- `status`: `active` | `archived`
+- `createdAt`, `updatedAt`
 
-**Indexes:** `by_owner_and_date`, `by_recipe`
+**Indexes:** `by_owner_and_updated_at`, `by_owner_and_status_and_updated_at`
+
+Keep this parent intentionally small. Generation seeds, leftover snapshots, settings copies, and other V1-style metadata require a demonstrated product need.
+
+Authenticated clients hydrate the current active plan from this table and its indexed slots. Local guest completion state is never used as the cross-device source of truth.
+
+### mealSlots
+
+The independently editable meals belonging to a plan. Separate slots keep individual dates and recipe references indexable without making the plan itself an inferred collection of adjacent rows or an increasingly large embedded array.
+
+- `mealPlanId`
+- `ownerSubject`
+- `date` (local calendar date as `YYYY-MM-DD`)
+- `recipeId`
+- `status`: `planned` | `cooked` | `skipped`
+- `createdAt`, `updatedAt`
+
+**Indexes:** `by_plan_and_date`, `by_owner_and_date`, `by_recipe`
+
+Recipe deletion must either be refused while slots reference the recipe or update/delete those slots in the same mutation. Account deletion removes slots before recipes. Plan reads preserve the plan and mark an unexpectedly dangling recipe unavailable rather than failing the entire application.
 
 ### shoppingLists / shoppingListItems
 
@@ -81,17 +99,18 @@ Idempotency records for moving a local guest draft into an authenticated account
 
 - `ownerSubject`
 - `claimKey` (random client-generated key, validated and bounded)
+- `mealPlanId`
 - `claimedAt`
 
 **Index:** `by_owner_and_claim_key`
 
-The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete bounded payload, copies referenced standard catalogue meals, and creates the user's plan/preferences. It records the claim in the same mutation. No guest payload is trusted as an owner reference.
+The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan; an occupied date produces a conflict and nothing is overwritten. No guest payload is trusted as an owner reference.
 
 ## Relationships (summary)
 
 ```
 authenticated identity 1—* recipes
-authenticated identity 1—* mealSlots *—1 recipes
+authenticated identity 1—* mealPlans 1—* mealSlots *—1 recipes
 authenticated identity 1—* shoppingLists 1—* shoppingListItems
 authenticated identity 1—* recipeEvents *—1 recipes
 authenticated identity 1—* guestClaims

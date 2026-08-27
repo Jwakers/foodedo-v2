@@ -20,7 +20,9 @@ test("serves the Foodedo app shell", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Tomato and lentil pasta" }),
+    page
+      .locator('section[aria-labelledby="catalogue-heading"]')
+      .getByRole("heading", { name: "Tomato and lentil pasta" }),
   ).toBeVisible();
 });
 

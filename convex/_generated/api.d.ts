@@ -10,7 +10,9 @@
 
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
 import type * as lib_recipeValidators from "../lib/recipeValidators.js";
+import type * as mealPlans from "../mealPlans.js";
 import type * as recipes from "../recipes.js";
 import type * as users from "../users.js";
 
@@ -23,7 +25,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  "lib/catalogueRecipes": typeof lib_catalogueRecipes;
   "lib/recipeValidators": typeof lib_recipeValidators;
+  mealPlans: typeof mealPlans;
   recipes: typeof recipes;
   users: typeof users;
 }>;

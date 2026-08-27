@@ -1,29 +1,16 @@
 "use client";
 
-import {
-  ClerkFailed,
-  ClerkLoaded,
-  ClerkLoading,
-  Show,
-  SignInButton,
-} from "@clerk/react";
-import { useConvexAuth, useMutation } from "convex/react";
-import { useState } from "react";
-import { api } from "../../../convex/_generated/api";
+import { useCatalogueSaveState } from "./catalogue-save-state";
 
 const isSaveConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() &&
   process.env.NEXT_PUBLIC_CONVEX_URL?.trim(),
 );
-
 const buttonClassName =
-  "inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--ink)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--ink)] hover:text-[var(--paper)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] disabled:cursor-not-allowed disabled:border-[var(--line)] disabled:text-[var(--muted)] disabled:hover:bg-transparent disabled:hover:text-[var(--muted)]";
-
-type SaveState = "idle" | "saving" | "saved" | "existing" | "error";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-foreground px-5 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:hover:bg-transparent disabled:hover:text-muted-foreground";
 
 export function SaveCatalogueMealButton({
   catalogueMealId,
-  catalogueVersion,
 }: {
   catalogueMealId: string;
   catalogueVersion: number;
@@ -36,107 +23,67 @@ export function SaveCatalogueMealButton({
     );
   }
 
-  return (
-    <ConfiguredSaveButton
-      catalogueMealId={catalogueMealId}
-      catalogueVersion={catalogueVersion}
-    />
-  );
+  return <ConfiguredSaveButton catalogueMealId={catalogueMealId} />;
 }
 
 function ConfiguredSaveButton({
   catalogueMealId,
-  catalogueVersion,
 }: {
   catalogueMealId: string;
-  catalogueVersion: number;
 }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const saveCatalogueMeal = useMutation(api.recipes.saveCatalogueMeal);
-  const [state, setState] = useState<SaveState>("idle");
-
-  async function save() {
-    setState("saving");
-
-    try {
-      const result = await saveCatalogueMeal({
-        catalogueMealId,
-        catalogueVersion,
-      });
-      setState(result.created ? "saved" : "existing");
-    } catch {
-      setState("error");
-    }
-  }
-
-  const completed = state === "saved" || state === "existing";
+  const saveState = useCatalogueSaveState();
+  const isSaved = saveState.savedMealIds.has(catalogueMealId);
+  const isPending = saveState.pendingMealId === catalogueMealId;
+  const failure =
+    saveState.failure !== null &&
+    (saveState.failure.catalogueMealId === catalogueMealId ||
+      (saveState.failure.catalogueMealId === null &&
+        saveState.failure.reason === "storage"))
+      ? saveState.failure
+      : null;
+  const isUnavailable = failure?.reason === "catalogue_unsupported";
+  const hasError = failure !== null;
+  const isSaveInFlight = isPending && saveState.isSignedIn && !hasError;
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <ClerkLoading>
-        <button type="button" className={buttonClassName} disabled>
-          Loading…
-        </button>
-      </ClerkLoading>
-
-      <ClerkFailed>
-        <p className="text-sm text-[var(--error)]" role="alert">
-          Sign in is unavailable. Please try again.
-        </p>
-      </ClerkFailed>
-
-      <ClerkLoaded>
-        <Show when="signed-out">
-          <SignInButton mode="modal">
-            <button type="button" className={buttonClassName}>
-              Sign in to save
-            </button>
-          </SignInButton>
-        </Show>
-
-        <Show when="signed-in">
-          <button
-            type="button"
-            className={buttonClassName}
-            disabled={
-              isLoading || !isAuthenticated || state === "saving" || completed
-            }
-            onClick={save}
-          >
-            {saveButtonLabel({ state, isLoading, isAuthenticated })}
-          </button>
-        </Show>
-      </ClerkLoaded>
+      <button
+        type="button"
+        className={buttonClassName}
+        disabled={
+          saveState.isLoading || isSaveInFlight || isSaved || isUnavailable
+        }
+        onClick={() => void saveState.requestSave(catalogueMealId)}
+      >
+        {isSaved
+          ? "Saved"
+          : isUnavailable
+            ? "Recipe unavailable"
+            : isPending && saveState.isSignedIn && !hasError
+              ? "Saving…"
+              : hasError
+                ? "Try saving again"
+                : isPending
+                  ? "Continue sign in"
+                  : saveState.isSignedIn
+                    ? "Save recipe"
+                    : "Sign in to save"}
+      </button>
 
       <p
-        className={`min-h-5 text-sm ${state === "error" ? "text-[var(--error)]" : "text-[var(--muted)]"}`}
+        className={`min-h-5 text-sm ${hasError ? "text-danger" : "text-muted-foreground"}`}
         aria-live="polite"
       >
-        {saveStatus(state)}
+        {hasError
+          ? failure.reason === "catalogue_unsupported"
+            ? "This recipe version is no longer available to save."
+            : failure.reason === "storage"
+              ? "The save could not be stored safely. Please try again."
+              : "The recipe was not saved. Please try again."
+          : isSaved
+            ? "Saved to your recipes."
+            : ""}
       </p>
     </div>
   );
-}
-
-function saveButtonLabel({
-  state,
-  isLoading,
-  isAuthenticated,
-}: {
-  state: SaveState;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}) {
-  if (isLoading || !isAuthenticated) return "Connecting…";
-  if (state === "saving") return "Saving…";
-  if (state === "saved" || state === "existing") return "Saved";
-  if (state === "error") return "Try saving again";
-  return "Save recipe";
-}
-
-function saveStatus(state: SaveState) {
-  if (state === "saved") return "Saved to your recipes.";
-  if (state === "existing") return "This recipe was already saved.";
-  if (state === "error") return "The recipe was not saved. Please try again.";
-  return "";
 }

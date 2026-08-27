@@ -35,7 +35,9 @@ The original shell and auth foundations are complete. The recipe kernel now adds
 
 **Now:** focused product shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration, user synchronization, recipe foundation, docs, CI, and folder conventions.
 
-**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, authenticated idempotent catalogue saving, and domain tests now exist. Next, use these contracts in the guest Decide draft and account-claim slice.
+**Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, authenticated idempotent catalogue saving, and domain tests now exist.
+
+**Guest Plan claim — foundation complete:** `GuestDraftV1` holds seven consecutive dated choices in IndexedDB. Guests can swap or shuffle meals, then **Keep this plan** persists an idempotent intent before sign-in. Authenticated app state first hydrates the current Convex plan, preventing a second device from submitting an already-saved date range. Otherwise it resumes one atomic claim that creates a minimal `mealPlans` parent, private recipe snapshots, and independently editable dated slots without overwriting occupied dates. Matching local state is deleted only after server confirmation; different unsaved state is retained and disclosed. Catalogue recipe saving uses the same persisted sign-in-continuation and post-save cleanup pattern.
 
 **Later product:** Capture → Decide → Plan → Shop → Cook → Remember. Discover after Remember has signal.
 
@@ -52,11 +54,15 @@ The original shell and auth foundations are complete. The recipe kernel now adds
 - **Server/client separation.** Default to Server Components. `"use client"` only for interaction.
 - **Domain vs platform.** `src/lib/domain` is React-free. `src/lib/platform` holds web/Capacitor adapters.
 - **Small composable components** when UI exists. No design-system install in the foundation.
+- **Semantic Tailwind v4 tokens.** Role-based CSS variables such as `--foreground` remain available to plain CSS and are mapped through `@theme inline` to utilities such as `text-foreground`, `text-accent`, `bg-surface`, and `border-border`. Product markup should prefer those utilities over arbitrary CSS-variable colour expressions.
+- Add component-specific tokens only when a genuinely recurring semantic role needs a distinct value. Typography/layout composition should not create speculative colour tokens.
 - **Existing V2 code is not more authoritative than principles.** V1 is migration insight only.
 
 Convex is the backend: queries/mutations/actions, indexes, custom authenticated functions—in a **separate project** from V1. Clerk provides identity; Convex validates its JWT and remains responsible for authorization. See [convex-migration.md](../knowledge/architecture/convex-migration.md), [data-model.md](../knowledge/architecture/data-model.md), and [the setup guide](./auth-and-backend-setup.md).
 
 Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
+
+Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
 
@@ -86,7 +92,7 @@ See [testing.md](./testing.md). Playwright currently checks the production web s
 
 Focus the first slices on Capture and Decide, then Plan/Shop/Cook/Remember. Do not start with settings, households, discovery feeds, or dashboards.
 
-Before Capture → Decide persists real user data, prove the identity boundary end to end: guest value, account prompt at the save boundary, authentication, claim, retry, and authenticated reload.
+Before expanding the product, manually prove the completed identity boundary end to end in release-like web and iOS builds: guest value, account prompt at the save boundary, email/Google authentication, automatic claim, retry/conflict behavior, and authenticated reload.
 
 Do not touch `/Users/jackwakeham/Documents/Projects/foodedo` (V1), `foodedo-cms`, or V1 Convex.
 

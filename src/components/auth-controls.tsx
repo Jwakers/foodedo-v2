@@ -15,12 +15,12 @@ const isAuthConfigured = Boolean(
 );
 
 const buttonClassName =
-  "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-[var(--ink)] underline decoration-[var(--line-strong)] underline-offset-4 transition-colors hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]";
+  "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-foreground underline decoration-border-strong underline-offset-4 transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
 
 export function AuthControls() {
   if (!isAuthConfigured) {
     return (
-      <p className="py-3 text-sm text-[var(--muted)]">Account unavailable</p>
+      <p className="py-3 text-sm text-muted-foreground">Account unavailable</p>
     );
   }
 
@@ -31,13 +31,13 @@ function ConfiguredAuthControls() {
   return (
     <div className="flex items-center">
       <ClerkLoading>
-        <p className="py-3 text-sm text-[var(--muted)]" aria-live="polite">
+        <p className="py-3 text-sm text-muted-foreground" aria-live="polite">
           Loading…
         </p>
       </ClerkLoading>
 
       <ClerkFailed>
-        <p className="py-3 text-sm text-[var(--error)]" role="alert">
+        <p className="py-3 text-sm text-danger" role="alert">
           Account unavailable
         </p>
       </ClerkFailed>

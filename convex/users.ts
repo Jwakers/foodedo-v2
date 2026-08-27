@@ -49,6 +49,28 @@ export const deleteFromClerk = internalMutation({
   args: { authSubject: v.string() },
   returns: v.null(),
   handler: async (ctx, { authSubject }) => {
+    const mealSlots = await ctx.db
+      .query("mealSlots")
+      .withIndex("by_owner_and_date", (q) => q.eq("ownerSubject", authSubject))
+      .collect();
+    for (const mealSlot of mealSlots) await ctx.db.delete(mealSlot._id);
+
+    const guestClaims = await ctx.db
+      .query("guestClaims")
+      .withIndex("by_owner_and_claim_key", (q) =>
+        q.eq("ownerSubject", authSubject),
+      )
+      .collect();
+    for (const guestClaim of guestClaims) await ctx.db.delete(guestClaim._id);
+
+    const mealPlans = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_owner_and_updated_at", (q) =>
+        q.eq("ownerSubject", authSubject),
+      )
+      .collect();
+    for (const mealPlan of mealPlans) await ctx.db.delete(mealPlan._id);
+
     const recipes = await ctx.db
       .query("recipes")
       .withIndex("by_owner_and_updated_at", (q) =>

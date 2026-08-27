@@ -16,12 +16,13 @@ Pure recipe-domain tests run without a browser or web server:
 pnpm test:unit
 ```
 
-They cover bounded recipe/catalogue validation, stable line IDs, and preservation of flexible ingredient quantities. Keep this suite focused on platform-independent logic.
+They cover bounded recipe/catalogue validation, stable line IDs, preservation of flexible ingredient quantities, seven-day guest-plan construction/restoration, slot changes, idempotent claim state, and exact cross-device plan reconciliation. Keep this suite focused on platform-independent logic.
 
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 
 - the app renders with its accessible heading and title
 - the standard catalogue is visible without authentication
+- a guest receives seven dated meals, can swap or shuffle them, and reload without losing the temporary plan
 - the web manifest is linked and contains the required app identity and icons
 - every declared icon is served as PNG
 - the shell renders either the sign-in entry point or an honest configuration state without requiring CI secrets
@@ -40,10 +41,9 @@ The Playwright web server runs `next start`, so the regular production build mus
 
 ## Upcoming
 
-- Guest can reach a useful Decide result without authentication.
-- Guest draft survives refresh locally but is clearly marked temporary.
-- Keep/save prompts for authentication without discarding the draft.
-- Claiming after sign-in is idempotent, survives retry, and never overwrites existing account data silently.
+- Manually verify Keep/save prompts resume automatically after email and Google sign-in on web and iOS without discarding local intent.
+- Add an authenticated integration harness for current-plan hydration, IndexedDB cleanup after acknowledgement, idempotent claim retry, occupied-date conflict, and cross-user isolation without storing real Clerk credentials in tests.
+- Cover plan hydration with a deliberately unavailable recipe reference so corrupted historical data cannot crash the app shell.
 - Unauthenticated clients cannot read or mutate personal Convex data.
 - Clerk sign-in yields a Convex-authenticated session and the user webhook creates exactly one indexed user document.
 - Clerk profile updates and deletion update/delete the matching Convex user document.

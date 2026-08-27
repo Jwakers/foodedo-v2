@@ -12,7 +12,7 @@ Reduce thinking, organising, and repetitive decision-making about what to eat an
 
 ## What's here now
 
-A Next.js 16 App Router app (TypeScript, Tailwind v4, web manifest, Capacitor 8 configured for iOS), a separate V2 Convex backend, and client-side Clerk authentication wired through `ConvexProviderWithClerk`. The recipe foundation includes bounded domain contracts, a small versioned standard catalogue available to guests, and an authenticated idempotent save that creates a private snapshot. Manual capture and recipe management remain deliberately deferred. Vercel uses the normal Next.js build; the iOS app packages a dedicated static export.
+A Next.js 16 App Router app (TypeScript, Tailwind v4, web manifest, Capacitor 8 configured for iOS), a separate V2 Convex backend, and client-side Clerk authentication wired through `ConvexProviderWithClerk`. The recipe foundation includes bounded domain contracts, a small versioned standard catalogue, and authenticated snapshot saving. A guest can adjust a seven-day meal plan in IndexedDB, then sign in to claim its private recipe snapshots and dated meal slots exactly once. Catalogue saves also resume automatically after sign-in. Manual capture and recipe management remain deliberately deferred. Vercel uses the normal Next.js build; the iOS app packages a dedicated static export.
 
 ## Run
 

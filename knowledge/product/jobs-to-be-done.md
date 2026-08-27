@@ -8,7 +8,7 @@ Each job below is a user situation, not a screen name.
 
 **Situation:** “I want to know whether Foodedo is useful before I sign up.”
 
-**Success:** The visitor reaches a credible Decide result, can shape a short draft plan, and understands what an account would preserve.
+**Success:** The visitor reaches a credible Decide result, can shape a roughly seven-day draft plan, and understands what an account would preserve.
 
 **Do:** Use the same standard Foodedo meal catalogue available to account holders, ask only lightweight context, and invite the user to **Keep this plan** after value appears. The early catalogue may be small because the product is early, never because the visitor is a guest.
 
@@ -18,21 +18,21 @@ Each job below is a user situation, not a screen name.
 
 **Job:** “I need to decide what we're eating.”
 
-**Context:** End of the day, limited energy, fridge and time are constraints. The user should not browse a library.
+**Context:** Planning the coming week or facing an immediate meal decision, with limited energy, food, and time. The user should not have to browse a library.
 
 **Success:** A credible suggestion (or a very short shortlist) they can accept, swap, or cook-now, based on saved food, preferences, and light context.
 
-**Do:** Surface neglected saved food, quick options, and “eat this tonight.” Make accept the primary action.
+**Do:** Build a useful week quickly, surface neglected saved food, and make individual meals easy to accept or swap. “Tonight” may be one entry point, not the scope of the product.
 
-**Don't:** Present an empty dashboard of equal cards. Don't require a generated week before tonight is solved.
+**Don't:** Present an empty dashboard of equal cards or make the user configure a planning system before Foodedo produces a useful plan.
 
 ## Plan
 
-**Job:** “I need food sorted for the next few days without spending ages planning it.”
+**Job:** “I need food sorted for roughly the next week without spending ages planning it.”
 
-**Context:** Short horizon (a few days), not an elaborate weekly generator as a prerequisite.
+**Context:** Around seven days by default, without treating an exact calendar week as a rigid object or requiring elaborate generator configuration.
 
-**Success:** The next few eats are decided with little fiddling. The plan can change without starting over.
+**Success:** The coming week is decided with little fiddling. Individual meals can change without starting over.
 
 **Do:** Defaults and suggestions; lock/swap individual meals.
 

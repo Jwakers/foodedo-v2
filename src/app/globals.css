@@ -3,20 +3,28 @@
 :root {
   --background: #f5f1e8;
   --foreground: #1e2820;
-  --paper: #f5f1e8;
-  --ink: #1e2820;
-  --ink-soft: #37483b;
-  --muted: #657166;
-  --line: #d5d0c3;
-  --line-strong: #aaa99c;
+  --muted-foreground: #657166;
+  --surface: #ebe4d7;
+  --border: #d5d0c3;
+  --border-strong: #aaa99c;
   --accent: #a2432e;
-  --error: #9f2525;
+  --accent-foreground: #fff8ee;
+  --danger: #9f2525;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --color-muted-foreground: var(--muted-foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --font-sans: "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -24,14 +32,13 @@
   :root {
     --background: #171c18;
     --foreground: #f1eee5;
-    --paper: #171c18;
-    --ink: #f1eee5;
-    --ink-soft: #d5d9d1;
-    --muted: #aeb6ad;
-    --line: #3a443b;
-    --line-strong: #677168;
+    --muted-foreground: #aeb6ad;
+    --surface: #222a24;
+    --border: #3a443b;
+    --border-strong: #677168;
     --accent: #e48b70;
-    --error: #ff9a90;
+    --accent-foreground: #171c18;
+    --danger: #ff9a90;
   }
 }
 
