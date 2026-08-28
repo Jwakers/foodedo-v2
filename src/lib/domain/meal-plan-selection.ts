@@ -107,6 +107,57 @@ export function createRegenerationSelection({
   return [...preservedMealIds, ...replacementMealIds];
 }
 
+export function selectRankedPlanCandidates({
+  preferredCandidateIds,
+  fallbackCandidateIds,
+  excludedCandidateIds,
+  numberOfMeals,
+  variant,
+}: {
+  preferredCandidateIds: readonly string[];
+  fallbackCandidateIds: readonly string[];
+  excludedCandidateIds: readonly string[];
+  numberOfMeals: number;
+  variant: number;
+}) {
+  const allCandidateIds = [...preferredCandidateIds, ...fallbackCandidateIds];
+  requireCandidates(allCandidateIds);
+  if (!Number.isInteger(numberOfMeals) || numberOfMeals < 1) {
+    throw new Error("The number of meals must be a positive whole number.");
+  }
+  if (!Number.isInteger(variant) || variant < 1) {
+    throw new Error("The proposal variant must be a positive whole number.");
+  }
+
+  const excluded = new Set(excludedCandidateIds);
+  const preferred = preferredCandidateIds.filter((id) => !excluded.has(id));
+  const fallback = fallbackCandidateIds.filter((id) => !excluded.has(id));
+  if (preferred.length + fallback.length < numberOfMeals) {
+    throw new Error("There are not enough distinct meals for this plan.");
+  }
+
+  const preferredSelection = takeRotated(
+    preferred,
+    Math.min(numberOfMeals, preferred.length),
+    (variant - 1) * numberOfMeals,
+  );
+  const remaining = numberOfMeals - preferredSelection.length;
+
+  return [
+    ...preferredSelection,
+    ...takeRotated(fallback, remaining, (variant - 1) * numberOfMeals),
+  ];
+}
+
+function takeRotated(ids: readonly string[], count: number, offset: number) {
+  if (count === 0) return [];
+  const startIndex = offset % ids.length;
+  return Array.from(
+    { length: count },
+    (_, index) => ids[(startIndex + index) % ids.length]!,
+  );
+}
+
 function requireCandidates(candidateMealIds: readonly string[]) {
   if (candidateMealIds.length === 0) {
     throw new Error("At least one candidate meal is required.");

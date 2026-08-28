@@ -411,6 +411,9 @@ function SavedAccountPlan({
     api.mealPlans.applyRegenerationProposal,
   );
   const undoPlanReplacement = useMutation(api.mealPlans.undoPlanReplacement);
+  const resolveActivePlanConflict = useMutation(
+    api.mealPlans.resolveActivePlanConflict,
+  );
   const startNew = useMutation(api.mealPlans.startNew);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -424,12 +427,37 @@ function SavedAccountPlan({
   } | null>(null);
   const proposal = useQuery(
     api.mealPlans.getRegenerationProposal,
-    proposalVariant === null
+    proposalVariant === null || mealPlan.hasActivePlanConflict
       ? "skip"
       : { fromDate: proposalFromDate, variant: proposalVariant },
   );
   const isBusy = isWriting || pendingAction !== null;
-  const isReviewingProposal = proposalVariant !== null;
+  const isPlanActionBlocked = isBusy || mealPlan.hasActivePlanConflict;
+  const isReviewingProposal =
+    proposalVariant !== null && !mealPlan.hasActivePlanConflict;
+
+  async function keepMostRecentActivePlan() {
+    setPendingAction("resolve-active-plan");
+    setActionMessage(null);
+    try {
+      const result = await resolveActivePlanConflict({
+        keepMealPlanId: mealPlan._id,
+      });
+      setActionMessage(
+        result.status === "resolved"
+          ? "This is now your current plan. Any other active plans were archived."
+          : result.status === "not_found"
+            ? "The current plan changed before it could be confirmed."
+            : "There are too many conflicting plans to repair safely. Please contact support.",
+      );
+    } catch {
+      setActionMessage(
+        "The plan conflict could not be resolved. Please try again.",
+      );
+    } finally {
+      setPendingAction(null);
+    }
+  }
 
   async function swapSavedMeal(
     mealSlotId: CurrentMealPlan["mealSlots"][number]["_id"],
@@ -548,6 +576,25 @@ function SavedAccountPlan({
         </div>
       </div>
 
+      {mealPlan.hasActivePlanConflict ? (
+        <div className="mb-7 border-l-2 border-accent pl-4">
+          <p className="max-w-xl text-sm leading-6 text-foreground">
+            We found another current plan. This is the one changed most
+            recently; no other plans have been altered.
+          </p>
+          <button
+            type="button"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-accent underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait"
+            disabled={isBusy}
+            onClick={() => void keepMostRecentActivePlan()}
+          >
+            {pendingAction === "resolve-active-plan"
+              ? "Keeping this plan…"
+              : "Keep this plan"}
+          </button>
+        </div>
+      ) : null}
+
       {isReviewingProposal ? (
         proposal === undefined ? (
           <PlanLoading message="Preparing another option…" />
@@ -561,7 +608,7 @@ function SavedAccountPlan({
       ) : (
         <CurrentPlanRows
           mealPlan={mealPlan}
-          isBusy={isBusy}
+          isBusy={isPlanActionBlocked}
           pendingAction={pendingAction}
           onSwap={swapSavedMeal}
         />
@@ -596,7 +643,7 @@ function SavedAccountPlan({
             <button
               type="button"
               className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
-              disabled={isBusy}
+              disabled={isPlanActionBlocked}
               onClick={() => setProposalVariant(null)}
             >
               Keep current plan
@@ -607,7 +654,7 @@ function SavedAccountPlan({
             <button
               type="button"
               className={`${primaryButtonClassName} gap-2`}
-              disabled={isBusy}
+              disabled={isPlanActionBlocked}
               onClick={() => {
                 setActionMessage(null);
                 setUndoReplacement(null);
@@ -621,7 +668,7 @@ function SavedAccountPlan({
             <button
               type="button"
               className={`${secondaryButtonClassName} gap-2`}
-              disabled={isBusy}
+              disabled={isPlanActionBlocked}
               onClick={() => setIsStartConfirmed(true)}
             >
               <CalendarPlus aria-hidden="true" className="size-4" />
@@ -631,7 +678,7 @@ function SavedAccountPlan({
         )}
       </div>
 
-      {isStartConfirmed ? (
+      {isStartConfirmed && !mealPlan.hasActivePlanConflict ? (
         <div className="mt-5 border-l-2 border-accent pl-4">
           <p className="max-w-xl text-sm leading-6 text-foreground">
             This starts a fresh seven-day plan and archives the current one.
@@ -668,7 +715,7 @@ function SavedAccountPlan({
         <button
           type="button"
           className="inline-flex min-h-11 items-center text-sm font-bold text-accent underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait"
-          disabled={isBusy}
+          disabled={isPlanActionBlocked}
           onClick={() => void undoReplacementPlan()}
         >
           {pendingAction === "undo-replacement"
@@ -774,10 +821,14 @@ function ProposalPlanRows({ mealSlots }: { mealSlots: ProposalMealSlot[] }) {
           </p>
           <div>
             <h3 className="font-display text-xl leading-tight tracking-[-0.02em] text-foreground sm:text-2xl">
-              <RecipePlanLink
-                slug={mealSlot.catalogueMealSlug}
-                title={mealSlot.title}
-              />
+              {mealSlot.catalogueMealSlug === null ? (
+                mealSlot.title
+              ) : (
+                <RecipePlanLink
+                  slug={mealSlot.catalogueMealSlug}
+                  title={mealSlot.title}
+                />
+              )}
             </h3>
             <MealMetadata
               prepMinutes={mealSlot.prepMinutes ?? undefined}

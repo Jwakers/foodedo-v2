@@ -11,9 +11,8 @@ import {
   standardCatalogue,
 } from "../src/lib/domain/standard-catalogue";
 import {
-  createRegenerationSelection,
   rotatingMealPlanSelectionStrategy,
-  selectReplacementMeal,
+  selectRankedPlanCandidates,
 } from "../src/lib/domain/meal-plan-selection";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -22,7 +21,29 @@ import { requireAuthSubject } from "./lib/auth";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 
 const maximumPlanSlots = 31;
+const maximumActivePlanRecovery = 10;
+const maximumPersonalPlanCandidates = 50;
 const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
+
+type PlanRecipeReference =
+  | { type: "existing"; recipeId: Id<"recipes"> }
+  | { type: "catalogue"; catalogueMealId: string };
+
+type PlanRecipeChoice = {
+  date: string;
+  recipe: PlanRecipeReference;
+  status: Doc<"mealSlots">["status"];
+};
+
+type PlanCandidate = {
+  key: string;
+  recipe: PlanRecipeReference;
+  catalogueMealId: string | null;
+  catalogueMealSlug: string | null;
+  title: string;
+  prepMinutes: number | null;
+  cookMinutes: number | null;
+};
 
 const mealSlotViewValidator = v.object({
   _id: v.id("mealSlots"),
@@ -46,6 +67,7 @@ const mealPlanViewValidator = v.object({
   startDate: v.string(),
   endDate: v.string(),
   status: v.literal("active"),
+  hasActivePlanConflict: v.boolean(),
   mealSlots: v.array(mealSlotViewValidator),
 });
 
@@ -79,8 +101,8 @@ const swapResultValidator = v.union(
 
 const proposalMealSlotValidator = v.object({
   date: v.string(),
-  catalogueMealId: v.string(),
-  catalogueMealSlug: v.string(),
+  catalogueMealId: v.union(v.string(), v.null()),
+  catalogueMealSlug: v.union(v.string(), v.null()),
   title: v.string(),
   prepMinutes: v.union(v.number(), v.null()),
   cookMinutes: v.union(v.number(), v.null()),
@@ -125,12 +147,19 @@ const startNewResultValidator = v.object({
   mealPlanId: v.id("mealPlans"),
 });
 
+const resolveActivePlanConflictResultValidator = v.union(
+  v.object({ status: v.literal("resolved") }),
+  v.object({ status: v.literal("not_found") }),
+  v.object({ status: v.literal("too_many_active_plans") }),
+);
+
 export const getCurrent = query({
   args: {},
   returns: v.union(mealPlanViewValidator, v.null()),
   handler: async (ctx) => {
     const ownerSubject = await requireAuthSubject(ctx);
-    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    const activePlanState = await getActivePlanState(ctx, ownerSubject);
+    const mealPlan = activePlanState.mealPlan;
 
     if (mealPlan === null) return null;
 
@@ -185,8 +214,41 @@ export const getCurrent = query({
       startDate: mealPlan.startDate,
       endDate: mealPlan.endDate,
       status: "active" as const,
+      hasActivePlanConflict: activePlanState.hasConflict,
       mealSlots: mealSlotViews,
     };
+  },
+});
+
+export const resolveActivePlanConflict = mutation({
+  args: { keepMealPlanId: v.id("mealPlans") },
+  returns: resolveActivePlanConflictResultValidator,
+  handler: async (ctx, { keepMealPlanId }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const activePlans = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_owner_and_status_and_updated_at", (q) =>
+        q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+      )
+      .order("desc")
+      .take(maximumActivePlanRecovery + 1);
+
+    if (activePlans.length > maximumActivePlanRecovery) {
+      return { status: "too_many_active_plans" } as const;
+    }
+    if (!activePlans.some((plan) => plan._id === keepMealPlanId)) {
+      return { status: "not_found" } as const;
+    }
+
+    const updatedAt = Date.now();
+    for (const plan of activePlans) {
+      if (plan._id !== keepMealPlanId) {
+        await ctx.db.patch(plan._id, { status: "archived", updatedAt });
+      }
+    }
+    await ctx.db.patch(keepMealPlanId, { updatedAt });
+
+    return { status: "resolved" } as const;
   },
 });
 
@@ -206,31 +268,47 @@ export const swapMeal = mutation({
     }
 
     const mealSlots = await getPlanSlots(ctx, mealPlan._id);
-    const plannedMealIds = await resolveCatalogueMealIds(
+    const recipesBySlot = await resolvePlanRecipes(
       ctx,
       mealSlots,
       ownerSubject,
     );
-    const currentMealId = plannedMealIds.get(mealSlot._id);
-    if (currentMealId === undefined) {
+    const currentRecipe = recipesBySlot.get(mealSlot._id);
+    if (
+      currentRecipe === undefined ||
+      recipesBySlot.size !== mealSlots.length
+    ) {
       return { status: "plan_unavailable" } as const;
     }
 
-    const replacementMealId = selectReplacementMeal({
-      candidateMealIds: catalogueMealIds,
-      currentMealId,
-      plannedMealIds: [...plannedMealIds.values()],
+    const candidatePool = await getPlanningCandidates(ctx, ownerSubject);
+    const currentCandidateKey = candidateKeyForRecipe(currentRecipe);
+    const currentPreferredIndex =
+      candidatePool.preferredKeys.indexOf(currentCandidateKey);
+    const currentFallbackIndex =
+      candidatePool.fallbackKeys.indexOf(currentCandidateKey);
+    const [replacementKey] = selectRankedPlanCandidates({
+      preferredCandidateIds: candidatePool.preferredKeys,
+      fallbackCandidateIds: candidatePool.fallbackKeys,
+      excludedCandidateIds: [...recipesBySlot.values()].map(
+        candidateKeyForRecipe,
+      ),
+      numberOfMeals: 1,
+      variant: Math.max(currentPreferredIndex, currentFallbackIndex, 0) + 2,
     });
-    const replacement = await getOrCreateCatalogueRecipe(ctx, {
+    const replacement = candidatePool.byKey.get(replacementKey!);
+    if (replacement === undefined) {
+      return { status: "plan_unavailable" } as const;
+    }
+    const replacementRecipeId = await resolveRecipeReference(
+      ctx,
       ownerSubject,
-      catalogueMealId: replacementMealId,
-      catalogueVersion: standardCatalogue.version,
-      saveToLibrary: false,
-    });
+      replacement.recipe,
+    );
     const updatedAt = Date.now();
 
     await ctx.db.patch(mealSlot._id, {
-      recipeId: replacement.recipeId,
+      recipeId: replacementRecipeId,
       status: "planned",
       updatedAt,
     });
@@ -307,7 +385,7 @@ export const applyRegenerationProposal = mutation({
       status: "archived",
       updatedAt,
     });
-    const mealPlanId = await createCataloguePlanFromChoices(ctx, {
+    const mealPlanId = await createPlanFromRecipeChoices(ctx, {
       ownerSubject,
       mealChoices: proposal.mealChoices,
       createdAt: updatedAt,
@@ -382,7 +460,7 @@ export const startNew = mutation({
       numberOfMeals: GUEST_PLAN_DAYS,
       offset: planDateOffset(startDate),
     });
-    const mealPlanId = await createCataloguePlan(ctx, {
+    const mealPlanId = await createPlanFromCatalogueMeals(ctx, {
       ownerSubject,
       startDate,
       catalogueMealIds: selectedMealIds,
@@ -445,7 +523,7 @@ export const claimGuestDraft = mutation({
     }
 
     const claimedAt = Date.now();
-    const mealPlanId = await createCataloguePlan(ctx, {
+    const mealPlanId = await createPlanFromCatalogueMeals(ctx, {
       ownerSubject,
       startDate: planStartDate,
       catalogueMealIds: mealChoices.map((choice) => choice.catalogueMealId),
@@ -467,6 +545,17 @@ async function getSingleActivePlan(
   ctx: QueryCtx | MutationCtx,
   ownerSubject: string,
 ): Promise<Doc<"mealPlans"> | null> {
+  const state = await getActivePlanState(ctx, ownerSubject);
+  if (state.hasConflict) {
+    throw new Error("Resolve multiple active meal plans before continuing.");
+  }
+  return state.mealPlan;
+}
+
+async function getActivePlanState(
+  ctx: QueryCtx | MutationCtx,
+  ownerSubject: string,
+) {
   const activePlans = await ctx.db
     .query("mealPlans")
     .withIndex("by_owner_and_status_and_updated_at", (q) =>
@@ -475,10 +564,10 @@ async function getSingleActivePlan(
     .order("desc")
     .take(2);
 
-  if (activePlans.length > 1) {
-    throw new Error("An account has more than one active meal plan.");
-  }
-  return activePlans[0] ?? null;
+  return {
+    mealPlan: activePlans[0] ?? null,
+    hasConflict: activePlans.length > 1,
+  };
 }
 
 async function getPlanSlots(
@@ -496,31 +585,6 @@ async function getPlanSlots(
   return mealSlots;
 }
 
-async function resolveCatalogueMealIds(
-  ctx: QueryCtx | MutationCtx,
-  mealSlots: Array<Doc<"mealSlots">>,
-  ownerSubject: string,
-) {
-  const catalogueMealIdBySlot = new Map<Id<"mealSlots">, string>();
-
-  for (const mealSlot of mealSlots) {
-    const recipe = await ctx.db.get(mealSlot.recipeId);
-    if (
-      recipe?.ownerSubject !== ownerSubject ||
-      recipe.source.type !== "catalogue" ||
-      findStandardCatalogueMeal(
-        recipe.source.catalogueMealId,
-        recipe.source.catalogueVersion,
-      ) === null
-    ) {
-      continue;
-    }
-    catalogueMealIdBySlot.set(mealSlot._id, recipe.source.catalogueMealId);
-  }
-
-  return catalogueMealIdBySlot;
-}
-
 async function buildRegenerationProposal(
   ctx: QueryCtx | MutationCtx,
   mealPlan: Doc<"mealPlans">,
@@ -534,27 +598,19 @@ async function buildRegenerationProposal(
       status: "ready";
       mealSlots: Array<{
         date: string;
-        catalogueMealId: string;
-        catalogueMealSlug: string;
+        catalogueMealId: string | null;
+        catalogueMealSlug: string | null;
         title: string;
         prepMinutes: number | null;
         cookMinutes: number | null;
         isChanged: boolean;
       }>;
-      mealChoices: Array<{
-        date: string;
-        catalogueMealId: string;
-        status: Doc<"mealSlots">["status"];
-      }>;
+      mealChoices: PlanRecipeChoice[];
     }
 > {
   const mealSlots = await getPlanSlots(ctx, mealPlan._id);
-  const plannedMealIds = await resolveCatalogueMealIds(
-    ctx,
-    mealSlots,
-    ownerSubject,
-  );
-  if (mealSlots.length === 0 || plannedMealIds.size !== mealSlots.length) {
+  const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerSubject);
+  if (mealSlots.length === 0 || recipesBySlot.size !== mealSlots.length) {
     return { status: "plan_unavailable" };
   }
 
@@ -562,49 +618,188 @@ async function buildRegenerationProposal(
   if (replaceableSlots.length === 0) {
     return { status: "no_future_meals" };
   }
-  const currentMealIds = mealSlots.map((slot) => plannedMealIds.get(slot._id)!);
-  const proposedMealIds = createRegenerationSelection({
-    candidateMealIds: catalogueMealIds,
-    currentMealIds,
-    replaceFromIndex: mealSlots.length - replaceableSlots.length,
+
+  const candidatePool = await getPlanningCandidates(ctx, ownerSubject);
+  const currentCandidateKeys = mealSlots.map((slot) =>
+    candidateKeyForRecipe(recipesBySlot.get(slot._id)!),
+  );
+  const selectedCandidateKeys = selectRankedPlanCandidates({
+    preferredCandidateIds: candidatePool.preferredKeys,
+    fallbackCandidateIds: candidatePool.fallbackKeys,
+    excludedCandidateIds: currentCandidateKeys,
+    numberOfMeals: replaceableSlots.length,
     variant,
   });
+  const selectedCandidates = selectedCandidateKeys.map((key) =>
+    candidatePool.byKey.get(key)!,
+  );
+  let replacementIndex = 0;
 
-  const mealChoices = mealSlots.map((slot, index) => {
+  const mealChoices = mealSlots.map((slot) => {
     const shouldReplace = slot.date >= fromDate;
+    const recipe = recipesBySlot.get(slot._id)!;
+    const selectedCandidate = shouldReplace
+      ? selectedCandidates[replacementIndex++]!
+      : planCandidateFromRecipe(recipe);
 
     return {
       date: slot.date,
-      catalogueMealId: proposedMealIds[index]!,
+      recipe: selectedCandidate.recipe,
       status: shouldReplace ? ("planned" as const) : slot.status,
     };
   });
-  const proposalMealSlots = mealChoices.map((choice, index) => {
-    const catalogueMeal = findStandardCatalogueMeal(
-      choice.catalogueMealId,
-      standardCatalogue.version,
-    );
-    if (catalogueMeal === null) {
-      throw new Error("A selected catalogue meal could not be resolved.");
-    }
+  replacementIndex = 0;
+  const proposalMealSlots: Array<{
+    date: string;
+    catalogueMealId: string | null;
+    catalogueMealSlug: string | null;
+    title: string;
+    prepMinutes: number | null;
+    cookMinutes: number | null;
+    isChanged: boolean;
+  }> = [];
+  for (let index = 0; index < mealChoices.length; index += 1) {
+    const mealSlot = mealSlots[index]!;
+    const shouldReplace = mealSlot.date >= fromDate;
+    const currentRecipe = recipesBySlot.get(mealSlot._id)!;
+    const candidate = shouldReplace
+      ? selectedCandidates[replacementIndex++]!
+      : planCandidateFromRecipe(currentRecipe);
 
-    return {
-      date: choice.date,
-      catalogueMealId: choice.catalogueMealId,
-      catalogueMealSlug: catalogueMeal.slug,
-      title: catalogueMeal.title,
-      prepMinutes: catalogueMeal.prepMinutes ?? null,
-      cookMinutes: catalogueMeal.cookMinutes ?? null,
-      isChanged:
-        choice.catalogueMealId !== plannedMealIds.get(mealSlots[index]!._id),
-    };
-  });
+    proposalMealSlots.push({
+      date: mealSlot.date,
+      catalogueMealId: candidate.catalogueMealId,
+      catalogueMealSlug: candidate.catalogueMealSlug,
+      title: candidate.title,
+      prepMinutes: candidate.prepMinutes,
+      cookMinutes: candidate.cookMinutes,
+      isChanged: candidate.key !== currentCandidateKeys[index],
+    });
+  }
 
   return {
     status: "ready",
     mealSlots: proposalMealSlots,
     mealChoices,
   };
+}
+
+async function resolvePlanRecipes(
+  ctx: QueryCtx | MutationCtx,
+  mealSlots: Array<Doc<"mealSlots">>,
+  ownerSubject: string,
+) {
+  const recipesBySlot = new Map<Id<"mealSlots">, Doc<"recipes">>();
+  for (const mealSlot of mealSlots) {
+    const recipe = await ctx.db.get(mealSlot.recipeId);
+    if (recipe?.ownerSubject === ownerSubject) {
+      recipesBySlot.set(mealSlot._id, recipe);
+    }
+  }
+  return recipesBySlot;
+}
+
+async function getPlanningCandidates(
+  ctx: QueryCtx | MutationCtx,
+  ownerSubject: string,
+) {
+  const savedRecipes = await ctx.db
+    .query("recipes")
+    .withIndex("by_owner_and_saved_at", (q) =>
+      q.eq("ownerSubject", ownerSubject).gt("savedAt", 0),
+    )
+    .order("desc")
+    .take(maximumPersonalPlanCandidates);
+  const byKey = new Map<string, PlanCandidate>();
+  const preferredKeys: string[] = [];
+
+  for (const recipe of savedRecipes) {
+    const candidate = planCandidateFromRecipe(recipe);
+    if (!byKey.has(candidate.key)) {
+      byKey.set(candidate.key, candidate);
+      preferredKeys.push(candidate.key);
+    }
+  }
+
+  const fallbackKeys: string[] = [];
+  for (const catalogueMeal of standardCatalogue.meals) {
+    const candidate = planCandidateFromCatalogue(catalogueMeal);
+    if (!byKey.has(candidate.key)) {
+      byKey.set(candidate.key, candidate);
+      fallbackKeys.push(candidate.key);
+    }
+  }
+
+  return { byKey, preferredKeys, fallbackKeys };
+}
+
+function planCandidateFromRecipe(recipe: Doc<"recipes">): PlanCandidate {
+  const catalogueMeal =
+    recipe.source.type === "catalogue"
+      ? findStandardCatalogueMeal(
+          recipe.source.catalogueMealId,
+          recipe.source.catalogueVersion,
+        )
+      : null;
+
+  return {
+    key: candidateKeyForRecipe(recipe),
+    recipe: { type: "existing", recipeId: recipe._id },
+    catalogueMealId: catalogueMeal?.id ?? null,
+    catalogueMealSlug: catalogueMeal?.slug ?? null,
+    title: recipe.title,
+    prepMinutes: recipe.prepMinutes ?? null,
+    cookMinutes: recipe.cookMinutes ?? null,
+  };
+}
+
+function planCandidateFromCatalogue(
+  catalogueMeal: (typeof standardCatalogue.meals)[number],
+): PlanCandidate {
+  return {
+    key: `catalogue:${catalogueMeal.id}`,
+    recipe: { type: "catalogue", catalogueMealId: catalogueMeal.id },
+    catalogueMealId: catalogueMeal.id,
+    catalogueMealSlug: catalogueMeal.slug,
+    title: catalogueMeal.title,
+    prepMinutes: catalogueMeal.prepMinutes ?? null,
+    cookMinutes: catalogueMeal.cookMinutes ?? null,
+  };
+}
+
+function candidateKeyForRecipe(recipe: Doc<"recipes">) {
+  if (
+    recipe.source.type === "catalogue" &&
+    findStandardCatalogueMeal(
+      recipe.source.catalogueMealId,
+      recipe.source.catalogueVersion,
+    ) !== null
+  ) {
+    return `catalogue:${recipe.source.catalogueMealId}`;
+  }
+  return `recipe:${recipe._id}`;
+}
+
+async function resolveRecipeReference(
+  ctx: MutationCtx,
+  ownerSubject: string,
+  recipeReference: PlanRecipeReference,
+) {
+  if (recipeReference.type === "existing") {
+    const recipe = await ctx.db.get(recipeReference.recipeId);
+    if (recipe?.ownerSubject !== ownerSubject) {
+      throw new Error("A selected personal recipe could not be resolved.");
+    }
+    return recipe._id;
+  }
+
+  const recipe = await getOrCreateCatalogueRecipe(ctx, {
+    ownerSubject,
+    catalogueMealId: recipeReference.catalogueMealId,
+    catalogueVersion: standardCatalogue.version,
+    saveToLibrary: false,
+  });
+  return recipe.recipeId;
 }
 
 function validateProposalRequest({
@@ -622,7 +817,7 @@ function validateProposalRequest({
   }
 }
 
-async function createCataloguePlan(
+async function createPlanFromCatalogueMeals(
   ctx: MutationCtx,
   {
     ownerSubject,
@@ -636,18 +831,18 @@ async function createCataloguePlan(
     createdAt: number;
   },
 ) {
-  return createCataloguePlanFromChoices(ctx, {
+  return createPlanFromRecipeChoices(ctx, {
     ownerSubject,
     mealChoices: selectedMealIds.map((catalogueMealId, index) => ({
       date: addDaysToPlanDate(startDate, index),
-      catalogueMealId,
+      recipe: { type: "catalogue" as const, catalogueMealId },
       status: "planned" as const,
     })),
     createdAt,
   });
 }
 
-async function createCataloguePlanFromChoices(
+async function createPlanFromRecipeChoices(
   ctx: MutationCtx,
   {
     ownerSubject,
@@ -655,11 +850,7 @@ async function createCataloguePlanFromChoices(
     createdAt,
   }: {
     ownerSubject: string;
-    mealChoices: readonly {
-      date: string;
-      catalogueMealId: string;
-      status: Doc<"mealSlots">["status"];
-    }[];
+    mealChoices: readonly PlanRecipeChoice[];
     createdAt: number;
   },
 ) {
@@ -679,17 +870,16 @@ async function createCataloguePlanFromChoices(
   });
 
   for (const choice of mealChoices) {
-    const recipe = await getOrCreateCatalogueRecipe(ctx, {
+    const recipeId = await resolveRecipeReference(
+      ctx,
       ownerSubject,
-      catalogueMealId: choice.catalogueMealId,
-      catalogueVersion: standardCatalogue.version,
-      saveToLibrary: false,
-    });
+      choice.recipe,
+    );
     await ctx.db.insert("mealSlots", {
       mealPlanId,
       ownerSubject,
       date: choice.date,
-      recipeId: recipe.recipeId,
+      recipeId,
       status: choice.status,
       createdAt,
       updatedAt: createdAt,

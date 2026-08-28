@@ -57,7 +57,9 @@ Keep this parent intentionally small. Generation seeds, leftover snapshots, sett
 
 Authenticated clients hydrate the current active plan from this table and its indexed slots. Local guest completion state is never used as the cross-device source of truth.
 
-An account has at most one active plan. An alternative plan is a deterministic, read-only proposal rather than a stored draft. Applying it verifies the source plan ID and `updatedAt`, preserves elapsed slots, archives the current parent, and creates the replacement atomically. The archived parent supports immediate undo and later history; archived and active plans may therefore contain the same dates. Expected stale interaction outcomes are returned to the client, while multiple active parents remain an invariant failure.
+An account should have one active plan. An alternative is a deterministic, read-only proposal rather than a stored draft. Applying it verifies the source plan ID and `updatedAt`, preserves elapsed slots, archives the current parent, and creates the replacement atomically. Plan choices are source-neutral recipe references: existing personal recipes are reused by ID, while standard catalogue choices are materialised as private snapshots only when applied. The archived parent supports immediate undo and later history.
+
+Convex transactions prevent ordinary mutations from creating multiple active plans. If historical, imported, or manually edited data violates that invariant, the app continues showing the most recently updated plan and blocks further plan edits. One explicit recovery mutation keeps that plan and archives the other active parents atomically; merely reading the plan never repairs data silently.
 
 ### mealSlots
 

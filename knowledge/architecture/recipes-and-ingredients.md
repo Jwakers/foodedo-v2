@@ -9,6 +9,7 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 - Plans may create a private snapshot for referential integrity without presenting it as explicitly saved.
 - Saving catalogue content creates or reuses a personal recipe, records `savedAt`, and preserves its source. Plans and history reference the personal recipe, so later catalogue changes cannot silently alter them.
 - **Save recipe** is the only initial library action. Favouriting is a separate preference signal and remains deferred until it serves recommendations or another proven job.
+- The authenticated planning candidate pool prefers eligible recipes in **My recipes**—regardless of whether they were created manually or saved from shared content—before using standard catalogue meals as fallback. Later scoring may add favourites, cooking history, recency, context, and explicit preferences without changing plan storage.
 - Future public publishing is a separate concern. Do not represent it with a nullable owner or an `isPublic` flag on a personal recipe.
 
 ## Catalogue lifecycle

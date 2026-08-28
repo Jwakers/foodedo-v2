@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   createRegenerationSelection,
   rotatingMealPlanSelectionStrategy,
+  selectRankedPlanCandidates,
   selectReplacementMeal,
 } from "../../src/lib/domain/meal-plan-selection";
 
@@ -36,4 +37,16 @@ test("preserves elapsed meals while proposing a new remainder", () => {
       variant: 1,
     }),
   ).toEqual(["a", "b", "g", "h", "i"]);
+});
+
+test("fills a plan from personal recipes before standard catalogue meals", () => {
+  expect(
+    selectRankedPlanCandidates({
+      preferredCandidateIds: ["mine-a", "mine-b"],
+      fallbackCandidateIds: ["standard-a", "standard-b", "standard-c"],
+      excludedCandidateIds: ["standard-a"],
+      numberOfMeals: 3,
+      variant: 1,
+    }),
+  ).toEqual(["mine-a", "mine-b", "standard-b"]);
 });
