@@ -62,6 +62,37 @@ export default defineSchema({
     .index("by_plan_and_date", ["mealPlanId", "date"])
     .index("by_owner_and_date", ["ownerSubject", "date"])
     .index("by_recipe", ["recipeId"]),
+  shoppingLists: defineTable({
+    ownerSubject: v.string(),
+    mealPlanId: v.id("mealPlans"),
+    mealPlanUpdatedAt: v.number(),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_updated_at", ["updatedAt"])
+    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"])
+    .index("by_owner_and_status_and_updated_at", [
+      "ownerSubject",
+      "status",
+      "updatedAt",
+    ])
+    .index("by_meal_plan", ["mealPlanId"]),
+  shoppingListItems: defineTable({
+    shoppingListId: v.id("shoppingLists"),
+    ownerSubject: v.string(),
+    name: v.string(),
+    detailLines: v.array(v.string()),
+    sourceRecipeIds: v.array(v.id("recipes")),
+    origin: v.union(v.literal("derived"), v.literal("manual")),
+    checked: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    order: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_list_and_order", ["shoppingListId", "order"])
+    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"]),
   guestClaims: defineTable({
     ownerSubject: v.string(),
     claimKey: v.string(),

@@ -1,6 +1,6 @@
 # V2 data model
 
-Partially implemented. `users`, private `recipes`, `mealPlans`, `mealSlots`, and `guestClaims` are the current foundation; the remaining entities below are proposed. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays are reserved for small bounded content.
+Partially implemented. `users`, private `recipes`, `mealPlans`, `mealSlots`, `shoppingLists`, `shoppingListItems`, and `guestClaims` are the current foundation; the remaining entities below are proposed. Documents stay **flat and relational** (IDs, indexes on foreign keys). Arrays are reserved for small bounded content.
 
 Orient around jobs, not V1 tables.
 
@@ -78,12 +78,18 @@ Recipe deletion must either be refused while slots reference the recipe or updat
 
 ### shoppingLists / shoppingListItems
 
-Derived from decided meals, then editable.
+An authenticated shopping list is an editable snapshot derived from one active meal-plan revision.
 
-- List: `ownerSubject`, `status` (`active` | `completed`), `createdAt`
-- Item: `shoppingListId`, `name`, `amount?`, `unit?`, `checked`, `order`, optional `recipeId`
+- List: `ownerSubject`, `mealPlanId`, `mealPlanUpdatedAt`, `status` (`active` | `archived`), timestamps
+- Item: `shoppingListId`, `ownerSubject`, `name`, bounded source detail lines and recipe IDs, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
 
-**Indexes:** `by_owner_and_status`, `by_shopping_list`
+**Indexes:** lists by owner/status/update and meal plan; items by list/order and owner/update.
+
+Generation groups only normalised exact ingredient names. It keeps each recipe's authored quantity, unit, and note as a readable source line instead of inventing totals or conversions. Manual additions and checks live on the derived snapshot. Removing an item sets `deletedAt`; it remains in a small **Removed items** section until restored or the parent list expires.
+
+The list records the source plan's `updatedAt`. A later meal swap or plan replacement makes the list visibly out of date but never rewrites it. Explicit regeneration archives every older active list and creates a fresh snapshot atomically. This protects manual edits while retaining a simple one-current-list model.
+
+Retention has two bounds: keep at most 30 list snapshots per account, and delete any list after 30 days without list activity. A daily internal Convex job removes expired items in bounded batches before deleting each parent. Checking, adding, removing, or restoring an item refreshes the parent activity timestamp.
 
 **Deferred vs V1:** leftover include modes, chalkboard linkage, household privacy, serving-scale metadata forests. Add scaling when Cook/Shop prove it.
 

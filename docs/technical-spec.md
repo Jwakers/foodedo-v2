@@ -42,7 +42,9 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Plan interface — MVP complete:** authenticated users can open recipes from dated slots, swap one meal, review alternative plans without changing the active plan, or explicitly archive it and start another. Accepting an alternative preserves elapsed slots, archives the previous plan atomically, and offers immediate recovery. Authenticated suggestions prefer eligible recipes in the user's saved library, then fill from the standard catalogue; the small ranked selector is intentionally replaceable by later preference, history, and context scoring. Guest planning remains catalogue-based because guest drafts have no personal backend identity.
 
-**Later product:** Capture → Decide → Plan → Shop → Cook → Remember. Discover after Remember has signal.
+**Shop — MVP foundation complete:** a guest can preview the ingredients derived from the temporary plan on that device. An authenticated user can explicitly derive a durable list from the active plan, check items, add extras, and soft-remove/restore items with Convex optimistic cache updates. Exact normalised ingredient names are grouped while each source quantity remains visible. The source plan revision is recorded, so plan changes mark the list outdated without overwriting edits; rebuilding is an explicit archival replacement. Accounts retain at most 30 list snapshots, and an internal daily cleanup deletes lists after 30 days without activity.
+
+**Later product:** deepen Capture and Decide, then Cook → Remember. Discover after Remember has signal.
 
 **Later native:** camera, photos, share sheet, haptics, push, deep links.
 
@@ -106,7 +108,7 @@ Do not touch `/Users/jackwakeham/Documents/Projects/foodedo` (V1), `foodedo-cms`
 ## 9. Folder conventions
 
 ```
-src/app/                 App Router routes (`/`, `/recipes`, `/recipes/[slug]`)
+src/app/                 App Router routes (`/`, `/recipes`, `/recipes/[slug]`, `/shop`)
 src/components/          Shared UI later
 src/features/            Job modules later
 src/lib/domain/          Platform-independent logic

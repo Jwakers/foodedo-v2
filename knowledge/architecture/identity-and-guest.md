@@ -88,14 +88,15 @@ Build the recipe prerequisite, then one identity vertical slice:
 1. **Recipe kernel — foundation complete:** bounded recipe content and `CatalogueMeal`, lossless ingredient lines, private authenticated create/read/list operations, owner indexes, and a catalogue-view/save proof now exist.
 2. **Guest contract — complete:** `GuestDraftV1`, platform storage, IndexedDB persistence, and a seven-day adjustable plan now exist around the shared catalogue.
 3. **New Convex project — complete:** V2 has a separate project and development deployment; no V1 keys or deployments are shared.
-4. **Minimum schema — complete:** `users`, `recipes`, `mealPlans`, `mealSlots`, and `guestClaims` support the claim slice. Shopping persistence and Remember events remain deferred.
+4. **Core schema — in progress:** `users`, `recipes`, `mealPlans`, `mealSlots`, `shoppingLists`, `shoppingListItems`, and `guestClaims` support the current recipe-to-shop loop. Remember events remain deferred.
 5. **Authorization boundary:** derive every owner from `ctx.auth` and use owner indexes from the first personal operation.
 6. **Auth integration — proof complete:** email and Google sign-in, token propagation, sign-out, and the iOS return flow work in development. Repeat the full matrix against release environments before launch.
 7. **Claim flow — complete:** one idempotent `claimGuestDraft` mutation retains the local draft until acknowledgement and refuses occupied dates. Authenticated plan hydration is authoritative across devices and cleans matching IndexedDB state after confirmation.
 8. **Plan editing — MVP complete:** authenticated users can swap a meal or review a read-only alternative before atomically replacing the current plan. Elapsed meals remain intact, the previous version is archived for undo, and saved personal recipes are considered before standard catalogue fallback. The ranked selector remains a replaceable seam for richer preference-aware planning.
-9. **Release proof remaining:** manually verify guest → Keep → email/Google authentication → automatic claim → authenticated editing and reload on web and iOS, plus cross-user authorization and conflict messaging.
+9. **Shopping list — MVP foundation complete:** authenticated users can derive and edit a list from the current plan. Plan changes make that list visibly stale; only explicit regeneration archives it and builds a replacement.
+10. **Release proof remaining:** manually verify guest → Keep → email/Google authentication → automatic claim → authenticated editing and Shop reload on web and iOS, plus cross-user authorization and conflict messaging.
 
-Do not begin with a full recipe importer, settings surface, shopping schema, or provider-specific user-profile system. The milestone succeeds when the identity transition is trustworthy.
+Do not begin with a full recipe importer, settings surface, ingredient taxonomy, or provider-specific user-profile system. Keep each new slice focused on the smallest trustworthy product loop.
 
 ## Authorization boundary
 

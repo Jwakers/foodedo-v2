@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpen, CalendarDays } from "lucide-react";
+import { BookOpen, CalendarDays, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navigationItems = [
   { href: "/", label: "Plan", section: "plan" },
   { href: "/recipes", label: "Recipes", section: "recipes" },
+  { href: "/shop", label: "Shop", section: "shop" },
 ] as const;
 
 export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
@@ -41,7 +42,7 @@ export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <div className="mx-auto grid max-w-sm grid-cols-2 px-3">
+      <div className="mx-auto grid max-w-sm grid-cols-3 px-3">
         {navigationItems.map((item) => {
           const isCurrent = isCurrentSection(pathname, item.section);
           return (
@@ -63,15 +64,22 @@ export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
   );
 }
 
-function isCurrentSection(pathname: string, section: "plan" | "recipes") {
+function isCurrentSection(
+  pathname: string,
+  section: "plan" | "recipes" | "shop",
+) {
   if (section === "plan") return pathname === "/";
-  return pathname.startsWith("/recipes");
+  return pathname.startsWith(`/${section}`);
 }
 
-function NavigationMark({ section }: { section: "plan" | "recipes" }) {
+function NavigationMark({ section }: { section: "plan" | "recipes" | "shop" }) {
   if (section === "plan") {
     return <CalendarDays aria-hidden="true" className="size-5" />;
   }
 
-  return <BookOpen aria-hidden="true" className="size-5" />;
+  if (section === "recipes") {
+    return <BookOpen aria-hidden="true" className="size-5" />;
+  }
+
+  return <ShoppingBasket aria-hidden="true" className="size-5" />;
 }

@@ -67,6 +67,7 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 - [ ] Guest-to-account claiming is atomic, idempotent, retryable, and never silently overwrites existing account data.
 - [ ] Reviewing plan alternatives performs no write. Applying one preserves elapsed meals, rejects a stale source plan, archives exactly one previous version, and can be undone without creating multiple active plans.
 - [ ] Inject a development-only multiple-active-plan anomaly and verify the newest plan remains visible, plan edits are blocked, and the explicit recovery archives the others atomically.
+- [ ] Verify shopping checks/removal are optimistic and roll back on mutation failure; removed items can be restored. Prove the 30-list account cap and daily 30-day inactive-list cleanup delete child items before their parent without crossing account boundaries.
 - [ ] Standard meals are not gated for guests. If premium meals are introduced later, entitlement is checked server-side and requires both authentication and an active subscription.
 - [ ] Account deletion is available inside the app and removes the Clerk account plus associated Convex data. Apple requires in-app initiation when an app supports account creation; follow its [account deletion guidance](https://developer.apple.com/support/offering-account-deletion-in-your-app/).
 - [ ] Data export, privacy requests, retention, deletion recovery window, and support escalation are documented and tested.
