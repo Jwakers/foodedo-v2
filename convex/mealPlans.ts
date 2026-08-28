@@ -10,12 +10,19 @@ import {
   findStandardCatalogueMeal,
   standardCatalogue,
 } from "../src/lib/domain/standard-catalogue";
-import type { Id } from "./_generated/dataModel";
+import {
+  createRegenerationSelection,
+  rotatingMealPlanSelectionStrategy,
+  selectReplacementMeal,
+} from "../src/lib/domain/meal-plan-selection";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireAuthSubject } from "./lib/auth";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 
 const maximumPlanSlots = 31;
+const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
 
 const mealSlotViewValidator = v.object({
   _id: v.id("mealSlots"),
@@ -23,6 +30,7 @@ const mealSlotViewValidator = v.object({
   recipeId: v.id("recipes"),
   isAvailable: v.boolean(),
   catalogueMealId: v.union(v.string(), v.null()),
+  catalogueMealSlug: v.union(v.string(), v.null()),
   title: v.string(),
   prepMinutes: v.union(v.number(), v.null()),
   cookMinutes: v.union(v.number(), v.null()),
@@ -59,32 +67,74 @@ const claimResultValidator = v.union(
     status: v.literal("date_conflict"),
     dates: v.array(v.string()),
   }),
+  v.object({ status: v.literal("active_plan_exists") }),
   v.object({ status: v.literal("catalogue_unsupported") }),
 );
+
+const swapResultValidator = v.union(
+  v.object({ status: v.literal("swapped") }),
+  v.object({ status: v.literal("not_found") }),
+  v.object({ status: v.literal("plan_unavailable") }),
+);
+
+const proposalMealSlotValidator = v.object({
+  date: v.string(),
+  catalogueMealId: v.string(),
+  catalogueMealSlug: v.string(),
+  title: v.string(),
+  prepMinutes: v.union(v.number(), v.null()),
+  cookMinutes: v.union(v.number(), v.null()),
+  isChanged: v.boolean(),
+});
+
+const regenerationProposalResultValidator = v.union(
+  v.object({
+    status: v.literal("ready"),
+    sourcePlanId: v.id("mealPlans"),
+    sourceUpdatedAt: v.number(),
+    variant: v.number(),
+    fromDate: v.string(),
+    mealSlots: v.array(proposalMealSlotValidator),
+  }),
+  v.object({ status: v.literal("no_active_plan") }),
+  v.object({ status: v.literal("plan_unavailable") }),
+  v.object({ status: v.literal("no_future_meals") }),
+);
+
+const applyProposalResultValidator = v.union(
+  v.object({
+    status: v.literal("applied"),
+    mealPlanId: v.id("mealPlans"),
+    previousMealPlanId: v.id("mealPlans"),
+    currentUpdatedAt: v.number(),
+  }),
+  v.object({ status: v.literal("plan_changed") }),
+  v.object({ status: v.literal("no_active_plan") }),
+  v.object({ status: v.literal("plan_unavailable") }),
+  v.object({ status: v.literal("no_future_meals") }),
+);
+
+const undoReplacementResultValidator = v.union(
+  v.object({ status: v.literal("restored") }),
+  v.object({ status: v.literal("not_found") }),
+  v.object({ status: v.literal("plan_changed") }),
+);
+
+const startNewResultValidator = v.object({
+  status: v.literal("started"),
+  mealPlanId: v.id("mealPlans"),
+});
 
 export const getCurrent = query({
   args: {},
   returns: v.union(mealPlanViewValidator, v.null()),
   handler: async (ctx) => {
     const ownerSubject = await requireAuthSubject(ctx);
-    const mealPlan = await ctx.db
-      .query("mealPlans")
-      .withIndex("by_owner_and_status_and_updated_at", (q) =>
-        q.eq("ownerSubject", ownerSubject).eq("status", "active"),
-      )
-      .order("desc")
-      .first();
+    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
 
     if (mealPlan === null) return null;
 
-    const mealSlots = await ctx.db
-      .query("mealSlots")
-      .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", mealPlan._id))
-      .take(maximumPlanSlots + 1);
-
-    if (mealSlots.length > maximumPlanSlots) {
-      throw new Error("A meal plan exceeds the supported number of meals.");
-    }
+    const mealSlots = await getPlanSlots(ctx, mealPlan._id);
 
     const mealSlotViews = [];
     for (const mealSlot of mealSlots) {
@@ -96,6 +146,7 @@ export const getCurrent = query({
           recipeId: mealSlot.recipeId,
           isAvailable: false,
           catalogueMealId: null,
+          catalogueMealSlug: null,
           title: "Recipe unavailable",
           prepMinutes: null,
           cookMinutes: null,
@@ -103,6 +154,14 @@ export const getCurrent = query({
         });
         continue;
       }
+
+      const catalogueMeal =
+        recipe.source.type === "catalogue"
+          ? findStandardCatalogueMeal(
+              recipe.source.catalogueMealId,
+              recipe.source.catalogueVersion,
+            )
+          : null;
 
       mealSlotViews.push({
         _id: mealSlot._id,
@@ -113,6 +172,7 @@ export const getCurrent = query({
           recipe.source.type === "catalogue"
             ? recipe.source.catalogueMealId
             : null,
+        catalogueMealSlug: catalogueMeal?.slug ?? null,
         title: recipe.title,
         prepMinutes: recipe.prepMinutes ?? null,
         cookMinutes: recipe.cookMinutes ?? null,
@@ -127,6 +187,209 @@ export const getCurrent = query({
       status: "active" as const,
       mealSlots: mealSlotViews,
     };
+  },
+});
+
+export const swapMeal = mutation({
+  args: { mealSlotId: v.id("mealSlots") },
+  returns: swapResultValidator,
+  handler: async (ctx, { mealSlotId }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const mealSlot = await ctx.db.get(mealSlotId);
+    if (mealSlot === null || mealSlot.ownerSubject !== ownerSubject) {
+      return { status: "not_found" } as const;
+    }
+
+    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    if (mealPlan === null || mealPlan._id !== mealSlot.mealPlanId) {
+      return { status: "not_found" } as const;
+    }
+
+    const mealSlots = await getPlanSlots(ctx, mealPlan._id);
+    const plannedMealIds = await resolveCatalogueMealIds(
+      ctx,
+      mealSlots,
+      ownerSubject,
+    );
+    const currentMealId = plannedMealIds.get(mealSlot._id);
+    if (currentMealId === undefined) {
+      return { status: "plan_unavailable" } as const;
+    }
+
+    const replacementMealId = selectReplacementMeal({
+      candidateMealIds: catalogueMealIds,
+      currentMealId,
+      plannedMealIds: [...plannedMealIds.values()],
+    });
+    const replacement = await getOrCreateCatalogueRecipe(ctx, {
+      ownerSubject,
+      catalogueMealId: replacementMealId,
+      catalogueVersion: standardCatalogue.version,
+      saveToLibrary: false,
+    });
+    const updatedAt = Date.now();
+
+    await ctx.db.patch(mealSlot._id, {
+      recipeId: replacement.recipeId,
+      status: "planned",
+      updatedAt,
+    });
+    await ctx.db.patch(mealPlan._id, { updatedAt });
+
+    return { status: "swapped" } as const;
+  },
+});
+
+export const getRegenerationProposal = query({
+  args: { fromDate: v.string(), variant: v.number() },
+  returns: regenerationProposalResultValidator,
+  handler: async (ctx, args) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    validateProposalRequest(args);
+    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    if (mealPlan === null) {
+      return { status: "no_active_plan" } as const;
+    }
+
+    const proposal = await buildRegenerationProposal(
+      ctx,
+      mealPlan,
+      ownerSubject,
+      args.fromDate,
+      args.variant,
+    );
+    if (proposal.status !== "ready") return proposal;
+
+    return {
+      status: "ready" as const,
+      sourcePlanId: mealPlan._id,
+      sourceUpdatedAt: mealPlan.updatedAt,
+      variant: args.variant,
+      fromDate: args.fromDate,
+      mealSlots: proposal.mealSlots,
+    };
+  },
+});
+
+export const applyRegenerationProposal = mutation({
+  args: {
+    sourcePlanId: v.id("mealPlans"),
+    sourceUpdatedAt: v.number(),
+    fromDate: v.string(),
+    variant: v.number(),
+  },
+  returns: applyProposalResultValidator,
+  handler: async (ctx, args) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    validateProposalRequest(args);
+    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    if (mealPlan === null) {
+      return { status: "no_active_plan" } as const;
+    }
+    if (
+      mealPlan._id !== args.sourcePlanId ||
+      mealPlan.updatedAt !== args.sourceUpdatedAt
+    ) {
+      return { status: "plan_changed" } as const;
+    }
+
+    const proposal = await buildRegenerationProposal(
+      ctx,
+      mealPlan,
+      ownerSubject,
+      args.fromDate,
+      args.variant,
+    );
+    if (proposal.status !== "ready") return proposal;
+
+    const updatedAt = Date.now();
+    await ctx.db.patch(mealPlan._id, {
+      status: "archived",
+      updatedAt,
+    });
+    const mealPlanId = await createCataloguePlanFromChoices(ctx, {
+      ownerSubject,
+      mealChoices: proposal.mealChoices,
+      createdAt: updatedAt,
+    });
+
+    return {
+      status: "applied" as const,
+      mealPlanId,
+      previousMealPlanId: mealPlan._id,
+      currentUpdatedAt: updatedAt,
+    };
+  },
+});
+
+export const undoPlanReplacement = mutation({
+  args: {
+    currentMealPlanId: v.id("mealPlans"),
+    previousMealPlanId: v.id("mealPlans"),
+    currentUpdatedAt: v.number(),
+  },
+  returns: undoReplacementResultValidator,
+  handler: async (
+    ctx,
+    { currentMealPlanId, previousMealPlanId, currentUpdatedAt },
+  ) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const activePlan = await getSingleActivePlan(ctx, ownerSubject);
+    if (
+      activePlan === null ||
+      activePlan._id !== currentMealPlanId ||
+      activePlan.updatedAt !== currentUpdatedAt
+    ) {
+      return { status: "plan_changed" } as const;
+    }
+    const previousPlan = await ctx.db.get(previousMealPlanId);
+    if (
+      previousPlan === null ||
+      previousPlan.ownerSubject !== ownerSubject ||
+      previousPlan.status !== "archived"
+    ) {
+      return { status: "not_found" } as const;
+    }
+
+    const updatedAt = Date.now();
+    await ctx.db.patch(activePlan._id, { status: "archived", updatedAt });
+    await ctx.db.patch(previousPlan._id, { status: "active", updatedAt });
+
+    return { status: "restored" } as const;
+  },
+});
+
+export const startNew = mutation({
+  args: { startDate: v.string() },
+  returns: startNewResultValidator,
+  handler: async (ctx, { startDate }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    if (!isPlanDate(startDate)) {
+      throwInvalidPlan("The plan start date is invalid.");
+    }
+
+    const currentPlan = await getSingleActivePlan(ctx, ownerSubject);
+    const updatedAt = Date.now();
+    if (currentPlan !== null) {
+      await ctx.db.patch(currentPlan._id, {
+        status: "archived",
+        updatedAt,
+      });
+    }
+
+    const selectedMealIds = rotatingMealPlanSelectionStrategy({
+      candidateMealIds: catalogueMealIds,
+      numberOfMeals: GUEST_PLAN_DAYS,
+      offset: planDateOffset(startDate),
+    });
+    const mealPlanId = await createCataloguePlan(ctx, {
+      ownerSubject,
+      startDate,
+      catalogueMealIds: selectedMealIds,
+      createdAt: updatedAt,
+    });
+
+    return { status: "started", mealPlanId } as const;
   },
 });
 
@@ -167,62 +430,27 @@ export const claimGuestDraft = mutation({
       return { status: "catalogue_unsupported" } as const;
     }
 
-    const conflictingDates: string[] = [];
-    for (const choice of mealChoices) {
-      const existingSlot = await ctx.db
-        .query("mealSlots")
-        .withIndex("by_owner_and_date", (q) =>
-          q.eq("ownerSubject", ownerSubject).eq("date", choice.date),
-        )
-        .unique();
-
-      if (existingSlot !== null) {
-        conflictingDates.push(choice.date);
-      }
-    }
+    const activePlan = await getSingleActivePlan(ctx, ownerSubject);
+    const activeSlots =
+      activePlan === null ? [] : await getPlanSlots(ctx, activePlan._id);
+    const activeDates = new Set(activeSlots.map((slot) => slot.date));
+    const conflictingDates = mealChoices
+      .map((choice) => choice.date)
+      .filter((date) => activeDates.has(date));
     if (conflictingDates.length > 0) {
       return { status: "date_conflict", dates: conflictingDates } as const;
     }
-
-    const recipeIdByCatalogueMeal = new Map<string, Id<"recipes">>();
-    const recipeIds: Array<Id<"recipes">> = [];
-
-    for (const choice of mealChoices) {
-      let recipeId = recipeIdByCatalogueMeal.get(choice.catalogueMealId);
-      if (recipeId === undefined) {
-        const recipe = await getOrCreateCatalogueRecipe(ctx, {
-          ownerSubject,
-          catalogueMealId: choice.catalogueMealId,
-          catalogueVersion,
-          saveToLibrary: false,
-        });
-        recipeId = recipe.recipeId;
-        recipeIdByCatalogueMeal.set(choice.catalogueMealId, recipeId);
-      }
-      recipeIds.push(recipeId);
+    if (activePlan !== null) {
+      return { status: "active_plan_exists" } as const;
     }
 
     const claimedAt = Date.now();
-    const mealPlanId = await ctx.db.insert("mealPlans", {
+    const mealPlanId = await createCataloguePlan(ctx, {
       ownerSubject,
       startDate: planStartDate,
-      endDate: addDaysToPlanDate(planStartDate, GUEST_PLAN_DAYS - 1),
-      status: "active",
+      catalogueMealIds: mealChoices.map((choice) => choice.catalogueMealId),
       createdAt: claimedAt,
-      updatedAt: claimedAt,
     });
-
-    for (let index = 0; index < mealChoices.length; index += 1) {
-      await ctx.db.insert("mealSlots", {
-        mealPlanId,
-        ownerSubject,
-        date: mealChoices[index]!.date,
-        recipeId: recipeIds[index]!,
-        status: "planned",
-        createdAt: claimedAt,
-        updatedAt: claimedAt,
-      });
-    }
 
     await ctx.db.insert("guestClaims", {
       ownerSubject,
@@ -234,6 +462,247 @@ export const claimGuestDraft = mutation({
     return { status: "claimed", mealPlanId } as const;
   },
 });
+
+async function getSingleActivePlan(
+  ctx: QueryCtx | MutationCtx,
+  ownerSubject: string,
+): Promise<Doc<"mealPlans"> | null> {
+  const activePlans = await ctx.db
+    .query("mealPlans")
+    .withIndex("by_owner_and_status_and_updated_at", (q) =>
+      q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+    )
+    .order("desc")
+    .take(2);
+
+  if (activePlans.length > 1) {
+    throw new Error("An account has more than one active meal plan.");
+  }
+  return activePlans[0] ?? null;
+}
+
+async function getPlanSlots(
+  ctx: QueryCtx | MutationCtx,
+  mealPlanId: Id<"mealPlans">,
+) {
+  const mealSlots = await ctx.db
+    .query("mealSlots")
+    .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", mealPlanId))
+    .take(maximumPlanSlots + 1);
+
+  if (mealSlots.length > maximumPlanSlots) {
+    throw new Error("A meal plan exceeds the supported number of meals.");
+  }
+  return mealSlots;
+}
+
+async function resolveCatalogueMealIds(
+  ctx: QueryCtx | MutationCtx,
+  mealSlots: Array<Doc<"mealSlots">>,
+  ownerSubject: string,
+) {
+  const catalogueMealIdBySlot = new Map<Id<"mealSlots">, string>();
+
+  for (const mealSlot of mealSlots) {
+    const recipe = await ctx.db.get(mealSlot.recipeId);
+    if (
+      recipe?.ownerSubject !== ownerSubject ||
+      recipe.source.type !== "catalogue" ||
+      findStandardCatalogueMeal(
+        recipe.source.catalogueMealId,
+        recipe.source.catalogueVersion,
+      ) === null
+    ) {
+      continue;
+    }
+    catalogueMealIdBySlot.set(mealSlot._id, recipe.source.catalogueMealId);
+  }
+
+  return catalogueMealIdBySlot;
+}
+
+async function buildRegenerationProposal(
+  ctx: QueryCtx | MutationCtx,
+  mealPlan: Doc<"mealPlans">,
+  ownerSubject: string,
+  fromDate: string,
+  variant: number,
+): Promise<
+  | { status: "plan_unavailable" }
+  | { status: "no_future_meals" }
+  | {
+      status: "ready";
+      mealSlots: Array<{
+        date: string;
+        catalogueMealId: string;
+        catalogueMealSlug: string;
+        title: string;
+        prepMinutes: number | null;
+        cookMinutes: number | null;
+        isChanged: boolean;
+      }>;
+      mealChoices: Array<{
+        date: string;
+        catalogueMealId: string;
+        status: Doc<"mealSlots">["status"];
+      }>;
+    }
+> {
+  const mealSlots = await getPlanSlots(ctx, mealPlan._id);
+  const plannedMealIds = await resolveCatalogueMealIds(
+    ctx,
+    mealSlots,
+    ownerSubject,
+  );
+  if (mealSlots.length === 0 || plannedMealIds.size !== mealSlots.length) {
+    return { status: "plan_unavailable" };
+  }
+
+  const replaceableSlots = mealSlots.filter((slot) => slot.date >= fromDate);
+  if (replaceableSlots.length === 0) {
+    return { status: "no_future_meals" };
+  }
+  const currentMealIds = mealSlots.map((slot) => plannedMealIds.get(slot._id)!);
+  const proposedMealIds = createRegenerationSelection({
+    candidateMealIds: catalogueMealIds,
+    currentMealIds,
+    replaceFromIndex: mealSlots.length - replaceableSlots.length,
+    variant,
+  });
+
+  const mealChoices = mealSlots.map((slot, index) => {
+    const shouldReplace = slot.date >= fromDate;
+
+    return {
+      date: slot.date,
+      catalogueMealId: proposedMealIds[index]!,
+      status: shouldReplace ? ("planned" as const) : slot.status,
+    };
+  });
+  const proposalMealSlots = mealChoices.map((choice, index) => {
+    const catalogueMeal = findStandardCatalogueMeal(
+      choice.catalogueMealId,
+      standardCatalogue.version,
+    );
+    if (catalogueMeal === null) {
+      throw new Error("A selected catalogue meal could not be resolved.");
+    }
+
+    return {
+      date: choice.date,
+      catalogueMealId: choice.catalogueMealId,
+      catalogueMealSlug: catalogueMeal.slug,
+      title: catalogueMeal.title,
+      prepMinutes: catalogueMeal.prepMinutes ?? null,
+      cookMinutes: catalogueMeal.cookMinutes ?? null,
+      isChanged:
+        choice.catalogueMealId !== plannedMealIds.get(mealSlots[index]!._id),
+    };
+  });
+
+  return {
+    status: "ready",
+    mealSlots: proposalMealSlots,
+    mealChoices,
+  };
+}
+
+function validateProposalRequest({
+  fromDate,
+  variant,
+}: {
+  fromDate: string;
+  variant: number;
+}) {
+  if (!isPlanDate(fromDate)) {
+    throwInvalidPlan("The proposal start date is invalid.");
+  }
+  if (!Number.isInteger(variant) || variant < 1 || variant > 100) {
+    throwInvalidPlan("The proposal variant is invalid.");
+  }
+}
+
+async function createCataloguePlan(
+  ctx: MutationCtx,
+  {
+    ownerSubject,
+    startDate,
+    catalogueMealIds: selectedMealIds,
+    createdAt,
+  }: {
+    ownerSubject: string;
+    startDate: string;
+    catalogueMealIds: readonly string[];
+    createdAt: number;
+  },
+) {
+  return createCataloguePlanFromChoices(ctx, {
+    ownerSubject,
+    mealChoices: selectedMealIds.map((catalogueMealId, index) => ({
+      date: addDaysToPlanDate(startDate, index),
+      catalogueMealId,
+      status: "planned" as const,
+    })),
+    createdAt,
+  });
+}
+
+async function createCataloguePlanFromChoices(
+  ctx: MutationCtx,
+  {
+    ownerSubject,
+    mealChoices,
+    createdAt,
+  }: {
+    ownerSubject: string;
+    mealChoices: readonly {
+      date: string;
+      catalogueMealId: string;
+      status: Doc<"mealSlots">["status"];
+    }[];
+    createdAt: number;
+  },
+) {
+  const firstChoice = mealChoices[0];
+  const lastChoice = mealChoices.at(-1);
+  if (firstChoice === undefined || lastChoice === undefined) {
+    throw new Error("A meal plan must contain at least one meal.");
+  }
+
+  const mealPlanId = await ctx.db.insert("mealPlans", {
+    ownerSubject,
+    startDate: firstChoice.date,
+    endDate: lastChoice.date,
+    status: "active",
+    createdAt,
+    updatedAt: createdAt,
+  });
+
+  for (const choice of mealChoices) {
+    const recipe = await getOrCreateCatalogueRecipe(ctx, {
+      ownerSubject,
+      catalogueMealId: choice.catalogueMealId,
+      catalogueVersion: standardCatalogue.version,
+      saveToLibrary: false,
+    });
+    await ctx.db.insert("mealSlots", {
+      mealPlanId,
+      ownerSubject,
+      date: choice.date,
+      recipeId: recipe.recipeId,
+      status: choice.status,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  }
+
+  return mealPlanId;
+}
+
+function planDateOffset(planDate: string) {
+  const [year, month, day] = planDate.split("-").map(Number);
+  return Math.floor(Date.UTC(year!, month! - 1, day!) / 86_400_000);
+}
 
 function validateGuestPlan({
   claimKey,

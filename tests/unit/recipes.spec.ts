@@ -126,7 +126,7 @@ test("validates versioned catalogue content and stable meal identifiers", () => 
 });
 
 test("exposes only meals from the current standard catalogue version", () => {
-  expect(standardCatalogue.meals.length).toBeGreaterThan(0);
+  expect(standardCatalogue.meals).toHaveLength(23);
   expect(
     findStandardCatalogueMeal("tomato-lentil-pasta", standardCatalogue.version),
   ).toMatchObject({

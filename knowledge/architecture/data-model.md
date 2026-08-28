@@ -20,7 +20,7 @@ There are no anonymous/guest `users` rows. A verified Clerk webhook creates or u
 
 ### catalogue meals (standard content)
 
-Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a small versioned bundle with stable catalogue IDs; this is a foundation-stage delivery choice rather than the final catalogue authoring architecture.
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a versioned bundle with stable catalogue IDs; the 23 lightweight entries support plan testing and are not the final authored catalogue.
 
 Move catalogue content to explicit public, non-personal Convex reads before introducing generation, administration, frequent independent updates, or substantial catalogue growth. Persist authoring candidates separately from immutable published revisions: generation creates a draft, validation and review promote it, and only published standard revisions are returned to guests. Saving continues to copy the trusted published revision into a private recipe snapshot.
 
@@ -56,6 +56,8 @@ The durable identity of a plan. Foodedo normally plans around seven days, but th
 Keep this parent intentionally small. Generation seeds, leftover snapshots, settings copies, and other V1-style metadata require a demonstrated product need.
 
 Authenticated clients hydrate the current active plan from this table and its indexed slots. Local guest completion state is never used as the cross-device source of truth.
+
+An account has at most one active plan. An alternative plan is a deterministic, read-only proposal rather than a stored draft. Applying it verifies the source plan ID and `updatedAt`, preserves elapsed slots, archives the current parent, and creates the replacement atomically. The archived parent supports immediate undo and later history; archived and active plans may therefore contain the same dates. Expected stale interaction outcomes are returned to the client, while multiple active parents remain an invariant failure.
 
 ### mealSlots
 
@@ -106,7 +108,7 @@ Idempotency records for moving a local guest draft into an authenticated account
 
 **Index:** `by_owner_and_claim_key`
 
-The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan; an occupied date produces a conflict and nothing is overwritten. No guest payload is trusted as an owner reference.
+The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan; an existing active plan produces a typed conflict and nothing is overwritten. Archived history does not block a new active plan. No guest payload is trusted as an owner reference.
 
 ## Relationships (summary)
 

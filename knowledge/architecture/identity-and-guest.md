@@ -57,7 +57,7 @@ After successful sign-in:
 
 Never accept `userId` or an auth-provider subject from the client. The mutation derives the owner from `ctx.auth`.
 
-The current foundation refuses a claim when any target date already contains a meal; nothing is silently replaced. Signed-in clients query Convex before attempting a claim: an equivalent account plan is shown as saved on every device, while a different local draft is retained and disclosed rather than sent into a retry loop. A richer merge/review surface belongs with authenticated plan editing, before overlapping account plans become an ordinary path.
+The current foundation refuses a claim when the account already has an active plan; nothing is silently replaced and a second active parent cannot be created. Overlapping dates are reported when available, while archived history does not create a false conflict. Signed-in clients query Convex before attempting a claim: an equivalent account plan is shown as saved on every device, while a different local draft is retained and disclosed rather than sent into a retry loop.
 
 Expected claim outcomes such as occupied dates or an unsupported catalogue revision are returned as typed results and explained in the interface without discarding the local draft. Authentication, malformed input, and internal data invariants still throw: application errors remain structured, while unexpected faults are contained by the nearest plan error boundary.
 
@@ -92,7 +92,8 @@ Build the recipe prerequisite, then one identity vertical slice:
 5. **Authorization boundary:** derive every owner from `ctx.auth` and use owner indexes from the first personal operation.
 6. **Auth integration — proof complete:** email and Google sign-in, token propagation, sign-out, and the iOS return flow work in development. Repeat the full matrix against release environments before launch.
 7. **Claim flow — complete:** one idempotent `claimGuestDraft` mutation retains the local draft until acknowledgement and refuses occupied dates. Authenticated plan hydration is authoritative across devices and cleans matching IndexedDB state after confirmation.
-8. **Release proof remaining:** manually verify guest → Keep → email/Google authentication → automatic claim → authenticated reload on web and iOS, plus cross-user authorization and conflict messaging.
+8. **Plan editing — MVP complete:** authenticated users can swap a meal or review a read-only alternative before atomically replacing the current plan. Elapsed meals remain intact, the previous version is archived for undo, and the deterministic domain selector is a replaceable seam for future preference-aware planning.
+9. **Release proof remaining:** manually verify guest → Keep → email/Google authentication → automatic claim → authenticated editing and reload on web and iOS, plus cross-user authorization and conflict messaging.
 
 Do not begin with a full recipe importer, settings surface, shopping schema, or provider-specific user-profile system. The milestone succeeds when the identity transition is trustworthy.
 

@@ -1,4 +1,8 @@
 import { RECIPE_LIMITS } from "./recipes";
+import {
+  rotatingMealPlanSelectionStrategy,
+  selectReplacementMeal,
+} from "./meal-plan-selection";
 
 export const GUEST_DRAFT_SCHEMA_VERSION = 1 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
@@ -124,13 +128,11 @@ export function swapGuestPlanMeal(
   if (choiceIndex === -1) throw new Error("That date is not in this plan.");
 
   const currentMealId = draft.mealChoices[choiceIndex]!.catalogueMealId;
-  const catalogueIndex = catalogueMealIds.indexOf(currentMealId);
-  if (catalogueIndex === -1) {
-    throw new Error("The current meal is not in this catalogue.");
-  }
-
-  const nextMealId =
-    catalogueMealIds[(catalogueIndex + 1) % catalogueMealIds.length]!;
+  const nextMealId = selectReplacementMeal({
+    candidateMealIds: catalogueMealIds,
+    currentMealId,
+    plannedMealIds: draft.mealChoices.map((choice) => choice.catalogueMealId),
+  });
   const mealChoices = draft.mealChoices.map((choice, index) =>
     index === choiceIndex ? { ...choice, catalogueMealId: nextMealId } : choice,
   );
@@ -146,18 +148,20 @@ export function shuffleGuestPlan(
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
 
-  const mealChoices = draft.mealChoices.map((choice, index) => {
-    const currentIndex = catalogueMealIds.indexOf(choice.catalogueMealId);
-    if (currentIndex === -1) {
-      throw new Error("A current meal is not in this catalogue.");
-    }
-
-    return {
-      ...choice,
-      catalogueMealId:
-        catalogueMealIds[(currentIndex + index + 1) % catalogueMealIds.length]!,
-    };
+  const firstMealId = draft.mealChoices[0]!.catalogueMealId;
+  const firstMealIndex = catalogueMealIds.indexOf(firstMealId);
+  if (firstMealIndex === -1) {
+    throw new Error("A current meal is not in this catalogue.");
+  }
+  const selectedMealIds = rotatingMealPlanSelectionStrategy({
+    candidateMealIds: catalogueMealIds,
+    numberOfMeals: draft.mealChoices.length,
+    offset: firstMealIndex + 1,
   });
+  const mealChoices = draft.mealChoices.map((choice, index) => ({
+    ...choice,
+    catalogueMealId: selectedMealIds[index]!,
+  }));
 
   return editableDraft(draft, mealChoices, now);
 }

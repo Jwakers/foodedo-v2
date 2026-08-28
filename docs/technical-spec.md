@@ -30,7 +30,7 @@ Authoritative product writing:
 | CI              | Format, lint, typecheck, both builds, Chromium web smoke     |
 | Hosting (web)   | Vercel (when deployed)                                       |
 
-The original shell and auth foundations are complete. The recipe kernel now adds private authenticated persistence, platform-independent recipe contracts, and a small guest-visible standard catalogue with an authenticated save proof. It does not add manual recipe management, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
+The original shell and auth foundations are complete. The recipe kernel adds private authenticated persistence, platform-independent recipe contracts, and a guest-visible standard catalogue with an authenticated save proof. It does not add manual recipe management, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
 
 ## 3. In vs later
 
@@ -39,6 +39,8 @@ The original shell and auth foundations are complete. The recipe kernel now adds
 **Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, explicit library membership, authenticated idempotent catalogue saving, and domain tests now exist. Plan-only snapshots do not appear in **My recipes** unless the user deliberately saves them.
 
 **Guest Plan claim — foundation complete:** `GuestDraftV1` holds seven consecutive dated choices in IndexedDB. Guests can swap or shuffle meals, then **Keep this plan** persists an idempotent intent before sign-in. Authenticated app state first hydrates the current Convex plan, preventing a second device from submitting an already-saved date range. Otherwise it resumes one atomic claim that creates a minimal `mealPlans` parent, private recipe snapshots, and independently editable dated slots without overwriting occupied dates. Matching local state is deleted only after server confirmation; different unsaved state is retained and disclosed. Catalogue recipe saving uses the same persisted sign-in-continuation and post-save cleanup pattern.
+
+**Plan interface — MVP complete:** authenticated users can open recipes from dated slots, swap one meal, review alternative plans without changing the active plan, or explicitly archive it and start another. Accepting an alternative preserves elapsed slots, archives the previous plan atomically, and offers immediate recovery. Guest and authenticated flows share a small deterministic selection strategy in the domain layer. That strategy is intentionally replaceable by later preference-aware scoring without changing plan storage or UI mutation contracts.
 
 **Later product:** Capture → Decide → Plan → Shop → Cook → Remember. Discover after Remember has signal.
 
@@ -66,6 +68,8 @@ Personal recipes are private snapshots. Catalogue content, future publications, 
 The current catalogue uses real `/recipes/[slug]` pages. A catalogue slug is a unique, human-readable URL value distinct from the stable internal catalogue ID used by plans and saved snapshots. Every bundled slug is generated at build time, so the same URLs work on Vercel and in Capacitor's static iOS bundle without a query-string router. Routes for future user-created recipes will be designed with duplicate handling and that native static-export constraint when Capture adds them; they are not simulated ahead of the data source.
 
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
+
+The bundled catalogue currently contains 23 lightweight meals to make plan testing meaningful. Their extra detail is temporary; their stable IDs and slugs still follow the real catalogue contract.
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
 
