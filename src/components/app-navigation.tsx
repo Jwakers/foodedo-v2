@@ -1,19 +1,30 @@
 "use client";
 
-import type { SVGProps } from "react";
+import {
+  Book,
+  CalendarDays,
+  Home,
+  ShoppingBag,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 
-const navigationItems = [
-  { href: "/", label: "Home", section: "home", icon: HomeIcon },
-  { href: "/week", label: "Week", section: "week", icon: WeekIcon },
-  { href: "/shop", label: "Shopping", section: "shopping", icon: ShoppingIcon },
-  { href: "/recipes", label: "Recipes", section: "recipes", icon: RecipesIcon },
-] as const;
+type NavigationSection = "home" | "week" | "shopping" | "recipes";
 
-type NavigationSection = (typeof navigationItems)[number]["section"];
+const navigationItems: ReadonlyArray<{
+  href: string;
+  label: string;
+  section: NavigationSection;
+  icon: LucideIcon;
+}> = [
+  { href: "/", label: "Home", section: "home", icon: Home },
+  { href: "/week", label: "Week", section: "week", icon: CalendarDays },
+  { href: "/shop", label: "Shopping", section: "shopping", icon: ShoppingBag },
+  { href: "/recipes", label: "Recipes", section: "recipes", icon: Book },
+];
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -23,7 +34,7 @@ export function AppNavigation() {
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-paper"
     >
-      <div className="mx-auto flex h-19.5 w-full max-w-175 justify-between px-4.5 pt-2.5 pb-4">
+      <div className="mx-auto flex h-(--app-nav-height) w-full max-w-175 justify-between px-4.5 pt-2.5 pb-(--app-nav-pad-bottom)">
         {navigationItems.map((item) => {
           const isCurrent = isCurrentSection(pathname, item.section);
           const Icon = item.icon;
@@ -41,13 +52,12 @@ export function AppNavigation() {
                   : "font-semibold text-graphite",
               )}
             >
-              <Icon aria-hidden="true" />
+              <Icon aria-hidden="true" className="size-5.5" strokeWidth={2} />
               <span className="text-11 leading-3.5">{item.label}</span>
             </Link>
           );
         })}
       </div>
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 }
@@ -66,89 +76,4 @@ function isCurrentSection(pathname: string, section: NavigationSection) {
   }
 
   return pathname === "/recipes" || pathname.startsWith("/recipes/");
-}
-
-function HomeIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="m3 11 9-8 9 8"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5 10v10h14V10"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 20v-6h6v6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function WeekIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
-      <g
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M8 2v4" />
-        <path d="M16 2v4" />
-        <rect width="18" height="18" x="3" y="4" rx="2" />
-        <path d="M3 10h18" />
-        <path d="M8 14h.01" />
-        <path d="M12 14h.01" />
-        <path d="M16 14h.01" />
-      </g>
-    </svg>
-  );
-}
-
-function ShoppingIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
-      <g
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="m5 11 4-7" />
-        <path d="m19 11-4-7" />
-        <path d="M2 11h20" />
-        <path d="M3.5 11 5 21h14l1.5-10" />
-        <path d="M9 15v2" />
-        <path d="M15 15v2" />
-      </g>
-    </svg>
-  );
-}
-
-function RecipesIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
-      <g
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
-      </g>
-    </svg>
-  );
 }

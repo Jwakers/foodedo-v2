@@ -1,38 +1,75 @@
 import { expect, test } from "@playwright/test";
 
-test("serves the dashboard with shared app chrome", async ({ page }) => {
+test("shows welcome on signed-out cold open without app chrome", async ({
+  page,
+}) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Foodedo");
   await expect(
+    page.getByRole("heading", { name: "Make food decisions easier." }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try Foodedo" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign in or create account" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Try Foodedo now. Save everything later."),
+  ).toBeVisible();
+
+  await expect(page.locator("header")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
+    0,
+  );
+});
+
+test("enters the guest app from welcome and keeps skip across navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try Foodedo" }).click();
+
+  await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
   await expect(page.locator("header")).toBeVisible();
-  await expect(
-    page.locator("header").getByRole("link", { name: "Foodedo" }),
-  ).toBeVisible();
-  await expect(
-    page.locator("header").getByRole("button", { name: "Sign in" }),
-  ).toBeVisible();
   const navigation = page.getByRole("navigation", { name: "Primary" });
   await expect(navigation).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Home" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Week" })).toBeVisible();
-  await expect(
-    navigation.getByRole("link", { name: "Shopping" }),
-  ).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Recipes" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
-    "href",
-    "/manifest.webmanifest",
-  );
+
+  await navigation.getByRole("link", { name: "Recipes" }).click();
+  await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
+
+  await navigation.getByRole("link", { name: "Home" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Make food decisions easier." }),
+  ).toHaveCount(0);
 });
 
-test("keeps obsolete feature routes as nominal placeholders", async ({
+test("keeps the guest session across refresh on web", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Make food decisions easier." }),
+  ).toHaveCount(0);
+});
+
+test("does not intercept public recipe deep links with welcome", async ({
   page,
 }) => {
   await page.goto("/recipes");
@@ -43,6 +80,9 @@ test("keeps obsolete feature routes as nominal placeholders", async ({
       name: "Recipes",
     }),
   ).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("heading", { name: "Make food decisions easier." }),
+  ).toHaveCount(0);
 });
 
 test("exposes valid home-screen metadata and icons", async ({ request }) => {

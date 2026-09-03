@@ -1,9 +1,5 @@
-import { Dashboard } from "@/features/dashboard/dashboard";
+import { HomeEntry } from "@/features/welcome/home-entry";
 
 export default function Home() {
-  return (
-    <main className="w-full px-page-inline py-8 sm:px-8 sm:py-12">
-      <Dashboard />
-    </main>
-  );
+  return <HomeEntry />;
 }

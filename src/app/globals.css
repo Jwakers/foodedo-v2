@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "./design-tokens.css";
 
+/*
+ * Bottom dock height stays in sync with AppNavigation + AppShell padding.
+ * Designed bar is 4.875rem with 1rem bottom pad; the pad grows for the
+ * home indicator without stacking a second spacer under the nav.
+ */
+:root {
+  --app-nav-pad-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  --app-nav-height: calc(3.875rem + var(--app-nav-pad-bottom));
+}
+
 html {
   min-height: 100%;
 }
