@@ -1,9 +1,8 @@
 "use client";
 
 import { useCatalogueSaveState } from "./catalogue-save-state";
-
-const buttonClassName =
-  "inline-flex min-h-11 items-center justify-center rounded-full border border-foreground px-5 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground disabled:hover:bg-transparent disabled:hover:text-muted-foreground";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 export function SaveCatalogueMealButton({
   catalogueMealId,
@@ -26,9 +25,8 @@ export function SaveCatalogueMealButton({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <button
-        type="button"
-        className={buttonClassName}
+      <Button
+        variant="secondary"
         disabled={
           saveState.isLoading || isSaveInFlight || isSaved || isUnavailable
         }
@@ -47,10 +45,13 @@ export function SaveCatalogueMealButton({
                   : saveState.isSignedIn
                     ? "Save recipe"
                     : "Sign in to save"}
-      </button>
+      </Button>
 
       <p
-        className={`min-h-5 text-sm ${hasError ? "text-danger" : "text-muted-foreground"}`}
+        className={cn(
+          "min-h-5 text-sm",
+          hasError ? "text-danger" : "text-muted-foreground",
+        )}
         aria-live="polite"
       >
         {hasError

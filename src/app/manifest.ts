@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { foodedoColors } from "@/lib/design-system/tokens";
 
 export const dynamic = "force-static";
 
@@ -10,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#1a3a2a",
+    background_color: foodedoColors.paper,
+    theme_color: foodedoColors.paper,
     categories: ["food", "lifestyle", "productivity"],
     lang: "en-GB",
     dir: "ltr",

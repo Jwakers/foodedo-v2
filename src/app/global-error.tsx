@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, type CSSProperties } from "react";
+import { foodedoColors } from "@/lib/design-system/tokens";
 
 const bodyStyle = {
   minHeight: "100vh",
   margin: 0,
-  background: "#f5f1e8",
-  color: "#1e2820",
-  fontFamily: '"Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif',
+  background: foodedoColors.paper,
+  color: foodedoColors.ink,
+  fontFamily: '"DM Sans", ui-sans-serif, system-ui, sans-serif',
 } satisfies CSSProperties;
 
 const mainStyle = {
@@ -27,9 +28,9 @@ const buttonStyle = {
   marginTop: "2rem",
   padding: "0.75rem 1.5rem",
   border: 0,
-  borderRadius: "9999px",
-  background: "#a2432e",
-  color: "#fff8ee",
+  borderRadius: "14px",
+  background: foodedoColors.cadmium,
+  color: foodedoColors.paper,
   font: "inherit",
   fontSize: "0.875rem",
   fontWeight: 700,
@@ -37,19 +38,20 @@ const buttonStyle = {
 } satisfies CSSProperties;
 
 const eyebrowStyle = {
-  color: "#9f2525",
+  color: foodedoColors.cadmium,
   fontWeight: 700,
 } satisfies CSSProperties;
 
 const headingStyle = {
   margin: "0.75rem 0 0",
+  fontFamily: "Fraunces, Georgia, serif",
   fontSize: "2.5rem",
 } satisfies CSSProperties;
 
 const descriptionStyle = {
   maxWidth: "36rem",
   margin: "1.25rem 0 0",
-  color: "#657166",
+  color: foodedoColors.graphite,
   lineHeight: 1.75,
 } satisfies CSSProperties;
 

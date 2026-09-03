@@ -32,22 +32,32 @@ Canonical and inferred allergen data can support warnings and filtering, but can
 
 ## MVP selection metadata
 
-The approved Swap Meal flow needs three small, optional recipe facets. They are selection metadata, not a general recipe taxonomy.
+The approved Swap Meal flow needs a small set of recipe selection facets. Time and approximate cost may be unknown; **protein category is required on every recipe**. These are selection metadata, not a general recipe taxonomy.
 
 ```ts
+type ProteinCategory =
+  | "chicken"
+  | "beef"
+  | "pork"
+  | "lamb"
+  | "fish"
+  | "meat-free";
+
 type RecipeSelectionMetadata = {
-  proteinCategory?: "chicken" | "beef" | "fish" | "meat-free";
+  proteinCategory: ProteinCategory;
+  prepMinutes?: number;
+  cookMinutes?: number;
   costBand?: "budget" | "standard" | "premium";
 };
 ```
 
-- **Time:** derive one total from `prepMinutes + cookMinutes`. Filtering, display, quick refinements, and sorting must use the same calculation. An unknown time does not match an active time constraint.
-- **Protein choice:** `proteinCategory` is one of `chicken`, `beef`, `fish`, or `meat-free`. It expresses the primary consumer-facing choice used by the approved filter, not every ingredient in the dish and not a nutritional claim.
-- **Approximate cost:** `costBand` is `budget`, `standard`, or `premium`. For the MVP catalogue it is assigned and reviewed editorially. The product does not expose a currency amount or imply live supermarket pricing.
+- **Time:** derive one total from `prepMinutes + cookMinutes`. Filtering, display, quick refinements, and sorting must use the same calculation. An unknown total time does not satisfy an active time constraint.
+- **Protein choice:** `proteinCategory` is required on every catalogue meal and every personal recipe. Allowed values are `chicken`, `beef`, `pork`, `lamb`, `fish`, and `meat-free`. It names the primary consumer-facing protein choice used by the approved filter—not every ingredient in the dish and not a nutritional claim. Prefer one clear primary (for example a chicken and vegetable traybake is `chicken`). Use `fish` for fish and seafood mains. Use `meat-free` when the primary protein is not animal flesh (beans, lentils, tofu, eggs, cheese, vegetable-forward mains). Prefer `meat-free` over `vegetable-based`: the latter understates dairy- and egg-led dishes that still belong in this filter option.
+- **Approximate cost:** `costBand` is optional for MVP and remains one of `budget`, `standard`, or `premium`. Keep this simple three-band model for now rather than a finer 0–10 index; revisit only if editorial banding proves too coarse. For the MVP catalogue it is assigned and reviewed editorially. The product does not expose a currency amount or imply live supermarket pricing.
 
 The approved **Budget friendly** filter matches the `budget` band. **Lowest cost first** orders known bands from budget to premium and retains the normal recommendation rank within a band. Recipes with unknown cost remain valid but are excluded by a cost filter and ordered after known bands when the user explicitly requests cost ordering.
 
-Filtering and sorting must share these fields and unknown-value rules. Add deterministic tests for time boundaries, each protein option, cost-band ordering, ties, and unknown metadata.
+Filtering and sorting must share these fields and unknown-value rules for time and cost. Protein filtering assumes every recipe has a category. Add deterministic tests for time boundaries, each protein option, cost-band ordering, ties, and unknown time/cost metadata.
 
 A later regional cost estimator may replace the editorial band when Foodedo has structured quantities, safe unit conversion, region/currency context, a maintained price source, and sufficient catalogue coverage. That estimator must preserve the same selection contract and label any displayed monetary value as an estimate.
 
@@ -114,7 +124,7 @@ Foundation already implemented:
 
 MVP additions still required by the approved designs:
 
-- the narrow time, protein-choice, and approximate-cost selection metadata above;
+- the narrow selection metadata above (required protein category; optional time and cost band);
 - an optional explicit oven-preheat value;
 - authored method-step timer cues;
 - one canonical serving-scaling path shared by Cook and Shop; and

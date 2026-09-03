@@ -1,67 +1,19 @@
 @import "tailwindcss";
-
-:root {
-  --background: #f5f1e8;
-  --foreground: #1e2820;
-  --muted-foreground: #657166;
-  --surface: #ebe4d7;
-  --surface-raised: #fffaf1;
-  --border: #d5d0c3;
-  --border-strong: #aaa99c;
-  --accent: #a2432e;
-  --accent-foreground: #fff8ee;
-  --danger: #9f2525;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-danger: var(--danger);
-  --font-sans: "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif;
-  --font-display:
-    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #171c18;
-    --foreground: #f1eee5;
-    --muted-foreground: #aeb6ad;
-    --surface: #222a24;
-    --surface-raised: #202720;
-    --border: #3a443b;
-    --border-strong: #677168;
-    --accent: #e48b70;
-    --accent-foreground: #171c18;
-    --danger: #ff9a90;
-  }
-}
+@import "./design-tokens.css";
 
 html {
   min-height: 100%;
 }
 
 body {
-  background-color: var(--background);
-  background-image: radial-gradient(
-    circle at 82% 3%,
-    color-mix(in srgb, var(--accent) 8%, transparent),
-    transparent 26rem
-  );
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  background: var(--color-cadmium-soft);
+  color: var(--color-ink);
 }
 
 button,

@@ -7,6 +7,7 @@ import { CalendarPlus, CircleCheck, RefreshCw, Shuffle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
+import { buttonClassName } from "@/components/ui/button";
 import {
   acceptGuestPlan,
   addDaysToPlanDate,
@@ -21,15 +22,14 @@ import {
 } from "@/lib/domain/guest-draft";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
+import { cn } from "@/lib/utils/cn";
 
 const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
 const mealById = new Map(
   standardCatalogue.meals.map((meal) => [meal.id, meal]),
 );
-const primaryButtonClassName =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-bold text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-55";
-const secondaryButtonClassName =
-  "inline-flex min-h-12 items-center justify-center rounded-full border border-border-strong px-6 py-3 text-sm font-bold text-foreground transition-colors hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-wait disabled:text-muted-foreground";
+const primaryButtonClassName = buttonClassName();
+const secondaryButtonClassName = buttonClassName({ variant: "secondary" });
 
 type InteractionState = "ready" | "writing";
 type CurrentMealPlan = NonNullable<
@@ -352,7 +352,7 @@ function PlanContent({
               {!isSaved ? (
                 <button
                   type="button"
-                  className={`${secondaryButtonClassName} gap-2`}
+                  className={cn(secondaryButtonClassName, "gap-2")}
                   disabled={arePlanEditsDisabled}
                   onClick={() => void shufflePlan(Date.now())}
                 >
@@ -378,7 +378,10 @@ function PlanContent({
       </div>
 
       <p
-        className={`mt-3 min-h-5 text-sm ${storageWarning ? "text-danger" : "text-muted-foreground"}`}
+        className={cn(
+          "mt-3 min-h-5 text-sm",
+          storageWarning ? "text-danger" : "text-muted-foreground",
+        )}
         aria-live="polite"
       >
         {storageWarning
@@ -629,7 +632,7 @@ function SavedAccountPlan({
             </button>
             <button
               type="button"
-              className={`${secondaryButtonClassName} gap-2`}
+              className={cn(secondaryButtonClassName, "gap-2")}
               disabled={isBusy || proposal === undefined}
               onClick={() =>
                 setProposalVariant((current) =>
@@ -653,7 +656,7 @@ function SavedAccountPlan({
           <>
             <button
               type="button"
-              className={`${primaryButtonClassName} gap-2`}
+              className={cn(primaryButtonClassName, "gap-2")}
               disabled={isPlanActionBlocked}
               onClick={() => {
                 setActionMessage(null);
@@ -667,7 +670,7 @@ function SavedAccountPlan({
             </button>
             <button
               type="button"
-              className={`${secondaryButtonClassName} gap-2`}
+              className={cn(secondaryButtonClassName, "gap-2")}
               disabled={isPlanActionBlocked}
               onClick={() => setIsStartConfirmed(true)}
             >
@@ -836,7 +839,10 @@ function ProposalPlanRows({ mealSlots }: { mealSlots: ProposalMealSlot[] }) {
             />
           </div>
           <p
-            className={`text-xs font-bold uppercase ${mealSlot.isChanged ? "text-accent" : "text-muted-foreground"}`}
+            className={cn(
+              "text-xs font-bold uppercase",
+              mealSlot.isChanged ? "text-accent" : "text-muted-foreground",
+            )}
           >
             {mealSlot.isChanged ? "New" : "Kept"}
           </p>
@@ -991,7 +997,10 @@ function KeepPlanAction({
                 : "Keep this plan"}
       </button>
       <p
-        className={`min-h-5 text-sm ${claimFailure !== null ? "text-danger" : "text-muted-foreground"}`}
+        className={cn(
+          "min-h-5 text-sm",
+          claimFailure !== null ? "text-danger" : "text-muted-foreground",
+        )}
         aria-live="polite"
       >
         {claimFailure !== null

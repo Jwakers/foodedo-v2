@@ -48,7 +48,7 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 The private Capture unit: something an account wants to cook. `ownerSubject` is always derived from the verified Clerk identity; it is never accepted from a client and does not depend on webhook timing.
 
-Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds `proteinCategory`, `costBand`, explicit oven preheat, and authored step-timer cues. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
+Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds a required `proteinCategory` (`chicken` | `beef` | `pork` | `lamb` | `fish` | `meat-free`), optional `costBand` (`budget` | `standard` | `premium`), explicit oven preheat, and authored step-timer cues. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
 `savedAt` is explicit library membership. Manual creation sets it immediately; choosing **Save recipe** sets it on a catalogue snapshot. A meal plan may create the same private snapshot solely to preserve what was planned without adding it to **My recipes**. Removing a recipe from the library clears `savedAt` rather than deleting a snapshot still referenced by a plan.
 

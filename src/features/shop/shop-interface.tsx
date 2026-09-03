@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { api } from "../../../convex/_generated/api";
+import { buttonClassName } from "@/components/ui/button";
 import { readGuestDraftV1 } from "@/lib/domain/guest-draft";
 import {
   deriveShoppingListItems,
@@ -23,11 +24,10 @@ import {
 } from "@/lib/domain/shopping-list";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
+import { cn } from "@/lib/utils/cn";
 
-const primaryButtonClassName =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-bold text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-55";
-const secondaryButtonClassName =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-border-strong px-6 py-3 text-sm font-bold text-foreground transition-colors hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-wait disabled:text-muted-foreground";
+const primaryButtonClassName = buttonClassName();
+const secondaryButtonClassName = buttonClassName({ variant: "secondary" });
 
 type CurrentShoppingState = FunctionReturnType<
   typeof api.shoppingLists.getCurrent
@@ -157,7 +157,7 @@ function GuestShoppingPreview() {
           This preview comes from the plan on this device. Keep the plan to
           check items, add extras, and sync the list.
         </p>
-        <Link href="/" className={`${primaryButtonClassName} mt-8`}>
+        <Link href="/" className={cn(primaryButtonClassName, "mt-8")}>
           <ListChecks aria-hidden="true" className="size-4" />
           Keep this plan
         </Link>
@@ -455,11 +455,12 @@ function AccountShoppingList({ current }: { current: ReadyShoppingState }) {
                     role="checkbox"
                     aria-checked={item.checked}
                     aria-label={`${item.checked ? "Uncheck" : "Check"} ${item.name}`}
-                    className={`mt-0.5 inline-flex size-7 items-center justify-center rounded-full border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                    className={cn(
+                      "mt-0.5 inline-flex size-7 items-center justify-center rounded-full border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
                       item.checked
                         ? "border-accent bg-accent text-accent-foreground"
-                        : "border-border-strong bg-background text-transparent"
-                    }`}
+                        : "border-border-strong bg-background text-transparent",
+                    )}
                     disabled={formAction === "generate"}
                     onClick={() => void updateChecked(item._id, !item.checked)}
                   >
@@ -467,11 +468,12 @@ function AccountShoppingList({ current }: { current: ReadyShoppingState }) {
                   </button>
                   <div className="min-w-0">
                     <p
-                      className={`font-display text-xl leading-tight tracking-[-0.02em] ${
+                      className={cn(
+                        "font-display text-xl leading-tight tracking-[-0.02em]",
                         item.checked
                           ? "text-muted-foreground line-through"
-                          : "text-foreground"
-                      }`}
+                          : "text-foreground",
+                      )}
                     >
                       {item.name}
                     </p>
@@ -604,14 +606,14 @@ function ShopEmptyState({
         {description}
       </p>
       {onAction === undefined ? (
-        <Link href="/" className={`${primaryButtonClassName} mt-8`}>
+        <Link href="/" className={cn(primaryButtonClassName, "mt-8")}>
           <ListChecks aria-hidden="true" className="size-4" />
           {actionLabel}
         </Link>
       ) : (
         <button
           type="button"
-          className={`${primaryButtonClassName} mt-8`}
+          className={cn(primaryButtonClassName, "mt-8")}
           disabled={actionDisabled}
           onClick={onAction}
         >

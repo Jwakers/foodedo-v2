@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function AppError({
   error,
@@ -31,13 +32,9 @@ export default function AppError({
         Your action may not have completed. Try loading this part of the app
         again.
       </p>
-      <button
-        type="button"
-        className="mt-8 inline-flex min-h-12 w-fit items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-bold text-accent-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        onClick={retry}
-      >
+      <Button className="mt-8 w-fit" onClick={retry}>
         Try again
-      </button>
+      </Button>
     </main>
   );
 }

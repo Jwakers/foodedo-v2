@@ -1,0 +1,153 @@
+/*
+ * Foodedo design tokens
+ * Source: the approved “Foodedo v2” Paper file.
+ *
+ * Type sizes are the source of truth; UI roles belong in components and Paper,
+ * not in primitive token names. Semantic color aliases at the end preserve the
+ * app's existing vocabulary while screens move onto the system incrementally.
+ */
+@theme static {
+  --color-paper: #ffffff;
+  --color-mist: #f2f2ef;
+  --color-ink: #171717;
+  --color-graphite: #656560;
+  --color-cadmium: #dd352a;
+  --color-leaf: #3f684b;
+  --color-border: #e2e2de;
+  --color-leaf-soft: #edf3ee;
+  --color-cadmium-soft: #fff0ee;
+  --color-control-muted: #d6d6d2;
+  --color-sheet-handle: #d8d8d4;
+  --color-scrim: rgb(23 23 23 / 18%);
+  --color-canvas-guide: #c9c9c2;
+
+  --font-display: var(--font-fraunces), Fraunces, Georgia, serif;
+  --font-ui: var(--font-dm-sans), "DM Sans", sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Paper type scale. Each size carries its default unitless line-height. */
+  --text-10: 0.625rem;
+  --text-10--line-height: 1.2;
+  --text-11: 0.6875rem;
+  --text-11--line-height: 1.45;
+  --text-12: 0.75rem;
+  --text-12--line-height: 1.33;
+  --text-13: 0.8125rem;
+  --text-13--line-height: 1.4;
+  --text-14: 0.875rem;
+  --text-14--line-height: 1.4;
+  --text-15: 0.9375rem;
+  --text-15--line-height: 1.45;
+  --text-16: 1rem;
+  --text-16--line-height: 1.5;
+  --text-18: 1.125rem;
+  --text-18--line-height: 1.3;
+  --text-20: 1.25rem;
+  --text-20--line-height: 1.25;
+  --text-22: 1.375rem;
+  --text-22--line-height: 1.2;
+  --text-24: 1.5rem;
+  --text-24--line-height: 1.2;
+  --text-26: 1.625rem;
+  --text-26--line-height: 1.15;
+  --text-28: 1.75rem;
+  --text-28--line-height: 1.15;
+  --text-30: 1.875rem;
+  --text-30--line-height: 1.2;
+  --text-32: 2rem;
+  --text-32--line-height: 1.25;
+  --text-34: 2.125rem;
+  --text-34--line-height: 1.2;
+  --text-42: 2.625rem;
+  --text-42--line-height: 1.05;
+  --text-44: 2.75rem;
+  --text-44--line-height: 1;
+  --text-48: 3rem;
+  --text-48--line-height: 0.96;
+  --text-56: 3.5rem;
+  --text-56--line-height: 1.05;
+
+  /* Familiar Tailwind utilities alias the underlying numeric scale. */
+  --text-xs: var(--text-12);
+  --text-xs--line-height: var(--text-12--line-height);
+  --text-sm: var(--text-14);
+  --text-sm--line-height: var(--text-14--line-height);
+  --text-base: var(--text-16);
+  --text-base--line-height: var(--text-16--line-height);
+  --text-lg: var(--text-18);
+  --text-lg--line-height: var(--text-18--line-height);
+  --text-xl: var(--text-20);
+  --text-xl--line-height: var(--text-20--line-height);
+  --text-2xl: var(--text-24);
+  --text-2xl--line-height: var(--text-24--line-height);
+  --text-3xl: var(--text-30);
+  --text-3xl--line-height: var(--text-30--line-height);
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 1.1;
+  --text-5xl: var(--text-48);
+  --text-5xl--line-height: var(--text-48--line-height);
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+
+  /* Size-independent overrides for deliberate exceptions. */
+  --leading-none: 1;
+  --leading-tight: 1.05;
+  --leading-snug: 1.2;
+  --leading-normal: 1.4;
+  --leading-relaxed: 1.5;
+
+  --tracking-display: -0.045em;
+  --tracking-brand: -0.04em;
+  --tracking-heading: -0.035em;
+  --tracking-tight: -0.03em;
+  --tracking-title: -0.025em;
+  --tracking-card: -0.015em;
+  --tracking-label: 0.08em;
+  --tracking-eyebrow: 0.1em;
+  --tracking-overline: 0.12em;
+
+  --breakpoint-mobile: 390px;
+  --breakpoint-desktop: 1440px;
+  --container-content: 1248px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-3-5: 14px;
+  --space-4: 16px;
+  --space-page-inline: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-sm: 8px;
+  --radius-compact: 14px;
+  --radius-md: 16px;
+  --radius-surface: 18px;
+  --radius-media: 20px;
+  --radius-media-large: 22px;
+  --radius-hero: 24px;
+  --radius-lg: 28px;
+  --radius-full: 999px;
+
+  /* Tailwind-compatible aliases for Paper's token naming. */
+  --font-sans: var(--font-ui);
+  --spacing-page-inline: var(--space-page-inline);
+
+  /* Semantic aliases used by the current application. */
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-muted-foreground: var(--color-graphite);
+  --color-surface: var(--color-mist);
+  --color-surface-raised: var(--color-paper);
+  --color-border-strong: var(--color-control-muted);
+  --color-accent: var(--color-cadmium);
+  --color-accent-foreground: var(--color-paper);
+  --color-danger: var(--color-cadmium);
+}
