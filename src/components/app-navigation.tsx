@@ -1,65 +1,29 @@
 "use client";
 
-import {
-  BookOpen,
-  CalendarDays,
-  Home,
-  ShoppingBasket,
-} from "lucide-react";
+import type { SVGProps } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 
 const navigationItems = [
-  { href: "/", label: "Home", section: "home", icon: Home },
-  { href: "/week", label: "Week", section: "week", icon: CalendarDays },
-  {
-    href: "/shop",
-    label: "Shopping",
-    section: "shopping",
-    icon: ShoppingBasket,
-  },
-  { href: "/recipes", label: "Recipes", section: "recipes", icon: BookOpen },
+  { href: "/", label: "Home", section: "home", icon: HomeIcon },
+  { href: "/week", label: "Week", section: "week", icon: WeekIcon },
+  { href: "/shop", label: "Shopping", section: "shopping", icon: ShoppingIcon },
+  { href: "/recipes", label: "Recipes", section: "recipes", icon: RecipesIcon },
 ] as const;
 
 type NavigationSection = (typeof navigationItems)[number]["section"];
 
-export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
+export function AppNavigation() {
   const pathname = usePathname();
-
-  if (placement === "header") {
-    return (
-      <nav aria-label="Primary" className="hidden items-center gap-6 sm:flex">
-        {navigationItems.map((item) => {
-          const isCurrent = isCurrentSection(pathname, item.section);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isCurrent ? "page" : undefined}
-              className={cn(
-                "border-b-2 py-2 text-14 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium",
-                isCurrent
-                  ? "border-cadmium text-cadmium"
-                  : "border-transparent text-graphite hover:text-ink",
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
 
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-control-muted bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-paper"
     >
-      <div className="mx-auto grid max-w-md grid-cols-4 px-2">
+      <div className="mx-auto flex h-19.5 w-full max-w-175 justify-between px-4.5 pt-2.5 pb-4">
         {navigationItems.map((item) => {
           const isCurrent = isCurrentSection(pathname, item.section);
           const Icon = item.icon;
@@ -70,16 +34,20 @@ export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
               href={item.href}
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
-                "flex min-h-16 flex-col items-center justify-center gap-1 text-11 font-bold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-cadmium",
-                isCurrent ? "text-cadmium" : "text-graphite",
+                "flex w-18 shrink-0 flex-col items-center gap-1 transition-colors",
+                "focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-cadmium",
+                isCurrent
+                  ? "font-bold text-cadmium"
+                  : "font-semibold text-graphite",
               )}
             >
-              <Icon aria-hidden="true" className="size-5" />
-              {item.label}
+              <Icon aria-hidden="true" />
+              <span className="text-11 leading-3.5">{item.label}</span>
             </Link>
           );
         })}
       </div>
+      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 }
@@ -98,4 +66,89 @@ function isCurrentSection(pathname: string, section: NavigationSection) {
   }
 
   return pathname === "/recipes" || pathname.startsWith("/recipes/");
+}
+
+function HomeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="m3 11 9-8 9 8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 10v10h14V10"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 20v-6h6v6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function WeekIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
+      <g
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
+        <rect width="18" height="18" x="3" y="4" rx="2" />
+        <path d="M3 10h18" />
+        <path d="M8 14h.01" />
+        <path d="M12 14h.01" />
+        <path d="M16 14h.01" />
+      </g>
+    </svg>
+  );
+}
+
+function ShoppingIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
+      <g
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m5 11 4-7" />
+        <path d="m19 11-4-7" />
+        <path d="M2 11h20" />
+        <path d="M3.5 11 5 21h14l1.5-10" />
+        <path d="M9 15v2" />
+        <path d="M15 15v2" />
+      </g>
+    </svg>
+  );
+}
+
+function RecipesIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...props}>
+      <g
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+      </g>
+    </svg>
+  );
 }

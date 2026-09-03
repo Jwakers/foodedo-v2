@@ -56,10 +56,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AppProviders>
           <div className="flex min-h-full flex-1 flex-col">
             <AppHeader />
-            <div className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0">
+            <div className="flex-1 pb-[calc(4.875rem+env(safe-area-inset-bottom))]">
               {children}
             </div>
-            <AppNavigation placement="dock" />
+            <AppNavigation />
           </div>
         </AppProviders>
       </body>
