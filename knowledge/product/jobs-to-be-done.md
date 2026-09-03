@@ -34,7 +34,7 @@ Each job below is a user situation, not a screen name.
 
 **Success:** The coming week is decided with little fiddling. Individual meals can change without starting over.
 
-**Do:** Defaults and suggestions; lock/swap individual meals.
+**Do:** Defaults and suggestions; lock/swap individual meals. For signed-in users, allow a fast optional adjustment of days, start date, servings, and saved-recipe strategy. Keep one-off plan input separate from the user's usual planning defaults.
 
 **Don't:** Make generation metadata, leftover engines, or household aggregation blocking. Don't copy V1's generator forest.
 
@@ -66,9 +66,9 @@ Each job below is a user situation, not a screen name.
 
 **Context:** Hands messy, phone on the counter, one recipe in play.
 
-**Success:** Ingredients and steps for this cooking session, with servings and timers if they reduce friction.
+**Success:** A preparation stage and one step at a time, with serving-scaled ingredients, explicit preheating when authored, and persistent recognised timers where they reduce friction.
 
-**Don't:** A separate data product. Cook is a view of a saved recipe, not another entity type.
+**Don't:** A separate data product. Cook is a view of a saved recipe, not another entity type. Do not invent preparation instructions or depend on brittle text extraction for safety-critical guidance.
 
 ## Remember
 

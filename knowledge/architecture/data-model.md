@@ -10,13 +10,29 @@ Guest access does not create backend documents. Its bounded, versioned draft liv
 
 ### users
 
-Account record synchronised from Clerk webhooks. The Clerk JWT subject is stored as the unguessable `authSubject`, with only the profile fields Foodedo currently needs: nullable email and name plus Clerk creation/update timestamps. Preferences will be added only with the product slice that uses them—not as a configuration product.
+Account record synchronised from Clerk webhooks. The Clerk JWT subject is stored as the unguessable `authSubject`, with only the identity fields Foodedo currently needs: nullable email and name plus Clerk creation/update timestamps. Product preferences are kept in purpose-specific authenticated records rather than turning this Clerk-synchronised row into a generic settings document.
 
 There are no anonymous/guest `users` rows. A verified Clerk webhook creates or updates the profile record; personal Convex functions independently derive the caller from verified `ctx.auth` identity and never accept an owner ID from the client.
 
 **Index:** `by_auth_subject`.
 
 **Deferred:** subscription fields, super-user flags, household membership.
+
+### planningPreferences
+
+The small set of reusable defaults required by the approved signed-in **Adjust your plan** MVP.
+
+- `ownerSubject`
+- `usualPlanDays`: `3` | `5` | `7`
+- `usualServings`
+- `prioritiseSavedRecipes`
+- `createdAt`, `updatedAt`
+
+**Index:** unique-by-contract `by_owner`.
+
+There is at most one record per authenticated owner. Mutations derive the owner from `ctx.auth`, use patch semantics, and update only persistent-capable fields the user actually changed. The actual start date selected for a plan is never stored here.
+
+The pre-plan sheet resolves its initial values from this record and then Foodedo defaults. **This plan only** keeps overrides in local generation state. **This and future plans** also patches this record. Dietary requirements and allergies will use their own later profile contract and are not governed by this selector. See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
 
 ### catalogue meals (standard content)
 
@@ -32,7 +48,7 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 The private Capture unit: something an account wants to cook. `ownerSubject` is always derived from the verified Clerk identity; it is never accepted from a client and does not depend on webhook timing.
 
-Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. Ingredient and step IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
+Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds `proteinCategory`, `costBand`, explicit oven preheat, and authored step-timer cues. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
 `savedAt` is explicit library membership. Manual creation sets it immediately; choosing **Save recipe** sets it on a catalogue snapshot. A meal plan may create the same private snapshot solely to preserve what was planned without adding it to **My recipes**. Removing a recipe from the library clears `savedAt` rather than deleting a snapshot still referenced by a plan.
 
@@ -40,7 +56,7 @@ Recipe content contains title, optional description, bounded ingredient lines an
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
-**Deferred vs V1:** canonical ingredients, categories, cuisine unions, generator flags, images, search, import, public slugs, publishers, and social relationships.
+**Deferred vs V1:** canonical ingredients, broad categories, cuisine unions, generator flags, images, search, import, public slugs, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
 
 ### mealPlans
 
@@ -48,12 +64,13 @@ The durable identity of a plan. Foodedo normally plans around seven days, but th
 
 - `ownerSubject`
 - `startDate`, `endDate` (`YYYY-MM-DD`)
+- `servings` used by this plan's Cook and Shop views
 - `status`: `active` | `archived`
 - `createdAt`, `updatedAt`
 
 **Indexes:** `by_owner_and_updated_at`, `by_owner_and_status_and_updated_at`
 
-Keep this parent intentionally small. Generation seeds, leftover snapshots, settings copies, and other V1-style metadata require a demonstrated product need.
+Keep this parent intentionally small. Days are represented by its range/slots and the actual start date already belongs to the plan. Persist serving count because downstream Cook and Shop need it. Generation seeds, saved-recipe strategy, preference copies, leftover snapshots, and other V1-style metadata do not belong here without another demonstrated product need.
 
 Authenticated clients hydrate the current active plan from this table and its indexed slots. Local guest completion state is never used as the cross-device source of truth.
 
@@ -122,6 +139,7 @@ The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index bef
 
 ```
 authenticated identity 1—* recipes
+authenticated identity 1—0..1 planningPreferences
 authenticated identity 1—* mealPlans 1—* mealSlots *—1 recipes
 authenticated identity 1—* shoppingLists 1—* shoppingListItems
 authenticated identity 1—* recipeEvents *—1 recipes
@@ -129,6 +147,8 @@ authenticated identity 1—* guestClaims
 ```
 
 Cook is **not** a table. It is a cooking-mode view of `recipes`.
+
+An active Cook session—current step, preparation checks, scroll position, and running timers—is runtime/local recovery state, not durable recipe content and not a Convex table in the MVP.
 
 ## Explicitly deferred
 

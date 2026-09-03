@@ -1,0 +1,66 @@
+# Design-to-scope register
+
+This register prevents approved [Foodedo V2 Paper designs](https://app.paper.design/file/01M0FD2K4HNTJZ5MET5T0CNYP7/1-0) from silently becoming either accidental scope or forgotten intent. It records product scope, not implementation completion. A capability marked **MVP** may still need to be built.
+
+Paper frame names are included verbatim so design and code discussions can be traced in either direction. If a design shows a capability whose backing product or data contract is unavailable, the implementation must hide or honestly simplify that capability rather than ship a decorative or misleading control.
+
+## Scope summary
+
+| Capability                         | Paper reference                                                                                                                                         | Scope                | Contract for implementation                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adjust Plan controls and scope     | `02A / Adjust / Signed in / Unchanged`, `This plan only`, `Future defaults`, and `02A / Pre-plan / Signed in / Applied summary`                         | **MVP**              | Signed-in users can adjust days, actual start date, servings, and whether saved recipes are prioritised. `This plan only` is the safe default. `This and future plans` updates only reusable defaults. Applying closes the sheet and updates the pre-plan summary; it does not generate the plan.                                                                                        |
+| Reusable planning preferences      | Same Adjust frames                                                                                                                                      | **MVP**              | Persist usual plan days, usual servings, and the saved-recipe strategy in an authenticated planning-preferences record. Never persist the actual date selected for the plan being made. Update only fields the user changed.                                                                                                                                                             |
+| Guest planning                     | `01 / Pre-plan / Guest / Default` and `Personalisation`                                                                                                 | **MVP**              | Guests receive sensible defaults and can experience the planning loop, but do not receive the full preference-editing sheet. The personalisation card explains the authenticated benefit without blocking `Plan my week`.                                                                                                                                                                |
+| Dietary requirements and allergies | Adjust frames: `Dietary preferences applied` and `Manage`                                                                                               | **Post-MVP**         | This is persistent account-level safety/preference data, not a weekly filter and not part of `This plan only` versus `future plans`. Until the profile and management flow exist, do not show an applied claim or an active Manage action.                                                                                                                                               |
+| Editorial meal descriptors         | `01 / Plan review / Guest / Default` and `Meal actions open`: examples include `Comfort food`, `Fresh and filling`, `Easygoing`, and `Light and bright` | **Post-MVP**         | Treat these as editorial flavour copy for now, not a trusted taxonomy. If they later drive recommendation or filtering, define a small controlled vocabulary, authoring guidance, and measurable product use before promoting them to structured data.                                                                                                                                   |
+| Time filtering and sorting         | `03 / Swap / Results`, `Filters`, and `Sort` frames                                                                                                     | **MVP**              | Use one derived total time (`prepMinutes + cookMinutes`) for eligibility, display, quick filters, and ordering. Unknown times remain valid recipes but do not qualify for a time constraint.                                                                                                                                                                                             |
+| Protein choice filtering           | `03 / Swap / Filters / Default` and `Multiple active`                                                                                                   | **MVP**              | Store one optional consumer-facing `proteinCategory` on filterable recipes: `chicken`, `beef`, `fish`, or `meat-free`. This is a narrow selection facet, not a global ingredient taxonomy or nutritional claim. Recipes without a trustworthy category remain valid but do not match an active protein constraint.                                                                       |
+| Approximate meal cost              | Swap Results/Filters/Sort: `Budget friendly` and `Lowest cost first`                                                                                    | **MVP**              | Use an editorially assigned, non-monetary cost band (`budget`, `standard`, `premium`) for the initial catalogue. Never display an invented currency amount. `Lowest cost first` sorts by band, then the normal recommendation rank. Unknown cost suppresses cost-based eligibility for that recipe. A calculated regional estimator is later work.                                       |
+| Shopping List                      | `06A / Shopping / Active list` through `06F / Shopping / No active plan`, `06B2 / Shopping / Checked items hidden`, and `07A` through `07C` Shopping discovery frames | **MVP — frozen** | Shopping is derived entirely from the active meal plan. Checkbox controls purchased state; ingredient content/chevron opens provenance. Checked items stay in place unless explicitly hidden, when `Hide checked` becomes `Show checked (N)`. Update feedback is temporary, state survives navigation, provenance restores scroll position, completion remains reversible, and only the first saved plan teaches Shopping. See [`src/features/shop/README.md`](../../src/features/shop/README.md). |
+| Cook Mode                          | `05A / Cook mode / Mise en place` through `05H / Cook mode / Complete`                                                                                  | **MVP**              | Build from the approved flow while bringing the new UI into code. Cook is a focused view of recipe data and local session state, not a new backend entity. Preserve step, scroll position, timers, and preparation state during an active session.                                                                                                                                       |
+| Explicit oven preheat              | `05A / Cook mode / Mise en place`: `Before you start — Preheat oven to 200°C`                                                                           | **MVP**              | Add an optional, explicitly authored oven-preheat value to recipe content. Show it only when present; do not infer it from an arbitrary cooking temperature or invent preheating for a recipe that does not require it.                                                                                                                                                                  |
+| Recognised step timers             | `05C / Cook mode / Timer available`, `05D / Active timer persists`, and `05E / Ingredient reference`                                                    | **MVP**              | A recipe step may expose one or more explicitly authored timer cues with stable IDs, labels, and durations. Runtime timer state is local to the Cook session and persists across subsequent steps and Ingredients. Do not create a timer table. Automatic timer extraction for imported recipes is later enrichment.                                                                     |
+| Method-step ingredient mapping     | Cook method frames: green ingredient references and contextual `YOU'LL NEED` quantities                                                                 | **Post-MVP planned** | Preserve this design intent. The target model maps a step to stable ingredient-line IDs, uses the single serving-scaled ingredient model, and highlights only reviewed/confident references. Do not ship brittle substring matching as safety-critical intelligence. See [Recipes and ingredients](../architecture/recipes-and-ingredients.md#method-step-ingredient-mapping-follow-up). |
+
+## Adjust Plan MVP boundary
+
+The plan being assembled and the user's normal routine are separate concepts.
+
+- **Plan-specific state:** actual start date, selected saved-recipe candidates, and any temporary overrides used by the next generation request.
+- **Persistent-capable defaults:** usual number of planned days, usual servings, and whether Foodedo normally prioritises saved recipes.
+- **Independently persistent later:** dietary requirements and allergies. They are not controlled by the adjustment scope selector.
+
+`This plan only` changes the generation request in local UI state. When the generated plan is accepted, downstream facts that remain relevant—particularly its serving count—must be stored with that plan. `This and future plans` also patches the authenticated planning defaults, but must not turn `starts tomorrow` or a chosen calendar date into a future default.
+
+See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
+
+## Recipe selection metadata
+
+MVP selection metadata is deliberately small:
+
+- `prepMinutes` and `cookMinutes` support a single total-time calculation;
+- `proteinCategory` supports the four approved Protein choice options; and
+- `costBand` supports honest relative-cost filtering and sorting without claiming precise prices.
+
+These are optional enrichments. A recipe remains readable, plannable, shoppable, and cookable without them. Missing metadata must degrade by removing the unsupported filter match, never by fabricating a value.
+
+The phrases `Comfort food`, `Fresh and filling`, `Easygoing`, and `Light and bright` do not belong in this metadata set yet. They can remain design copy or be omitted in MVP. They become taxonomy only when a defined behaviour consumes them.
+
+## Cook Mode data boundary
+
+The MVP requires explicit preheat and timer cues because both remove effort without requiring risky interpretation at runtime. Method-to-ingredient mapping is more complex and remains a planned follow-up.
+
+All Cook surfaces must consume one serving-scaled ingredient model:
+
+```text
+base recipe
+→ selected serving count
+→ canonical scaled ingredient lines
+→ mise en place, contextual ingredients, all ingredients, and shopping output
+```
+
+No Cook component should independently multiply or hard-code quantities. Authored quantities that cannot be scaled safely—such as `to taste`, packets, handfuls, or some whole items—remain human-readable and require explicit scaling rules rather than naive decimals.
+
+## Implementation guardrail
+
+Before implementing an approved frame, check this register and the linked architecture document. Design presence alone does not authorise a post-MVP capability. Conversely, an MVP label here means the capability should be planned into the MVP even if the current code or schema does not yet contain it.

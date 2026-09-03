@@ -9,6 +9,7 @@ Authoritative product writing:
 - [Product principles](../knowledge/principles/product-principles.md)
 - [Vision](../knowledge/product/vision.md)
 - [Jobs to be done](../knowledge/product/jobs-to-be-done.md)
+- [Design-to-scope register](../knowledge/product/design-scope-register.md)
 - [Interaction principles](../knowledge/ux/interaction-principles.md)
 - [Identity and guest access](../knowledge/architecture/identity-and-guest.md)
 
@@ -44,7 +45,9 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Shop — MVP foundation complete:** a guest can preview the ingredients derived from the temporary plan on that device. An authenticated user can explicitly derive a durable list from the active plan, check items, add extras, and soft-remove/restore items with Convex optimistic cache updates. Exact normalised ingredient names are grouped while each source quantity remains visible. The source plan revision is recorded, so plan changes mark the list outdated without overwriting edits; rebuilding is an explicit archival replacement. Accounts retain at most 30 list snapshots, and an internal daily cleanup deletes lists after 30 days without activity.
 
-**Later product:** deepen Capture and Decide, then Cook → Remember. Discover after Remember has signal.
+**MVP product still to build:** bring the approved mobile design system into the existing Plan/Shop flows; add authenticated Adjust Plan preferences and plan-specific overrides; add the small recipe-selection metadata needed for time, protein, and approximate-cost steering; and implement the approved Cook Mode with explicit preheat data and authored timer cues.
+
+**Later product:** deepen Capture and Decide, add dietary/allergy profile management, plan automatic method-step ingredient mapping, then build Remember. Discover follows only after Remember has signal.
 
 **Later native:** camera, photos, share sheet, haptics, push, deep links.
 
@@ -139,3 +142,4 @@ out/                     Generated native web bundle (gitignored)
 - [0006 Guest-first account boundary](../knowledge/decisions/0006-guest-first-account-boundary.md)
 - [0007 Standard meals and future premium entitlement](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md)
 - [0008 Convex and Clerk](../knowledge/decisions/0008-convex-and-clerk.md)
+- [0009 Plan adjustments and preferences](../knowledge/decisions/0009-plan-adjustments-and-preferences.md)
