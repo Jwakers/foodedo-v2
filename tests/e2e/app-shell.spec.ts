@@ -1,28 +1,35 @@
 import { expect, test } from "@playwright/test";
 
-test("serves the Foodedo app shell", async ({ page }) => {
+test("serves the dashboard with shared app chrome", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Foodedo");
-  await expect(page.getByRole("link", { name: "Foodedo" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(page.locator("header")).toBeVisible();
+  const navigation = page
+    .getByRole("navigation", { name: "Primary" })
+    .filter({ visible: true });
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Home" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Week" })).toBeVisible();
+  await expect(
+    navigation.getByRole("link", { name: "Shopping" }),
+  ).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Recipes" })).toBeVisible();
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
     "href",
     "/manifest.webmanifest",
   );
-  await expect(
-    page.getByRole("link", { name: "Recipes" }).first(),
-  ).toHaveAttribute("href", "/recipes");
 });
 
-test("navigates from the catalogue to a recipe page", async ({ page }) => {
+test("keeps obsolete feature routes as nominal placeholders", async ({
+  page,
+}) => {
   await page.goto("/recipes");
-
-  const recipeLink = page.locator('a[href="/recipes/tomato-and-lentil-pasta"]');
-  await expect(recipeLink).toBeVisible();
-  await recipeLink.click();
-
-  await expect(page).toHaveURL(/\/recipes\/tomato-and-lentil-pasta$/);
-  await expect(page.locator("main article")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
+  await expect(page.getByText(/intentionally clear/)).toBeVisible();
 });
 
 test("exposes valid home-screen metadata and icons", async ({ request }) => {

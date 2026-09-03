@@ -1,35 +1,49 @@
 "use client";
 
-import { BookOpen, CalendarDays, ShoppingBasket } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  Home,
+  ShoppingBasket,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 
 const navigationItems = [
-  { href: "/", label: "Plan", section: "plan" },
-  { href: "/recipes", label: "Recipes", section: "recipes" },
-  { href: "/shop", label: "Shop", section: "shop" },
+  { href: "/", label: "Home", section: "home", icon: Home },
+  { href: "/week", label: "Week", section: "week", icon: CalendarDays },
+  {
+    href: "/shop",
+    label: "Shopping",
+    section: "shopping",
+    icon: ShoppingBasket,
+  },
+  { href: "/recipes", label: "Recipes", section: "recipes", icon: BookOpen },
 ] as const;
+
+type NavigationSection = (typeof navigationItems)[number]["section"];
 
 export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
   const pathname = usePathname();
 
   if (placement === "header") {
     return (
-      <nav aria-label="Primary" className="hidden items-center gap-7 sm:flex">
+      <nav aria-label="Primary" className="hidden items-center gap-6 sm:flex">
         {navigationItems.map((item) => {
           const isCurrent = isCurrentSection(pathname, item.section);
+
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
-                "border-b py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent",
+                "border-b-2 py-2 text-14 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium",
                 isCurrent
-                  ? "border-accent text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
+                  ? "border-cadmium text-cadmium"
+                  : "border-transparent text-graphite hover:text-ink",
               )}
             >
               {item.label}
@@ -43,22 +57,24 @@ export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-control-muted bg-background pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <div className="mx-auto grid max-w-sm grid-cols-3 px-3">
+      <div className="mx-auto grid max-w-md grid-cols-4 px-2">
         {navigationItems.map((item) => {
           const isCurrent = isCurrentSection(pathname, item.section);
+          const Icon = item.icon;
+
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
-                "flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-accent",
-                isCurrent ? "text-accent" : "text-muted-foreground",
+                "flex min-h-16 flex-col items-center justify-center gap-1 text-11 font-bold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-cadmium",
+                isCurrent ? "text-cadmium" : "text-graphite",
               )}
             >
-              <NavigationMark section={item.section} />
+              <Icon aria-hidden="true" className="size-5" />
               {item.label}
             </Link>
           );
@@ -68,22 +84,18 @@ export function AppNavigation({ placement }: { placement: "header" | "dock" }) {
   );
 }
 
-function isCurrentSection(
-  pathname: string,
-  section: "plan" | "recipes" | "shop",
-) {
-  if (section === "plan") return pathname === "/";
-  return pathname.startsWith(`/${section}`);
-}
-
-function NavigationMark({ section }: { section: "plan" | "recipes" | "shop" }) {
-  if (section === "plan") {
-    return <CalendarDays aria-hidden="true" className="size-5" />;
+function isCurrentSection(pathname: string, section: NavigationSection) {
+  if (section === "home") {
+    return pathname === "/";
   }
 
-  if (section === "recipes") {
-    return <BookOpen aria-hidden="true" className="size-5" />;
+  if (section === "week") {
+    return pathname === "/week" || pathname.startsWith("/week/");
   }
 
-  return <ShoppingBasket aria-hidden="true" className="size-5" />;
+  if (section === "shopping") {
+    return pathname === "/shop" || pathname.startsWith("/shop/");
+  }
+
+  return pathname === "/recipes" || pathname.startsWith("/recipes/");
 }
