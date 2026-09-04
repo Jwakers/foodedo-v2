@@ -18,7 +18,7 @@ Foodedo should earn an account request by demonstrating value first. A visitor m
 
 “Temporary” means a versioned local draft may survive refresh or an accidental close, but it is not cloud-backed, portable, or guaranteed. The interface must say this plainly. The primary prompt is **Keep this plan**, not “Create an account to continue.”
 
-The full pre-generation adjustment sheet is an authenticated personalisation capability. Signed-in users may apply days, servings, and other generation inputs to **This plan only**, or update the persistent-capable subset for **This and future plans**. The actual plan start date is always plan-specific. Guests use sensible defaults and see a secondary sign-in-to-personalise explanation; they must not be shown preference controls that imply durable memory. See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
+The full pre-generation adjustment sheet is an authenticated personalisation capability. Signed-in users may apply days, servings, and other generation inputs to **This plan only**, or update the persistent-capable subset for **This and future plans**. The actual plan start date is always plan-specific. Guests use sensible defaults and see a personalisation drawer when they tap **Adjust**; they must not be shown preference controls that imply durable memory. After **Sign in to personalise**, resume the same planning context and open the signed-in Adjust sheet. See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
 
 Guest access is an activation path, not the later Discover job. It must not become a generic recipe feed or a second product.
 

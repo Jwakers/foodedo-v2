@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { PlanAction } from "@/features/dashboard/plan-action";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
 
@@ -23,6 +24,7 @@ export function Dashboard() {
     >
       <DashboardIntroduction />
       <DashboardImage />
+      <PlanAction />
       <AccountNotice />
       <IdeasForYourWeek />
     </section>
