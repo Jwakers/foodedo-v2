@@ -29,6 +29,7 @@ Native plugins (camera, photos, share, haptics, push, deep links) are documented
 - The browser version requires connectivity beyond ordinary browser caching; do not claim offline-web support.
 - The native shell and route assets work without the web origin; live data still depends on the future backend and its resilience strategy.
 - Shared native routes must remain compatible with static export. Dynamic data uses client-side Convex or explicit external APIs; unsupported Next server features require a deliberate web/native split.
+- Prebuilding one HTML page per catalogue slug via `generateStaticParams` scales with catalogue size in the iOS export; treat that as a known watch item, not a permanent model for large catalogues or personal recipes. See [recipes-and-ingredients.md](../architecture/recipes-and-ingredients.md).
 - Capacitor `sync` rebuilds and copies native web assets; it does not replace Vercel deploys.
 - Adding a service worker later requires a demonstrated job, cache/update semantics, offline-data behavior, and a new decision record.
 - Confirm the bundle ID against any existing App Store app before shipping native.

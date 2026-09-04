@@ -16,6 +16,8 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 
 The current versioned code bundle is a deliberate foundation-stage delivery choice, not the intended permanent authoring system. About 30 real system meals exist to exercise catalogue and planning behavior. Move standard catalogue content to public, non-personal Convex reads before adding generation, catalogue administration, frequent independent releases, or enough content that bundling becomes costly.
 
+**Static-export page growth (watch):** `/recipes/[slug]` currently uses `generateStaticParams` so every catalogue slug becomes a prebuilt HTML page in the Capacitor `out/` bundle. That is fine at ~30 meals. As the standard catalogue grows into the hundreds, iOS build time and packaged asset count grow with it—separately from shipping meal JSON and hero images in the client. Do not extend this pattern to personal recipes. When catalogue content moves to public Convex reads (or before page generation becomes costly), prefer a client-hydrated detail shell for native (and optionally keep SEO SSG on web only) rather than pre-rendering every published slug into the App Store package. See [technical-spec.md](../../docs/technical-spec.md) and [ADR 0002](../decisions/0002-nextjs-web-capacitor-runtime.md).
+
 Generation must create a candidate, not publish directly. A future workflow validates and reviews the candidate before publishing an immutable catalogue revision. Guests can read published standard revisions without authentication; premium delivery remains a separate, server-entitled concern. Saving still resolves the trusted published revision on the server and creates a personal snapshot, so the client contract and provenance model can remain stable when storage moves.
 
 ## Ingredient lines
@@ -111,6 +113,12 @@ Recipe provenance is a small discriminated value. The initial variants are `manu
 
 Future public content should use publisher profiles and immutable publication revisions. Following, liking, and saving are separate relationships. Saving a published revision creates an attributed personal snapshot; personal edits never mutate the publisher's recipe. Rights, moderation, takedown, feeds, and update notifications are later product work.
 
+## Home “Ideas for your week”
+
+The guest Home strip is a horizontal carousel of six catalogue meals plus **Browse recipes**. Cards are wider than a three-across grid so titles can breathe; titles still clamp to three lines with an ellipsis when needed. Selection is deliberately naive for now: `selectDashboardWeekIdeas` returns the first meals in catalogue bundle order so the approved layout can ship without inventing a recommendation surface. The Paper frame still shows a static three-up row—update the design to match this carousel when convenient.
+
+**Post-MVP follow-up:** replace that placeholder ranking with real intelligence—preferences, cooking history, plan context, variety, and any later favourites signal—without changing the Home composition or the catalogue contract. Do not treat the current first-six order as product intent.
+
 ## Foundation scope
 
 Foundation already implemented:
@@ -121,6 +129,7 @@ Foundation already implemented:
 - Create, read, and paginated-list operations that derive ownership from verified auth.
 - A small versioned in-code catalogue (real meal content + hero images) rendered equally for guests and accounts.
 - An authenticated, retry-safe save that resolves trusted catalogue content on the server, creates or reuses a private snapshot, and explicitly adds it to the user's library.
+- Guest Home “Ideas for your week” carousel using temporary first-six catalogue selection (smarter ranking deferred post-MVP).
 
 MVP additions still required by the approved designs:
 
