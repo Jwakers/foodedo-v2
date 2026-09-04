@@ -36,9 +36,9 @@ The pre-plan sheet resolves its initial values from this record and then Foodedo
 
 ### catalogue meals (standard content)
 
-Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a versioned bundle with stable catalogue IDs; the 23 lightweight entries support plan testing and are not the final authored catalogue.
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a versioned in-code bundle with stable catalogue IDs, real meal content (~30 system meals), hero images under `public/images/catalogue/`, and required `proteinCategory` selection metadata. This keeps the contract flexible while MVP surfaces settle.
 
-Move catalogue content to explicit public, non-personal Convex reads before introducing generation, administration, frequent independent updates, or substantial catalogue growth. Persist authoring candidates separately from immutable published revisions: generation creates a draft, validation and review promote it, and only published standard revisions are returned to guests. Saving continues to copy the trusted published revision into a private recipe snapshot.
+Move catalogue content to explicit public, non-personal Convex reads before introducing generation, administration, frequent independent updates, or further substantial catalogue growth. Persist authoring candidates separately from immutable published revisions: generation creates a draft, validation and review promote it, and only published standard revisions are returned to guests. Saving continues to copy the trusted published revision into a private recipe snapshot.
 
 An early catalogue can be small because the product is early. Do not model a separate guest subset or use authentication to gate standard meals.
 

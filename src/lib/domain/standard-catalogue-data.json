@@ -1,0 +1,2474 @@
+{
+  "version": 2,
+  "meals": [
+    {
+      "id": "chicken-fajitas",
+      "slug": "chicken-fajitas",
+      "title": "Chicken Fajitas",
+      "description": "Spicy chicken strips served with peppers and onions, perfect for wrapping in tortillas.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/chicken-fajitas.png",
+      "ingredients": [
+        {
+          "id": "ri_63d31e3f1066",
+          "name": "chicken breast",
+          "quantity": "500",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_c4db65794829",
+          "name": "bell pepper",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_54516d8b59c0",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_0b29883ac028",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_a8a82f2c46f3",
+          "name": "fajita seasoning",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_383bc182bb3b",
+          "name": "tortillas",
+          "quantity": "8",
+          "unit": "piece"
+        },
+        {
+          "id": "ri_07a84e5373ff",
+          "name": "lime",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the chicken: Season the chicken strips with the fajita seasoning and a pinch of salt. Heat 1 tbsp olive oil in a large frying pan over high heat and fry the chicken until golden and cooked through. Remove and set aside."
+        },
+        {
+          "id": "step-2",
+          "text": "Saut\u00e9 vegetables and combine: In the same pan, add the remaining oil and stir-fry the bell peppers and onion until charred at the edges and tender. Return the chicken and toss together."
+        },
+        {
+          "id": "step-3",
+          "text": "Warm tortillas and serve: Warm the tortillas in a dry pan or over a gas flame. Serve the chicken and vegetables in tortillas with lime juice squeezed over."
+        }
+      ]
+    },
+    {
+      "id": "lemon-herb-grilled-chicken",
+      "slug": "lemon-herb-grilled-chicken",
+      "title": "Lemon Herb Grilled Chicken",
+      "description": "Juicy grilled chicken marinated in lemon and herbs, served with a fresh salad.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/lemon-herb-grilled-chicken.png",
+      "ingredients": [
+        {
+          "id": "ri_f5f0d1436a48",
+          "name": "chicken breast",
+          "quantity": "500",
+          "unit": "g",
+          "note": "butterflied"
+        },
+        {
+          "id": "ri_3fac144c0ff9",
+          "name": "lemon",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        },
+        {
+          "id": "ri_3ef037b884b3",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_64d874999738",
+          "name": "mixed herbs",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_8e23ddf0965e",
+          "name": "salad leaves",
+          "quantity": "100",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Marinate the chicken: Mix the lemon juice, olive oil, mixed herbs, salt, and pepper in a bowl. Add the chicken and turn to coat. Marinate for at least 30 minutes (or up to a few hours in the fridge)."
+        },
+        {
+          "id": "step-2",
+          "text": "Grill and rest: Preheat the grill or griddle pan to medium-high. Cook the chicken for 6\u20138 minutes per side until cooked through and nicely marked. Rest for 5 minutes before slicing\u2014this keeps the juices in."
+        },
+        {
+          "id": "step-3",
+          "text": "Serve: Slice the chicken and serve with the salad leaves and an extra drizzle of olive oil or lemon if you like."
+        }
+      ]
+    },
+    {
+      "id": "baked-chicken-and-rice-casserole",
+      "slug": "baked-chicken-and-rice-casserole",
+      "title": "Baked Chicken and Rice Casserole",
+      "description": "A comforting one-pan chicken and rice dish baked to perfection.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 45,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/baked-chicken-and-rice-casserole.png",
+      "ingredients": [
+        {
+          "id": "ri_57b53a6f0d77",
+          "name": "chicken breast",
+          "quantity": "400",
+          "unit": "g",
+          "note": "cubed"
+        },
+        {
+          "id": "ri_20e496f866f9",
+          "name": "rice",
+          "quantity": "250",
+          "unit": "g"
+        },
+        {
+          "id": "ri_3ae433673bc5",
+          "name": "chicken stock",
+          "quantity": "600",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_09c7d1a1be7b",
+          "name": "peas",
+          "quantity": "150",
+          "unit": "g"
+        },
+        {
+          "id": "ri_3501fd861437",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_d17f6278e49f",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_eb30272f76c5",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Preheat and season: Preheat the oven to 180\u00b0C (160\u00b0C fan). Season the chicken with salt and pepper."
+        },
+        {
+          "id": "step-2",
+          "text": "Saut\u00e9 vegetables and chicken: Heat the olive oil in a large ovenproof casserole over medium heat. Saut\u00e9 the onion and carrot until soft, about 5 minutes. Push to one side, add the chicken and brown briefly."
+        },
+        {
+          "id": "step-3",
+          "text": "Add rice and bake: Stir in the rice and pour over the chicken stock. Add the peas, bring to a simmer, then cover with a tight-fitting lid and bake for 45 minutes until the rice is tender and has absorbed the liquid. Fluff with a fork and serve."
+        }
+      ]
+    },
+    {
+      "id": "mediterranean-chicken-bake",
+      "slug": "mediterranean-chicken-bake",
+      "title": "Mediterranean Chicken Bake",
+      "description": "Baked chicken with olives, tomatoes, and herbs, served with couscous.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 30,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/mediterranean-chicken-bake.png",
+      "ingredients": [
+        {
+          "id": "ri_f7eeeb2c57df",
+          "name": "chicken thighs",
+          "quantity": "600",
+          "unit": "g"
+        },
+        {
+          "id": "ri_79e4e31330f7",
+          "name": "canned tomatoes",
+          "quantity": "400",
+          "unit": "g"
+        },
+        {
+          "id": "ri_4a31866cd38b",
+          "name": "kalamata olives",
+          "quantity": "100",
+          "unit": "g"
+        },
+        {
+          "id": "ri_2e7797ab4936",
+          "name": "garlic",
+          "quantity": "3",
+          "unit": "clove",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_04ab487751bd",
+          "name": "couscous",
+          "quantity": "250",
+          "unit": "g"
+        },
+        {
+          "id": "ri_2dcdc811f336",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_21142a3e7def",
+          "name": "mixed herbs",
+          "quantity": "2",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Preheat and season chicken: Preheat the oven to 200\u00b0C (180\u00b0C fan). Season the chicken thighs with salt and pepper."
+        },
+        {
+          "id": "step-2",
+          "text": "Brown the chicken: Heat 1 tbsp olive oil in a large ovenproof dish over medium heat. Brown the chicken thighs skin-side down for 5 minutes, then turn and remove from the heat."
+        },
+        {
+          "id": "step-3",
+          "text": "Add tomatoes and bake: Add the canned tomatoes, olives, garlic, mixed herbs, and the remaining oil. Stir around the chicken and bake uncovered for 30 minutes until the chicken is cooked through and the sauce is bubbling."
+        },
+        {
+          "id": "step-4",
+          "text": "Prepare couscous and serve: Meanwhile, prepare the couscous according to package instructions (usually pour over boiling water, cover and leave for 5 minutes, then fluff with a fork). Serve the chicken and sauce with the couscous."
+        }
+      ]
+    },
+    {
+      "id": "thai-noodle-soup",
+      "slug": "thai-noodle-soup",
+      "title": "Thai Noodle Soup",
+      "description": "A warming, fragrant noodle soup with a lightly spiced coconut broth, rice noodles, and fresh toppings. Quick enough for a weeknight and satisfying enough for the whole family.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 20,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/thai-noodle-soup.png",
+      "ingredients": [
+        {
+          "id": "ri_20d8bf52632d",
+          "name": "chicken breast",
+          "quantity": "500",
+          "unit": "g",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ri_fc787f1a4a77",
+          "name": "rice noodles",
+          "quantity": "200",
+          "unit": "g",
+          "note": "dried"
+        },
+        {
+          "id": "ri_2ba0f8f7f8e8",
+          "name": "coconut milk",
+          "quantity": "400",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_22a03e6a2dfd",
+          "name": "chicken stock",
+          "quantity": "750",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_beed29aa273e",
+          "name": "red curry paste",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_b614497b3f32",
+          "name": "fish sauce",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_fa656488d93b",
+          "name": "lime juice",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_b94c2fc235f5",
+          "name": "light brown sugar",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_03f5ad018501",
+          "name": "garlic",
+          "quantity": "3",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_32400552027c",
+          "name": "fresh ginger",
+          "quantity": "20",
+          "unit": "g",
+          "note": "finely grated"
+        },
+        {
+          "id": "ri_c48d8f90cf1e",
+          "name": "lemongrass",
+          "quantity": "2",
+          "unit": "stalk",
+          "note": "trimmed"
+        },
+        {
+          "id": "ri_d769767fc112",
+          "name": "spring onions",
+          "quantity": "4",
+          "unit": "whole",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ri_fd784daa9d29",
+          "name": "baby spinach",
+          "quantity": "80",
+          "unit": "g",
+          "note": "fresh"
+        },
+        {
+          "id": "ri_b70338b61cb8",
+          "name": "beansprouts",
+          "quantity": "100",
+          "unit": "g",
+          "note": "rinsed"
+        },
+        {
+          "id": "ri_43cb8dff8948",
+          "name": "fresh coriander",
+          "quantity": "1",
+          "unit": "handful",
+          "note": "roughly chopped"
+        },
+        {
+          "id": "ri_b60a8b03d859",
+          "name": "red chilli",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ri_f068d7febfc0",
+          "name": "lime",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "quartered"
+        },
+        {
+          "id": "ri_42bcdc1417f9",
+          "name": "sesame oil",
+          "quantity": "1",
+          "unit": "tsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Soak the noodles: Place the rice noodles in a large bowl and cover with boiling water. Leave to soak for 6\u20138 minutes until just tender, then drain and set aside. Toss with a small drizzle of sesame oil to prevent sticking."
+        },
+        {
+          "id": "step-2",
+          "text": "Build the broth: Heat a large saucepan or wok over a medium heat with a little vegetable oil. Add the garlic and ginger and fry for 1 minute until fragrant. Add the red curry paste and stir-fry for another minute. Bash the lemongrass stalks with the back of a knife to release their flavour, then add to the pan along with the chicken stock and coconut milk. Bring to a gentle simmer."
+        },
+        {
+          "id": "step-3",
+          "text": "Cook the chicken: Season the sliced chicken breast lightly, then add to the simmering broth. Cook for 6\u20138 minutes until the chicken is cooked through with no pink remaining. Stir in the fish sauce, lime juice, and brown sugar. Taste and adjust seasoning \u2014 add more fish sauce for saltiness or lime juice for brightness. Remove and discard the lemongrass stalks."
+        },
+        {
+          "id": "step-4",
+          "text": "Finish and assemble: Add the baby spinach to the broth and stir until just wilted. Divide the drained noodles between four deep bowls. Ladle the hot broth and chicken over the noodles. Top each bowl with beansprouts, spring onions, fresh coriander, and sliced red chilli. Serve with lime wedges on the side for squeezing over."
+        }
+      ]
+    },
+    {
+      "id": "chicken-and-vegetable-stir-fry",
+      "slug": "chicken-and-vegetable-stir-fry",
+      "title": "Chicken and Vegetable Stir-Fry",
+      "description": "A quick and colourful stir-fry with chicken and seasonal vegetables.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/chicken-and-vegetable-stir-fry.png",
+      "ingredients": [
+        {
+          "id": "ri_cafad0bc7a2b",
+          "name": "chicken thigh",
+          "quantity": "400",
+          "unit": "g",
+          "note": "diced"
+        },
+        {
+          "id": "ri_6c51ba7435ea",
+          "name": "bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_7e500094b9df",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_7c05f7221ffc",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ri_c3f48fd2efb7",
+          "name": "soy sauce",
+          "quantity": "60",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_c6a9ae56b8d8",
+          "name": "sesame oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_d81d39663299",
+          "name": "ginger",
+          "quantity": "1",
+          "unit": "piece",
+          "note": "minced"
+        },
+        {
+          "id": "ri_e5d2d8fc0410",
+          "name": "spring onion",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_4249acbc1605",
+          "name": "rice",
+          "quantity": "300",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice: Cook the rice according to package instructions. Keep warm."
+        },
+        {
+          "id": "step-2",
+          "text": "Stir-fry the chicken: Heat the sesame oil in a wok or large frying pan over high heat. Add the chicken and stir-fry until golden and cooked through. Remove and set aside."
+        },
+        {
+          "id": "step-3",
+          "text": "Stir-fry the vegetables: Add the broccoli, bell pepper, carrot, and ginger. Stir-fry for 4\u20135 minutes until tender-crisp. Add a splash of water and cover briefly if needed."
+        },
+        {
+          "id": "step-4",
+          "text": "Finish and serve: Return the chicken, pour in the soy sauce and toss for 1\u20132 minutes. Garnish with spring onion and serve over the rice."
+        }
+      ]
+    },
+    {
+      "id": "chicken-tacos-with-salsa",
+      "slug": "chicken-tacos-with-salsa",
+      "title": "Chicken Tacos with Salsa",
+      "description": "Flavourful chicken tacos topped with fresh salsa and avocado.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 10,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/chicken-tacos-with-salsa.png",
+      "ingredients": [
+        {
+          "id": "ri_ee14b1f3e031",
+          "name": "chicken breast",
+          "quantity": "400",
+          "unit": "g",
+          "note": "diced"
+        },
+        {
+          "id": "ri_57ef01f3cee6",
+          "name": "taco seasoning",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_46e7536eee87",
+          "name": "tortillas",
+          "quantity": "8",
+          "unit": "whole"
+        },
+        {
+          "id": "ri_475f65a3888e",
+          "name": "tomato",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_6d2f5bf6a942",
+          "name": "red onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_382c704a1f00",
+          "name": "coriander",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_ba7964eda52a",
+          "name": "lime",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        },
+        {
+          "id": "ri_ba66cbd63699",
+          "name": "avocado",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_ae3f95301eab",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the chicken: Season the chicken with the taco seasoning and a pinch of salt. Heat the olive oil in a frying pan over medium-high heat and cook the chicken until golden and cooked through. Set aside."
+        },
+        {
+          "id": "step-2",
+          "text": "Make the salsa: In a bowl, mix the tomato, red onion, coriander, and lime juice for the salsa. Season with a little salt."
+        },
+        {
+          "id": "step-3",
+          "text": "Assemble and serve: Warm the tortillas in a dry pan or over a gas flame. Fill with the chicken, salsa, and sliced avocado. Serve with extra lime."
+        }
+      ]
+    },
+    {
+      "id": "chicken-teriyaki-stir-fry",
+      "slug": "chicken-teriyaki-stir-fry",
+      "title": "Chicken Teriyaki Stir-Fry",
+      "description": "Quick stir-fried chicken in a sweet teriyaki sauce served with rice.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "proteinCategory": "chicken",
+      "imageSrc": "/images/catalogue/chicken-teriyaki-stir-fry.png",
+      "ingredients": [
+        {
+          "id": "ri_4b6fec1e8276",
+          "name": "chicken breast",
+          "quantity": "400",
+          "unit": "g",
+          "note": "thinly sliced"
+        },
+        {
+          "id": "ri_ac6e2eba5954",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_3341ef45f429",
+          "name": "bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_67dc288ca349",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "julienned"
+        },
+        {
+          "id": "ri_7618f9e2e48b",
+          "name": "teriyaki sauce",
+          "quantity": "100",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_ef31b4d10321",
+          "name": "rice",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_93f7a2c673c4",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_0ad8a1266184",
+          "name": "sesame seeds",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice: Cook the rice according to package instructions. Keep warm."
+        },
+        {
+          "id": "step-2",
+          "text": "Stir-fry the chicken: Heat 1 tbsp olive oil in a wok or large frying pan over high heat. Stir-fry the chicken until golden and cooked through. Remove and set aside."
+        },
+        {
+          "id": "step-3",
+          "text": "Stir-fry the vegetables: Add the remaining oil, then the broccoli, bell pepper, and carrot. Stir-fry for 4\u20135 minutes until tender-crisp. Add a splash of water and cover briefly if the broccoli needs to soften."
+        },
+        {
+          "id": "step-4",
+          "text": "Add sauce and serve: Return the chicken to the pan, pour in the teriyaki sauce and toss until everything is glossy. Serve over the rice and sprinkle with sesame seeds."
+        }
+      ]
+    },
+    {
+      "id": "beef-stroganoff",
+      "slug": "beef-stroganoff",
+      "title": "Beef Stroganoff",
+      "description": "A creamy and comforting beef stroganoff served over egg noodles.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "proteinCategory": "beef",
+      "imageSrc": "/images/catalogue/beef-stroganoff.png",
+      "ingredients": [
+        {
+          "id": "ri_e2604f7e0b22",
+          "name": "beef sirloin",
+          "quantity": "500",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_31b3d9f29c02",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_1899380ef1a6",
+          "name": "mushrooms",
+          "quantity": "200",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_1bee2c5b699c",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_edc39e0a33d0",
+          "name": "beef stock",
+          "quantity": "250",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_d60685aa4a37",
+          "name": "sour cream",
+          "quantity": "150",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_c4563363d885",
+          "name": "egg noodles",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_e9f2fc946c64",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_3c723de7af9f",
+          "name": "parsley",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the noodles: Boil the egg noodles according to package instructions, then drain and set aside."
+        },
+        {
+          "id": "step-2",
+          "text": "Saut\u00e9 the beef: Season the beef with salt and pepper. Heat 1 tbsp olive oil in a large frying pan over medium-high heat and saut\u00e9 the sliced beef in a single layer until browned. Remove and set aside\u2014don\u2019t crowd the pan or the beef will steam."
+        },
+        {
+          "id": "step-3",
+          "text": "Cook the vegetables: In the same pan, add the remaining oil, then the onion, garlic, and mushrooms. Cook until softened and any mushroom liquid has evaporated."
+        },
+        {
+          "id": "step-4",
+          "text": "Combine and simmer: Return the beef and any resting juices to the pan. Pour in the beef stock and scrape up any browned bits (deglazing adds flavour). Simmer for 5 minutes, then turn off the heat and stir in the sour cream. Warm through without boiling so the cream doesn\u2019t split."
+        },
+        {
+          "id": "step-5",
+          "text": "Serve: Serve the stroganoff over the egg noodles and garnish with parsley."
+        }
+      ]
+    },
+    {
+      "id": "beef-kofta-with-couscous",
+      "slug": "beef-kofta-with-couscous",
+      "title": "Beef Kofta with Couscous",
+      "description": "Spiced beef koftas served with fluffy couscous and a fresh salad.",
+      "servings": 4,
+      "prepMinutes": 20,
+      "cookMinutes": 15,
+      "proteinCategory": "beef",
+      "imageSrc": "/images/catalogue/beef-kofta-with-couscous.png",
+      "ingredients": [
+        {
+          "id": "ri_3307f458758e",
+          "name": "minced beef",
+          "quantity": "500",
+          "unit": "g"
+        },
+        {
+          "id": "ri_1ea16b883553",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "grated"
+        },
+        {
+          "id": "ri_b68fa4e95466",
+          "name": "cumin",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_95bf9a824d3e",
+          "name": "coriander",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_051a9f2c0de7",
+          "name": "couscous",
+          "quantity": "250",
+          "unit": "g"
+        },
+        {
+          "id": "ri_41dbe2d2b06a",
+          "name": "boiling water",
+          "quantity": "300",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_4a156c68c000",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_f379107b9dac",
+          "name": "parsley",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_b9127a56cc8d",
+          "name": "cucumber",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_93c67cbf9fed",
+          "name": "tomato",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "diced"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Mix the kofta: In a bowl, combine minced beef, onion, cumin, and coriander. Shape into kofta."
+        },
+        {
+          "id": "step-2",
+          "text": "Cook the kofta: Heat oil in a pan and cook kofta until browned and cooked through."
+        },
+        {
+          "id": "step-3",
+          "text": "Prepare the couscous: Put couscous in a bowl, pour boiling water over it, cover, and let sit for 5 minutes."
+        },
+        {
+          "id": "step-4",
+          "text": "Serve: Fluff couscous with a fork, mix in parsley. Combine diced cucumber and tomato for the salad. Serve with kofta and salad."
+        }
+      ]
+    },
+    {
+      "id": "beef-and-broccoli-stir-fry",
+      "slug": "beef-and-broccoli-stir-fry",
+      "title": "Beef and Broccoli Stir-Fry",
+      "description": "A quick and healthy beef and broccoli stir-fry served over rice.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "proteinCategory": "beef",
+      "imageSrc": "/images/catalogue/beef-and-broccoli-stir-fry.png",
+      "ingredients": [
+        {
+          "id": "ri_5abd78857d3c",
+          "name": "beef flank steak",
+          "quantity": "500",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_3cd794eb5c37",
+          "name": "broccoli",
+          "quantity": "300",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_d4f3766c9bff",
+          "name": "soy sauce",
+          "quantity": "60",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_1e5c762f62f4",
+          "name": "ginger",
+          "quantity": "1",
+          "unit": "piece",
+          "note": "grated"
+        },
+        {
+          "id": "ri_0c615620168f",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_8b88a54c796e",
+          "name": "rice",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_c9787b95f23c",
+          "name": "beef stock",
+          "quantity": "600",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_ac24099bb8b2",
+          "name": "vegetable oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_0515a1fd126a",
+          "name": "sesame oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_d6e1e627d17a",
+          "name": "cornstarch",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_09aa05adca82",
+          "name": "black pepper",
+          "quantity": "1",
+          "unit": "pinch"
+        },
+        {
+          "id": "ri_5653976a2f18",
+          "name": "red pepper flakes",
+          "quantity": "1",
+          "unit": "pinch"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice: In a saucepan, combine the rice and beef stock in a 2:1 ratio (600 ml stock to 300 g rice). Bring to a boil, then reduce heat to low, cover, and simmer for 15\u201318 minutes until the rice is tender. Keep warm."
+        },
+        {
+          "id": "step-2",
+          "text": "Prepare the beef: Toss the sliced beef flank steak with cornstarch, black pepper, and a pinch of red pepper flakes for added flavor. This will help create a nice crust when stir-frying."
+        },
+        {
+          "id": "step-3",
+          "text": "Stir-fry the beef: Heat 1 tbsp vegetable oil and 1 tbsp sesame oil in a wok or large frying pan over high heat. Add the beef in a single layer and stir-fry until browned, about 3-4 minutes. Remove and set aside."
+        },
+        {
+          "id": "step-4",
+          "text": "Cook the vegetables: In the same wok, add the remaining vegetable oil. Stir-fry the minced garlic and grated ginger for 30 seconds until fragrant. Then add the chopped broccoli and a splash of water. Cover briefly until the broccoli is tender-crisp, about 2-3 minutes."
+        },
+        {
+          "id": "step-5",
+          "text": "Combine and serve: Return the beef to the wok, add the soy sauce, and toss everything together for 1 minute to heat through. Serve the stir-fry over the cooked rice."
+        }
+      ]
+    },
+    {
+      "id": "pork-stir-fry-with-vegetables",
+      "slug": "pork-stir-fry-with-vegetables",
+      "title": "Pork Stir-Fry with Vegetables",
+      "description": "Quick and colourful stir-fry with tender pork and fresh vegetables.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "proteinCategory": "pork",
+      "imageSrc": "/images/catalogue/pork-stir-fry-with-vegetables.png",
+      "ingredients": [
+        {
+          "id": "ri_c700607494a2",
+          "name": "pork loin",
+          "quantity": "500",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_2ab4981c50ec",
+          "name": "bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_241c3ba85d68",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_ee8162a71ad6",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_bf8065b9431f",
+          "name": "soy sauce",
+          "quantity": "60",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_b7ef76491e1b",
+          "name": "ginger",
+          "quantity": "10",
+          "unit": "g",
+          "note": "grated"
+        },
+        {
+          "id": "ri_d7694c8b0176",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_fc50e25c89e3",
+          "name": "rice",
+          "quantity": "300",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice: Cook the rice according to package instructions (or use 2:1 water to rice, bring to a boil, then simmer covered for 15\u201318 minutes). Keep warm."
+        },
+        {
+          "id": "step-2",
+          "text": "Stir-fry the pork: Heat 1 tbsp vegetable oil in a wok or large frying pan over high heat. Season the pork slices with a little salt and stir-fry until browned. Remove and set aside."
+        },
+        {
+          "id": "step-3",
+          "text": "Stir-fry the vegetables: Add the remaining oil to the pan. Stir-fry the ginger and garlic for 30 seconds, then add the bell pepper, broccoli, and carrot. Cook for 3\u20134 minutes until tender but still crisp."
+        },
+        {
+          "id": "step-4",
+          "text": "Combine and serve: Return the pork to the pan, pour in the soy sauce, and toss everything together for 1\u20132 minutes. Serve over the cooked rice."
+        }
+      ]
+    },
+    {
+      "id": "bbq-pulled-pork-sandwiches",
+      "slug": "bbq-pulled-pork-sandwiches",
+      "title": "BBQ Pulled Pork Sandwiches",
+      "description": "Slow-cooked pulled pork in BBQ sauce served in buns.",
+      "servings": 6,
+      "prepMinutes": 15,
+      "cookMinutes": 480,
+      "proteinCategory": "pork",
+      "imageSrc": "/images/catalogue/bbq-pulled-pork-sandwiches.png",
+      "ingredients": [
+        {
+          "id": "ri_1733c56d8c27",
+          "name": "pork shoulder",
+          "quantity": "1",
+          "unit": "kg"
+        },
+        {
+          "id": "ri_3581605892a9",
+          "name": "BBQ sauce",
+          "quantity": "250",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_6dabbbb03ba2",
+          "name": "buns",
+          "quantity": "6",
+          "unit": "piece"
+        },
+        {
+          "id": "ri_dfb23c2417d8",
+          "name": "coleslaw",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_f9bb64221b9d",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Prepare and add to slow cooker: Season the pork shoulder all over with salt and pepper. Place it in the slow cooker and pour over the BBQ sauce. Scatter the sliced onion around the meat."
+        },
+        {
+          "id": "step-2",
+          "text": "Slow cook: Cook on low for 8 hours (or high for 4\u20135) until the pork is tender and shreds easily with two forks."
+        },
+        {
+          "id": "step-3",
+          "text": "Shred the pork: Transfer the pork to a board and shred, discarding large pieces of fat. Skim excess fat from the cooking liquid if you like, then return the shredded pork to the sauce and toss."
+        },
+        {
+          "id": "step-4",
+          "text": "Assemble and serve: Warm the buns, pile with pulled pork and a spoonful of coleslaw. Serve with extra sauce and onion on the side."
+        }
+      ]
+    },
+    {
+      "id": "pork-tacos-with-salsa",
+      "slug": "pork-tacos-with-salsa",
+      "title": "Pork Tacos with Salsa",
+      "description": "Easy and delicious pork tacos topped with fresh salsa.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "proteinCategory": "pork",
+      "imageSrc": "/images/catalogue/pork-tacos-with-salsa.png",
+      "ingredients": [
+        {
+          "id": "ri_bbce525a8bc6",
+          "name": "pork mince",
+          "quantity": "500",
+          "unit": "g"
+        },
+        {
+          "id": "ri_cdd6ec91469c",
+          "name": "taco seasoning",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_bec16b84ac1c",
+          "name": "tortillas",
+          "quantity": "8",
+          "unit": "piece"
+        },
+        {
+          "id": "ri_71a09a37071a",
+          "name": "tomato",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_6ad4a8ef2fe6",
+          "name": "red onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_bc949d1ececd",
+          "name": "coriander",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_3c622cdf9f0c",
+          "name": "lime",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        },
+        {
+          "id": "ri_5e2e2a6d06b4",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Brown the pork: In a large frying pan, heat the olive oil and fry the pork mince over medium-high heat, breaking it up with a spoon, until browned and no pink remains."
+        },
+        {
+          "id": "step-2",
+          "text": "Season and simmer: Stir in the taco seasoning and a splash of water. Simmer for 4\u20135 minutes until the mixture is thick and fragrant."
+        },
+        {
+          "id": "step-3",
+          "text": "Make the salsa and warm tortillas: Meanwhile, mix the diced tomato, red onion, and chopped coriander in a bowl for the salsa. Warm the tortillas in a dry pan or microwave."
+        },
+        {
+          "id": "step-4",
+          "text": "Assemble and serve: Fill the tortillas with the pork and top with the salsa and a squeeze of lime. Serve immediately."
+        }
+      ]
+    },
+    {
+      "id": "lamb-kofta-kebabs-with-tzatziki",
+      "slug": "lamb-kofta-kebabs-with-tzatziki",
+      "title": "Lamb Kofta Kebabs with Tzatziki",
+      "description": "Spiced lamb kofta kebabs served with a refreshing tzatziki sauce and warm pitta bread.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "proteinCategory": "lamb",
+      "imageSrc": "/images/catalogue/lamb-kofta-kebabs-with-tzatziki.png",
+      "ingredients": [
+        {
+          "id": "ri_870d6190614f",
+          "name": "lamb mince",
+          "quantity": "500",
+          "unit": "g"
+        },
+        {
+          "id": "ri_90bbbe477388",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_4d8a9bee27f3",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_5fc99494c491",
+          "name": "cumin",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_ce890d0ebb80",
+          "name": "coriander",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_c44775c037f8",
+          "name": "paprika",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_84d00b834922",
+          "name": "pitta bread",
+          "quantity": "4",
+          "unit": "whole"
+        },
+        {
+          "id": "ri_aa26a5291450",
+          "name": "cucumber",
+          "quantity": "0.5",
+          "unit": "whole",
+          "note": "grated"
+        },
+        {
+          "id": "ri_a52be0c9bde4",
+          "name": "yogurt",
+          "quantity": "200",
+          "unit": "g"
+        },
+        {
+          "id": "ri_a2a291ba258b",
+          "name": "mint",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "finely chopped"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Make the tzatziki: For the tzatziki: grate the cucumber and squeeze out the excess liquid. Mix with the yogurt and mint, season with a little salt, and set aside. This gives the cucumber time to release flavour without watering down the sauce."
+        },
+        {
+          "id": "step-2",
+          "text": "Shape the kofta: In a bowl, combine the lamb mince, onion, garlic, cumin, coriander, paprika, salt, and pepper. Mix with your hands until just combined\u2014don\u2019t overwork or the kofta can become dense. Shape into sausage-shaped kebabs on skewers (or form into ovals without skewers)."
+        },
+        {
+          "id": "step-3",
+          "text": "Grill and serve: Preheat the grill or griddle to medium-high. Cook the kofta for 8\u201310 minutes, turning occasionally, until cooked through and nicely charred. Rest for 2\u20133 minutes. Warm the pitta and serve with the kofta and tzatziki."
+        }
+      ]
+    },
+    {
+      "id": "lamb-and-mint-pasta",
+      "slug": "lamb-and-mint-pasta",
+      "title": "Lamb and Mint Pasta",
+      "description": "A quick and easy pasta dish with minced lamb, fresh mint, and a creamy sauce.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "proteinCategory": "lamb",
+      "imageSrc": "/images/catalogue/lamb-and-mint-pasta.png",
+      "ingredients": [
+        {
+          "id": "ri_212c3e5a1066",
+          "name": "lamb mince",
+          "quantity": "500",
+          "unit": "g"
+        },
+        {
+          "id": "ri_863cbfaa496f",
+          "name": "penne pasta",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_1042c73ee937",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_8ac152d5a36e",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_1c1cadfa2239",
+          "name": "double cream",
+          "quantity": "200",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_ca0960b5bbfd",
+          "name": "parmesan cheese",
+          "quantity": "50",
+          "unit": "g",
+          "note": "finely grated"
+        },
+        {
+          "id": "ri_569db4d9cbae",
+          "name": "mint",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_71e0549c3930",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the pasta: Bring a large pot of salted water to the boil and cook the penne according to package instructions. Drain and reserve a little pasta water."
+        },
+        {
+          "id": "step-2",
+          "text": "Saut\u00e9 the lamb: Heat the olive oil in a large frying pan over medium heat. Saut\u00e9 the onion until soft, then add the garlic and cook for 1 minute. Add the lamb mince, break it up with a spoon, and cook until browned and no pink remains. Season with salt and pepper."
+        },
+        {
+          "id": "step-3",
+          "text": "Make the sauce and serve: Lower the heat and stir in the double cream and parmesan. Simmer gently for 2\u20133 minutes until the sauce has thickened slightly\u2014don\u2019t boil or the cream can split. Add the mint, then toss in the pasta. Add a splash of pasta water if the sauce is thick. Serve immediately."
+        }
+      ]
+    },
+    {
+      "id": "thai-fish-curry",
+      "slug": "thai-fish-curry",
+      "title": "Thai Fish Curry",
+      "description": "A fragrant and creamy curry made with white fish and a blend of Thai spices.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 25,
+      "proteinCategory": "fish",
+      "imageSrc": "/images/catalogue/thai-fish-curry.png",
+      "ingredients": [
+        {
+          "id": "ri_cb244a5ab125",
+          "name": "white fish fillet",
+          "quantity": "600",
+          "unit": "g",
+          "note": "cubed"
+        },
+        {
+          "id": "ri_1dc0fb8cd8ba",
+          "name": "coconut milk",
+          "quantity": "400",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_571913a0c304",
+          "name": "red curry paste",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_4cd30b342a5d",
+          "name": "bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_f8c95bb3de68",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_2c52a5f77fb9",
+          "name": "fresh coriander",
+          "quantity": "15",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_053644792af3",
+          "name": "lime",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Fry the curry paste and add coconut milk: Heat the oil in a large pan over medium heat. Fry the curry paste for 1\u20132 minutes until fragrant. Add the thick part of the coconut milk first and stir to form a paste, then pour in the rest. Bring to a gentle simmer."
+        },
+        {
+          "id": "step-2",
+          "text": "Add vegetables and fish: Add the bell pepper and broccoli and simmer for 5 minutes until starting to soften. Add the fish cubes and cook for 5\u20138 minutes until the fish is just cooked through\u2014don\u2019t overcook or it will break up. Season with salt and a squeeze of lime."
+        },
+        {
+          "id": "step-3",
+          "text": "Finish and serve: Stir in most of the coriander. Serve with rice, with the remaining coriander on top."
+        }
+      ]
+    },
+    {
+      "id": "lemon-garlic-butter-prawns",
+      "slug": "lemon-garlic-butter-prawns",
+      "title": "Lemon Garlic Butter Prawns",
+      "description": "Succulent prawns tossed in a zesty lemon garlic butter sauce, served over pasta.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "proteinCategory": "fish",
+      "imageSrc": "/images/catalogue/lemon-garlic-butter-prawns.png",
+      "ingredients": [
+        {
+          "id": "ri_e2d9c9a09fcf",
+          "name": "prawns",
+          "quantity": "500",
+          "unit": "g"
+        },
+        {
+          "id": "ri_5b31d1d1024d",
+          "name": "butter",
+          "quantity": "50",
+          "unit": "g"
+        },
+        {
+          "id": "ri_606767312a74",
+          "name": "garlic",
+          "quantity": "3",
+          "unit": "clove",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_0f0c7cd1b818",
+          "name": "lemon",
+          "quantity": "1",
+          "unit": "whole"
+        },
+        {
+          "id": "ri_0e29e15f6eb4",
+          "name": "spaghetti",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_87a6b13c0dd3",
+          "name": "parsley",
+          "quantity": "20",
+          "unit": "g",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the pasta: Bring a large pan of salted water to the boil and cook the spaghetti until al dente. Reserve a cup of pasta water, then drain."
+        },
+        {
+          "id": "step-2",
+          "text": "Cook the prawns in garlic butter: Melt the butter in a large frying pan over medium heat. Add the garlic and cook for 1 minute until fragrant\u2014don\u2019t let it burn. Add the prawns and cook for 2\u20133 minutes until pink and just cooked through; overcooked prawns go rubbery."
+        },
+        {
+          "id": "step-3",
+          "text": "Combine and serve: Add the pasta to the pan with a splash of pasta water, the lemon juice, most of the parsley, and a pinch of salt. Toss well and serve with the remaining parsley on top."
+        }
+      ]
+    },
+    {
+      "id": "fish-pie",
+      "slug": "fish-pie",
+      "title": "Fish Pie",
+      "description": "A comforting fish pie made with a creamy white sauce topped with mashed potatoes.",
+      "servings": 4,
+      "prepMinutes": 20,
+      "cookMinutes": 30,
+      "proteinCategory": "fish",
+      "imageSrc": "/images/catalogue/fish-pie.png",
+      "ingredients": [
+        {
+          "id": "ri_f22fa1ca0913",
+          "name": "white fish fillet",
+          "quantity": "300",
+          "unit": "g",
+          "note": "cubed"
+        },
+        {
+          "id": "ri_fa647fe8a54f",
+          "name": "smoked haddock fillet",
+          "quantity": "300",
+          "unit": "g",
+          "note": "cubed"
+        },
+        {
+          "id": "ri_ca80be7b7e54",
+          "name": "potatoes",
+          "quantity": "800",
+          "unit": "g",
+          "note": "cubed"
+        },
+        {
+          "id": "ri_9c32ca76e1e9",
+          "name": "milk",
+          "quantity": "200",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_a275663e2439",
+          "name": "butter",
+          "quantity": "50",
+          "unit": "g"
+        },
+        {
+          "id": "ri_1fd273c49231",
+          "name": "plain flour",
+          "quantity": "50",
+          "unit": "g"
+        },
+        {
+          "id": "ri_45eeb7603ea7",
+          "name": "frozen peas",
+          "quantity": "150",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook and mash the potatoes: Boil the potatoes in salted water until tender, drain, then mash with a little of the butter. Keep warm. Preheat the oven to 200\u00b0C (180\u00b0C fan)."
+        },
+        {
+          "id": "step-2",
+          "text": "Make the sauce and add the fish: Melt the remaining butter in a pan, stir in the flour and cook for 1 minute. Take off the heat and gradually whisk in the milk until smooth. Return to the heat and simmer gently for 2\u20133 minutes. Season with salt and pepper. Add the fish and peas and stir gently\u2014the fish will cook in the sauce. Pour into a baking dish."
+        },
+        {
+          "id": "step-3",
+          "text": "Top with mash and bake: Spoon or pipe the mash over the fish mixture. Bake for 25\u201330 minutes until golden and bubbling. Rest for 5 minutes before serving."
+        }
+      ]
+    },
+    {
+      "id": "oven-baked-cod-with-tomato-and-basil",
+      "slug": "oven-baked-cod-with-tomato-and-basil",
+      "title": "Oven-Baked Cod with Tomato and Basil",
+      "description": "A light and healthy cod dish baked with fresh tomatoes and basil.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "proteinCategory": "fish",
+      "imageSrc": "/images/catalogue/oven-baked-cod-with-tomato-and-basil.png",
+      "ingredients": [
+        {
+          "id": "ri_2f1769914076",
+          "name": "cod fillet",
+          "quantity": "600",
+          "unit": "g"
+        },
+        {
+          "id": "ri_60c7bc20f42b",
+          "name": "cherry tomatoes",
+          "quantity": "250",
+          "unit": "g",
+          "note": "halved"
+        },
+        {
+          "id": "ri_5bde855c2a3c",
+          "name": "fresh basil",
+          "quantity": "15",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_efbe3e755ac9",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_81fa1d4bef4d",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Preheat and assemble: Preheat the oven to 180\u00b0C (160\u00b0C fan). Place the cod in a baking dish and scatter the tomatoes and garlic around and over it. Drizzle with olive oil and season with salt and pepper."
+        },
+        {
+          "id": "step-2",
+          "text": "Bake and serve: Bake for 15\u201320 minutes until the cod is opaque and flakes easily. Rest for 1\u20132 minutes, then scatter with basil and serve with the tomato juices."
+        }
+      ]
+    },
+    {
+      "id": "shrimp-fried-rice",
+      "slug": "shrimp-fried-rice",
+      "title": "Shrimp Fried Rice",
+      "description": "A quick and easy fried rice dish packed with shrimp and vegetables.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "proteinCategory": "fish",
+      "imageSrc": "/images/catalogue/shrimp-fried-rice.png",
+      "ingredients": [
+        {
+          "id": "ri_ed7844ee295e",
+          "name": "shrimp",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_ad6c0aa6abf3",
+          "name": "rice",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_3fb3c65cd597",
+          "name": "peas",
+          "quantity": "100",
+          "unit": "g"
+        },
+        {
+          "id": "ri_2507d1a13e58",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_860778927352",
+          "name": "soy sauce",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_2cb8b5285f44",
+          "name": "spring onion",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_dd2f8636b15f",
+          "name": "egg",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "beaten"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice and shrimp: Cook the rice according to packet instructions, then spread on a tray to cool and dry slightly\u2014day-old or cooled rice works best for fried rice. Heat 1 tbsp oil in a wok or large frying pan over high heat. Add the shrimp and stir-fry until pink; transfer to a plate."
+        },
+        {
+          "id": "step-2",
+          "text": "Fry the rice and vegetables: Add the remaining oil to the pan. Add the carrot and peas and stir-fry for 2 minutes. Add the rice and break up any lumps. Stir-fry for 3\u20134 minutes until the rice is hot and starting to crisp. Add the soy sauce and toss well."
+        },
+        {
+          "id": "step-3",
+          "text": "Add egg and shrimp, then serve: Push the rice to one side, pour in the egg and scramble until just set, then mix through the rice. Return the shrimp, add most of the spring onion, and toss. Serve immediately with the remaining spring onion on top."
+        }
+      ]
+    },
+    {
+      "id": "veggie-stuffed-sweet-potatoes",
+      "slug": "veggie-stuffed-sweet-potatoes",
+      "title": "Veggie Stuffed Sweet Potatoes",
+      "description": "Roasted sweet potatoes filled with a hearty mix of black beans, corn, and spices, making a satisfying dinner.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 30,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/veggie-stuffed-sweet-potatoes.png",
+      "ingredients": [
+        {
+          "id": "ri_b1cea2fda772",
+          "name": "sweet potatoes",
+          "quantity": "4",
+          "unit": "whole"
+        },
+        {
+          "id": "ri_e5036a183312",
+          "name": "black beans",
+          "quantity": "400",
+          "unit": "g",
+          "note": "drained"
+        },
+        {
+          "id": "ri_b3ff2e86bdd8",
+          "name": "corn",
+          "quantity": "150",
+          "unit": "g"
+        },
+        {
+          "id": "ri_63b834a36e97",
+          "name": "red bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_55d01533b86f",
+          "name": "red onion",
+          "quantity": "0.5",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_a7c617924951",
+          "name": "cumin powder",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_eb577bfc1674",
+          "name": "smoked paprika",
+          "quantity": "0.5",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_a04decb3c4f4",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Roast the sweet potatoes: Preheat the oven to 200\u00b0C (180\u00b0C fan). Halve the sweet potatoes lengthways, drizzle with olive oil and a pinch of salt, and place cut-side down on a baking tray. Roast for 30\u201335 minutes until tender."
+        },
+        {
+          "id": "step-2",
+          "text": "Prepare the filling: In a bowl, mix the black beans, corn, red bell pepper, red onion, cumin, smoked paprika, salt, and pepper. You can warm this in a pan for 2\u20133 minutes if you prefer the filling hot."
+        },
+        {
+          "id": "step-3",
+          "text": "Stuff and serve: Turn the sweet potato halves cut-side up and fluff the flesh with a fork. Fill each half with the bean mixture and serve warm."
+        }
+      ]
+    },
+    {
+      "id": "vegetarian-chili",
+      "slug": "vegetarian-chili",
+      "title": "Vegetarian Chili",
+      "description": "A hearty chili made with beans, vegetables, and spices, served with bread.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 30,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/vegetarian-chili.png",
+      "ingredients": [
+        {
+          "id": "ri_5bf2bee50058",
+          "name": "canned kidney beans",
+          "quantity": "400",
+          "unit": "g",
+          "note": "drained"
+        },
+        {
+          "id": "ri_01f712cec74e",
+          "name": "canned black beans",
+          "quantity": "400",
+          "unit": "g",
+          "note": "drained"
+        },
+        {
+          "id": "ri_03d550865bc5",
+          "name": "red onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_5cdbdcd85a51",
+          "name": "bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_9a6176d43955",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_b55d6fa04370",
+          "name": "canned chopped tomatoes",
+          "quantity": "400",
+          "unit": "g"
+        },
+        {
+          "id": "ri_13a595baef51",
+          "name": "chili powder",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_e0f2151a691a",
+          "name": "cumin",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_c959048fc412",
+          "name": "olive oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Saut\u00e9 vegetables and spices: Heat the olive oil in a large pot over medium heat. Saut\u00e9 the red onion and bell pepper until softening, then add the garlic and cook for 1 minute. Stir in the chili powder and cumin and cook for 30 seconds to toast the spices."
+        },
+        {
+          "id": "step-2",
+          "text": "Add beans and simmer: Add the kidney beans, black beans, and chopped tomatoes. Bring to a simmer, then reduce the heat and cook uncovered for 15\u201320 minutes until the chilli has thickened. Season with salt and pepper."
+        },
+        {
+          "id": "step-3",
+          "text": "Serve: Serve the chilli hot with bread, rice, or tortilla chips. A dollop of yogurt or sour cream and a squeeze of lime work well on top."
+        }
+      ]
+    },
+    {
+      "id": "mediterranean-chickpea-salad",
+      "slug": "mediterranean-chickpea-salad",
+      "title": "Mediterranean Chickpea Salad",
+      "description": "A vibrant and refreshing salad packed with chickpeas, vegetables, and a tangy dressing, ideal for a light dinner.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 0,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/mediterranean-chickpea-salad.png",
+      "ingredients": [
+        {
+          "id": "ri_bb94c51ddd3f",
+          "name": "canned chickpeas",
+          "quantity": "400",
+          "unit": "g",
+          "note": "drained"
+        },
+        {
+          "id": "ri_df132df73066",
+          "name": "cucumber",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_0391dd6f80b4",
+          "name": "tomato",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "diced"
+        },
+        {
+          "id": "ri_184bae3293dc",
+          "name": "red onion",
+          "quantity": "0.5",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_5311f1552452",
+          "name": "feta cheese",
+          "quantity": "100",
+          "unit": "g",
+          "note": "crumbled"
+        },
+        {
+          "id": "ri_82df53399515",
+          "name": "fresh parsley",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_aa1bdb88c224",
+          "name": "olive oil",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_a6f7c844d011",
+          "name": "lemon",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "whole"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Combine the salad ingredients: In a large bowl, combine the chickpeas, cucumber, tomato, red onion, feta, and parsley."
+        },
+        {
+          "id": "step-2",
+          "text": "Make the dressing: In a small bowl, whisk together the olive oil, lemon juice, salt, and pepper. Taste and adjust\u2014the dressing should balance the richness of the feta."
+        },
+        {
+          "id": "step-3",
+          "text": "Dress and serve: Pour the dressing over the salad and toss gently. Serve straight away, or leave for 10 minutes so the flavours meld."
+        }
+      ]
+    },
+    {
+      "id": "pasta-puttanesca-with-olives-and-capers",
+      "slug": "pasta-puttanesca-with-olives-and-capers",
+      "title": "Pasta Puttanesca with Olives and Capers",
+      "description": "A quick and easy pasta dish with a rich tomato sauce, olives, and capers.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/pasta-puttanesca-with-olives-and-capers.png",
+      "ingredients": [
+        {
+          "id": "ri_edb82dead099",
+          "name": "spaghetti",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_41fee475d5b2",
+          "name": "canned chopped tomatoes",
+          "quantity": "400",
+          "unit": "g"
+        },
+        {
+          "id": "ri_07b823e37195",
+          "name": "black olives",
+          "quantity": "100",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_9705191a6261",
+          "name": "capers",
+          "quantity": "50",
+          "unit": "g"
+        },
+        {
+          "id": "ri_cb9800090bad",
+          "name": "garlic",
+          "quantity": "3",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_c0f76b4c41df",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_e941b5cf5f37",
+          "name": "red chili flakes",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "id": "ri_085e4ad2fb4d",
+          "name": "fresh basil",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the pasta: Bring a large pot of salted water to the boil and cook the spaghetti according to package instructions. Drain and reserve a little pasta water."
+        },
+        {
+          "id": "step-2",
+          "text": "Make the sauce: In a large frying pan, heat the olive oil and fry the garlic and chilli flakes for 1 minute\u2014don\u2019t let the garlic burn. Add the tomatoes, olives, and capers. Simmer for 10 minutes until the sauce has thickened. Season with salt and pepper."
+        },
+        {
+          "id": "step-3",
+          "text": "Combine and serve: Add the spaghetti to the sauce and toss well, adding a splash of pasta water if needed. Tear in most of the basil and serve with the rest on top."
+        }
+      ]
+    },
+    {
+      "id": "mushroom-risotto",
+      "slug": "mushroom-risotto",
+      "title": "Mushroom Risotto",
+      "description": "A creamy risotto with mushrooms and peas, perfect for a comforting dinner.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 30,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/mushroom-risotto.png",
+      "ingredients": [
+        {
+          "id": "ri_11f436c35522",
+          "name": "arborio rice",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_b1fda24bd87c",
+          "name": "mushrooms",
+          "quantity": "250",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_0afc3b51e5ff",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_9c10f0e9bb77",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_3d8601ea3e5b",
+          "name": "vegetable stock",
+          "quantity": "1",
+          "unit": "l"
+        },
+        {
+          "id": "ri_ab3b9e0f32e2",
+          "name": "peas",
+          "quantity": "100",
+          "unit": "g",
+          "note": "frozen"
+        },
+        {
+          "id": "ri_b10ff406a87b",
+          "name": "parmesan",
+          "quantity": "40",
+          "unit": "g",
+          "note": "finely grated"
+        },
+        {
+          "id": "ri_1369f5679979",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Fry mushrooms and saut\u00e9 aromatics: Keep the vegetable stock warm in a separate pan. Heat 1 tbsp oil in a large pan and fry the mushrooms until golden. Remove and set aside. In the same pan, add the remaining oil and saut\u00e9 the onion until soft, then add the garlic and cook for 1 minute."
+        },
+        {
+          "id": "step-2",
+          "text": "Add rice and stock gradually: Stir in the arborio rice and cook for 1\u20132 minutes until the grains look translucent at the edges. Add the stock a ladle at a time, stirring frequently and waiting until each addition is absorbed before adding more. This gives you a creamy risotto."
+        },
+        {
+          "id": "step-3",
+          "text": "Finish and serve: When the rice is almost tender, stir in the mushrooms and peas. Cook for 2\u20133 minutes more. Off the heat, stir in the parmesan and season with salt and pepper. Serve immediately."
+        }
+      ]
+    },
+    {
+      "id": "thai-red-curry-with-tofu",
+      "slug": "thai-red-curry-with-tofu",
+      "title": "Thai Red Curry with Tofu",
+      "description": "A fragrant and creamy red curry with tofu and vegetables, served with rice.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 30,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/thai-red-curry-with-tofu.png",
+      "ingredients": [
+        {
+          "id": "ri_c10db2790cb1",
+          "name": "tofu",
+          "quantity": "400",
+          "unit": "g"
+        },
+        {
+          "id": "ri_04acdf703cb3",
+          "name": "coconut milk",
+          "quantity": "400",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_63403624fe77",
+          "name": "red curry paste",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_cff84fa85b96",
+          "name": "red bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_893f795907a0",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_a0447214c799",
+          "name": "carrot",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_edfc02a364ac",
+          "name": "soy sauce",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_197040e3904f",
+          "name": "fresh coriander",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_c39572784497",
+          "name": "jasmine rice",
+          "quantity": "300",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the rice and fry the tofu: Cook the jasmine rice according to package instructions. Keep warm. Press the tofu between kitchen paper to remove excess moisture, then cut into cubes. Heat the vegetable oil in a large pan and fry the tofu until golden on all sides. Remove and set aside."
+        },
+        {
+          "id": "step-2",
+          "text": "Fry the paste and add coconut milk: In the same pan, fry the red curry paste for 1\u20132 minutes until fragrant. Add the thick part of the coconut milk first and stir to form a paste, then add the rest of the milk. Bring to a gentle simmer."
+        },
+        {
+          "id": "step-3",
+          "text": "Add vegetables and finish: Add the red bell pepper, broccoli, and carrot. Simmer for 8\u201310 minutes until the vegetables are tender. Return the tofu, add the soy sauce and simmer for 2\u20133 minutes. Stir in most of the coriander. Serve over the rice with the remaining coriander on top."
+        }
+      ]
+    },
+    {
+      "id": "roasted-vegetable-and-hummus-wrap",
+      "slug": "roasted-vegetable-and-hummus-wrap",
+      "title": "Roasted Vegetable and Hummus Wrap",
+      "description": "A healthy wrap filled with roasted vegetables and creamy hummus.",
+      "servings": 4,
+      "prepMinutes": 10,
+      "cookMinutes": 25,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/roasted-vegetable-and-hummus-wrap.png",
+      "ingredients": [
+        {
+          "id": "ri_523c3a9217be",
+          "name": "wholemeal wraps",
+          "quantity": "4",
+          "unit": "whole"
+        },
+        {
+          "id": "ri_ba2b6ee8731d",
+          "name": "bell peppers",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_70edf9db6e56",
+          "name": "aubergine",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_523dcbf441aa",
+          "name": "courgette",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_c0adad8733b6",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_978ed4b47413",
+          "name": "hummus",
+          "quantity": "200",
+          "unit": "g"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Roast the vegetables: Preheat the oven to 200\u00b0C (180\u00b0C fan). Toss the bell peppers, aubergine, and courgette with the olive oil, salt, and pepper on a baking tray. Spread in a single layer and roast for 25 minutes until tender and slightly charred."
+        },
+        {
+          "id": "step-2",
+          "text": "Assemble the wraps: Warm the wraps briefly in a dry pan or the microwave so they roll without cracking. Spread each with hummus and pile with the roasted vegetables. Roll tightly, tucking in the sides."
+        },
+        {
+          "id": "step-3",
+          "text": "Serve: Slice each wrap in half and serve straight away."
+        }
+      ]
+    },
+    {
+      "id": "tofu-stir-fry-with-broccoli-and-peppers",
+      "slug": "tofu-stir-fry-with-broccoli-and-peppers",
+      "title": "Tofu Stir-Fry with Broccoli and Peppers",
+      "description": "A quick and healthy stir-fry featuring marinated tofu, broccoli, and bell peppers, served over rice.",
+      "servings": 2,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "proteinCategory": "meat-free",
+      "imageSrc": "/images/catalogue/tofu-stir-fry-with-broccoli-and-peppers.png",
+      "ingredients": [
+        {
+          "id": "ri_4f03313b82c2",
+          "name": "firm tofu",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_a2156cd55962",
+          "name": "broccoli",
+          "quantity": "200",
+          "unit": "g",
+          "note": "chopped"
+        },
+        {
+          "id": "ri_de680fae66a0",
+          "name": "red bell pepper",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_463bf78875f8",
+          "name": "soy sauce",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_2e2adb9f7c4d",
+          "name": "sesame oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_a78fc1d8f028",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "id": "ri_853629ac7057",
+          "name": "ginger",
+          "quantity": "1",
+          "unit": "piece",
+          "note": "grated"
+        },
+        {
+          "id": "ri_6518a1c3e144",
+          "name": "rice",
+          "quantity": "250",
+          "unit": "g"
+        },
+        {
+          "id": "ri_d060dced1076",
+          "name": "spring onions",
+          "quantity": "2",
+          "unit": "whole",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_9a7d20e820ec",
+          "name": "black sesame seeds",
+          "quantity": "1",
+          "unit": "tbsp"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook rice, press and marinate tofu: Cook the rice according to package instructions. Keep warm. Press the tofu between kitchen paper to remove excess moisture, then cut into cubes. In a bowl, mix 1 tbsp soy sauce, half the sesame oil, half the garlic, and the ginger. Add the tofu and toss. Marinate for at least 10 minutes."
+        },
+        {
+          "id": "step-2",
+          "text": "Fry the tofu: Heat the remaining sesame oil in a non-stick wok or frying pan over medium-high heat. Add the tofu and fry until golden on all sides. Remove and set aside."
+        },
+        {
+          "id": "step-3",
+          "text": "Stir-fry vegetables and serve: Add the broccoli and bell pepper to the pan and stir-fry for 4\u20135 minutes until tender-crisp. Return the tofu, add the remaining soy sauce and garlic, and toss for 1 minute. Serve over the rice, garnished with spring onions and sesame seeds."
+        }
+      ]
+    },
+    {
+      "id": "beef-and-mushroom-stroganoff",
+      "slug": "beef-and-mushroom-stroganoff",
+      "title": "Beef and Mushroom Stroganoff",
+      "description": "A creamy and comforting beef stroganoff with tender mushrooms, served over egg noodles.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 30,
+      "proteinCategory": "beef",
+      "imageSrc": "/images/catalogue/beef-and-mushroom-stroganoff.png",
+      "ingredients": [
+        {
+          "id": "ri_1e8239cd4c53",
+          "name": "beef sirloin",
+          "quantity": "500",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_4875adeb7a4e",
+          "name": "mushrooms",
+          "quantity": "250",
+          "unit": "g",
+          "note": "sliced"
+        },
+        {
+          "id": "ri_fb2df1e23841",
+          "name": "onion",
+          "quantity": "1",
+          "unit": "whole",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_3677e232f459",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "clove",
+          "note": "finely chopped"
+        },
+        {
+          "id": "ri_a357f54265e6",
+          "name": "beef stock",
+          "quantity": "300",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_5bdb7e92f668",
+          "name": "sour cream",
+          "quantity": "200",
+          "unit": "ml"
+        },
+        {
+          "id": "ri_5650485ef773",
+          "name": "egg noodles",
+          "quantity": "300",
+          "unit": "g"
+        },
+        {
+          "id": "ri_1b585364adc9",
+          "name": "olive oil",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ri_98bb79c773b4",
+          "name": "parsley",
+          "quantity": "1",
+          "unit": "bunch",
+          "note": "chopped"
+        }
+      ],
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "Cook the noodles: In a pot of salted boiling water, cook the egg noodles according to package instructions until al dente. Drain and set aside."
+        },
+        {
+          "id": "step-2",
+          "text": "Saut\u00e9 the beef: In a large frying pan, heat olive oil over medium-high heat. Add the sliced beef, season with salt and black pepper, and cook until browned. Remove beef and set aside."
+        },
+        {
+          "id": "step-3",
+          "text": "Cook the vegetables: In the same pan, add the finely chopped onion and cook until softened. Add the garlic and sliced mushrooms, cooking until mushrooms are browned."
+        },
+        {
+          "id": "step-4",
+          "text": "Make the sauce: Pour in the beef stock and bring to a simmer. Stir in the sour cream and return the beef to the pan. Cook for a few minutes until heated through."
+        },
+        {
+          "id": "step-5",
+          "text": "Serve: Serve the beef stroganoff over the cooked egg noodles and garnish with chopped parsley."
+        }
+      ]
+    }
+  ]
+}

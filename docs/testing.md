@@ -16,7 +16,7 @@ Pure recipe-domain tests run without a browser or web server:
 pnpm test:unit
 ```
 
-They cover bounded recipe/catalogue validation, stable line IDs, preservation of flexible ingredient quantities, seven-day guest-plan construction/restoration, slot changes, idempotent claim state, and exact cross-device plan reconciliation. Keep this suite focused on platform-independent logic.
+They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein-category validation, catalogue ID/slug uniqueness, version-scoped catalogue lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping. Keep the suite small. Do not assert catalogue size, release version numbers, or other content that changes as meals are added.
 
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 

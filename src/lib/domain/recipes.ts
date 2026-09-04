@@ -15,7 +15,23 @@ export const RECIPE_LIMITS = {
   stepText: 2_000,
   servings: 1_000,
   minutes: 10_080,
+  imageSrc: 240,
 } as const;
+
+export const PROTEIN_CATEGORIES = [
+  "chicken",
+  "beef",
+  "pork",
+  "lamb",
+  "fish",
+  "meat-free",
+] as const;
+
+export type ProteinCategory = (typeof PROTEIN_CATEGORIES)[number];
+
+export const COST_BANDS = ["budget", "standard", "premium"] as const;
+
+export type CostBand = (typeof COST_BANDS)[number];
 
 export type RecipeIngredientLine = {
   id: string;
@@ -38,6 +54,9 @@ export type RecipeContent = {
   servings?: number;
   prepMinutes?: number;
   cookMinutes?: number;
+  proteinCategory: ProteinCategory;
+  costBand?: CostBand;
+  imageSrc?: string;
 };
 
 export type RecipeSource =
@@ -89,6 +108,12 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     0,
     RECIPE_LIMITS.minutes,
   );
+  const imageSrc = optionalText(
+    input.imageSrc,
+    "Image path",
+    RECIPE_LIMITS.imageSrc,
+  );
+  const costBand = optionalCostBand(input.costBand);
 
   return {
     title: requiredText(input.title, "Title", RECIPE_LIMITS.title),
@@ -98,6 +123,9 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     ...(servings === undefined ? {} : { servings }),
     ...(prepMinutes === undefined ? {} : { prepMinutes }),
     ...(cookMinutes === undefined ? {} : { cookMinutes }),
+    proteinCategory: requiredProteinCategory(input.proteinCategory),
+    ...(costBand === undefined ? {} : { costBand }),
+    ...(imageSrc === undefined ? {} : { imageSrc }),
   };
 }
 
@@ -234,6 +262,25 @@ function requiredSlug(value: string) {
     );
   }
   return slug;
+}
+
+function requiredProteinCategory(value: ProteinCategory): ProteinCategory {
+  if (!PROTEIN_CATEGORIES.includes(value)) {
+    throw new RecipeValidationError(
+      "Protein category must be chicken, beef, pork, lamb, fish, or meat-free.",
+    );
+  }
+  return value;
+}
+
+function optionalCostBand(value: CostBand | undefined): CostBand | undefined {
+  if (value === undefined) return undefined;
+  if (!COST_BANDS.includes(value)) {
+    throw new RecipeValidationError(
+      "Cost band must be budget, standard, or premium.",
+    );
+  }
+  return value;
 }
 
 function boundedList(

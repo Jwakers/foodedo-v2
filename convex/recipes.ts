@@ -7,7 +7,8 @@ import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { requireAuthSubject } from "./lib/auth";
 import {
-  recipeContentValidator,
+  proteinCategoryValidator,
+  recipeContentFields,
   recipeViewValidator,
 } from "./lib/recipeValidators";
 import {
@@ -21,7 +22,12 @@ import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 const maximumPageSize = 50;
 
 export const create = mutation({
-  args: { recipe: recipeContentValidator },
+  args: {
+    recipe: v.object({
+      ...recipeContentFields,
+      proteinCategory: proteinCategoryValidator,
+    }),
+  },
   returns: v.id("recipes"),
   handler: async (ctx, { recipe }) => {
     const ownerSubject = await requireAuthSubject(ctx);
@@ -107,7 +113,17 @@ export const removeMineFromLibrary = mutation({
       .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
       .first();
 
-    if (referencedSlot === null) {
+    const shoppingListItems = await ctx.db
+      .query("shoppingListItems")
+      .withIndex("by_owner_and_updated_at", (q) =>
+        q.eq("ownerSubject", ownerSubject),
+      )
+      .collect();
+    const referencedInShoppingList = shoppingListItems.some((item) =>
+      item.sourceRecipeIds.includes(recipe._id),
+    );
+
+    if (referencedSlot === null && !referencedInShoppingList) {
       await ctx.db.delete(recipe._id);
     } else {
       await ctx.db.patch(recipe._id, {
@@ -213,6 +229,11 @@ function toRecipeView(recipe: Doc<"recipes">) {
     ...(recipe.cookMinutes === undefined
       ? {}
       : { cookMinutes: recipe.cookMinutes }),
+    ...(recipe.proteinCategory === undefined
+      ? {}
+      : { proteinCategory: recipe.proteinCategory }),
+    ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
+    ...(recipe.imageSrc === undefined ? {} : { imageSrc: recipe.imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),
     updatedAt: recipe.updatedAt,

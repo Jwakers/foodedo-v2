@@ -13,6 +13,21 @@ export const recipeStepValidator = v.object({
   text: v.string(),
 });
 
+export const proteinCategoryValidator = v.union(
+  v.literal("chicken"),
+  v.literal("beef"),
+  v.literal("pork"),
+  v.literal("lamb"),
+  v.literal("fish"),
+  v.literal("meat-free"),
+);
+
+export const costBandValidator = v.union(
+  v.literal("budget"),
+  v.literal("standard"),
+  v.literal("premium"),
+);
+
 export const recipeContentFields = {
   title: v.string(),
   description: v.optional(v.string()),
@@ -21,6 +36,11 @@ export const recipeContentFields = {
   servings: v.optional(v.number()),
   prepMinutes: v.optional(v.number()),
   cookMinutes: v.optional(v.number()),
+  // Optional in Convex until existing private snapshots are backfilled; domain
+  // prepareRecipeContent still requires proteinCategory for new writes.
+  proteinCategory: v.optional(proteinCategoryValidator),
+  costBand: v.optional(costBandValidator),
+  imageSrc: v.optional(v.string()),
 };
 
 export const recipeContentValidator = v.object(recipeContentFields);

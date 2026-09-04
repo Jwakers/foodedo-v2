@@ -74,7 +74,7 @@ The current catalogue uses real `/recipes/[slug]` pages. A catalogue slug is a u
 
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
-The bundled catalogue currently contains 23 lightweight meals to make plan testing meaningful. Their extra detail is temporary; their stable IDs and slugs still follow the real catalogue contract.
+The bundled catalogue currently contains about 30 real system meals (versioned in code with hero images) so plan and recipe flows exercise production-like content. Stable IDs and slugs follow the catalogue contract; moving this bundle into Convex public reads remains a later cutover.
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
 

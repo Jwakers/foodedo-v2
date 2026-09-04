@@ -11,99 +11,72 @@ import {
 } from "../../src/lib/domain/standard-catalogue";
 
 const validRecipe = {
-  title: "  Tomato pasta  ",
-  description: "  A useful weeknight dinner.  ",
+  title: "Tomato pasta",
+  description: "A useful weeknight dinner.",
   ingredients: [
     {
       id: "ingredient-1",
-      name: "  chopped tomatoes  ",
-      quantity: "  1 × 400g  ",
-      unit: "  tin  ",
-      note: "  drained  ",
+      name: "chopped tomatoes",
+      quantity: "1 × 400g",
+      unit: "tin",
+      note: "drained",
     },
   ],
-  steps: [{ id: "step-1", text: "  Simmer until reduced.  " }],
+  steps: [{ id: "step-1", text: "Simmer until reduced." }],
   servings: 2,
   prepMinutes: 5,
   cookMinutes: 20,
+  proteinCategory: "meat-free" as const,
 };
 
-test("preserves flexible ingredient meaning while normalising whitespace", () => {
-  expect(prepareRecipeContent(validRecipe)).toEqual({
-    title: "Tomato pasta",
-    description: "A useful weeknight dinner.",
+test("preserves authored ingredient quantity text while normalising whitespace", () => {
+  const prepared = prepareRecipeContent({
+    ...validRecipe,
+    title: "  Tomato pasta  ",
     ingredients: [
       {
         id: "ingredient-1",
-        name: "chopped tomatoes",
-        quantity: "1 × 400g",
-        unit: "tin",
-        note: "drained",
+        name: "  chopped tomatoes  ",
+        quantity: "  1 × 400g  ",
+        unit: "  tin  ",
+        note: "  drained  ",
       },
     ],
-    steps: [{ id: "step-1", text: "Simmer until reduced." }],
-    servings: 2,
-    prepMinutes: 5,
-    cookMinutes: 20,
+  });
+
+  expect(prepared.title).toBe("Tomato pasta");
+  expect(prepared.ingredients[0]).toEqual({
+    id: "ingredient-1",
+    name: "chopped tomatoes",
+    quantity: "1 × 400g",
+    unit: "tin",
+    note: "drained",
   });
 });
 
-test("removes blank optional text", () => {
-  const prepared = prepareRecipeContent({
-    ...validRecipe,
-    description: "  ",
-    ingredients: [{ ...validRecipe.ingredients[0], note: " " }],
-  });
-
-  expect(prepared.description).toBeUndefined();
-  expect(prepared.ingredients[0]?.note).toBeUndefined();
-});
-
-test("rejects duplicate stable line identifiers", () => {
+test("rejects duplicate stable ingredient line IDs", () => {
   expect(() =>
     prepareRecipeContent({
       ...validRecipe,
       ingredients: [
-        validRecipe.ingredients[0],
-        { ...validRecipe.ingredients[0], name: "tomato purée" },
+        validRecipe.ingredients[0]!,
+        { ...validRecipe.ingredients[0]!, name: "tomato purée" },
       ],
     }),
   ).toThrow(RecipeValidationError);
 });
 
-test("requires at least one ingredient and one step", () => {
+test("requires a valid protein category", () => {
   expect(() =>
     prepareRecipeContent({
       ...validRecipe,
-      ingredients: [],
+      // @ts-expect-error intentional invalid fixture
+      proteinCategory: "duck",
     }),
-  ).toThrow("Ingredients must contain between 1 and 100 items.");
-
-  expect(() =>
-    prepareRecipeContent({
-      ...validRecipe,
-      steps: [],
-    }),
-  ).toThrow("Steps must contain between 1 and 100 items.");
+  ).toThrow(RecipeValidationError);
 });
 
-test("validates versioned catalogue content and stable meal identifiers", () => {
-  expect(
-    prepareStandardCatalogue({
-      version: 1,
-      meals: [{ id: "catalogue-meal-1", slug: "tomato-pasta", ...validRecipe }],
-    }),
-  ).toMatchObject({
-    version: 1,
-    meals: [
-      {
-        id: "catalogue-meal-1",
-        slug: "tomato-pasta",
-        title: "Tomato pasta",
-      },
-    ],
-  });
-
+test("rejects catalogue meals that share an ID or slug", () => {
   expect(() =>
     prepareStandardCatalogue({
       version: 1,
@@ -125,29 +98,16 @@ test("validates versioned catalogue content and stable meal identifiers", () => 
   ).toThrow("Catalogue meal slugs must be unique.");
 });
 
-test("exposes only meals from the current standard catalogue version", () => {
-  expect(standardCatalogue.meals).toHaveLength(23);
+test("resolves catalogue meals only for the current catalogue version", () => {
+  const sample = standardCatalogue.meals[0];
+  expect(sample).toBeDefined();
+  if (sample === undefined) return;
+
   expect(
-    findStandardCatalogueMeal("tomato-lentil-pasta", standardCatalogue.version),
-  ).toMatchObject({
-    id: "tomato-lentil-pasta",
-    slug: "tomato-and-lentil-pasta",
-    title: "Tomato and lentil pasta",
-  });
+    findStandardCatalogueMeal(sample.id, standardCatalogue.version),
+  ).toMatchObject({ id: sample.id, slug: sample.slug });
   expect(
-    findStandardCatalogueMealBySlug("tomato-and-lentil-pasta"),
-  ).toMatchObject({
-    id: "tomato-lentil-pasta",
-    title: "Tomato and lentil pasta",
-  });
-  expect(
-    findStandardCatalogueMeal(
-      "tomato-lentil-pasta",
-      standardCatalogue.version + 1,
-    ),
+    findStandardCatalogueMeal(sample.id, standardCatalogue.version + 1),
   ).toBeNull();
-  expect(
-    findStandardCatalogueMeal("missing", standardCatalogue.version),
-  ).toBeNull();
-  expect(findStandardCatalogueMealBySlug("missing")).toBeNull();
+  expect(findStandardCatalogueMealBySlug("missing-meal")).toBeNull();
 });

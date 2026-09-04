@@ -14,7 +14,7 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 
 ## Catalogue lifecycle
 
-The current versioned code bundle is a deliberate foundation-stage delivery choice, not the intended permanent authoring system. Its 23 lightweight meals exist to exercise catalogue and planning behavior. Move standard catalogue content to public, non-personal Convex reads before adding generation, catalogue administration, frequent independent releases, or enough content that bundling becomes costly.
+The current versioned code bundle is a deliberate foundation-stage delivery choice, not the intended permanent authoring system. About 30 real system meals exist to exercise catalogue and planning behavior. Move standard catalogue content to public, non-personal Convex reads before adding generation, catalogue administration, frequent independent releases, or enough content that bundling becomes costly.
 
 Generation must create a candidate, not publish directly. A future workflow validates and reviews the candidate before publishing an immutable catalogue revision. Guests can read published standard revisions without authentication; premium delivery remains a separate, server-entitled concern. Saving still resolves the trusted published revision on the server and creates a personal snapshot, so the client contract and provenance model can remain stable when storage moves.
 
@@ -119,7 +119,7 @@ Foundation already implemented:
 - Private authenticated recipe persistence and owner indexes.
 - Manual provenance plus the versioned `CatalogueMeal` contract.
 - Create, read, and paginated-list operations that derive ownership from verified auth.
-- A small versioned catalogue rendered equally for guests and accounts.
+- A small versioned in-code catalogue (real meal content + hero images) rendered equally for guests and accounts.
 - An authenticated, retry-safe save that resolves trusted catalogue content on the server, creates or reuses a private snapshot, and explicitly adds it to the user's library.
 
 MVP additions still required by the approved designs:
