@@ -28,6 +28,7 @@ import {
   readAdjustPlanIntent,
 } from "@/lib/domain/auth-intents";
 import { createAdjustPlanIntentStore } from "@/lib/platform/auth-intent-store";
+import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 const guestBenefits = [
   {
@@ -95,7 +96,7 @@ export function PlanAction() {
       );
     } catch (error) {
       console.error("Failed to store adjust-plan resume intent.", error);
-      window.alert(
+      temporaryFeedback(
         "Foodedo couldn’t save your place. Check storage access and try again.",
       );
       return;

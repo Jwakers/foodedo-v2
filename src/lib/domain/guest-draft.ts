@@ -7,12 +7,6 @@ import {
 export const GUEST_DRAFT_SCHEMA_VERSION = 1 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
 
-/**
- * Temporary preview free day so guest plan review can show the empty-slot UI.
- * Index is 0-based within the seven-day draft.
- */
-export const GUEST_PLAN_PREVIEW_EMPTY_SLOT_INDEX = 2 as const;
-
 const minimumClaimKeyLength = 16;
 const maximumClaimKeyLength = 100;
 const claimKeyPattern = /^[A-Za-z0-9_-]+$/;
@@ -80,7 +74,7 @@ export function createGuestDraft({
   };
 }
 
-/** Clears the given slots so plan review can show free days. */
+/** Clears the given days. Editing clears acceptance/claim like other plan edits. */
 export function applyGuestPlanEmptySlots(
   draft: GuestDraftV1,
   emptySlotIndexes: readonly number[],
@@ -101,12 +95,7 @@ export function applyGuestPlanEmptySlots(
     return draft;
   }
 
-  // Preview free days must not clear acceptance/claim the way swap/shuffle do.
-  return {
-    ...draft,
-    mealChoices,
-    updatedAt: now,
-  };
+  return editableDraft(draft, mealChoices, now);
 }
 
 export function countPlannedGuestMeals(draft: GuestDraftV1) {

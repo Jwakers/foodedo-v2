@@ -70,7 +70,7 @@ test("can leave selected days empty and keep them empty across shuffle", () => {
   ).toHaveLength(6);
 });
 
-test("applies empty slots without clearing acceptance or claim state", () => {
+test("applying empty slots clears acceptance and claim like other plan edits", () => {
   const accepted = acceptGuestPlan(
     createGuestDraft({
       catalogueVersion: 1,
@@ -84,11 +84,8 @@ test("applies empty slots without clearing acceptance or claim state", () => {
 
   const withEmptySlot = applyGuestPlanEmptySlots(claimed, [2], 400);
 
-  expect(withEmptySlot.acceptedAt).toBe(200);
-  expect(withEmptySlot.claim).toEqual({
-    key: "claim_key_1234567890",
-    requestedAt: 300,
-  });
+  expect(withEmptySlot.acceptedAt).toBeUndefined();
+  expect(withEmptySlot.claim).toBeUndefined();
   expect(withEmptySlot.mealChoices[2]?.catalogueMealId).toBeNull();
   expect(withEmptySlot.updatedAt).toBe(400);
 });

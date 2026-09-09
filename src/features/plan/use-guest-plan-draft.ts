@@ -19,6 +19,9 @@ const mealsById = new Map(
   standardCatalogue.meals.map((meal) => [meal.id, meal]),
 );
 
+const loadErrorMessage =
+  "Foodedo couldn’t open your plan on this device. Check storage access and try again.";
+
 export type GuestPlanDraftState =
   | { status: "loading" }
   | { status: "empty" }
@@ -41,6 +44,19 @@ function toReadyState(
   };
 }
 
+async function readDraftState(): Promise<
+  Exclude<GuestPlanDraftState, { status: "loading" }>
+> {
+  try {
+    const draft = await loadGuestPlanDraftForReview();
+    if (!draft) return { status: "empty" };
+    return toReadyState(draft);
+  } catch (error) {
+    console.error("Failed to read guest plan draft.", error);
+    return { status: "error", message: loadErrorMessage };
+  }
+}
+
 export function useGuestPlanDraft() {
   const [state, setState] = useState<GuestPlanDraftState>({
     status: "loading",
@@ -50,25 +66,8 @@ export function useGuestPlanDraft() {
     let cancelled = false;
 
     void (async () => {
-      try {
-        const draft = await loadGuestPlanDraftForReview();
-        if (cancelled) return;
-
-        if (!draft) {
-          setState({ status: "empty" });
-          return;
-        }
-
-        setState(toReadyState(draft));
-      } catch (error) {
-        console.error("Failed to read guest plan draft.", error);
-        if (cancelled) return;
-        setState({
-          status: "error",
-          message:
-            "Foodedo couldn’t open your plan on this device. Check storage access and try again.",
-        });
-      }
+      const next = await readDraftState();
+      if (!cancelled) setState(next);
     })();
 
     return () => {
@@ -78,22 +77,7 @@ export function useGuestPlanDraft() {
 
   const retry = useCallback(async () => {
     setState({ status: "loading" });
-    try {
-      const draft = await loadGuestPlanDraftForReview();
-      if (!draft) {
-        setState({ status: "empty" });
-        return;
-      }
-
-      setState(toReadyState(draft));
-    } catch (error) {
-      console.error("Failed to read guest plan draft.", error);
-      setState({
-        status: "error",
-        message:
-          "Foodedo couldn’t open your plan on this device. Check storage access and try again.",
-      });
-    }
+    setState(await readDraftState());
   }, []);
 
   const startPlan = useCallback(async () => {

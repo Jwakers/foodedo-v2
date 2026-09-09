@@ -1,76 +1,71 @@
 import {
   applyGuestPlanEmptySlots,
   createGuestDraft,
-  GUEST_PLAN_PREVIEW_EMPTY_SLOT_INDEX,
   readGuestDraftV1,
   shuffleGuestPlan,
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
 import { tomorrowPlanDate } from "@/lib/domain/plan-display";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
-import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
+import {
+  createIndexedDbGuestDraftStore,
+  type GuestDraftStore,
+} from "@/lib/platform/guest-draft-store";
 
 const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
-const previewEmptySlotIndexes = [GUEST_PLAN_PREVIEW_EMPTY_SLOT_INDEX] as const;
 
-export async function readCurrentGuestPlanDraft(): Promise<GuestDraftV1 | null> {
-  const store = createIndexedDbGuestDraftStore();
+/**
+ * Temporary generation policy: leave one free day so plan review can exercise
+ * empty-slot UI. Owned by the plan feature, not domain persistence.
+ */
+export const GUEST_PLAN_GENERATION_FREE_DAY_INDEX = 2 as const;
+
+const generationFreeDayIndexes = [
+  GUEST_PLAN_GENERATION_FREE_DAY_INDEX,
+] as const;
+
+function guestDraftStore(): GuestDraftStore {
+  return createIndexedDbGuestDraftStore();
+}
+
+export async function readCurrentGuestPlanDraft(
+  store: GuestDraftStore = guestDraftStore(),
+): Promise<GuestDraftV1 | null> {
   return readGuestDraftV1(await store.read(), {
     catalogueVersion: standardCatalogue.version,
     catalogueMealIds,
   });
 }
 
-async function withPreviewEmptySlot(
-  draft: GuestDraftV1,
-  now: number,
-): Promise<GuestDraftV1> {
-  const withEmptySlot = applyGuestPlanEmptySlots(
-    draft,
-    previewEmptySlotIndexes,
-    now,
-  );
-  if (withEmptySlot !== draft) {
-    await createIndexedDbGuestDraftStore().write(withEmptySlot);
-  }
-  return withEmptySlot;
-}
-
-/** Loads the local draft for plan review, ensuring the preview free day exists. */
-export async function loadGuestPlanDraftForReview({
-  now = Date.now(),
-}: {
-  now?: number;
-} = {}): Promise<GuestDraftV1 | null> {
-  const existing = await readCurrentGuestPlanDraft();
-  if (!existing) return null;
-  return withPreviewEmptySlot(existing, now);
+/** Read-only load for plan review. Does not rewrite storage. */
+export async function loadGuestPlanDraftForReview(
+  store: GuestDraftStore = guestDraftStore(),
+): Promise<GuestDraftV1 | null> {
+  return readCurrentGuestPlanDraft(store);
 }
 
 /**
- * Returns the current local guest draft, creating a fresh one when missing or
- * invalid. Generation stays on the transparent rotating catalogue order for now,
- * with one preview free day so plan review can show the empty-slot UI.
+ * Returns the current local guest draft, creating one when missing or invalid.
+ * New plans use the temporary free-day generation policy.
  */
 export async function ensureGuestPlanDraft({
   now = Date.now(),
   planStartDate = tomorrowPlanDate(),
+  store = guestDraftStore(),
 }: {
   now?: number;
   planStartDate?: string;
+  store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
-  const store = createIndexedDbGuestDraftStore();
-  const existing = await readCurrentGuestPlanDraft();
-  if (existing) {
-    return withPreviewEmptySlot(existing, now);
-  }
+  const existing = await readCurrentGuestPlanDraft(store);
+  if (existing) return existing;
 
   const draft = createGuestDraft({
     catalogueVersion: standardCatalogue.version,
     planStartDate,
     catalogueMealIds,
     now,
-    emptySlotIndexes: previewEmptySlotIndexes,
+    emptySlotIndexes: generationFreeDayIndexes,
   });
 
   await store.write(draft);
@@ -79,15 +74,19 @@ export async function ensureGuestPlanDraft({
 
 export async function shuffleCurrentGuestPlanDraft({
   now = Date.now(),
+  store = guestDraftStore(),
 }: {
   now?: number;
+  store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
-  const existing = await ensureGuestPlanDraft({ now });
-  const shuffled = applyGuestPlanEmptySlots(
-    shuffleGuestPlan(existing, catalogueMealIds, now),
-    previewEmptySlotIndexes,
+  const existing = await ensureGuestPlanDraft({ now, store });
+  const shuffled = shuffleGuestPlan(existing, catalogueMealIds, now);
+  // Re-apply generation free-day so older full drafts pick up the policy.
+  const withFreeDay = applyGuestPlanEmptySlots(
+    shuffled,
+    generationFreeDayIndexes,
     now,
   );
-  await createIndexedDbGuestDraftStore().write(shuffled);
-  return shuffled;
+  await store.write(withFreeDay);
+  return withFreeDay;
 }
