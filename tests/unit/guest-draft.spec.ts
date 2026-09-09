@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   acceptGuestPlan,
+  applyGuestPlanEmptySlots,
   completeGuestPlanClaim,
   createGuestDraft,
   GUEST_DRAFT_SCHEMA_VERSION,
@@ -37,6 +38,84 @@ test("creates seven consecutive dated meal choices", () => {
     createdAt: 100,
     updatedAt: 100,
   });
+});
+
+test("can leave selected days empty and keep them empty across shuffle", () => {
+  const draft = createGuestDraft({
+    catalogueVersion: 1,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+
+  expect(draft.mealChoices[2]).toEqual({
+    date: "2026-08-31",
+    catalogueMealId: null,
+  });
+  expect(draft.mealChoices.map((choice) => choice.catalogueMealId)).toEqual([
+    "meal-a",
+    "meal-b",
+    null,
+    "meal-c",
+    "meal-a",
+    "meal-b",
+    "meal-c",
+  ]);
+
+  const shuffled = shuffleGuestPlan(draft, catalogueMealIds, 200);
+  expect(shuffled.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(
+    shuffled.mealChoices.filter((choice) => choice.catalogueMealId !== null),
+  ).toHaveLength(6);
+});
+
+test("applies empty slots without clearing acceptance or claim state", () => {
+  const accepted = acceptGuestPlan(
+    createGuestDraft({
+      catalogueVersion: 1,
+      planStartDate: "2026-08-29",
+      catalogueMealIds,
+      now: 100,
+    }),
+    200,
+  );
+  const claimed = requestGuestPlanClaim(accepted, "claim_key_1234567890", 300);
+
+  const withEmptySlot = applyGuestPlanEmptySlots(claimed, [2], 400);
+
+  expect(withEmptySlot.acceptedAt).toBe(200);
+  expect(withEmptySlot.claim).toEqual({
+    key: "claim_key_1234567890",
+    requestedAt: 300,
+  });
+  expect(withEmptySlot.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(withEmptySlot.updatedAt).toBe(400);
+});
+
+test("swaps or shuffles clear acceptance so the plan must be kept again", () => {
+  const accepted = acceptGuestPlan(
+    createGuestDraft({
+      catalogueVersion: 1,
+      planStartDate: "2026-08-26",
+      catalogueMealIds,
+      now: 100,
+    }),
+    200,
+  );
+
+  const swapped = swapGuestPlanMeal(
+    accepted,
+    "2026-08-27",
+    catalogueMealIds,
+    300,
+  );
+  const shuffled = shuffleGuestPlan(accepted, catalogueMealIds, 300);
+
+  expect(swapped.acceptedAt).toBeUndefined();
+  expect(swapped.claim).toBeUndefined();
+  expect(shuffled.acceptedAt).toBeUndefined();
+  expect(shuffled.claim).toBeUndefined();
 });
 
 test("swaps one slot or shuffles the plan without changing its dates", () => {

@@ -11,7 +11,7 @@ import {
 import { ArrowRight, CircleCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Drawer,
   DrawerBody,
@@ -76,10 +76,6 @@ export function PlanAction() {
     };
   }, [isLoaded, isSignedIn]);
 
-  function handlePlanWeek() {
-    window.alert("Weekly planning is coming next.");
-  }
-
   function handleDrawerOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
     if (nextOpen || isSignedIn) return;
@@ -114,10 +110,10 @@ export function PlanAction() {
 
   return (
     <div className="mt-3 flex flex-col gap-2">
-      <Button className="w-full" onClick={handlePlanWeek}>
+      <ButtonLink href="/week" className="w-full">
         Plan my week
         <ArrowRight aria-hidden="true" className="size-4.5" />
-      </Button>
+      </ButtonLink>
 
       <div className="flex items-center justify-between gap-3 px-1">
         <p className="text-13 text-graphite">

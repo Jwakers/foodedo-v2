@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils/cn";
 
 /**
  * Filled buttons share one approved measure for now. Inline is the compact
- * text control (Paper: 28px / 13px label). Add a `size` axis with
- * compoundVariants when a second measure exists per variant.
+ * text control (Paper: 28px / 13px label). `leafChip` is the empty plan-day
+ * “Add meal” control (Paper: 26px / 10px label).
  */
 export const buttonVariants = cva(
   "inline-flex items-center font-ui font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-not-allowed",
@@ -20,6 +20,8 @@ export const buttonVariants = cva(
           "h-12 justify-center gap-2 rounded-compact px-page-inline border border-control-muted bg-paper text-ink text-sm hover:border-ink disabled:border-border disabled:text-graphite",
         // Text colour is left to the caller (`text-leaf`, `text-ink`, …).
         inline: "h-7 gap-1 text-13 leading-4.5 disabled:text-graphite",
+        leafChip:
+          "h-6.5 justify-center whitespace-nowrap rounded-sm bg-leaf px-2.5 text-10 font-semibold text-paper hover:opacity-90",
       },
     },
     defaultVariants: {

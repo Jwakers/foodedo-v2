@@ -36,14 +36,48 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByText("7 days · starts tomorrow · serves 4"),
   ).toBeVisible();
 
-  const planningAlert = page.waitForEvent("dialog").then(async (dialog) => {
-    expect(dialog.message()).toBe("Weekly planning is coming next.");
-    await dialog.dismiss();
-  });
-  await Promise.all([
-    planningAlert,
-    page.getByRole("button", { name: "Plan my week" }).click(),
-  ]);
+  await page.getByRole("link", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "No week planned yet" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Seven useful dinners in one tap. Adjust anything after."),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Keep planning—sign in later to save this week."),
+  ).toBeVisible();
+  await expect(page.getByText("No meal planned")).toBeVisible();
+  await expect(page.getByText("Leave it free or add a meal")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add meal" })).toBeVisible();
+  await expect(page.getByText(/6 planned dinners/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
+    6,
+  );
+  await expect(
+    page.getByRole("button", { name: "Save my plan" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try another week" }),
+  ).toBeVisible();
+
+  await expect(page.locator("header")).toBeVisible();
+  const navigation = page.getByRole("navigation", { name: "Primary" });
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Week" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+
+  await navigation.getByRole("link", { name: "Home" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adjust" })).toBeVisible();
 
   await page.getByRole("button", { name: "Adjust" }).click();
   await expect(
@@ -61,21 +95,14 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByRole("heading", { name: "Make Foodedo fit your week" }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Plan my week" }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Adjust" })).toBeVisible();
-
-  await expect(page.locator("header")).toBeVisible();
-  const navigation = page.getByRole("navigation", { name: "Primary" });
-  await expect(navigation).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
 
   await navigation.getByRole("link", { name: "Recipes" }).click();
   await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
+
+  await navigation.getByRole("link", { name: "Week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible();
 
   await navigation.getByRole("link", { name: "Home" }).click();
   await expect(

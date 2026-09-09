@@ -7,6 +7,12 @@ import {
 export const GUEST_DRAFT_SCHEMA_VERSION = 1 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
 
+/**
+ * Temporary preview free day so guest plan review can show the empty-slot UI.
+ * Index is 0-based within the seven-day draft.
+ */
+export const GUEST_PLAN_PREVIEW_EMPTY_SLOT_INDEX = 2 as const;
+
 const minimumClaimKeyLength = 16;
 const maximumClaimKeyLength = 100;
 const claimKeyPattern = /^[A-Za-z0-9_-]+$/;
@@ -14,7 +20,7 @@ const planDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export type GuestMealChoiceV1 = {
   date: string;
-  catalogueMealId: string;
+  catalogueMealId: string | null;
 };
 
 export type GuestPlanClaimV1 = {
@@ -39,28 +45,73 @@ export function createGuestDraft({
   planStartDate,
   catalogueMealIds,
   now,
+  emptySlotIndexes = [],
 }: {
   catalogueVersion: number;
   planStartDate: string;
   catalogueMealIds: readonly string[];
   now: number;
+  emptySlotIndexes?: readonly number[];
 }): GuestDraftV1 {
   requirePositiveWholeNumber(catalogueVersion, "Catalogue version");
   requirePlanDate(planStartDate);
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Creation time");
+  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes);
 
+  let mealCursor = 0;
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     catalogueVersion,
     planStartDate,
-    mealChoices: Array.from({ length: GUEST_PLAN_DAYS }, (_, index) => ({
-      date: addDaysToPlanDate(planStartDate, index),
-      catalogueMealId: catalogueMealIds[index % catalogueMealIds.length]!,
-    })),
+    mealChoices: Array.from({ length: GUEST_PLAN_DAYS }, (_, index) => {
+      const date = addDaysToPlanDate(planStartDate, index);
+      if (emptySlots.has(index)) {
+        return { date, catalogueMealId: null };
+      }
+
+      const catalogueMealId =
+        catalogueMealIds[mealCursor % catalogueMealIds.length]!;
+      mealCursor += 1;
+      return { date, catalogueMealId };
+    }),
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** Clears the given slots so plan review can show free days. */
+export function applyGuestPlanEmptySlots(
+  draft: GuestDraftV1,
+  emptySlotIndexes: readonly number[],
+  now: number,
+): GuestDraftV1 {
+  requireTimestamp(now, "Update time");
+  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes);
+  const mealChoices = draft.mealChoices.map((choice, index) =>
+    emptySlots.has(index) ? { ...choice, catalogueMealId: null } : choice,
+  );
+
+  if (
+    mealChoices.every(
+      (choice, index) =>
+        choice.catalogueMealId === draft.mealChoices[index]?.catalogueMealId,
+    )
+  ) {
+    return draft;
+  }
+
+  // Preview free days must not clear acceptance/claim the way swap/shuffle do.
+  return {
+    ...draft,
+    mealChoices,
+    updatedAt: now,
+  };
+}
+
+export function countPlannedGuestMeals(draft: GuestDraftV1) {
+  return draft.mealChoices.filter((choice) => choice.catalogueMealId !== null)
+    .length;
 }
 
 export function readGuestDraftV1(
@@ -128,10 +179,16 @@ export function swapGuestPlanMeal(
   if (choiceIndex === -1) throw new Error("That date is not in this plan.");
 
   const currentMealId = draft.mealChoices[choiceIndex]!.catalogueMealId;
+  if (currentMealId === null) {
+    throw new Error("That day has no meal to swap.");
+  }
+
   const nextMealId = selectReplacementMeal({
     candidateMealIds: catalogueMealIds,
     currentMealId,
-    plannedMealIds: draft.mealChoices.map((choice) => choice.catalogueMealId),
+    plannedMealIds: draft.mealChoices
+      .map((choice) => choice.catalogueMealId)
+      .filter((mealId): mealId is string => mealId !== null),
   });
   const mealChoices = draft.mealChoices.map((choice, index) =>
     index === choiceIndex ? { ...choice, catalogueMealId: nextMealId } : choice,
@@ -148,20 +205,31 @@ export function shuffleGuestPlan(
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
 
-  const firstMealId = draft.mealChoices[0]!.catalogueMealId;
+  const filledMealIds = draft.mealChoices
+    .map((choice) => choice.catalogueMealId)
+    .filter((mealId): mealId is string => mealId !== null);
+  if (filledMealIds.length === 0) {
+    return editableDraft(draft, draft.mealChoices, now);
+  }
+
+  const firstMealId = filledMealIds[0]!;
   const firstMealIndex = catalogueMealIds.indexOf(firstMealId);
   if (firstMealIndex === -1) {
     throw new Error("A current meal is not in this catalogue.");
   }
   const selectedMealIds = rotatingMealPlanSelectionStrategy({
     candidateMealIds: catalogueMealIds,
-    numberOfMeals: draft.mealChoices.length,
+    numberOfMeals: filledMealIds.length,
     offset: firstMealIndex + 1,
   });
-  const mealChoices = draft.mealChoices.map((choice, index) => ({
-    ...choice,
-    catalogueMealId: selectedMealIds[index]!,
-  }));
+
+  let filledCursor = 0;
+  const mealChoices = draft.mealChoices.map((choice) => {
+    if (choice.catalogueMealId === null) return choice;
+    const catalogueMealId = selectedMealIds[filledCursor]!;
+    filledCursor += 1;
+    return { ...choice, catalogueMealId };
+  });
 
   return editableDraft(draft, mealChoices, now);
 }
@@ -292,18 +360,45 @@ function readMealChoices(
     const choice = input[index];
     if (
       !isRecord(choice) ||
-      choice.date !== addDaysToPlanDate(planStartDate, index) ||
+      choice.date !== addDaysToPlanDate(planStartDate, index)
+    ) {
+      return null;
+    }
+
+    if (choice.catalogueMealId === null) {
+      choices.push({ date: choice.date, catalogueMealId: null });
+      continue;
+    }
+
+    if (
       typeof choice.catalogueMealId !== "string" ||
       !validMealIds.has(choice.catalogueMealId)
     ) {
       return null;
     }
+
     choices.push({
       date: choice.date,
       catalogueMealId: choice.catalogueMealId,
     });
   }
   return choices;
+}
+
+function requireEmptySlotIndexes(indexes: readonly number[]) {
+  const emptySlots = new Set<number>();
+  for (const index of indexes) {
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= GUEST_PLAN_DAYS ||
+      emptySlots.has(index)
+    ) {
+      throw new Error("Empty slot indexes must be unique days in the plan.");
+    }
+    emptySlots.add(index);
+  }
+  return emptySlots;
 }
 
 function readClaim(

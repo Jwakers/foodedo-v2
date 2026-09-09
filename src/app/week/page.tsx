@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { PlanReview } from "@/features/plan/plan-review";
 
 export default function WeekPage() {
-  return <PagePlaceholder eyebrow="Route placeholder" title="Week" />;
+  return <PlanReview />;
 }
