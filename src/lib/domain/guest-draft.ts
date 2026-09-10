@@ -186,6 +186,26 @@ export function swapGuestPlanMeal(
   return editableDraft(draft, mealChoices, now);
 }
 
+/** Clears one planned day. Editing clears acceptance/claim like other plan edits. */
+export function clearGuestPlanMeal(
+  draft: GuestDraftV1,
+  date: string,
+  now: number,
+): GuestDraftV1 {
+  requireTimestamp(now, "Update time");
+
+  const choiceIndex = draft.mealChoices.findIndex(
+    (choice) => choice.date === date,
+  );
+  if (choiceIndex === -1) throw new Error("That date is not in this plan.");
+
+  if (draft.mealChoices[choiceIndex]!.catalogueMealId === null) {
+    throw new Error("That day has no meal to remove.");
+  }
+
+  return applyGuestPlanEmptySlots(draft, [choiceIndex], now);
+}
+
 export function shuffleGuestPlan(
   draft: GuestDraftV1,
   catalogueMealIds: readonly string[],

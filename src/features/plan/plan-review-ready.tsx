@@ -13,12 +13,14 @@ export function PlanReviewReady({
   isShuffling,
   onSavePlan,
   onTryAnotherWeek,
+  onRemoveMeal,
 }: {
   summary: string;
   rows: GuestPlanMealRow[];
   isShuffling: boolean;
   onSavePlan: () => void;
   onTryAnotherWeek: () => void | Promise<void>;
+  onRemoveMeal: (date: string) => Promise<unknown> | void;
 }) {
   return (
     <main
@@ -47,7 +49,7 @@ export function PlanReviewReady({
       <ul className="mt-5">
         {rows.map((row) => (
           <li key={row.date}>
-            <PlanMealRow row={row} />
+            <PlanMealRow row={row} onRemoveMeal={onRemoveMeal} />
           </li>
         ))}
       </ul>

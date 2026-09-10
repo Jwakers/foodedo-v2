@@ -10,7 +10,8 @@ import { useGuestPlanDraft } from "@/features/plan/use-guest-plan-draft";
 import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 export function PlanReview() {
-  const { state, retry, startPlan, tryAnotherWeek } = useGuestPlanDraft();
+  const { state, retry, startPlan, tryAnotherWeek, removeMeal } =
+    useGuestPlanDraft();
   const [isPlanning, setIsPlanning] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
 
@@ -46,6 +47,7 @@ export function PlanReview() {
       onSavePlan={() => {
         temporaryFeedback("Saving your plan comes next.");
       }}
+      onRemoveMeal={removeMeal}
       onTryAnotherWeek={async () => {
         setIsShuffling(true);
         try {

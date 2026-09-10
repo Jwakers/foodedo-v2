@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ensureGuestPlanDraft,
   loadGuestPlanDraftForReview,
+  removeGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
 import type { GuestDraftV1 } from "@/lib/domain/guest-draft";
@@ -92,5 +93,11 @@ export function useGuestPlanDraft() {
     return draft;
   }, []);
 
-  return { state, retry, startPlan, tryAnotherWeek };
+  const removeMeal = useCallback(async (date: string) => {
+    const draft = await removeGuestPlanMeal({ date });
+    setState(toReadyState(draft));
+    return draft;
+  }, []);
+
+  return { state, retry, startPlan, tryAnotherWeek, removeMeal };
 }

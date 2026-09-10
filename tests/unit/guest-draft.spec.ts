@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
+  clearGuestPlanMeal,
   completeGuestPlanClaim,
   createGuestDraft,
   GUEST_DRAFT_SCHEMA_VERSION,
@@ -88,6 +89,29 @@ test("applying empty slots clears acceptance and claim like other plan edits", (
   expect(withEmptySlot.claim).toBeUndefined();
   expect(withEmptySlot.mealChoices[2]?.catalogueMealId).toBeNull();
   expect(withEmptySlot.updatedAt).toBe(400);
+});
+
+test("clears one planned meal by date into an empty slot", () => {
+  const draft = createGuestDraft({
+    catalogueVersion: 1,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+  });
+
+  const cleared = clearGuestPlanMeal(draft, "2026-08-30", 200);
+
+  expect(cleared.mealChoices[1]).toEqual({
+    date: "2026-08-30",
+    catalogueMealId: null,
+  });
+  expect(
+    cleared.mealChoices.filter((choice) => choice.catalogueMealId !== null),
+  ).toHaveLength(6);
+  expect(cleared.updatedAt).toBe(200);
+  expect(() => clearGuestPlanMeal(cleared, "2026-08-30", 300)).toThrow(
+    "no meal to remove",
+  );
 });
 
 test("swaps or shuffles clear acceptance so the plan must be kept again", () => {

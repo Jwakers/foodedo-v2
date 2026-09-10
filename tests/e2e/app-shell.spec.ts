@@ -65,6 +65,32 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("button", { name: "Try another week" }),
   ).toBeVisible();
 
+  const firstMealActions = page
+    .getByRole("button", { name: /^Actions for / })
+    .first();
+  const firstMealName =
+    (await firstMealActions.getAttribute("aria-label"))?.replace(
+      /^Actions for /,
+      "",
+    ) ?? "";
+  await firstMealActions.click();
+  await expect(
+    page.getByRole("heading", { name: firstMealName }),
+  ).toBeVisible();
+  await expect(page.getByText("What would you like to do?")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Choose a recipe/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Choose for me/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Remove from plan" }).click();
+  await expect(page.getByText("No meal planned")).toHaveCount(2);
+  await expect(page.getByText(/5 planned dinners/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
+    5,
+  );
+
   await expect(page.locator("header")).toBeVisible();
   const navigation = page.getByRole("navigation", { name: "Primary" });
   await expect(navigation).toBeVisible();

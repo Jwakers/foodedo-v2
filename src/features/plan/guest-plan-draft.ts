@@ -1,5 +1,6 @@
 import {
   applyGuestPlanEmptySlots,
+  clearGuestPlanMeal,
   createGuestDraft,
   readGuestDraftV1,
   shuffleGuestPlan,
@@ -24,17 +25,23 @@ const generationFreeDayIndexes = [
   GUEST_PLAN_GENERATION_FREE_DAY_INDEX,
 ] as const;
 
+const missingDraftMessage = "There is no guest plan on this device to update.";
+
 function guestDraftStore(): GuestDraftStore {
   return createIndexedDbGuestDraftStore();
+}
+
+function parseGuestDraft(raw: unknown): GuestDraftV1 | null {
+  return readGuestDraftV1(raw, {
+    catalogueVersion: standardCatalogue.version,
+    catalogueMealIds,
+  });
 }
 
 export async function readCurrentGuestPlanDraft(
   store: GuestDraftStore = guestDraftStore(),
 ): Promise<GuestDraftV1 | null> {
-  return readGuestDraftV1(await store.read(), {
-    catalogueVersion: standardCatalogue.version,
-    catalogueMealIds,
-  });
+  return parseGuestDraft(await store.read());
 }
 
 /** Read-only load for plan review. Does not rewrite storage. */
@@ -57,19 +64,21 @@ export async function ensureGuestPlanDraft({
   planStartDate?: string;
   store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
-  const existing = await readCurrentGuestPlanDraft(store);
-  if (existing) return existing;
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (existing) return { draft: existing, write: false };
 
-  const draft = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
-    planStartDate,
-    catalogueMealIds,
-    now,
-    emptySlotIndexes: generationFreeDayIndexes,
+    return {
+      draft: createGuestDraft({
+        catalogueVersion: standardCatalogue.version,
+        planStartDate,
+        catalogueMealIds,
+        now,
+        emptySlotIndexes: generationFreeDayIndexes,
+      }),
+      write: true,
+    };
   });
-
-  await store.write(draft);
-  return draft;
 }
 
 export async function shuffleCurrentGuestPlanDraft({
@@ -79,14 +88,45 @@ export async function shuffleCurrentGuestPlanDraft({
   now?: number;
   store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
-  const existing = await ensureGuestPlanDraft({ now, store });
-  const shuffled = shuffleGuestPlan(existing, catalogueMealIds, now);
-  // Re-apply generation free-day so older full drafts pick up the policy.
-  const withFreeDay = applyGuestPlanEmptySlots(
-    shuffled,
-    generationFreeDayIndexes,
-    now,
-  );
-  await store.write(withFreeDay);
-  return withFreeDay;
+  return store.runMutation((raw) => {
+    const existing =
+      parseGuestDraft(raw) ??
+      createGuestDraft({
+        catalogueVersion: standardCatalogue.version,
+        planStartDate: tomorrowPlanDate(),
+        catalogueMealIds,
+        now,
+        emptySlotIndexes: generationFreeDayIndexes,
+      });
+    const shuffled = shuffleGuestPlan(existing, catalogueMealIds, now);
+    // Re-apply generation free-day so older full drafts pick up the policy.
+    const withFreeDay = applyGuestPlanEmptySlots(
+      shuffled,
+      generationFreeDayIndexes,
+      now,
+    );
+    return { draft: withFreeDay, write: true };
+  });
+}
+
+export async function removeGuestPlanMeal({
+  date,
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  date: string;
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+
+    return {
+      draft: clearGuestPlanMeal(existing, date, now),
+      write: true,
+    };
+  });
 }

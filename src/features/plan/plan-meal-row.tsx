@@ -2,12 +2,21 @@
 
 import { Ellipsis, Plus } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { PlanMealActions } from "@/features/plan/plan-meal-actions";
 import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
 import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
-export function PlanMealRow({ row }: { row: GuestPlanMealRow }) {
+export function PlanMealRow({
+  row,
+  onRemoveMeal,
+}: {
+  row: GuestPlanMealRow;
+  onRemoveMeal?: (date: string) => Promise<unknown> | void;
+}) {
   if (row.kind === "empty") {
     return (
       <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
@@ -38,6 +47,19 @@ export function PlanMealRow({ row }: { row: GuestPlanMealRow }) {
     );
   }
 
+  return <PlannedMealRow row={row} onRemoveMeal={onRemoveMeal} />;
+}
+
+function PlannedMealRow({
+  row,
+  onRemoveMeal,
+}: {
+  row: Extract<GuestPlanMealRow, { kind: "planned" }>;
+  onRemoveMeal?: (date: string) => Promise<unknown> | void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+
   return (
     <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
       <PlanDayLabel weekday={row.weekday} dayOfMonth={row.dayOfMonth} />
@@ -63,17 +85,49 @@ export function PlanMealRow({ row }: { row: GuestPlanMealRow }) {
         ) : null}
       </div>
 
-      <Button
-        type="button"
-        variant="quiet"
-        size="icon"
-        aria-label={`Actions for ${row.meal.title}`}
-        onClick={() => {
-          temporaryFeedback("Meal actions come next.");
-        }}
-      >
-        <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
-      </Button>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          <Button
+            type="button"
+            variant="quiet"
+            size="icon"
+            aria-label={`Actions for ${row.meal.title}`}
+          >
+            <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <PlanMealActions
+            mealTitle={row.meal.title}
+            isRemoving={isRemoving}
+            onChooseRecipe={() => {
+              setOpen(false);
+              temporaryFeedback("Choosing a recipe comes next.");
+            }}
+            onChooseForMe={() => {
+              setOpen(false);
+              temporaryFeedback("Choosing for you comes next.");
+            }}
+            onRemove={() => {
+              if (!onRemoveMeal || isRemoving) return;
+              void (async () => {
+                setIsRemoving(true);
+                setOpen(false);
+                try {
+                  await onRemoveMeal(row.date);
+                } catch (error) {
+                  console.error("Failed to remove guest plan meal.", error);
+                  temporaryFeedback(
+                    "Foodedo couldn’t remove that meal. Check storage access and try again.",
+                  );
+                } finally {
+                  setIsRemoving(false);
+                }
+              })();
+            }}
+          />
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
