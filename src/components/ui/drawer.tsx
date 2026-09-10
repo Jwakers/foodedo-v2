@@ -59,7 +59,7 @@ export function DrawerFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-border bg-paper px-page-inline pt-3 pb-[max(14px,env(safe-area-inset-bottom))]",
+        "shrink-0 border-t border-border bg-paper px-page-inline pt-3 pb-[max(18px,env(safe-area-inset-bottom))]",
         className,
       )}
       {...props}

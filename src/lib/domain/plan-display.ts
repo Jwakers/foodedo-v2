@@ -1,5 +1,5 @@
 import { countPlannedGuestMeals, type GuestDraftV1 } from "./guest-draft";
-import type { CatalogueMeal } from "./recipes";
+import type { CatalogueMeal, ProteinCategory } from "./recipes";
 
 export type GuestPlanMealRow = {
   date: string;
@@ -40,6 +40,26 @@ export function formatPlanDayParts(date: string): {
   };
 }
 
+/** e.g. "Saturday" for swap sheet titles. */
+export function formatPlanWeekdayLong(date: string): string {
+  const parts = parsePlanDateParts(date);
+  const utc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  return utc.toLocaleDateString("en-GB", {
+    weekday: "long",
+    timeZone: "UTC",
+  });
+}
+
+/** e.g. "Sat" for the replacing-meal chip (title case, not uppercase). */
+export function formatPlanWeekdayShort(date: string): string {
+  const parts = parsePlanDateParts(date);
+  const utc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  return utc.toLocaleDateString("en-GB", {
+    weekday: "short",
+    timeZone: "UTC",
+  });
+}
+
 /**
  * Example: `29 Aug–4 Sep · 6 planned dinners`
  */
@@ -75,6 +95,12 @@ export function formatMealDurationLabel(
   const total = (prepMinutes ?? 0) + (cookMinutes ?? 0);
   if (total <= 0) return null;
   return `${total} min`;
+}
+
+/** Display label for catalogue protein categories (e.g. meat-free → Meat-free). */
+export function formatProteinCategoryLabel(category: ProteinCategory): string {
+  if (category === "meat-free") return "Meat-free";
+  return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 export function resolveGuestPlanMealRows({

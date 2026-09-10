@@ -26,6 +26,7 @@ test("shows welcome on signed-out cold open without app chrome", async ({
 test("enters the guest app from welcome and keeps skip across navigation", async ({
   page,
 }) => {
+  test.setTimeout(60_000);
   await page.goto("/");
   await page.getByRole("button", { name: "Try Foodedo" }).click();
 
@@ -83,6 +84,50 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Choose for me/ }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: /Choose a recipe/ }).click();
+  await expect(
+    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Choose a better fit for your week"),
+  ).toBeVisible();
+  await expect(page.getByText("Good matches")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Swap in / })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Open filters" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Filter recipes" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Only choose what would make this meal a better fit."),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close recipe filters" })).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(
+    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+  ).toBeVisible();
+
+  await page.getByRole("option").nth(1).click();
+  const swapButton = page.getByRole("button", { name: /^Swap in / });
+  const swapLabel = ((await swapButton.textContent()) ?? "")
+    .replace(/^Swap in\s+/, "")
+    .trim();
+  expect(swapLabel.length).toBeGreaterThan(0);
+  await swapButton.click();
+  await expect(page.getByRole("button", { name: /^Swap in / })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: `Actions for ${swapLabel}` }).first(),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: /^Actions for / })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Remove from plan" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Remove from plan" }).click();
   await expect(page.getByText("No meal planned")).toHaveCount(2);

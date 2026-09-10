@@ -6,6 +6,7 @@ import {
   ensureGuestPlanDraft,
   loadGuestPlanDraftForReview,
   removeGuestPlanMeal,
+  replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
 import type { GuestDraftV1 } from "@/lib/domain/guest-draft";
@@ -99,5 +100,14 @@ export function useGuestPlanDraft() {
     return draft;
   }, []);
 
-  return { state, retry, startPlan, tryAnotherWeek, removeMeal };
+  const replaceMeal = useCallback(
+    async (date: string, catalogueMealId: string) => {
+      const draft = await replaceGuestPlanMeal({ date, catalogueMealId });
+      setState(toReadyState(draft));
+      return draft;
+    },
+    [],
+  );
+
+  return { state, retry, startPlan, tryAnotherWeek, removeMeal, replaceMeal };
 }

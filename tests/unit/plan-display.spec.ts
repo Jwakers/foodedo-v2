@@ -4,6 +4,9 @@ import {
   formatGuestPlanSummary,
   formatMealDurationLabel,
   formatPlanDayParts,
+  formatPlanWeekdayLong,
+  formatPlanWeekdayShort,
+  formatProteinCategoryLabel,
   resolveGuestPlanMealRows,
   summarizeGuestPlanDraft,
   tomorrowPlanDate,
@@ -20,6 +23,10 @@ test("formats day parts and week summary for plan review", () => {
     weekday: "SAT",
     dayOfMonth: "29",
   });
+  expect(formatPlanWeekdayLong("2026-08-29")).toBe("Saturday");
+  expect(formatPlanWeekdayShort("2026-08-29")).toBe("Sat");
+  expect(formatProteinCategoryLabel("chicken")).toBe("Chicken");
+  expect(formatProteinCategoryLabel("meat-free")).toBe("Meat-free");
   expect(
     formatGuestPlanSummary({
       planStartDate: "2026-08-29",

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   ensureGuestPlanDraft,
   removeGuestPlanMeal,
+  replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
 } from "../../src/features/plan/guest-plan-draft";
 import {
@@ -144,4 +145,43 @@ test("remove rejects empty storage without persisting a draft", async () => {
   ).rejects.toThrow("There is no guest plan on this device to update.");
   expect(store.writes).toBe(0);
   expect(await store.read()).toBeNull();
+});
+
+test("replaces a planned meal with a chosen catalogue recipe", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+  });
+  const store = createMemoryStore(seed);
+  const nextMealId = catalogueMealIds.find(
+    (id) => id !== seed.mealChoices[0]?.catalogueMealId,
+  );
+  expect(nextMealId).toBeTruthy();
+
+  const replaced = await replaceGuestPlanMeal({
+    date: "2026-08-29",
+    catalogueMealId: nextMealId!,
+    now: 200,
+    store,
+  });
+
+  expect(replaced.mealChoices[0]?.catalogueMealId).toBe(nextMealId);
+  expect(replaced.updatedAt).toBe(200);
+  expect(store.writes).toBe(1);
+});
+
+test("replace rejects empty storage without persisting a draft", async () => {
+  const store = createMemoryStore(null);
+
+  await expect(
+    replaceGuestPlanMeal({
+      date: "2026-08-29",
+      catalogueMealId: catalogueMealIds[0]!,
+      now: 200,
+      store,
+    }),
+  ).rejects.toThrow("There is no guest plan on this device to update.");
+  expect(store.writes).toBe(0);
 });

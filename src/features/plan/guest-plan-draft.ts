@@ -3,6 +3,7 @@ import {
   clearGuestPlanMeal,
   createGuestDraft,
   readGuestDraftV1,
+  setGuestPlanMeal,
   shuffleGuestPlan,
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
@@ -127,6 +128,38 @@ export async function removeGuestPlanMeal({
     return {
       draft: clearGuestPlanMeal(existing, date, now),
       write: true,
+    };
+  });
+}
+
+export async function replaceGuestPlanMeal({
+  date,
+  catalogueMealId,
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  date: string;
+  catalogueMealId: string;
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+
+    const next = setGuestPlanMeal(
+      existing,
+      date,
+      catalogueMealId,
+      catalogueMealIds,
+      now,
+    );
+
+    return {
+      draft: next,
+      write: next !== existing,
     };
   });
 }

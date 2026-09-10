@@ -35,7 +35,7 @@ export function PlanMealActions({
         </DrawerDescription>
       </DrawerHeader>
 
-      <DrawerBody className="flex flex-col gap-2 pb-7">
+      <DrawerBody className="flex flex-none flex-col gap-2 overflow-visible pb-7">
         <MealActionRow
           icon={
             <ArrowLeftRight

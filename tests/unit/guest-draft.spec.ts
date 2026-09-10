@@ -9,6 +9,7 @@ import {
   guestDraftMatchesSavedPlan,
   readGuestDraftV1,
   requestGuestPlanClaim,
+  setGuestPlanMeal,
   shuffleGuestPlan,
   swapGuestPlanMeal,
 } from "../../src/lib/domain/guest-draft";
@@ -161,6 +162,38 @@ test("swaps one slot or shuffles the plan without changing its dates", () => {
   ).not.toEqual(
     swapped.mealChoices.map(({ catalogueMealId }) => catalogueMealId),
   );
+});
+
+test("sets a chosen catalogue meal on a planned day", () => {
+  const draft = createGuestDraft({
+    catalogueVersion: 1,
+    planStartDate: "2026-08-26",
+    catalogueMealIds,
+    now: 100,
+  });
+  const accepted = acceptGuestPlan(draft, 150);
+
+  const replaced = setGuestPlanMeal(
+    accepted,
+    "2026-08-27",
+    "meal-a",
+    catalogueMealIds,
+    200,
+  );
+
+  expect(replaced.mealChoices[1]).toEqual({
+    date: "2026-08-27",
+    catalogueMealId: "meal-a",
+  });
+  expect(replaced.acceptedAt).toBeUndefined();
+  expect(replaced.claim).toBeUndefined();
+  expect(replaced.updatedAt).toBe(200);
+  expect(
+    setGuestPlanMeal(replaced, "2026-08-27", "meal-a", catalogueMealIds, 300),
+  ).toBe(replaced);
+  expect(() =>
+    setGuestPlanMeal(draft, "2026-08-27", "meal-z", catalogueMealIds, 300),
+  ).toThrow("not in this catalogue");
 });
 
 test("keeps one claim key across retries and records acknowledgement", () => {

@@ -14,6 +14,7 @@ export function PlanReviewReady({
   onSavePlan,
   onTryAnotherWeek,
   onRemoveMeal,
+  onReplaceMeal,
 }: {
   summary: string;
   rows: GuestPlanMealRow[];
@@ -21,6 +22,10 @@ export function PlanReviewReady({
   onSavePlan: () => void;
   onTryAnotherWeek: () => void | Promise<void>;
   onRemoveMeal: (date: string) => Promise<unknown> | void;
+  onReplaceMeal: (
+    date: string,
+    catalogueMealId: string,
+  ) => Promise<unknown> | void;
 }) {
   return (
     <main
@@ -49,7 +54,11 @@ export function PlanReviewReady({
       <ul className="mt-5">
         {rows.map((row) => (
           <li key={row.date}>
-            <PlanMealRow row={row} onRemoveMeal={onRemoveMeal} />
+            <PlanMealRow
+              row={row}
+              onRemoveMeal={onRemoveMeal}
+              onReplaceMeal={onReplaceMeal}
+            />
           </li>
         ))}
       </ul>

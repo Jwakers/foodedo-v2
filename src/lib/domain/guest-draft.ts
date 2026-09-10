@@ -186,6 +186,41 @@ export function swapGuestPlanMeal(
   return editableDraft(draft, mealChoices, now);
 }
 
+/** Replaces one planned day with a chosen catalogue meal. Clears acceptance/claim. */
+export function setGuestPlanMeal(
+  draft: GuestDraftV1,
+  date: string,
+  catalogueMealId: string,
+  catalogueMealIds: readonly string[],
+  now: number,
+): GuestDraftV1 {
+  requireCatalogueMealIds(catalogueMealIds);
+  requireMealId(catalogueMealId);
+  requireTimestamp(now, "Update time");
+
+  if (!catalogueMealIds.includes(catalogueMealId)) {
+    throw new Error("That meal is not in this catalogue.");
+  }
+
+  const choiceIndex = draft.mealChoices.findIndex(
+    (choice) => choice.date === date,
+  );
+  if (choiceIndex === -1) throw new Error("That date is not in this plan.");
+
+  const currentMealId = draft.mealChoices[choiceIndex]!.catalogueMealId;
+  if (currentMealId === null) {
+    throw new Error("That day has no meal to swap.");
+  }
+
+  if (currentMealId === catalogueMealId) return draft;
+
+  const mealChoices = draft.mealChoices.map((choice, index) =>
+    index === choiceIndex ? { ...choice, catalogueMealId } : choice,
+  );
+
+  return editableDraft(draft, mealChoices, now);
+}
+
 /** Clears one planned day. Editing clears acceptance/claim like other plan edits. */
 export function clearGuestPlanMeal(
   draft: GuestDraftV1,

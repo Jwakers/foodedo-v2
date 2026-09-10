@@ -2,20 +2,36 @@
 
 import { Ellipsis, Plus } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import {
+  DrawerStack,
+  DrawerStackView,
+  useDrawerStack,
+} from "@/components/ui/drawer-stack";
 import { PlanMealActions } from "@/features/plan/plan-meal-actions";
+import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
+import { PlanMealFilters } from "@/features/plan/plan-meal-filters";
+import { PlanMealSwap } from "@/features/plan/plan-meal-swap";
 import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
+import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+
+const catalogueMatchCount = Math.max(standardCatalogue.meals.length - 1, 0);
 
 export function PlanMealRow({
   row,
   onRemoveMeal,
+  onReplaceMeal,
 }: {
   row: GuestPlanMealRow;
   onRemoveMeal?: (date: string) => Promise<unknown> | void;
+  onReplaceMeal?: (
+    date: string,
+    catalogueMealId: string,
+  ) => Promise<unknown> | void;
 }) {
   if (row.kind === "empty") {
     return (
@@ -47,18 +63,38 @@ export function PlanMealRow({
     );
   }
 
-  return <PlannedMealRow row={row} onRemoveMeal={onRemoveMeal} />;
+  return (
+    <PlannedMealRow
+      row={row}
+      onRemoveMeal={onRemoveMeal}
+      onReplaceMeal={onReplaceMeal}
+    />
+  );
 }
 
 function PlannedMealRow({
   row,
   onRemoveMeal,
+  onReplaceMeal,
 }: {
   row: Extract<GuestPlanMealRow, { kind: "planned" }>;
   onRemoveMeal?: (date: string) => Promise<unknown> | void;
+  onReplaceMeal?: (
+    date: string,
+    catalogueMealId: string,
+  ) => Promise<unknown> | void;
 }) {
   const [open, setOpen] = useState(false);
+  const [stackKey, setStackKey] = useState(0);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
+
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setStackKey((value) => value + 1);
+    }
+  }, []);
 
   return (
     <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
@@ -85,7 +121,7 @@ function PlannedMealRow({
         ) : null}
       </div>
 
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>
           <Button
             type="button"
@@ -96,39 +132,91 @@ function PlannedMealRow({
             <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
           </Button>
         </DrawerTrigger>
-        <DrawerContent>
-          <PlanMealActions
-            mealTitle={row.meal.title}
-            isRemoving={isRemoving}
-            onChooseRecipe={() => {
-              setOpen(false);
-              temporaryFeedback("Choosing a recipe comes next.");
-            }}
-            onChooseForMe={() => {
-              setOpen(false);
-              temporaryFeedback("Choosing for you comes next.");
-            }}
-            onRemove={() => {
-              if (!onRemoveMeal || isRemoving) return;
-              void (async () => {
-                setIsRemoving(true);
-                setOpen(false);
-                try {
-                  await onRemoveMeal(row.date);
-                } catch (error) {
-                  console.error("Failed to remove guest plan meal.", error);
-                  temporaryFeedback(
-                    "Foodedo couldn’t remove that meal. Check storage access and try again.",
-                  );
-                } finally {
-                  setIsRemoving(false);
-                }
-              })();
-            }}
-          />
+        <DrawerContent className="max-h-[min(92dvh,52rem)]">
+          <DrawerStack key={stackKey} rootId={planMealDrawerViews.actions}>
+            <DrawerStackView id={planMealDrawerViews.actions} layout="hug">
+              <MealActionsPane
+                mealTitle={row.meal.title}
+                isRemoving={isRemoving}
+                onChooseForMe={() => {
+                  setOpen(false);
+                  temporaryFeedback("Choosing for you comes next.");
+                }}
+                onRemove={() => {
+                  if (!onRemoveMeal || isRemoving) return;
+                  void (async () => {
+                    setIsRemoving(true);
+                    setOpen(false);
+                    try {
+                      await onRemoveMeal(row.date);
+                    } catch (error) {
+                      console.error("Failed to remove guest plan meal.", error);
+                      temporaryFeedback(
+                        "Foodedo couldn’t remove that meal. Check storage access and try again.",
+                      );
+                    } finally {
+                      setIsRemoving(false);
+                    }
+                  })();
+                }}
+              />
+            </DrawerStackView>
+
+            <DrawerStackView id={planMealDrawerViews.swap} layout="fill">
+              <PlanMealSwap
+                row={row}
+                isSwapping={isSwapping}
+                onSwap={(catalogueMealId) => {
+                  if (!onReplaceMeal || isSwapping) return;
+                  void (async () => {
+                    setIsSwapping(true);
+                    try {
+                      await onReplaceMeal(row.date, catalogueMealId);
+                      setOpen(false);
+                    } catch (error) {
+                      console.error("Failed to swap guest plan meal.", error);
+                      temporaryFeedback(
+                        "Foodedo couldn’t swap that meal. Check storage access and try again.",
+                      );
+                    } finally {
+                      setIsSwapping(false);
+                    }
+                  })();
+                }}
+              />
+            </DrawerStackView>
+
+            <DrawerStackView id={planMealDrawerViews.filters} layout="fill">
+              <PlanMealFilters matchCount={catalogueMatchCount} />
+            </DrawerStackView>
+          </DrawerStack>
         </DrawerContent>
       </Drawer>
     </div>
+  );
+}
+
+function MealActionsPane({
+  mealTitle,
+  isRemoving,
+  onChooseForMe,
+  onRemove,
+}: {
+  mealTitle: string;
+  isRemoving: boolean;
+  onChooseForMe: () => void;
+  onRemove: () => void;
+}) {
+  const { push } = useDrawerStack();
+
+  return (
+    <PlanMealActions
+      mealTitle={mealTitle}
+      isRemoving={isRemoving}
+      onChooseRecipe={() => push(planMealDrawerViews.swap)}
+      onChooseForMe={onChooseForMe}
+      onRemove={onRemove}
+    />
   );
 }
 
