@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PagePlaceholder } from "@/components/page-placeholder";
+
+import { RecipeDetailPage } from "@/features/recipes/recipe-detail-page";
 import {
   findStandardCatalogueMealBySlug,
   standardCatalogue,
@@ -39,5 +40,5 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   if (recipe === null) notFound();
 
-  return <PagePlaceholder eyebrow="Recipe placeholder" title={recipe.title} />;
+  return <RecipeDetailPage meal={recipe} />;
 }

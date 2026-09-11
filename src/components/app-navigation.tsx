@@ -11,6 +11,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
+import { isRecipesSectionPath } from "@/lib/routing/recipes";
 
 type NavigationSection = "home" | "week" | "shopping" | "recipes";
 
@@ -75,5 +76,5 @@ function isCurrentSection(pathname: string, section: NavigationSection) {
     return pathname === "/shop" || pathname.startsWith("/shop/");
   }
 
-  return pathname === "/recipes" || pathname.startsWith("/recipes/");
+  return isRecipesSectionPath(pathname);
 }

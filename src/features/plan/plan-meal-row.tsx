@@ -14,9 +14,13 @@ import {
 import { PlanMealActions } from "@/features/plan/plan-meal-actions";
 import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
 import { PlanMealFilters } from "@/features/plan/plan-meal-filters";
+import { PlanMealRecipePreview } from "@/features/plan/plan-meal-recipe-preview";
 import { PlanMealSwap } from "@/features/plan/plan-meal-swap";
 import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
+import {
+  findStandardCatalogueMeal,
+  standardCatalogue,
+} from "@/lib/domain/standard-catalogue";
 import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 const catalogueMatchCount = Math.max(standardCatalogue.meals.length - 1, 0);
@@ -88,13 +92,41 @@ function PlannedMealRow({
   const [stackKey, setStackKey] = useState(0);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [previewMealId, setPreviewMealId] = useState<string | null>(null);
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
     if (!nextOpen) {
       setStackKey((value) => value + 1);
+      setPreviewMealId(null);
     }
   }, []);
+
+  const previewMeal =
+    previewMealId === null
+      ? null
+      : findStandardCatalogueMeal(previewMealId, standardCatalogue.version);
+
+  const runSwap = useCallback(
+    (catalogueMealId: string) => {
+      if (!onReplaceMeal || isSwapping) return;
+      void (async () => {
+        setIsSwapping(true);
+        try {
+          await onReplaceMeal(row.date, catalogueMealId);
+          setOpen(false);
+        } catch (error) {
+          console.error("Failed to swap guest plan meal.", error);
+          temporaryFeedback(
+            "Foodedo couldn't swap that meal. Check storage access and try again.",
+          );
+        } finally {
+          setIsSwapping(false);
+        }
+      })();
+    },
+    [isSwapping, onReplaceMeal, row.date],
+  );
 
   return (
     <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
@@ -163,31 +195,28 @@ function PlannedMealRow({
             </DrawerStackView>
 
             <DrawerStackView id={planMealDrawerViews.swap} layout="fill">
-              <PlanMealSwap
+              <SwapPane
                 row={row}
                 isSwapping={isSwapping}
-                onSwap={(catalogueMealId) => {
-                  if (!onReplaceMeal || isSwapping) return;
-                  void (async () => {
-                    setIsSwapping(true);
-                    try {
-                      await onReplaceMeal(row.date, catalogueMealId);
-                      setOpen(false);
-                    } catch (error) {
-                      console.error("Failed to swap guest plan meal.", error);
-                      temporaryFeedback(
-                        "Foodedo couldn’t swap that meal. Check storage access and try again.",
-                      );
-                    } finally {
-                      setIsSwapping(false);
-                    }
-                  })();
+                onSwap={runSwap}
+                onOpenPreview={(catalogueMealId) => {
+                  setPreviewMealId(catalogueMealId);
                 }}
               />
             </DrawerStackView>
 
             <DrawerStackView id={planMealDrawerViews.filters} layout="fill">
               <PlanMealFilters matchCount={catalogueMatchCount} />
+            </DrawerStackView>
+
+            <DrawerStackView id={planMealDrawerViews.preview} layout="fill">
+              {previewMeal ? (
+                <PlanMealRecipePreview
+                  meal={previewMeal}
+                  isSwapping={isSwapping}
+                  onSwap={() => runSwap(previewMeal.id)}
+                />
+              ) : null}
             </DrawerStackView>
           </DrawerStack>
         </DrawerContent>
@@ -216,6 +245,40 @@ function MealActionsPane({
       onChooseRecipe={() => push(planMealDrawerViews.swap)}
       onChooseForMe={onChooseForMe}
       onRemove={onRemove}
+    />
+  );
+}
+
+function SwapPane({
+  row,
+  isSwapping,
+  onSwap,
+  onOpenPreview,
+}: {
+  row: Extract<GuestPlanMealRow, { kind: "planned" }>;
+  isSwapping: boolean;
+  onSwap: (catalogueMealId: string) => void;
+  onOpenPreview: (catalogueMealId: string) => void;
+}) {
+  const { push } = useDrawerStack();
+
+  return (
+    <PlanMealSwap
+      row={row}
+      isSwapping={isSwapping}
+      onSwap={onSwap}
+      onOpenPreview={(catalogueMealId) => {
+        const meal = findStandardCatalogueMeal(
+          catalogueMealId,
+          standardCatalogue.version,
+        );
+        if (meal === null) {
+          temporaryFeedback("That recipe isn’t available to preview.");
+          return;
+        }
+        onOpenPreview(catalogueMealId);
+        push(planMealDrawerViews.preview);
+      }}
     />
   );
 }

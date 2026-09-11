@@ -15,6 +15,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PlanAction } from "@/features/dashboard/plan-action";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
+import { recipeDetailPath } from "@/lib/routing/recipes";
 
 export function Dashboard() {
   return (
@@ -149,7 +150,7 @@ function IdeasForYourWeek() {
 function WeekIdeaCard({ meal }: { meal: CatalogueMeal }) {
   return (
     <Link
-      href={`/recipes/${meal.slug}`}
+      href={recipeDetailPath(meal.slug)}
       className="flex flex-col gap-1.75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
     >
       <div className="relative aspect-37/24 overflow-hidden rounded-compact bg-mist">

@@ -94,7 +94,9 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByText("Choose a better fit for your week"),
   ).toBeVisible();
   await expect(page.getByText("Good matches")).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Swap in / })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Choose a recipe" }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
 
   await page.getByRole("button", { name: "Open filters" }).click();
@@ -104,22 +106,47 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByText("Only choose what would make this meal a better fit."),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Close recipe filters" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Close recipe filters" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
   await expect(
     page.getByRole("heading", { name: /Swap .+’s meal/ }),
   ).toBeVisible();
 
-  await page.getByRole("option").nth(1).click();
-  const swapButton = page.getByRole("button", { name: /^Swap in / });
-  const swapLabel = ((await swapButton.textContent()) ?? "")
-    .replace(/^Swap in\s+/, "")
-    .trim();
-  expect(swapLabel.length).toBeGreaterThan(0);
+  const previewCandidate = page.getByRole("button", {
+    name: "View Baked Chicken and Rice Casserole",
+  });
+  await previewCandidate.click();
+  await expect(
+    page.getByRole("heading", { name: "Recipe details" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Baked Chicken and Rice Casserole" }),
+  ).toBeVisible();
+  await expect(page.getByText("Foodedo recipe").first()).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Ingredients" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(
+    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Select Baked Chicken and Rice Casserole" })
+    .click();
+  const swapButton = page.getByRole("button", {
+    name: "Swap in Baked Chicken and Rice Casserole",
+  });
   await swapButton.click();
   await expect(page.getByRole("button", { name: /^Swap in / })).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: `Actions for ${swapLabel}` }).first(),
+    page
+      .getByRole("button", {
+        name: "Actions for Baked Chicken and Rice Casserole",
+      })
+      .first(),
   ).toBeVisible();
 
   await page
@@ -206,7 +233,9 @@ test("does not intercept public recipe deep links with welcome", async ({
 }) => {
   await page.goto("/recipes");
   await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
-  await expect(page.getByText(/intentionally clear/)).toBeVisible();
+  await expect(
+    page.getByText("Temporary listing — tap through to a recipe detail."),
+  ).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
       name: "Recipes",
@@ -245,4 +274,39 @@ test("exposes valid home-screen metadata and icons", async ({ request }) => {
     expect(iconResponse.ok()).toBeTruthy();
     expect(iconResponse.headers()["content-type"]).toContain("image/png");
   }
+});
+
+test("opens a catalogue recipe detail page with shared content chrome", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.getByRole("link", { name: /Lemon Herb Grilled Chicken/i }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Lemon Herb Grilled Chicken" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Foodedo" })).toBeVisible();
+  await expect(page.getByText("Foodedo recipe")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Ingredients" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Method" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start cooking" }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Plan this meal" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Recipe options" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Recipe options" }).click();
+  await expect(page.getByRole("button", { name: "Share" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Report/i })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Serves / }).click();
+  await expect(page.getByText("Quantity scaling comes next")).toBeVisible();
 });

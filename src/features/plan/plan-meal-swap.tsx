@@ -38,10 +38,12 @@ export function PlanMealSwap({
   row,
   isSwapping = false,
   onSwap,
+  onOpenPreview,
 }: {
   row: Extract<GuestPlanMealRow, { kind: "planned" }>;
   isSwapping?: boolean;
   onSwap: (catalogueMealId: string) => Promise<unknown> | void;
+  onOpenPreview: (catalogueMealId: string) => void;
 }) {
   const { push } = useDrawerStack();
   const candidates = standardCatalogue.meals.filter(
@@ -115,7 +117,7 @@ export function PlanMealSwap({
               strokeWidth={2}
             />
           </Button>
-          <div className="-mr-page-inline flex min-w-0 flex-1 gap-2 overflow-x-auto pr-page-inline scrollbar-none">
+          <div className="scrollbar-none -mr-page-inline flex min-w-0 flex-1 gap-2 overflow-x-auto pr-page-inline">
             {quickFilterLabels.map((label, index) => {
               const active = index === 0;
               return (
@@ -149,7 +151,6 @@ export function PlanMealSwap({
 
         <ul
           className="flex min-h-0 flex-1 flex-col"
-          role="listbox"
           aria-label="Recipe matches"
         >
           {candidates.map((meal) => (
@@ -159,6 +160,7 @@ export function PlanMealSwap({
               selected={meal.id === selectedId}
               disabled={isSwapping}
               onSelect={() => setSelectedId(meal.id)}
+              onOpenPreview={() => onOpenPreview(meal.id)}
             />
           ))}
         </ul>
@@ -189,32 +191,30 @@ function SwapCandidateRow({
   selected,
   disabled,
   onSelect,
+  onOpenPreview,
 }: {
   meal: CatalogueMeal;
   selected: boolean;
   disabled: boolean;
   onSelect: () => void;
+  onOpenPreview: () => void;
 }) {
   const durationLabel = formatMealDurationLabel(
     meal.prepMinutes,
     meal.cookMinutes,
   );
-  const meta = [
-    durationLabel,
-    formatProteinCategoryLabel(meal.proteinCategory),
-  ]
+  const meta = [durationLabel, formatProteinCategoryLabel(meal.proteinCategory)]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <li className="shrink-0" role="presentation">
+    <li className="flex shrink-0 items-center gap-3 border-b border-border py-2.5">
       <button
         type="button"
-        role="option"
-        aria-selected={selected}
+        aria-label={`View ${meal.title}`}
         disabled={disabled}
-        className="flex w-full min-h-21.5 items-center gap-3 border-b border-border py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-55"
-        onClick={onSelect}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-55"
+        onClick={onOpenPreview}
       >
         <div className="relative h-17 w-20.5 shrink-0 overflow-hidden rounded-sm bg-mist">
           {meal.imageSrc ? (
@@ -241,15 +241,33 @@ function SwapCandidateRow({
                 strokeWidth={1.8}
               />
             </span>
-          ) : null}
+          ) : (
+            <span className="flex w-fit items-center gap-1 text-12 text-graphite">
+              View recipe
+              <ChevronRight
+                aria-hidden="true"
+                className="size-4 shrink-0"
+                strokeWidth={1.8}
+              />
+            </span>
+          )}
         </div>
+      </button>
 
+      <button
+        type="button"
+        aria-pressed={selected}
+        aria-label={`Select ${meal.title}`}
+        disabled={disabled}
+        className="flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-55"
+        onClick={onSelect}
+      >
         <span
           className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-full",
+            "box-border flex size-6 items-center justify-center rounded-full border border-solid",
             selected
-              ? "bg-cadmium text-paper"
-              : "border-1.5 border-control-muted",
+              ? "border-cadmium bg-cadmium text-paper"
+              : "border-control-muted bg-transparent",
           )}
           aria-hidden="true"
         >
