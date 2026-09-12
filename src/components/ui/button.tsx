@@ -28,7 +28,7 @@ export const buttonVariants = cva(
         quiet: "justify-center bg-mist text-graphite hover:bg-border",
         ghost: "justify-center text-ink hover:bg-mist",
         filter:
-          "h-9.5 shrink-0 justify-center whitespace-nowrap rounded-full border border-border px-3.5 text-13 font-medium text-ink hover:bg-mist aria-pressed:border-transparent aria-pressed:bg-ink aria-pressed:font-semibold aria-pressed:text-paper",
+          "h-9.5 shrink-0 justify-center whitespace-nowrap rounded-full border border-border px-3.5 text-13 font-medium text-ink hover:bg-mist aria-pressed:border-transparent aria-pressed:bg-ink aria-pressed:text-paper",
       },
       size: {
         default: "",

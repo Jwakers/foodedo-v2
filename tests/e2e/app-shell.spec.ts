@@ -234,8 +234,12 @@ test("does not intercept public recipe deep links with welcome", async ({
   await page.goto("/recipes");
   await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
   await expect(
-    page.getByText("Temporary listing — tap through to a recipe detail."),
+    page.getByText("Saved favourites, your recipes and new ideas."),
   ).toBeVisible();
+  await expect(page.getByRole("group", { name: "Recipe scopes" })).toHaveCount(
+    0,
+  );
+  await expect(page.getByText("Ideas for you")).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
       name: "Recipes",
