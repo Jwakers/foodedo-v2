@@ -136,9 +136,14 @@ export const removeMineFromLibrary = mutation({
   },
 });
 
-export const listSavedCatalogueMealIds = query({
+export const listSavedCatalogueMeals = query({
   args: { catalogueVersion: v.number() },
-  returns: v.array(v.string()),
+  returns: v.array(
+    v.object({
+      catalogueMealId: v.string(),
+      recipeId: v.id("recipes"),
+    }),
+  ),
   handler: async (ctx, { catalogueVersion }) => {
     const ownerSubject = await requireAuthSubject(ctx);
 
@@ -166,7 +171,12 @@ export const listSavedCatalogueMealIds = query({
 
     return recipes.flatMap((recipe) =>
       recipe.savedAt !== undefined && recipe.source.type === "catalogue"
-        ? [recipe.source.catalogueMealId]
+        ? [
+            {
+              catalogueMealId: recipe.source.catalogueMealId,
+              recipeId: recipe._id,
+            },
+          ]
         : [],
     );
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/react";
-import { ListFilter, Search, X } from "lucide-react";
+import { Heart, ListFilter, Search, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
 import { RecipeCard } from "@/features/recipes/recipe-card";
 import {
   RecipeFilterPanel,
@@ -29,29 +30,24 @@ import { cn } from "@/lib/utils/cn";
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
 
-/** Temporary Saved-tab stand-ins until persistence exists. */
-const SAVED_PLACEHOLDER_COUNT = 6;
-/** How many “All” cards look saved for signed-in design fidelity. */
-const ALL_SAVED_PREVIEW_COUNT = 3;
-
-const emptySavedIds: ReadonlySet<string> = new Set();
-
 export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const {
+    isLibraryLoading,
+    isSaved,
+    isSavePending,
+    savedRecipeIdByMealId,
+    toggleSave,
+  } = useCatalogueRecipeLibrary();
   const [scope, setScope] = useState<RecipeScope>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
   const activeScope: RecipeScope = showScopes ? scope : "All";
-  const savedPlaceholders = meals.slice(0, SAVED_PLACEHOLDER_COUNT);
-  const allSavedPreviewIds = showScopes
-    ? new Set(
-        savedPlaceholders
-          .slice(0, ALL_SAVED_PREVIEW_COUNT)
-          .map((meal) => meal.id),
-      )
-    : emptySavedIds;
+  const savedMeals = meals.filter((meal) => savedRecipeIdByMealId.has(meal.id));
+  const savedIsEmpty =
+    activeScope === "Saved" && !isLibraryLoading && savedMeals.length === 0;
 
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-6 pb-8">
@@ -106,50 +102,68 @@ export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
         </div>
       ) : null}
 
-      <div
-        className={cn(
-          "flex items-center gap-2 pb-1",
-          showScopes ? "pt-2" : "pt-3",
-        )}
-      >
-        <Button
-          variant="filter"
-          className="gap-1.75 border-ink px-3.25 font-semibold"
-          onClick={() => setFiltersOpen(true)}
+      {!savedIsEmpty ? (
+        <div
+          className={cn(
+            "flex items-center gap-2 pb-1",
+            showScopes ? "pt-2" : "pt-3",
+          )}
         >
-          <ListFilter aria-hidden="true" className="size-4" strokeWidth={1.8} />
-          Filter
-        </Button>
-        <div className="scrollbar-none -mr-page-inline flex min-w-0 flex-1 gap-2 overflow-x-auto pr-page-inline">
-          {recipeQuickFilterLabels.map((label) => (
-            <Button
-              key={label}
-              variant="filter"
-              onClick={() => setFiltersOpen(true)}
-            >
-              {label}
-            </Button>
-          ))}
+          <Button
+            variant="filter"
+            className="gap-1.75 border-ink px-3.25 font-semibold"
+            onClick={() => setFiltersOpen(true)}
+          >
+            <ListFilter
+              aria-hidden="true"
+              className="size-4"
+              strokeWidth={1.8}
+            />
+            Filter
+          </Button>
+          <div className="scrollbar-none -mr-page-inline flex min-w-0 flex-1 gap-2 overflow-x-auto pr-page-inline">
+            {recipeQuickFilterLabels.map((label) => (
+              <Button
+                key={label}
+                variant="filter"
+                onClick={() => setFiltersOpen(true)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {activeScope === "All" ? (
         <CatalogueGrid
           heading="Ideas for you"
           countLabel={recipeCountLabel(meals.length)}
           meals={meals}
-          savedIds={allSavedPreviewIds}
-          canSave={showScopes}
+          isSaved={isSaved}
+          isSavePending={isSavePending}
+          onToggleSave={toggleSave}
         />
       ) : null}
 
-      {activeScope === "Saved" ? (
+      {activeScope === "Saved" && isLibraryLoading ? (
+        <p className="py-16 text-center text-14 text-graphite" role="status">
+          Loading saved recipes…
+        </p>
+      ) : null}
+
+      {activeScope === "Saved" && savedIsEmpty ? (
+        <EmptySavedState onBrowse={() => setScope("All")} />
+      ) : null}
+
+      {activeScope === "Saved" && !isLibraryLoading && !savedIsEmpty ? (
         <CatalogueGrid
           heading="Saved favourites"
-          countLabel={`${savedPlaceholders.length} saved`}
-          meals={savedPlaceholders}
-          savedIds={new Set(savedPlaceholders.map((meal) => meal.id))}
-          canSave
+          countLabel={`${savedMeals.length} saved`}
+          meals={savedMeals}
+          isSaved={isSaved}
+          isSavePending={isSavePending}
+          onToggleSave={toggleSave}
         />
       ) : null}
 
@@ -184,14 +198,19 @@ function CatalogueGrid({
   heading,
   countLabel,
   meals,
-  savedIds,
-  canSave,
+  isSaved,
+  isSavePending,
+  onToggleSave,
 }: {
   heading: string;
   countLabel: string;
   meals: CatalogueMeal[];
-  savedIds: ReadonlySet<string>;
-  canSave: boolean;
+  isSaved: (catalogueMealId: string) => boolean;
+  isSavePending: (catalogueMealId: string) => boolean;
+  onToggleSave: (args: {
+    catalogueMealId: string;
+    title: string;
+  }) => Promise<unknown> | void;
 }) {
   return (
     <section className="pt-2">
@@ -205,8 +224,14 @@ function CatalogueGrid({
               title={meal.title}
               meta={catalogueMealMeta(meal)}
               imageSrc={meal.imageSrc}
-              saved={savedIds.has(meal.id)}
-              canSave={canSave}
+              saved={isSaved(meal.id)}
+              isSavePending={isSavePending(meal.id)}
+              onToggleSave={() =>
+                onToggleSave({
+                  catalogueMealId: meal.id,
+                  title: meal.title,
+                })
+              }
             />
           </li>
         ))}
@@ -243,7 +268,9 @@ function YoursGrid({ imageFallbacks }: { imageFallbacks: CatalogueMeal[] }) {
               meta={recipe.meta}
               imageSrc={recipe.imageSrc}
               saved={recipe.saved}
-              canSave
+              onToggleSave={() => {
+                temporaryFeedback("Saving your own recipes comes next.");
+              }}
               onOpen={() => {
                 temporaryFeedback(
                   `Opening “${recipe.title}” comes next — your recipes aren’t wired yet.`,
@@ -253,6 +280,25 @@ function YoursGrid({ imageFallbacks }: { imageFallbacks: CatalogueMeal[] }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function EmptySavedState({ onBrowse }: { onBrowse: () => void }) {
+  return (
+    <section className="flex flex-col items-center px-5 pt-18 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-cadmium-soft text-cadmium">
+        <Heart aria-hidden="true" className="size-6" strokeWidth={1.8} />
+      </span>
+      <h2 className="mt-5 font-display text-24 font-semibold tracking-title text-ink">
+        Nothing saved yet
+      </h2>
+      <p className="mt-2 max-w-65 text-14 leading-5 text-graphite">
+        Save recipes you love and they&apos;ll be easy to find here.
+      </p>
+      <Button className="mt-6" onClick={onBrowse}>
+        Browse Foodedo recipes
+      </Button>
     </section>
   );
 }

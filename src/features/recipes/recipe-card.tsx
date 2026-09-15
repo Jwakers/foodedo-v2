@@ -1,22 +1,22 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
+import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 import { cn } from "@/lib/utils/cn";
 
 /**
  * Listing card: media + title + meta, with a separate 44px save target so
- * bookmark taps never navigate (Paper §08 behaviour).
+ * heart taps never navigate (Paper §08 behaviour).
  */
 export function RecipeCard({
   title,
   meta,
   imageSrc,
   saved,
-  canSave,
+  isSavePending = false,
+  onToggleSave,
   href,
   onOpen,
 }: {
@@ -24,8 +24,8 @@ export function RecipeCard({
   meta: string;
   imageSrc?: string | null;
   saved: boolean;
-  /** False for guests — save asks them to sign in instead. */
-  canSave: boolean;
+  isSavePending?: boolean;
+  onToggleSave: () => Promise<unknown> | void;
   href?: string;
   onOpen?: () => void;
 }) {
@@ -85,25 +85,23 @@ export function RecipeCard({
         type="button"
         aria-label={saved ? `Unsave ${title}` : `Save ${title}`}
         aria-pressed={saved}
+        aria-busy={isSavePending || undefined}
+        disabled={isSavePending}
         className={cn(
-          "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium",
+          "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-70",
           saved
-            ? "bg-leaf-soft text-leaf"
+            ? "bg-cadmium-soft text-cadmium"
             : "border border-paper bg-mist text-ink",
         )}
         onClick={() => {
-          if (!canSave) {
-            temporaryFeedback("Sign in to save recipes you love.");
-            return;
-          }
-          temporaryFeedback(
-            saved
-              ? `Unsaving “${title}” comes next.`
-              : `Saving “${title}” comes next.`,
-          );
+          void onToggleSave();
         }}
       >
-        <Bookmark aria-hidden="true" className="size-4.5" strokeWidth={1.8} />
+        <Heart
+          aria-hidden="true"
+          className={cn("size-4.5", saved && "fill-current")}
+          strokeWidth={1.8}
+        />
       </button>
     </div>
   );

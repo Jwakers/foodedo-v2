@@ -241,6 +241,9 @@ test("does not intercept public recipe deep links with welcome", async ({
   );
   await expect(page.getByText("Ideas for you")).toBeVisible();
   await expect(
+    page.getByRole("button", { name: "Save Chicken Fajitas" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
       name: "Recipes",
     }),
@@ -305,6 +308,9 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Recipe options" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save Lemon Herb Grilled Chicken" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Recipe options" }).click();

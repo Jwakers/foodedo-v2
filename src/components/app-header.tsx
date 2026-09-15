@@ -8,17 +8,16 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/react";
-import { Bookmark, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { HeaderModeSlot } from "@/components/header-mode-slot";
 import { Button } from "@/components/ui/button";
-import { RecipeOverflowMenu } from "@/features/recipes/recipe-overflow-menu";
+import { RecipeDetailHeaderActions } from "@/features/recipes/recipe-detail-header-actions";
 import { findStandardCatalogueMealBySlug } from "@/lib/domain/standard-catalogue";
 import { parseRecipeDetailSlug } from "@/lib/routing/recipes";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 import { cn } from "@/lib/utils/cn";
 
 export function AppHeader() {
@@ -39,7 +38,6 @@ export function AppHeader() {
   // Only enter recipe chrome when the slug resolves — avoids fake chrome on 404s
   // and future `/recipes/…` routes that are not catalogue detail pages.
   const isRecipeDetail = recipe !== null;
-  const recipeTitle = recipe?.title ?? "recipe";
 
   return (
     <header className="sticky top-0 z-40 bg-paper pt-[env(safe-area-inset-top)]">
@@ -96,23 +94,7 @@ export function AppHeader() {
           </HeaderModeSlot>
 
           <HeaderModeSlot active={isRecipeDetail} className="gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="headerIcon"
-              aria-label={`Save ${recipeTitle}`}
-              tabIndex={isRecipeDetail ? 0 : -1}
-              onClick={() => {
-                temporaryFeedback("Saving recipes comes next.");
-              }}
-            >
-              <Bookmark
-                aria-hidden="true"
-                className="size-5"
-                strokeWidth={1.8}
-              />
-            </Button>
-            <RecipeOverflowMenu recipeTitle={recipeTitle} />
+            {recipe ? <RecipeDetailHeaderActions recipe={recipe} /> : null}
           </HeaderModeSlot>
         </div>
       </div>
