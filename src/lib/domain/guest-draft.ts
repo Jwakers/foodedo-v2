@@ -312,6 +312,24 @@ export function requestGuestPlanClaim(
   };
 }
 
+/**
+ * Stops retrying an unsuccessful save without changing the reviewed week.
+ * A later explicit Save creates a fresh idempotency key.
+ */
+export function cancelGuestPlanClaim(
+  draft: GuestDraftV1,
+  now: number,
+): GuestDraftV1 {
+  requireTimestamp(now, "Claim cancellation time");
+  if (draft.claim === undefined) return draft;
+
+  return {
+    ...draft,
+    claim: undefined,
+    updatedAt: now,
+  };
+}
+
 export function completeGuestPlanClaim(
   draft: GuestDraftV1,
   now: number,

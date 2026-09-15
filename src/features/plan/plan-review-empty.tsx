@@ -1,9 +1,9 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 export function PlanReviewEmpty({
   isPlanning,
@@ -38,7 +38,7 @@ export function PlanReviewEmpty({
               await onPlanWeek();
             } catch (error) {
               console.error("Failed to create guest plan draft.", error);
-              temporaryFeedback(
+              toast.error(
                 "Foodedo couldn’t start your week. Check storage access and try again.",
               );
             }

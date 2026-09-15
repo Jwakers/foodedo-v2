@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 import {
   ensureGuestPlanDraft,
+  acceptAndPrepareGuestPlanClaim,
+  cancelPendingGuestPlanClaim,
+  clearClaimedGuestPlanDraft,
+  guestPlanClaimMutationArgs,
   removeGuestPlanMeal,
   replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
@@ -43,6 +47,11 @@ function createMemoryStore(
     },
     async clear() {
       draft = null;
+    },
+    async clearIf(predicate) {
+      if (!predicate(draft)) return false;
+      draft = null;
+      return true;
     },
     runMutation(mutate) {
       const run = mutationTail.then(async () => {
@@ -184,4 +193,152 @@ test("replace rejects empty storage without persisting a draft", async () => {
     }),
   ).rejects.toThrow("There is no guest plan on this device to update.");
   expect(store.writes).toBe(0);
+});
+
+test("accepts a draft and keeps one claim key across retries", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+  const store = createMemoryStore(seed);
+
+  const prepared = await acceptAndPrepareGuestPlanClaim({
+    now: 200,
+    claimKey: "claim_key_1234567890",
+    store,
+  });
+  const retried = await acceptAndPrepareGuestPlanClaim({
+    now: 300,
+    claimKey: "different_key_123456",
+    store,
+  });
+
+  expect(prepared.acceptedAt).toBe(200);
+  expect(prepared.claim).toEqual({
+    key: "claim_key_1234567890",
+    requestedAt: 200,
+  });
+  expect(retried.claim?.key).toBe("claim_key_1234567890");
+  expect(guestPlanClaimMutationArgs(prepared).mealChoices).toEqual(
+    prepared.mealChoices,
+  );
+});
+
+test("cancels a pending claim but preserves the exact local draft", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+  const store = createMemoryStore(seed);
+  const prepared = await acceptAndPrepareGuestPlanClaim({
+    now: 200,
+    claimKey: "claim_key_1234567890",
+    store,
+  });
+
+  await cancelPendingGuestPlanClaim({
+    expectedDraft: prepared,
+    now: 300,
+    store,
+  });
+
+  const cancelled = (await store.read()) as GuestDraftV1;
+  expect(cancelled.mealChoices).toEqual(prepared.mealChoices);
+  expect(cancelled.acceptedAt).toBe(prepared.acceptedAt);
+  expect(cancelled.claim).toBeUndefined();
+  expect(store.writes).toBe(2);
+});
+
+test("clears only the draft revision acknowledged by a claim", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+  });
+  const store = createMemoryStore(seed);
+  const submitted = await acceptAndPrepareGuestPlanClaim({
+    now: 200,
+    claimKey: "claim_key_1234567890",
+    store,
+  });
+  const replacementMealId = catalogueMealIds.find(
+    (id) => id !== submitted.mealChoices[0]?.catalogueMealId,
+  )!;
+
+  const newerDraft = await replaceGuestPlanMeal({
+    date: submitted.mealChoices[0]!.date,
+    catalogueMealId: replacementMealId,
+    now: 300,
+    store,
+  });
+  const cleared = await clearClaimedGuestPlanDraft({
+    expectedDraft: submitted,
+    store,
+  });
+
+  expect(cleared).toBe(false);
+  expect(await store.read()).toEqual(newerDraft);
+});
+
+test("does not cancel a newer claim prepared in another tab", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+  });
+  const store = createMemoryStore(seed);
+  const firstClaim = await acceptAndPrepareGuestPlanClaim({
+    now: 200,
+    claimKey: "claim_key_1234567890",
+    store,
+  });
+  const replacementMealId = catalogueMealIds.find(
+    (id) => id !== firstClaim.mealChoices[0]?.catalogueMealId,
+  )!;
+  await replaceGuestPlanMeal({
+    date: firstClaim.mealChoices[0]!.date,
+    catalogueMealId: replacementMealId,
+    now: 300,
+    store,
+  });
+  const newerClaim = await acceptAndPrepareGuestPlanClaim({
+    now: 400,
+    claimKey: "new_claim_key_123456",
+    store,
+  });
+
+  await cancelPendingGuestPlanClaim({
+    expectedDraft: firstClaim,
+    now: 500,
+    store,
+  });
+
+  expect(await store.read()).toEqual(newerClaim);
+});
+
+test("refuses to prepare a claim when every day is empty", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [0, 1, 2, 3, 4, 5, 6],
+  });
+  const store = createMemoryStore(seed);
+
+  await expect(
+    acceptAndPrepareGuestPlanClaim({
+      now: 200,
+      claimKey: "claim_key_1234567890",
+      store,
+    }),
+  ).rejects.toThrow("Save at least one dinner");
 });

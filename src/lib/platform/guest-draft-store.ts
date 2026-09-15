@@ -17,6 +17,11 @@ export interface GuestDraftStore {
   write(draft: GuestDraftV1): Promise<void>;
   clear(): Promise<void>;
   /**
+   * Atomically delete the current draft only when it is still the expected
+   * revision. Prevents a completed claim in one tab deleting newer work.
+   */
+  clearIf(predicate: (current: unknown | null) => boolean): Promise<boolean>;
+  /**
    * Exclusive read-modify-write. IndexedDB uses one readwrite transaction so
    * mutations serialize across tabs/windows as well as within a page.
    * `mutate` must stay synchronous so the transaction stays active.
@@ -63,6 +68,24 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
         const transaction = database.transaction(objectStoreName, "readwrite");
         transaction.objectStore(objectStoreName).delete(currentDraftKey);
         await transactionComplete(transaction);
+      } finally {
+        database.close();
+      }
+    },
+
+    async clearIf(predicate) {
+      const database = await openFoodedoDatabase();
+      try {
+        const transaction = database.transaction(objectStoreName, "readwrite");
+        const objectStore = transaction.objectStore(objectStoreName);
+        const current =
+          (await requestResult(objectStore.get(currentDraftKey))) ?? null;
+        const shouldClear = predicate(current);
+        if (shouldClear) {
+          objectStore.delete(currentDraftKey);
+        }
+        await transactionComplete(transaction);
+        return shouldClear;
       } finally {
         database.close();
       }

@@ -50,7 +50,9 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("heading", { name: "Your week is ready" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Keep planning—sign in later to save this week."),
+    page.getByText(
+      "Keep planning. Sign in when you're ready to save this week.",
+    ),
   ).toBeVisible();
   await expect(page.getByText("No meal planned")).toBeVisible();
   await expect(page.getByText("Leave it free or add a meal")).toBeVisible();
@@ -65,6 +67,24 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByRole("button", { name: "Try another week" }),
   ).toBeVisible();
+  // Guest review hides the dock — focused temporary state, not a destination.
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
+    0,
+  );
+
+  await page.getByRole("button", { name: "Save my plan" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Save this week" }),
+  ).toBeVisible();
+  await expect(page.getByText("Keep this exact week")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign in to save" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Not now" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible();
+  await expect(page.getByText("Keep this exact week")).toHaveCount(0);
 
   const firstMealActions = page
     .getByRole("button", { name: /^Actions for / })
@@ -164,14 +184,11 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   );
 
   await expect(page.locator("header")).toBeVisible();
-  const navigation = page.getByRole("navigation", { name: "Primary" });
-  await expect(navigation).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Week" })).toHaveAttribute(
-    "aria-current",
-    "page",
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
+    0,
   );
 
-  await navigation.getByRole("link", { name: "Home" }).click();
+  await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
@@ -194,6 +211,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("heading", { name: "Make Foodedo fit your week" }),
   ).toHaveCount(0);
 
+  const navigation = page.getByRole("navigation", { name: "Primary" });
   await navigation.getByRole("link", { name: "Recipes" }).click();
   await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
 
@@ -202,7 +220,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("heading", { name: "Your week is ready" }),
   ).toBeVisible();
 
-  await navigation.getByRole("link", { name: "Home" }).click();
+  await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();

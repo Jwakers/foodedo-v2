@@ -60,9 +60,18 @@ After successful sign-in:
 
 Never accept `userId` or an auth-provider subject from the client. The mutation derives the owner from `ctx.auth`.
 
-The current foundation refuses a claim when the account already has an active plan; nothing is silently replaced and a second active parent cannot be created. Overlapping dates are reported when available, while archived history does not create a false conflict. Signed-in clients query Convex before attempting a claim: an equivalent account plan is shown as saved on every device, while a different local draft is retained and disclosed rather than sent into a retry loop.
+Claiming is the completion of the user's explicit **Save this exact week** action. If
+the account already has a different active plan, the mutation archives that parent
+and creates the reviewed plan as the new active plan in the same transaction. The
+archived snapshot remains available from Week history; it is never merged into or
+partially substituted for the reviewed draft. A matching active plan is treated as
+already saved, and the claim key keeps retries idempotent so a second active parent
+cannot be created.
 
-Expected claim outcomes such as occupied dates or an unsupported catalogue revision are returned as typed results and explained in the interface without discarding the local draft. Authentication, malformed input, and internal data invariants still throw: application errors remain structured, while unexpected faults are contained by the nearest plan error boundary.
+An unsupported catalogue revision is returned as a typed result and explained in
+the interface without discarding the local draft. Authentication, malformed input,
+and internal data invariants still throw: application errors remain structured,
+while unexpected faults are contained by the nearest plan error boundary.
 
 ## Authentication provider
 

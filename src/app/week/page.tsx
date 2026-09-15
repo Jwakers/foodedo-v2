@@ -1,5 +1,5 @@
-import { PlanReview } from "@/features/plan/plan-review";
+import { WeekPage } from "@/features/plan/week-page";
 
-export default function WeekPage() {
-  return <PlanReview />;
+export default function WeekRoutePage() {
+  return <WeekPage />;
 }

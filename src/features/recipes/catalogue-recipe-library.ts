@@ -3,6 +3,7 @@
 import { useAuth, useClerk } from "@clerk/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -12,7 +13,6 @@ import {
 } from "@/lib/domain/auth-intents";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { createCatalogueSaveIntentStore } from "@/lib/platform/auth-intent-store";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 type ToggleCatalogueSaveArgs = {
   catalogueMealId: string;
@@ -58,7 +58,7 @@ export function useCatalogueRecipeLibrary() {
     if (pendingMealIdsRef.current.has(catalogueMealId)) return;
 
     if (!isLoaded) {
-      temporaryFeedback("Foodedo is still checking your account. Try again.");
+      toast.info("Foodedo is still checking your account. Try again.");
       return;
     }
 
@@ -69,7 +69,7 @@ export function useCatalogueRecipeLibrary() {
         );
       } catch (error) {
         console.error("Failed to store catalogue-save resume intent.", error);
-        temporaryFeedback(
+        toast.error(
           "Foodedo couldn’t save your place. Check storage access and try again.",
         );
         return;
@@ -80,7 +80,7 @@ export function useCatalogueRecipeLibrary() {
     }
 
     if (isConvexAuthLoading || !isAuthenticated) {
-      temporaryFeedback(
+      toast.error(
         "Foodedo couldn’t connect your account yet. Try saving again.",
       );
       return;
@@ -99,7 +99,7 @@ export function useCatalogueRecipeLibrary() {
           recipeId: savedRecipeId,
         });
         if (result.status === "not_found") {
-          temporaryFeedback(`“${title}” is no longer in your saved recipes.`);
+          toast.info(`“${title}” is no longer in your saved recipes.`);
         }
         return;
       }
@@ -109,13 +109,11 @@ export function useCatalogueRecipeLibrary() {
         catalogueVersion: standardCatalogue.version,
       });
       if (result.status === "catalogue_unsupported") {
-        temporaryFeedback("This recipe can’t be saved right now.");
+        toast.error("This recipe can’t be saved right now.");
       }
     } catch (error) {
       console.error(`Failed to update saved recipe “${title}”.`, error);
-      temporaryFeedback(
-        "Foodedo couldn’t update this saved recipe. Try again.",
-      );
+      toast.error("Foodedo couldn’t update this saved recipe. Try again.");
     } finally {
       setMealPending(catalogueMealId, false);
     }
@@ -132,8 +130,8 @@ export function useCatalogueRecipeLibrary() {
 
   const isLibraryLoading = Boolean(
     isLoaded &&
-      isSignedIn &&
-      (isConvexAuthLoading || !isAuthenticated || savedRecipes === undefined),
+    isSignedIn &&
+    (isConvexAuthLoading || !isAuthenticated || savedRecipes === undefined),
   );
 
   return {
@@ -174,12 +172,12 @@ export function CatalogueSaveIntentResume() {
         });
 
         if (result.status === "catalogue_unsupported") {
-          temporaryFeedback("This recipe can’t be saved right now.");
+          toast.error("This recipe can’t be saved right now.");
         }
         await store.clear();
       } catch (error) {
         console.error("Failed to resume catalogue recipe save.", error);
-        temporaryFeedback(
+        toast.error(
           "Foodedo couldn’t finish saving that recipe. Try saving it again.",
         );
       } finally {

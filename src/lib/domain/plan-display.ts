@@ -17,6 +17,16 @@ export type GuestPlanMealRow = {
 );
 
 /**
+ * Calendar “today” in the viewer's local timezone, as YYYY-MM-DD.
+ * Plan dates are civil days, not UTC instants.
+ */
+export function todayPlanDate(now: Date = new Date()): string {
+  return formatLocalPlanDate(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+  );
+}
+
+/**
  * Calendar “tomorrow” in the viewer's local timezone, as YYYY-MM-DD.
  * Plan dates are civil days, not UTC instants.
  */
@@ -70,22 +80,35 @@ export function formatGuestPlanSummary({
   planStartDate: string;
   plannedMealCount: number;
 }): string {
-  const start = parsePlanDateParts(planStartDate);
-  const endDate = addCalendarDays(planStartDate, 6);
-  const end = parsePlanDateParts(endDate);
+  const dateRange = formatPlanDateRange({
+    startDate: planStartDate,
+    endDate: addCalendarDays(planStartDate, 6),
+  });
+  const dinnerLabel =
+    plannedMealCount === 1
+      ? "1 planned dinner"
+      : `${plannedMealCount} planned dinners`;
 
+  return `${dateRange} · ${dinnerLabel}`;
+}
+
+/** Compact civil-date range for Week selectors, e.g. `29 Aug–4 Sep`. */
+export function formatPlanDateRange({
+  startDate,
+  endDate,
+}: {
+  startDate: string;
+  endDate: string;
+}): string {
+  const start = parsePlanDateParts(startDate);
+  const end = parsePlanDateParts(endDate);
   const startLabel = `${start.day} ${shortMonth(start.month)}`;
   const endLabel =
     start.month === end.month && start.year === end.year
       ? `${end.day} ${shortMonth(end.month)}`
       : `${end.day} ${shortMonth(end.month)}`;
 
-  const dinnerLabel =
-    plannedMealCount === 1
-      ? "1 planned dinner"
-      : `${plannedMealCount} planned dinners`;
-
-  return `${startLabel}–${endLabel} · ${dinnerLabel}`;
+  return `${startLabel}–${endLabel}`;
 }
 
 export function formatMealDurationLabel(
@@ -95,6 +118,81 @@ export function formatMealDurationLabel(
   const total = (prepMinutes ?? 0) + (cookMinutes ?? 0);
   if (total <= 0) return null;
   return `${total} min`;
+}
+
+export type ActivePlanMealSlot = {
+  date: string;
+  title: string;
+  description: string | null;
+  imageSrc: string | null;
+  catalogueMealSlug: string | null;
+  prepMinutes: number | null;
+  cookMinutes: number | null;
+  status: "planned" | "cooked" | "skipped";
+};
+
+export type ActivePlanFocus = {
+  meal: ActivePlanMealSlot;
+  /** Overline label without duration, e.g. TONIGHT / TOMORROW / FRIDAY. */
+  timingLabel: string;
+  durationLabel: string | null;
+};
+
+/**
+ * Pick the meal to feature on Home: today's planned meal when present,
+ * otherwise the next upcoming planned meal in the active week.
+ */
+export function resolveActivePlanFocus({
+  mealSlots,
+  today = todayPlanDate(),
+}: {
+  mealSlots: ReadonlyArray<ActivePlanMealSlot>;
+  today?: string;
+}): ActivePlanFocus | null {
+  const upcoming = mealSlots
+    .filter((slot) => slot.status === "planned" && slot.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const meal = upcoming[0];
+  if (!meal) return null;
+
+  return {
+    meal,
+    timingLabel: formatActivePlanTimingLabel(meal.date, today),
+    durationLabel: formatMealDurationLabel(
+      meal.prepMinutes ?? undefined,
+      meal.cookMinutes ?? undefined,
+    ),
+  };
+}
+
+export function resolveActivePlanRestOfWeek({
+  mealSlots,
+  focusDate,
+  today = todayPlanDate(),
+}: {
+  mealSlots: ReadonlyArray<ActivePlanMealSlot>;
+  focusDate: string | null;
+  today?: string;
+}): ActivePlanMealSlot[] {
+  return mealSlots
+    .filter(
+      (slot) =>
+        slot.status === "planned" &&
+        slot.date >= today &&
+        slot.date !== focusDate,
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Full weekday name uppercased for rest-of-week tiles (FRIDAY). */
+export function formatPlanWeekdayUpper(date: string): string {
+  return formatPlanWeekdayLong(date).toUpperCase();
+}
+
+function formatActivePlanTimingLabel(date: string, today: string): string {
+  if (date === today) return "TONIGHT";
+  if (date === addCalendarDays(today, 1)) return "TOMORROW";
+  return formatPlanWeekdayUpper(date);
 }
 
 /** Display label for catalogue protein categories (e.g. meat-free → Meat-free). */
@@ -146,6 +244,102 @@ export function summarizeGuestPlanDraft(draft: GuestDraftV1) {
     planStartDate: draft.planStartDate,
     plannedMealCount: countPlannedGuestMeals(draft),
   });
+}
+
+export type ActivePlanWeekSlot = {
+  date: string;
+  status: "planned" | "cooked" | "skipped";
+  title: string;
+  description: string | null;
+  imageSrc: string | null;
+  catalogueMealId: string | null;
+  catalogueMealSlug: string | null;
+  prepMinutes: number | null;
+  cookMinutes: number | null;
+};
+
+/**
+ * Expand an active plan into seven dated display rows, inserting empty days
+ * where free days were never written as slots.
+ */
+export function resolveActivePlanWeekRows({
+  startDate,
+  mealSlots,
+  mealsById,
+}: {
+  startDate: string;
+  mealSlots: ReadonlyArray<ActivePlanWeekSlot>;
+  mealsById: ReadonlyMap<string, CatalogueMeal>;
+}): GuestPlanMealRow[] {
+  const byDate = new Map(mealSlots.map((slot) => [slot.date, slot] as const));
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addCalendarDays(startDate, index);
+    const day = formatPlanDayParts(date);
+    const slot = byDate.get(date);
+
+    if (!slot || slot.status === "skipped") {
+      return {
+        kind: "empty" as const,
+        date,
+        weekday: day.weekday,
+        dayOfMonth: day.dayOfMonth,
+      };
+    }
+
+    const catalogueMeal =
+      slot.catalogueMealId === null
+        ? undefined
+        : mealsById.get(slot.catalogueMealId);
+    const meal: CatalogueMeal = catalogueMeal ?? {
+      id: slot.catalogueMealId ?? `slot:${date}`,
+      slug: slot.catalogueMealSlug ?? `slot-${date}`,
+      title: slot.title,
+      description: slot.description ?? undefined,
+      imageSrc: slot.imageSrc ?? undefined,
+      proteinCategory: "meat-free",
+      ingredients: [],
+      steps: [],
+      prepMinutes: slot.prepMinutes ?? undefined,
+      cookMinutes: slot.cookMinutes ?? undefined,
+    };
+
+    return {
+      kind: "planned" as const,
+      date,
+      weekday: day.weekday,
+      dayOfMonth: day.dayOfMonth,
+      meal,
+      durationLabel: formatMealDurationLabel(
+        meal.prepMinutes,
+        meal.cookMinutes,
+      ),
+    };
+  });
+}
+
+/** Last two calendar days of the plan — when “Start next plan” may rise. */
+export function isNearActivePlanEnd({
+  endDate,
+  today = todayPlanDate(),
+}: {
+  endDate: string;
+  today?: string;
+}): boolean {
+  return today >= addCalendarDays(endDate, -1) && today <= endDate;
+}
+
+export function formatActivePlanEndSummary({
+  endDate,
+  dinnersLeft,
+}: {
+  endDate: string;
+  dinnersLeft: number;
+}): string {
+  const weekday = formatPlanWeekdayShort(endDate);
+  const dinnerLabel =
+    dinnersLeft === 1 ? "1 dinner left" : `${dinnersLeft} dinners left`;
+  return `Ends ${weekday} · ${dinnerLabel}`;
 }
 
 function formatLocalPlanDate(date: Date) {

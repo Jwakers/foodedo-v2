@@ -6,18 +6,54 @@ import {
   ClerkLoading,
   Show,
   SignInButton,
+  useAuth,
 } from "@clerk/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
 import { PlanAction } from "@/features/dashboard/plan-action";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 
 export function Dashboard() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { isAuthenticated } = useConvexAuth();
+  const currentPlan = useQuery(
+    api.mealPlans.getCurrent,
+    isAuthenticated ? {} : "skip",
+  );
+
+  // Resolve Clerk before choosing guest/account UI. Signed-in users also wait
+  // for Convex so Home never flashes the guest “Plan my week” state.
+  const isCheckingPlan =
+    !isLoaded ||
+    (isSignedIn && !isAuthenticated) ||
+    (isAuthenticated && currentPlan === undefined);
+
+  if (isCheckingPlan) {
+    return (
+      <section
+        aria-label="Loading your dashboard"
+        className="mx-auto w-full max-w-175"
+        aria-busy="true"
+      >
+        <div className="h-8 w-28 rounded-sm bg-mist" />
+        <div className="mt-3 h-12 w-56 rounded-sm bg-mist" />
+        <div className="mt-6 h-52 rounded-hero bg-mist sm:h-72" />
+      </section>
+    );
+  }
+
+  if (currentPlan) {
+    return <ActivePlanDashboard plan={currentPlan} />;
+  }
+
   return (
     <section
       aria-labelledby="dashboard-heading"

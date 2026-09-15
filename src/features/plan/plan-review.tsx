@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 
+import { useSaveGuestPlan } from "@/features/plan/guest-plan-claim";
 import { PlanReviewEmpty } from "@/features/plan/plan-review-empty";
 import { PlanReviewError } from "@/features/plan/plan-review-error";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
 import { PlanReviewReady } from "@/features/plan/plan-review-ready";
 import { useGuestPlanDraft } from "@/features/plan/use-guest-plan-draft";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 export function PlanReview() {
   const { state, retry, startPlan, tryAnotherWeek, removeMeal, replaceMeal } =
     useGuestPlanDraft();
+  const { isSaving, savePlan, prepareGuestSaveSignIn } = useSaveGuestPlan();
   const [isPlanning, setIsPlanning] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
 
@@ -43,10 +44,12 @@ export function PlanReview() {
     <PlanReviewReady
       summary={state.summary}
       rows={state.rows}
+      isSaving={isSaving}
       isShuffling={isShuffling}
       onSavePlan={() => {
-        temporaryFeedback("Saving your plan comes next.");
+        void savePlan();
       }}
+      onPrepareGuestSaveSignIn={prepareGuestSaveSignIn}
       onRemoveMeal={removeMeal}
       onReplaceMeal={replaceMeal}
       onTryAnotherWeek={async () => {

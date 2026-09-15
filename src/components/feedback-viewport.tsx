@@ -1,0 +1,86 @@
+"use client";
+
+import { Code2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import {
+  foodedoFeedbackEvent,
+  type FoodedoFeedbackDetail,
+} from "@/lib/ui/temporary-feedback";
+import { cn } from "@/lib/utils/cn";
+
+const feedbackDurationMs = 5_000;
+
+export function FeedbackViewport({ dockVisible }: { dockVisible: boolean }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    function clearFeedback() {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setMessage(null);
+    }
+
+    function handleFeedback(event: Event) {
+      const detail = (event as CustomEvent<FoodedoFeedbackDetail>).detail;
+      if (!detail?.message) return;
+
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
+      setMessage(detail.message);
+      timeoutRef.current = setTimeout(clearFeedback, feedbackDurationMs);
+    }
+
+    window.addEventListener(foodedoFeedbackEvent, handleFeedback);
+    return () => {
+      window.removeEventListener(foodedoFeedbackEvent, handleFeedback);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (message === null) return null;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cn(
+        "fixed inset-x-page-inline z-60 mx-auto flex max-w-167 items-start gap-3 rounded-sm border border-dashed border-cadmium bg-cadmium-soft px-3.5 py-3 font-mono text-ink shadow-lg",
+        dockVisible
+          ? "bottom-[calc(var(--app-nav-height)+var(--space-16)+var(--space-3))]"
+          : "bottom-[calc(env(safe-area-inset-bottom)+var(--space-16)+var(--space-4))]",
+      )}
+    >
+      <Code2
+        aria-hidden="true"
+        className="mt-0.5 size-4.5 shrink-0 text-cadmium"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-10 font-bold tracking-overline text-cadmium uppercase">
+          Dev note · unfinished
+        </p>
+        <p className="mt-1 text-13 leading-relaxed">{message}</p>
+      </div>
+      <button
+        type="button"
+        aria-label="Dismiss message"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+        onClick={() => {
+          if (timeoutRef.current !== null) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+          setMessage(null);
+        }}
+      >
+        <X aria-hidden="true" className="size-4" />
+      </button>
+    </div>
+  );
+}

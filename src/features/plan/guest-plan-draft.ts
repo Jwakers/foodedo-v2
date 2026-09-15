@@ -1,8 +1,13 @@
 import {
+  acceptGuestPlan,
   applyGuestPlanEmptySlots,
+  cancelGuestPlanClaim,
   clearGuestPlanMeal,
+  countPlannedGuestMeals,
   createGuestDraft,
+  GUEST_DRAFT_SCHEMA_VERSION,
   readGuestDraftV1,
+  requestGuestPlanClaim,
   setGuestPlanMeal,
   shuffleGuestPlan,
   type GuestDraftV1,
@@ -162,4 +167,126 @@ export async function replaceGuestPlanMeal({
       write: next !== existing,
     };
   });
+}
+
+/**
+ * Accept the local draft and persist a stable claim key before sign-in / claim.
+ * Retries keep the first key so Convex claim stays idempotent.
+ */
+export async function acceptAndPrepareGuestPlanClaim({
+  now = Date.now(),
+  claimKey = createGuestClaimKey(),
+  store = guestDraftStore(),
+}: {
+  now?: number;
+  claimKey?: string;
+  store?: GuestDraftStore;
+} = {}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+    if (countPlannedGuestMeals(existing) === 0) {
+      throw new Error("Save at least one dinner before keeping this plan.");
+    }
+
+    const accepted =
+      existing.acceptedAt === undefined
+        ? acceptGuestPlan(existing, now)
+        : existing;
+    const prepared = requestGuestPlanClaim(accepted, claimKey, now);
+
+    return {
+      draft: prepared,
+      write: prepared !== existing,
+    };
+  });
+}
+
+export function guestPlanClaimMutationArgs(draft: GuestDraftV1) {
+  if (draft.claim === undefined) {
+    throw new Error("There is no plan claim ready to send.");
+  }
+
+  return {
+    claimKey: draft.claim.key,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    catalogueVersion: draft.catalogueVersion,
+    planStartDate: draft.planStartDate,
+    mealChoices: draft.mealChoices.map((choice) => ({
+      date: choice.date,
+      catalogueMealId: choice.catalogueMealId,
+    })),
+  };
+}
+
+/** Remove only the exact draft revision acknowledged by Convex. */
+export async function clearClaimedGuestPlanDraft({
+  expectedDraft,
+  store = guestDraftStore(),
+}: {
+  expectedDraft: GuestDraftV1;
+  store?: GuestDraftStore;
+}): Promise<boolean> {
+  return await store.clearIf((raw) => {
+    const current = parseGuestDraft(raw);
+    return current !== null && isSameDraftRevision(current, expectedDraft);
+  });
+}
+
+/** Stop automatic claim retries while preserving every local plan choice. */
+export async function cancelPendingGuestPlanClaim({
+  expectedDraft,
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  expectedDraft: GuestDraftV1;
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<void> {
+  await store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+    if (!isSameDraftRevision(existing, expectedDraft)) {
+      return { draft: existing, write: false };
+    }
+
+    const cancelled = cancelGuestPlanClaim(existing, now);
+    return {
+      draft: cancelled,
+      write: cancelled !== existing,
+    };
+  });
+}
+
+function isSameDraftRevision(
+  current: GuestDraftV1,
+  expected: GuestDraftV1,
+): boolean {
+  if (
+    current.schemaVersion !== expected.schemaVersion ||
+    current.catalogueVersion !== expected.catalogueVersion ||
+    current.planStartDate !== expected.planStartDate ||
+    current.updatedAt !== expected.updatedAt ||
+    current.claim?.key !== expected.claim?.key ||
+    current.mealChoices.length !== expected.mealChoices.length
+  ) {
+    return false;
+  }
+
+  return current.mealChoices.every((choice, index) => {
+    const expectedChoice = expected.mealChoices[index];
+    return (
+      expectedChoice !== undefined &&
+      choice.date === expectedChoice.date &&
+      choice.catalogueMealId === expectedChoice.catalogueMealId
+    );
+  });
+}
+
+export function createGuestClaimKey() {
+  return crypto.randomUUID();
 }

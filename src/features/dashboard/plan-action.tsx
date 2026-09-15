@@ -10,6 +10,7 @@ import {
 } from "@clerk/react";
 import { ArrowRight, CircleCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
@@ -28,7 +29,6 @@ import {
   readAdjustPlanIntent,
 } from "@/lib/domain/auth-intents";
 import { createAdjustPlanIntentStore } from "@/lib/platform/auth-intent-store";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
 
 const guestBenefits = [
   {
@@ -96,7 +96,7 @@ export function PlanAction() {
       );
     } catch (error) {
       console.error("Failed to store adjust-plan resume intent.", error);
-      temporaryFeedback(
+      toast.error(
         "Foodedo couldn’t save your place. Check storage access and try again.",
       );
       return;

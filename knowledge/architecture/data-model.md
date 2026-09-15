@@ -76,6 +76,11 @@ Authenticated clients hydrate the current active plan from this table and its in
 
 An account should have one active plan. An alternative is a deterministic, read-only proposal rather than a stored draft. Applying it verifies the source plan ID and `updatedAt`, preserves elapsed slots, archives the current parent, and creates the replacement atomically. Plan choices are source-neutral recipe references: existing personal recipes are reused by ID, while standard catalogue choices are materialised as private snapshots only when applied. The archived parent supports immediate undo and later history.
 
+An accepted guest draft is also an explicit replacement intent: claiming it
+archives a different active parent and creates the exact seven-day reviewed plan
+atomically. Week exposes a bounded list of recent plans with archived entries in a
+view-only state, so replacing a nearly elapsed plan does not erase its history.
+
 Convex transactions prevent ordinary mutations from creating multiple active plans. If historical, imported, or manually edited data violates that invariant, the app continues showing the most recently updated plan and blocks further plan edits. One explicit recovery mutation keeps that plan and archives the other active parents atomically; merely reading the plan never repairs data silently.
 
 ### mealSlots
@@ -133,7 +138,7 @@ Idempotency records for moving a local guest draft into an authenticated account
 
 **Index:** `by_owner_and_claim_key`
 
-The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan; an existing active plan produces a typed conflict and nothing is overwritten. Archived history does not block a new active plan. No guest payload is trusted as an owner reference.
+The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan. A different active plan is archived in the same transaction before the reviewed draft becomes active; archived history does not block the claim. No guest payload is trusted as an owner reference.
 
 ## Relationships (summary)
 

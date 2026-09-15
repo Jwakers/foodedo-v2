@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
+  cancelGuestPlanClaim,
   clearGuestPlanMeal,
   completeGuestPlanClaim,
   createGuestDraft,
@@ -216,6 +217,30 @@ test("keeps one claim key across retries and records acknowledgement", () => {
     requestedAt: 300,
     completedAt: 500,
   });
+});
+
+test("cancels a failed claim without changing the reviewed week", () => {
+  const accepted = acceptGuestPlan(
+    createGuestDraft({
+      catalogueVersion: 1,
+      planStartDate: "2026-08-26",
+      catalogueMealIds,
+      now: 100,
+      emptySlotIndexes: [2],
+    }),
+    200,
+  );
+  const requested = requestGuestPlanClaim(
+    accepted,
+    "claim_key_1234567890",
+    300,
+  );
+  const cancelled = cancelGuestPlanClaim(requested, 400);
+
+  expect(cancelled.mealChoices).toEqual(requested.mealChoices);
+  expect(cancelled.acceptedAt).toBe(200);
+  expect(cancelled.claim).toBeUndefined();
+  expect(cancelled.updatedAt).toBe(400);
 });
 
 test("restores only the current catalogue and consecutive known choices", () => {
