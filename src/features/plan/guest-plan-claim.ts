@@ -14,9 +14,8 @@ import {
   guestPlanClaimMutationArgs,
   readCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
+import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
 import {
-  addDaysToPlanDate,
-  GUEST_PLAN_DAYS,
   guestDraftMatchesSavedPlan,
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
@@ -129,7 +128,7 @@ export function GuestPlanClaimResume() {
         }
 
         if (currentPlan !== null) {
-          const savedChoices = mealChoicesFromActivePlan({
+          const savedChoices = savedPlanMealChoices({
             planStartDate: currentPlan.startDate,
             mealSlots: currentPlan.mealSlots,
           });
@@ -178,7 +177,7 @@ export function GuestPlanClaimResume() {
       const draft = await readCurrentGuestPlanDraft();
       if (!draft) return;
 
-      const savedChoices = mealChoicesFromActivePlan({
+      const savedChoices = savedPlanMealChoices({
         planStartDate: currentPlan.startDate,
         mealSlots: currentPlan.mealSlots,
       });
@@ -239,27 +238,4 @@ function navigateAfterSuccessfulClaim(
   router: ReturnType<typeof useRouter>,
 ): void {
   router.replace("/week/saved");
-}
-
-function mealChoicesFromActivePlan({
-  planStartDate,
-  mealSlots,
-}: {
-  planStartDate: string;
-  mealSlots: ReadonlyArray<{
-    date: string;
-    catalogueMealId: string | null;
-  }>;
-}): Array<{ date: string; catalogueMealId: string | null }> {
-  const byDate = new Map(
-    mealSlots.map((slot) => [slot.date, slot.catalogueMealId] as const),
-  );
-
-  return Array.from({ length: GUEST_PLAN_DAYS }, (_, index) => {
-    const date = addDaysToPlanDate(planStartDate, index);
-    return {
-      date,
-      catalogueMealId: byDate.get(date) ?? null,
-    };
-  });
 }

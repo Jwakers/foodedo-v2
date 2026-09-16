@@ -1,3 +1,4 @@
+import type { SavedPlanMealChoice } from "@/features/plan/saved-plan-meal-choices";
 import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
@@ -6,6 +7,7 @@ import {
   countPlannedGuestMeals,
   createGuestDraft,
   GUEST_DRAFT_SCHEMA_VERSION,
+  guestDraftMatchesSavedPlan,
   readGuestDraftV1,
   rebaseGuestPlanStartDate,
   requestGuestPlanClaim,
@@ -120,6 +122,58 @@ export async function beginNextGuestPlanDraft({
       }),
       write: true,
     };
+  });
+}
+
+/**
+ * Opens a fully editable replacement for the active plan's existing date
+ * window. No slot is preserved by date or status: dates remain ordering labels,
+ * and saving the reviewed draft is the only point that replaces the active plan.
+ */
+export async function beginReplannedGuestPlanDraft({
+  planStartDate,
+  currentMealChoices,
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  planStartDate: string;
+  currentMealChoices: ReadonlyArray<SavedPlanMealChoice>;
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    const hasEditableDraft =
+      existing !== null &&
+      existing.acceptedAt === undefined &&
+      countPlannedGuestMeals(existing) > 0;
+    if (
+      hasEditableDraft &&
+      existing.planStartDate === planStartDate &&
+      !guestDraftMatchesSavedPlan(existing, currentMealChoices)
+    ) {
+      return { draft: existing, write: false };
+    }
+
+    const baseDraft = hasEditableDraft
+      ? rebaseGuestPlanStartDate(existing, planStartDate, now)
+      : createGuestDraft({
+          catalogueVersion: standardCatalogue.version,
+          planStartDate,
+          catalogueMealIds,
+          now,
+          emptySlotIndexes: generationFreeDayIndexes,
+        });
+    let replanned = baseDraft;
+    for (let variant = 0; variant < catalogueMealIds.length; variant += 1) {
+      replanned = shuffleGuestPlan(replanned, catalogueMealIds, now);
+      if (!guestDraftMatchesSavedPlan(replanned, currentMealChoices)) break;
+    }
+    if (guestDraftMatchesSavedPlan(replanned, currentMealChoices)) {
+      throw new Error("The catalogue could not produce a different plan.");
+    }
+
+    return { draft: replanned, write: true };
   });
 }
 

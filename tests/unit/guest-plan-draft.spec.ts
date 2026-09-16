@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   beginNextGuestPlanDraft,
+  beginReplannedGuestPlanDraft,
   ensureGuestPlanDraft,
   acceptAndPrepareGuestPlanClaim,
   cancelPendingGuestPlanClaim,
@@ -14,6 +15,7 @@ import {
   acceptGuestPlan,
   countPlannedGuestMeals,
   createGuestDraft,
+  shuffleGuestPlan,
   type GuestDraftV1,
 } from "../../src/lib/domain/guest-draft";
 import { standardCatalogue } from "../../src/lib/domain/standard-catalogue";
@@ -232,6 +234,75 @@ test("starts fresh instead of reopening an already accepted draft", async () => 
   expect(next.planStartDate).toBe("2026-08-29");
   expect(next.acceptedAt).toBeUndefined();
   expect(next.createdAt).toBe(200);
+  expect(store.writes).toBe(1);
+});
+
+test("replans the active date window with a fresh meal selection", async () => {
+  const store = createMemoryStore(null);
+  const initial = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-20",
+    catalogueMealIds,
+    now: 200,
+    emptySlotIndexes: [2],
+  });
+  // The first generated alternative is this shuffled variant, so the replan
+  // must advance again rather than accidentally returning the active plan.
+  const active = shuffleGuestPlan(initial, catalogueMealIds, 200);
+
+  const replanned = await beginReplannedGuestPlanDraft({
+    planStartDate: "2026-08-20",
+    currentMealChoices: active.mealChoices,
+    now: 200,
+    store,
+  });
+
+  expect(replanned.planStartDate).toBe("2026-08-20");
+  expect(replanned.mealChoices).not.toEqual(active.mealChoices);
+  expect(replanned.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(store.writes).toBe(1);
+});
+
+test("resumes an editable replan for the same active date window", async () => {
+  const inProgress = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-20",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [1, 4],
+  });
+  const store = createMemoryStore(inProgress);
+
+  const resumed = await beginReplannedGuestPlanDraft({
+    planStartDate: "2026-08-20",
+    currentMealChoices: shuffleGuestPlan(inProgress, catalogueMealIds, 150)
+      .mealChoices,
+    now: 200,
+    store,
+  });
+
+  expect(resumed).toEqual(inProgress);
+  expect(store.writes).toBe(0);
+});
+
+test("refreshes a local draft that still matches the active plan", async () => {
+  const active = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-20",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+  const store = createMemoryStore(active);
+
+  const replanned = await beginReplannedGuestPlanDraft({
+    planStartDate: "2026-08-20",
+    currentMealChoices: active.mealChoices,
+    now: 200,
+    store,
+  });
+
+  expect(replanned.mealChoices).not.toEqual(active.mealChoices);
   expect(store.writes).toBe(1);
 });
 

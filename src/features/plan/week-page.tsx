@@ -14,9 +14,13 @@ import {
   ActiveWeek,
   type ActiveWeekPlanSummary,
 } from "@/features/plan/active-week";
-import { beginNextGuestPlanDraft } from "@/features/plan/guest-plan-draft";
+import {
+  beginNextGuestPlanDraft,
+  beginReplannedGuestPlanDraft,
+} from "@/features/plan/guest-plan-draft";
 import { PlanReview } from "@/features/plan/plan-review";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
+import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
 
 /**
  * Week tab: guest/temporary review vs signed-in active week. Archived plan
@@ -37,7 +41,9 @@ export function WeekPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
   );
-  const [isStartingNextPlan, setIsStartingNextPlan] = useState(false);
+  const [pendingPlanAction, setPendingPlanAction] = useState<
+    "replan" | "next" | null
+  >(null);
   const selectedArchivedPlan = useQuery(
     api.mealPlans.getArchived,
     isAuthenticated && selectedPlanId !== null
@@ -59,6 +65,8 @@ export function WeekPage() {
   }
 
   if (currentPlan) {
+    const activePlan = currentPlan;
+
     if (selectedPlanId !== null && selectedArchivedPlan === undefined) {
       return <PlanReviewLoading />;
     }
@@ -85,33 +93,59 @@ export function WeekPage() {
     }
 
     const plans: ActiveWeekPlanSummary[] = [
-      currentPlan,
+      activePlan,
       ...(archivedPlanSummaries ?? []),
     ];
 
+    async function handleReplan() {
+      if (pendingPlanAction !== null) return;
+
+      setPendingPlanAction("replan");
+      try {
+        await beginReplannedGuestPlanDraft({
+          planStartDate: activePlan.startDate,
+          currentMealChoices: savedPlanMealChoices({
+            planStartDate: activePlan.startDate,
+            mealSlots: activePlan.mealSlots,
+          }),
+        });
+        router.push("/week/replan");
+      } catch (error) {
+        console.error("Failed to replan the active plan.", error);
+        toast.error(
+          "Foodedo couldn’t replan this week. Check storage access and try again.",
+        );
+        setPendingPlanAction(null);
+      }
+    }
+
+    async function handleStartNextPlan() {
+      if (pendingPlanAction !== null) return;
+
+      setPendingPlanAction("next");
+      try {
+        await beginNextGuestPlanDraft();
+        router.push("/week/new");
+      } catch (error) {
+        console.error("Failed to start the next plan.", error);
+        toast.error(
+          "Foodedo couldn’t start your next plan. Check storage access and try again.",
+        );
+        setPendingPlanAction(null);
+      }
+    }
+
     return (
       <ActiveWeek
-        plan={selectedArchivedPlan ?? currentPlan}
+        plan={selectedArchivedPlan ?? activePlan}
         plans={plans}
-        isStartingNextPlan={isStartingNextPlan}
-        onStartNextPlan={async () => {
-          if (isStartingNextPlan) return;
-
-          setIsStartingNextPlan(true);
-          try {
-            await beginNextGuestPlanDraft();
-            router.push("/week/new");
-          } catch (error) {
-            console.error("Failed to start the next plan.", error);
-            toast.error(
-              "Foodedo couldn’t start your next plan. Check storage access and try again.",
-            );
-            setIsStartingNextPlan(false);
-          }
-        }}
+        isReplanning={pendingPlanAction === "replan"}
+        isStartingNextPlan={pendingPlanAction === "next"}
+        onReplan={handleReplan}
+        onStartNextPlan={handleStartNextPlan}
         onSelectPlan={(mealPlanId) => {
           setSelectedPlanId(
-            mealPlanId === currentPlan._id
+            mealPlanId === activePlan._id
               ? null
               : (mealPlanId as Id<"mealPlans">),
           );

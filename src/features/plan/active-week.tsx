@@ -49,12 +49,16 @@ export function ActiveWeek({
   plan,
   plans,
   onSelectPlan,
+  onReplan,
+  isReplanning,
   onStartNextPlan,
   isStartingNextPlan,
 }: {
   plan: ActiveWeekPlan;
   plans: ReadonlyArray<ActiveWeekPlanSummary>;
   onSelectPlan: (mealPlanId: string) => void;
+  onReplan: () => void | Promise<void>;
+  isReplanning: boolean;
   onStartNextPlan: () => void | Promise<void>;
   isStartingNextPlan: boolean;
 }) {
@@ -150,16 +154,18 @@ export function ActiveWeek({
         <div className="mt-4 flex items-center justify-between gap-3 pt-2">
           <Button
             variant="inline"
+            disabled={isReplanning || isStartingNextPlan}
+            aria-busy={isReplanning}
             className="h-auto px-0 text-14 font-medium text-graphite"
             onClick={() => {
-              markUnfinishedInteraction("Replanning this week comes next.");
+              void onReplan();
             }}
           >
-            Replan this week
+            {isReplanning ? "Replanning this week…" : "Replan this week"}
           </Button>
           <Button
             variant="inline"
-            disabled={isStartingNextPlan}
+            disabled={isReplanning || isStartingNextPlan}
             aria-busy={isStartingNextPlan}
             className={cn(
               "h-auto px-0 text-14",
