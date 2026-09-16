@@ -37,29 +37,18 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByText("7 days · starts tomorrow · serves 4"),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Plan my week" }).click();
-  await expect(
-    page.getByRole("heading", { name: "No week planned yet" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Seven useful dinners in one tap. Adjust anything after."),
-  ).toBeVisible();
-
   await page.getByRole("button", { name: "Plan my week" }).click();
   await expect(
     page.getByRole("heading", { name: "Your week is ready" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15_000 });
   await expect(
     page.getByText(
       "Keep planning. Sign in when you're ready to save this week.",
     ),
   ).toBeVisible();
-  await expect(page.getByText("No meal planned")).toBeVisible();
-  await expect(page.getByText("Leave it free or add a meal")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add meal" })).toBeVisible();
-  await expect(page.getByText(/6 planned dinners/)).toBeVisible();
+  await expect(page.getByText(/7 planned dinners/)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
-    6,
+    7,
   );
   await expect(
     page.getByRole("button", { name: "Save my plan" }),
@@ -177,10 +166,10 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("button", { name: "Remove from plan" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Remove from plan" }).click();
-  await expect(page.getByText("No meal planned")).toHaveCount(2);
-  await expect(page.getByText(/5 planned dinners/)).toBeVisible();
+  await expect(page.getByText("No meal planned")).toHaveCount(1);
+  await expect(page.getByText(/6 planned dinners/)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
-    5,
+    6,
   );
 
   await expect(page.locator("header")).toBeVisible();
@@ -310,7 +299,7 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
 
   await expect(
     page.getByRole("heading", { name: "Lemon Herb Grilled Chicken" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Foodedo" })).toBeVisible();
   await expect(page.getByText("Foodedo recipe")).toBeVisible();

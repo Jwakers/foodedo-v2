@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   ensureGuestPlanDraft,
+  extendCurrentGuestPlanDraft,
   loadGuestPlanDraftForReview,
   removeGuestPlanMeal,
   replaceGuestPlanMeal,
@@ -109,5 +110,19 @@ export function useGuestPlanDraft() {
     [],
   );
 
-  return { state, retry, startPlan, tryAnotherWeek, removeMeal, replaceMeal };
+  const addDay = useCallback(async () => {
+    const draft = await extendCurrentGuestPlanDraft();
+    setState(toReadyState(draft));
+    return draft;
+  }, []);
+
+  return {
+    state,
+    retry,
+    startPlan,
+    tryAnotherWeek,
+    removeMeal,
+    replaceMeal,
+    addDay,
+  };
 }

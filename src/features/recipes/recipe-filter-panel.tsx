@@ -62,9 +62,9 @@ export function RecipeFilterPanel({
             />
           </div>
 
-          <button
-            type="button"
-            className="flex h-13 w-full items-center justify-between border-y border-border text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+          <Button
+            variant="ghost"
+            className="h-13 w-full justify-between rounded-none border-y border-border bg-paper px-0 text-left font-normal hover:bg-paper"
             onClick={() => {
               markUnfinishedInteraction("Sort options come next.");
             }}
@@ -78,7 +78,7 @@ export function RecipeFilterPanel({
                 strokeWidth={2}
               />
             </span>
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2.5">
             <Check

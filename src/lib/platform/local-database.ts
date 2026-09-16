@@ -42,3 +42,13 @@ export function transactionComplete(transaction: IDBTransaction) {
       reject(transaction.error ?? new Error("IndexedDB transaction failed."));
   });
 }
+
+/**
+ * Observe an IndexedDB transaction's completion promise without changing
+ * control flow. Prevents unhandled rejections after a prior request failure.
+ */
+export async function observeTransactionComplete(
+  completed: Promise<void>,
+): Promise<void> {
+  await completed.catch(() => undefined);
+}

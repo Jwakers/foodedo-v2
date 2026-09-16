@@ -3,6 +3,7 @@
 import { ArrowLeftRight, Sparkles, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   DrawerBody,
   DrawerDescription,
@@ -107,12 +108,12 @@ function MealActionRow({
   busy?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       disabled={disabled}
       aria-busy={busy || undefined}
       className={cn(
-        "flex w-full items-center gap-3 rounded-sm p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-55",
+        "h-auto w-full justify-start gap-3 rounded-sm p-3 text-left font-normal disabled:cursor-wait disabled:opacity-55",
         className ?? "bg-paper hover:bg-mist",
       )}
       onClick={onClick}
@@ -138,6 +139,6 @@ function MealActionRow({
           <span className="text-12 text-graphite">{description}</span>
         ) : null}
       </span>
-    </button>
+    </Button>
   );
 }

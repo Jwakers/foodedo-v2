@@ -13,42 +13,58 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_auth_subject", ["authSubject"]),
+  planningPreferences: defineTable({
+    ownerId: v.id("users"),
+    usualPlanDays: v.union(
+      v.literal(3),
+      v.literal(4),
+      v.literal(5),
+      v.literal(6),
+      v.literal(7),
+    ),
+    usualServings: v.number(),
+    prioritiseSavedRecipes: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
   recipes: defineTable({
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     ...recipeContentFields,
     source: recipeSourceValidator,
     savedAt: v.optional(v.number()),
     updatedAt: v.number(),
   })
-    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"])
-    .index("by_owner_and_saved_at", ["ownerSubject", "savedAt"])
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
+    .index("by_owner_and_saved_at", ["ownerId", "savedAt"])
     .index("by_owner_and_catalogue_source", [
-      "ownerSubject",
+      "ownerId",
       "source.catalogueMealId",
       "source.catalogueVersion",
     ])
     .index("by_owner_and_catalogue_version", [
-      "ownerSubject",
+      "ownerId",
       "source.catalogueVersion",
       "source.catalogueMealId",
     ]),
   mealPlans: defineTable({
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     startDate: v.string(),
     endDate: v.string(),
+    // Optional while existing plans are migrated; reads resolve the default.
+    servings: v.optional(v.number()),
     status: v.union(v.literal("active"), v.literal("archived")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"])
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
     .index("by_owner_and_status_and_updated_at", [
-      "ownerSubject",
+      "ownerId",
       "status",
       "updatedAt",
     ]),
   mealSlots: defineTable({
     mealPlanId: v.id("mealPlans"),
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     date: v.string(),
     recipeId: v.id("recipes"),
     status: v.union(
@@ -60,10 +76,10 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_plan_and_date", ["mealPlanId", "date"])
-    .index("by_owner_and_date", ["ownerSubject", "date"])
+    .index("by_owner_and_date", ["ownerId", "date"])
     .index("by_recipe", ["recipeId"]),
   shoppingLists: defineTable({
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     mealPlanId: v.id("mealPlans"),
     mealPlanUpdatedAt: v.number(),
     status: v.union(v.literal("active"), v.literal("archived")),
@@ -71,16 +87,16 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_updated_at", ["updatedAt"])
-    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"])
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
     .index("by_owner_and_status_and_updated_at", [
-      "ownerSubject",
+      "ownerId",
       "status",
       "updatedAt",
     ])
     .index("by_meal_plan", ["mealPlanId"]),
   shoppingListItems: defineTable({
     shoppingListId: v.id("shoppingLists"),
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     name: v.string(),
     detailLines: v.array(v.string()),
     sourceRecipeIds: v.array(v.id("recipes")),
@@ -92,11 +108,11 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_list_and_order", ["shoppingListId", "order"])
-    .index("by_owner_and_updated_at", ["ownerSubject", "updatedAt"]),
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"]),
   guestClaims: defineTable({
-    ownerSubject: v.string(),
+    ownerId: v.id("users"),
     claimKey: v.string(),
     mealPlanId: v.id("mealPlans"),
     claimedAt: v.number(),
-  }).index("by_owner_and_claim_key", ["ownerSubject", "claimKey"]),
+  }).index("by_owner_and_claim_key", ["ownerId", "claimKey"]),
 });

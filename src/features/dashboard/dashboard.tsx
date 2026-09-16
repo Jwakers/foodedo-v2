@@ -17,7 +17,7 @@ import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
-import { PlanAction } from "@/features/dashboard/plan-action";
+import { PlanAction } from "@/features/plan/plan-action";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";

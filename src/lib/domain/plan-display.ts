@@ -70,19 +70,27 @@ export function formatPlanWeekdayShort(date: string): string {
   });
 }
 
+/** e.g. "Wednesday 3 Sep" for an upcoming plan day. */
+export function formatPlanDateWithWeekday(date: string): string {
+  const parts = parsePlanDateParts(date);
+  return `${formatPlanWeekdayLong(date)} ${parts.day} ${shortMonth(parts.month)}`;
+}
+
 /**
  * Example: `29 Aug–4 Sep · 6 planned dinners`
  */
 export function formatGuestPlanSummary({
   planStartDate,
+  planEndDate = addCalendarDays(planStartDate, 6),
   plannedMealCount,
 }: {
   planStartDate: string;
+  planEndDate?: string;
   plannedMealCount: number;
 }): string {
   const dateRange = formatPlanDateRange({
     startDate: planStartDate,
-    endDate: addCalendarDays(planStartDate, 6),
+    endDate: planEndDate,
   });
   const dinnerLabel =
     plannedMealCount === 1
@@ -242,6 +250,7 @@ export function resolveGuestPlanMealRows({
 export function summarizeGuestPlanDraft(draft: GuestDraftV1) {
   return formatGuestPlanSummary({
     planStartDate: draft.planStartDate,
+    planEndDate: addCalendarDays(draft.planStartDate, draft.planDays - 1),
     plannedMealCount: countPlannedGuestMeals(draft),
   });
 }
@@ -259,21 +268,27 @@ export type ActivePlanWeekSlot = {
 };
 
 /**
- * Expand an active plan into seven dated display rows, inserting empty days
- * where free days were never written as slots.
+ * Expand an active plan across its actual date range, inserting empty days
+ * only where a date inside that range has no persisted slot.
  */
 export function resolveActivePlanWeekRows({
   startDate,
+  endDate,
   mealSlots,
   mealsById,
 }: {
   startDate: string;
+  endDate: string;
   mealSlots: ReadonlyArray<ActivePlanWeekSlot>;
   mealsById: ReadonlyMap<string, CatalogueMeal>;
 }): GuestPlanMealRow[] {
   const byDate = new Map(mealSlots.map((slot) => [slot.date, slot] as const));
+  const planDays = countPlanDays({ startDate, endDate });
+  if (planDays < 1) {
+    throw new Error("A plan end date cannot be before its start date.");
+  }
 
-  return Array.from({ length: 7 }, (_, index) => {
+  return Array.from({ length: planDays }, (_, index) => {
     const date = addCalendarDays(startDate, index);
     const day = formatPlanDayParts(date);
     const slot = byDate.get(date);
@@ -365,7 +380,7 @@ function parsePlanDateParts(date: string) {
   return { year, month, day };
 }
 
-function addCalendarDays(date: string, days: number) {
+export function addCalendarDays(date: string, days: number) {
   const { year, month, day } = parsePlanDateParts(date);
   const next = new Date(Date.UTC(year, month - 1, day + days));
   return [
@@ -373,6 +388,20 @@ function addCalendarDays(date: string, days: number) {
     (next.getUTCMonth() + 1).toString().padStart(2, "0"),
     next.getUTCDate().toString().padStart(2, "0"),
   ].join("-");
+}
+
+export function countPlanDays({
+  startDate,
+  endDate,
+}: {
+  startDate: string;
+  endDate: string;
+}) {
+  const start = parsePlanDateParts(startDate);
+  const end = parsePlanDateParts(endDate);
+  const startTime = Date.UTC(start.year, start.month - 1, start.day);
+  const endTime = Date.UTC(end.year, end.month - 1, end.day);
+  return Math.round((endTime - startTime) / 86_400_000) + 1;
 }
 
 const SHORT_MONTHS = [

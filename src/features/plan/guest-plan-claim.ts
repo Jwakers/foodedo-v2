@@ -130,6 +130,7 @@ export function GuestPlanClaimResume() {
         if (currentPlan !== null) {
           const savedChoices = savedPlanMealChoices({
             planStartDate: currentPlan.startDate,
+            planEndDate: currentPlan.endDate,
             mealSlots: currentPlan.mealSlots,
           });
 
@@ -179,6 +180,7 @@ export function GuestPlanClaimResume() {
 
       const savedChoices = savedPlanMealChoices({
         planStartDate: currentPlan.startDate,
+        planEndDate: currentPlan.endDate,
         mealSlots: currentPlan.mealSlots,
       });
 

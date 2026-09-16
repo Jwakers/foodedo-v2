@@ -1,16 +1,10 @@
-"use client";
-
-import { ArrowRight } from "lucide-react";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
+import { PlanAction } from "@/features/plan/plan-action";
+import { ButtonLink } from "@/components/ui/button";
 
 export function PlanReviewEmpty({
-  isPlanning,
   onPlanWeek,
 }: {
-  isPlanning: boolean;
-  onPlanWeek: () => void | Promise<void>;
+  onPlanWeek: () => void | Promise<unknown>;
 }) {
   return (
     <main
@@ -25,31 +19,28 @@ export function PlanReviewEmpty({
           No week planned yet
         </h1>
         <p className="text-14 font-medium text-graphite">
-          Seven useful dinners in one tap. Adjust anything after.
+          Set up the week that works for you, then review every meal before
+          saving.
         </p>
       </div>
-      <Button
-        className="w-full"
-        disabled={isPlanning}
-        aria-busy={isPlanning}
-        onClick={() => {
-          void (async () => {
-            try {
-              await onPlanWeek();
-            } catch (error) {
-              console.error("Failed to create guest plan draft.", error);
-              toast.error(
-                "Foodedo couldn’t start your week. Check storage access and try again.",
-              );
-            }
-          })();
-        }}
-      >
-        {isPlanning ? "Planning your week…" : "Plan my week"}
-        {isPlanning ? null : (
-          <ArrowRight aria-hidden="true" className="size-4.5" />
-        )}
-      </Button>
+      <PlanAction onPlanCreated={onPlanWeek} />
+    </main>
+  );
+}
+
+export function PlanReviewMissingReplan() {
+  return (
+    <main className="mx-auto flex min-h-[45vh] w-full max-w-175 flex-col items-start justify-center px-page-inline py-10">
+      <h1 className="font-display text-30 font-semibold tracking-title text-ink">
+        There’s no replan to review
+      </h1>
+      <p className="mt-2 text-15 text-graphite">
+        Return to your saved week and choose Replan this week to generate a new
+        set of meals.
+      </p>
+      <ButtonLink href="/week" className="mt-5">
+        Return to Week
+      </ButtonLink>
     </main>
   );
 }

@@ -70,9 +70,9 @@ export function RecipeOverflowMenu({
           id={panelId}
           className="absolute top-full right-0 z-50 mt-1 min-w-44 rounded-md border border-border bg-paper py-1 shadow-sm"
         >
-          <button
-            type="button"
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-14 font-semibold text-ink hover:bg-mist focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-cadmium"
+          <Button
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2.5 rounded-none px-3.5 py-2.5 text-left text-14 font-semibold focus-visible:-outline-offset-2"
             onClick={() => {
               setOpen(false);
               markUnfinishedInteraction(`Sharing “${recipeTitle}” comes next.`);
@@ -81,7 +81,7 @@ export function RecipeOverflowMenu({
           >
             <Share aria-hidden="true" className="size-4" strokeWidth={2} />
             Share
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

@@ -3,6 +3,7 @@ import {
   beginNextGuestPlanDraft,
   beginReplannedGuestPlanDraft,
   ensureGuestPlanDraft,
+  extendCurrentGuestPlanDraft,
   acceptAndPrepareGuestPlanClaim,
   cancelPendingGuestPlanClaim,
   clearClaimedGuestPlanDraft,
@@ -150,6 +151,38 @@ test("ensure still creates a draft when storage is empty", async () => {
   expect(store.writes).toBe(1);
 });
 
+test("adds one trailing draft day at a time and stops at seven", async () => {
+  const seed = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    planDays: 5,
+    catalogueMealIds,
+    now: 100,
+  });
+  const store = createMemoryStore(seed);
+
+  const sixDays = await extendCurrentGuestPlanDraft({ now: 200, store });
+  expect(sixDays.planDays).toBe(6);
+  expect(sixDays.mealChoices.slice(0, 5)).toEqual(seed.mealChoices);
+  expect(sixDays.mealChoices[5]).toMatchObject({ date: "2026-09-03" });
+  expect(
+    seed.mealChoices.some(
+      (choice) =>
+        choice.catalogueMealId === sixDays.mealChoices[5]?.catalogueMealId,
+    ),
+  ).toBe(false);
+
+  const sevenDays = await extendCurrentGuestPlanDraft({ now: 300, store });
+  expect(sevenDays.planDays).toBe(7);
+  expect(sevenDays.mealChoices.slice(0, 6)).toEqual(sixDays.mealChoices);
+  expect(sevenDays.mealChoices[6]).toMatchObject({ date: "2026-09-04" });
+
+  await expect(
+    extendCurrentGuestPlanDraft({ now: 400, store }),
+  ).rejects.toThrow("This plan already has seven days.");
+  expect(store.writes).toBe(2);
+});
+
 test("starts a replacement plan tomorrow when no editable draft exists", async () => {
   const store = createMemoryStore(null);
 
@@ -244,22 +277,33 @@ test("replans the active date window with a fresh meal selection", async () => {
     planStartDate: "2026-08-20",
     catalogueMealIds,
     now: 200,
-    emptySlotIndexes: [2],
+    emptySlotIndexes: [1, 5],
   });
   // The first generated alternative is this shuffled variant, so the replan
   // must advance again rather than accidentally returning the active plan.
   const active = shuffleGuestPlan(initial, catalogueMealIds, 200);
+  // A personal recipe has no catalogue ID but still occupies its date.
+  const activeChoices = active.mealChoices.map((choice, index) =>
+    index === 3 ? { ...choice, catalogueMealId: null } : choice,
+  );
 
   const replanned = await beginReplannedGuestPlanDraft({
     planStartDate: "2026-08-20",
-    currentMealChoices: active.mealChoices,
+    currentMealChoices: activeChoices,
+    occupiedDates: active.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.date],
+    ),
+    servings: 4,
     now: 200,
     store,
   });
 
   expect(replanned.planStartDate).toBe("2026-08-20");
-  expect(replanned.mealChoices).not.toEqual(active.mealChoices);
-  expect(replanned.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(replanned.mealChoices).not.toEqual(activeChoices);
+  expect(replanned.mealChoices[1]?.catalogueMealId).toBeNull();
+  expect(replanned.mealChoices[5]?.catalogueMealId).toBeNull();
+  expect(replanned.mealChoices[2]?.catalogueMealId).not.toBeNull();
+  expect(replanned.mealChoices[3]?.catalogueMealId).not.toBeNull();
   expect(store.writes).toBe(1);
 });
 
@@ -277,6 +321,10 @@ test("resumes an editable replan for the same active date window", async () => {
     planStartDate: "2026-08-20",
     currentMealChoices: shuffleGuestPlan(inProgress, catalogueMealIds, 150)
       .mealChoices,
+    occupiedDates: inProgress.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.date],
+    ),
+    servings: 4,
     now: 200,
     store,
   });
@@ -298,6 +346,10 @@ test("refreshes a local draft that still matches the active plan", async () => {
   const replanned = await beginReplannedGuestPlanDraft({
     planStartDate: "2026-08-20",
     currentMealChoices: active.mealChoices,
+    occupiedDates: active.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.date],
+    ),
+    servings: 4,
     now: 200,
     store,
   });

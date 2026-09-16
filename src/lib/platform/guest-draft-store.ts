@@ -1,6 +1,7 @@
 import type { GuestDraftV1 } from "@/lib/domain/guest-draft";
 import {
   localObjectStores,
+  observeTransactionComplete,
   openFoodedoDatabase,
   requestResult,
   transactionComplete,
@@ -40,12 +41,18 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readonly");
+        const completed = transactionComplete(transaction);
         const request = transaction
           .objectStore(objectStoreName)
           .get(currentDraftKey);
-        const result = await requestResult(request);
-        await transactionComplete(transaction);
-        return result ?? null;
+        try {
+          const result = await requestResult(request);
+          await completed;
+          return result ?? null;
+        } catch (error) {
+          await observeTransactionComplete(completed);
+          throw error;
+        }
       } finally {
         database.close();
       }
@@ -55,8 +62,9 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         transaction.objectStore(objectStoreName).put(draft, currentDraftKey);
-        await transactionComplete(transaction);
+        await completed;
       } finally {
         database.close();
       }
@@ -66,8 +74,9 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         transaction.objectStore(objectStoreName).delete(currentDraftKey);
-        await transactionComplete(transaction);
+        await completed;
       } finally {
         database.close();
       }
@@ -77,15 +86,21 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         const objectStore = transaction.objectStore(objectStoreName);
-        const current =
-          (await requestResult(objectStore.get(currentDraftKey))) ?? null;
-        const shouldClear = predicate(current);
-        if (shouldClear) {
-          objectStore.delete(currentDraftKey);
+        try {
+          const current =
+            (await requestResult(objectStore.get(currentDraftKey))) ?? null;
+          const shouldClear = predicate(current);
+          if (shouldClear) {
+            objectStore.delete(currentDraftKey);
+          }
+          await completed;
+          return shouldClear;
+        } catch (error) {
+          await observeTransactionComplete(completed);
+          throw error;
         }
-        await transactionComplete(transaction);
-        return shouldClear;
       } finally {
         database.close();
       }
@@ -95,16 +110,24 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         const objectStore = transaction.objectStore(objectStoreName);
-        const current =
-          (await requestResult(objectStore.get(currentDraftKey))) ?? null;
+
+        let current: unknown | null;
+        try {
+          current =
+            (await requestResult(objectStore.get(currentDraftKey))) ?? null;
+        } catch (error) {
+          await observeTransactionComplete(completed);
+          throw error;
+        }
 
         let result: GuestDraftMutationResult;
         try {
           result = mutate(current);
         } catch (error) {
           // Finish the exclusive txn with no write so storage stays unchanged.
-          await transactionComplete(transaction);
+          await completed;
           throw error;
         }
 
@@ -112,7 +135,7 @@ export function createIndexedDbGuestDraftStore(): GuestDraftStore {
           objectStore.put(result.draft, currentDraftKey);
         }
 
-        await transactionComplete(transaction);
+        await completed;
         return result.draft;
       } finally {
         database.close();

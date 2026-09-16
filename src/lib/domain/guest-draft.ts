@@ -4,8 +4,13 @@ import {
   selectReplacementMeal,
 } from "./meal-plan-selection";
 
-export const GUEST_DRAFT_SCHEMA_VERSION = 1 as const;
+export const GUEST_DRAFT_SCHEMA_VERSION = 2 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
+export const PLAN_DAY_OPTIONS = [3, 5, 7] as const;
+export const MINIMUM_PLAN_SERVINGS = 1 as const;
+export const MAXIMUM_PLAN_SERVINGS = 20 as const;
+export type PlanDayOption = (typeof PLAN_DAY_OPTIONS)[number];
+export type PlanDays = 3 | 4 | 5 | 6 | 7;
 
 const minimumClaimKeyLength = 16;
 const maximumClaimKeyLength = 100;
@@ -27,6 +32,8 @@ export type GuestDraftV1 = {
   schemaVersion: typeof GUEST_DRAFT_SCHEMA_VERSION;
   catalogueVersion: number;
   planStartDate: string;
+  planDays: PlanDays;
+  servings: number;
   mealChoices: GuestMealChoiceV1[];
   acceptedAt?: number;
   claim?: GuestPlanClaimV1;
@@ -39,26 +46,34 @@ export function createGuestDraft({
   planStartDate,
   catalogueMealIds,
   now,
+  planDays = GUEST_PLAN_DAYS,
+  servings = 4,
   emptySlotIndexes = [],
 }: {
   catalogueVersion: number;
   planStartDate: string;
   catalogueMealIds: readonly string[];
   now: number;
+  planDays?: PlanDays;
+  servings?: number;
   emptySlotIndexes?: readonly number[];
 }): GuestDraftV1 {
   requirePositiveWholeNumber(catalogueVersion, "Catalogue version");
   requirePlanDate(planStartDate);
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Creation time");
-  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes);
+  requirePlanDays(planDays);
+  requireServings(servings);
+  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes, planDays);
 
   let mealCursor = 0;
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     catalogueVersion,
     planStartDate,
-    mealChoices: Array.from({ length: GUEST_PLAN_DAYS }, (_, index) => {
+    planDays,
+    servings,
+    mealChoices: Array.from({ length: planDays }, (_, index) => {
       const date = addDaysToPlanDate(planStartDate, index);
       if (emptySlots.has(index)) {
         return { date, catalogueMealId: null };
@@ -81,7 +96,7 @@ export function applyGuestPlanEmptySlots(
   now: number,
 ): GuestDraftV1 {
   requireTimestamp(now, "Update time");
-  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes);
+  const emptySlots = requireEmptySlotIndexes(emptySlotIndexes, draft.planDays);
   const mealChoices = draft.mealChoices.map((choice, index) =>
     emptySlots.has(index) ? { ...choice, catalogueMealId: null } : choice,
   );
@@ -103,6 +118,53 @@ export function countPlannedGuestMeals(draft: GuestDraftV1) {
     .length;
 }
 
+/** Adds one chosen meal to the end of an editable plan, up to seven days. */
+export function extendGuestPlanByOneDay(
+  draft: GuestDraftV1,
+  catalogueMealIds: readonly string[],
+  now: number,
+): GuestDraftV1 {
+  requireCatalogueMealIds(catalogueMealIds);
+  requireTimestamp(now, "Update time");
+  if (draft.planDays >= GUEST_PLAN_DAYS) {
+    throw new Error("This plan already has seven days.");
+  }
+
+  const plannedMealIds = new Set(
+    draft.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+    ),
+  );
+  const unusedMealIds = catalogueMealIds.filter(
+    (mealId) => !plannedMealIds.has(mealId),
+  );
+  const candidates =
+    unusedMealIds.length > 0 ? unusedMealIds : catalogueMealIds;
+  const catalogueMealId = rotatingMealPlanSelectionStrategy({
+    candidateMealIds: candidates,
+    numberOfMeals: 1,
+    offset: draft.planDays,
+  })[0]!;
+  const planDays = (draft.planDays + 1) as PlanDays;
+
+  return {
+    schemaVersion: draft.schemaVersion,
+    catalogueVersion: draft.catalogueVersion,
+    planStartDate: draft.planStartDate,
+    planDays,
+    servings: draft.servings,
+    mealChoices: [
+      ...draft.mealChoices,
+      {
+        date: addDaysToPlanDate(draft.planStartDate, draft.planDays),
+        catalogueMealId,
+      },
+    ],
+    createdAt: draft.createdAt,
+    updatedAt: now,
+  };
+}
+
 /** Moves an editable plan window without changing its selected meals. */
 export function rebaseGuestPlanStartDate(
   draft: GuestDraftV1,
@@ -117,6 +179,8 @@ export function rebaseGuestPlanStartDate(
     schemaVersion: draft.schemaVersion,
     catalogueVersion: draft.catalogueVersion,
     planStartDate,
+    planDays: draft.planDays,
+    servings: draft.servings,
     mealChoices: draft.mealChoices.map((choice, index) => ({
       date: addDaysToPlanDate(planStartDate, index),
       catalogueMealId: choice.catalogueMealId,
@@ -141,11 +205,13 @@ export function readGuestDraftV1(
   if (input.catalogueVersion !== catalogueVersion) return null;
   if (typeof input.planStartDate !== "string") return null;
   if (!isPlanDate(input.planStartDate)) return null;
+  if (!isPlanDays(input.planDays) || !isServings(input.servings)) return null;
 
   const validMealIds = new Set(catalogueMealIds);
   const mealChoices = readMealChoices(
     input.mealChoices,
     input.planStartDate,
+    input.planDays,
     validMealIds,
   );
   if (mealChoices === null) return null;
@@ -168,6 +234,8 @@ export function readGuestDraftV1(
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     catalogueVersion,
     planStartDate: input.planStartDate,
+    planDays: input.planDays,
+    servings: input.servings,
     mealChoices,
     ...(acceptedAt === undefined ? {} : { acceptedAt }),
     ...(claim === undefined ? {} : { claim }),
@@ -402,6 +470,32 @@ export function addDaysToPlanDate(date: string, days: number) {
   return formatPlanDate(next);
 }
 
+/** Dates removed when a plan is shortened; rebasing alone removes nothing. */
+export function planDatesRemovedByShortening({
+  startDate,
+  currentPlanDays,
+  nextPlanDays,
+}: {
+  startDate: string;
+  currentPlanDays: number;
+  nextPlanDays: number;
+}): string[] {
+  requirePlanDate(startDate);
+  if (
+    !Number.isInteger(currentPlanDays) ||
+    currentPlanDays < 1 ||
+    !Number.isInteger(nextPlanDays) ||
+    nextPlanDays < 1
+  ) {
+    throw new Error("Plan lengths must be positive whole numbers.");
+  }
+  if (nextPlanDays >= currentPlanDays) return [];
+
+  return Array.from({ length: currentPlanDays - nextPlanDays }, (_, index) =>
+    addDaysToPlanDate(startDate, nextPlanDays + index),
+  );
+}
+
 export function isPlanDate(value: string) {
   const match = planDatePattern.exec(value);
   if (match === null) return false;
@@ -418,6 +512,41 @@ export function isPlanDate(value: string) {
   );
 }
 
+export function isPlanDays(value: unknown): value is PlanDays {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 3 &&
+    value <= GUEST_PLAN_DAYS
+  );
+}
+
+export function isPlanDayOption(value: unknown): value is PlanDayOption {
+  return PLAN_DAY_OPTIONS.some((option) => option === value);
+}
+
+function requirePlanDays(value: unknown): asserts value is PlanDays {
+  if (!isPlanDays(value)) {
+    throw new Error("Plan days must be a whole number between 3 and 7.");
+  }
+}
+
+function isServings(value: unknown): value is number {
+  return (
+    Number.isInteger(value) &&
+    Number(value) >= MINIMUM_PLAN_SERVINGS &&
+    Number(value) <= MAXIMUM_PLAN_SERVINGS
+  );
+}
+
+function requireServings(value: unknown): asserts value is number {
+  if (!isServings(value)) {
+    throw new Error(
+      `Servings must be a whole number between ${MINIMUM_PLAN_SERVINGS} and ${MAXIMUM_PLAN_SERVINGS}.`,
+    );
+  }
+}
+
 function editableDraft(
   draft: GuestDraftV1,
   mealChoices: GuestMealChoiceV1[],
@@ -427,6 +556,8 @@ function editableDraft(
     schemaVersion: draft.schemaVersion,
     catalogueVersion: draft.catalogueVersion,
     planStartDate: draft.planStartDate,
+    planDays: draft.planDays,
+    servings: draft.servings,
     mealChoices,
     createdAt: draft.createdAt,
     updatedAt: now,
@@ -436,9 +567,10 @@ function editableDraft(
 function readMealChoices(
   input: unknown,
   planStartDate: string,
+  planDays: PlanDays,
   validMealIds: ReadonlySet<string>,
 ): GuestMealChoiceV1[] | null {
-  if (!Array.isArray(input) || input.length !== GUEST_PLAN_DAYS) return null;
+  if (!Array.isArray(input) || input.length !== planDays) return null;
 
   const choices: GuestMealChoiceV1[] = [];
   for (let index = 0; index < input.length; index += 1) {
@@ -470,13 +602,13 @@ function readMealChoices(
   return choices;
 }
 
-function requireEmptySlotIndexes(indexes: readonly number[]) {
+function requireEmptySlotIndexes(indexes: readonly number[], planDays: number) {
   const emptySlots = new Set<number>();
   for (const index of indexes) {
     if (
       !Number.isInteger(index) ||
       index < 0 ||
-      index >= GUEST_PLAN_DAYS ||
+      index >= planDays ||
       emptySlots.has(index)
     ) {
       throw new Error("Empty slot indexes must be unique days in the plan.");

@@ -5,7 +5,7 @@ import {
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { requireAuthSubject } from "./lib/auth";
+import { requireUserId } from "./lib/auth";
 import {
   proteinCategoryValidator,
   recipeContentFields,
@@ -30,12 +30,12 @@ export const create = mutation({
   },
   returns: v.id("recipes"),
   handler: async (ctx, { recipe }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const content = prepareRecipeOrThrow(recipe);
     const savedAt = Date.now();
 
     return await ctx.db.insert("recipes", {
-      ownerSubject,
+      ownerId,
       ...content,
       source: { type: "manual" },
       savedAt,
@@ -58,13 +58,13 @@ export const saveCatalogueMeal = mutation({
     v.object({ status: v.literal("catalogue_unsupported") }),
   ),
   handler: async (ctx, { catalogueMealId, catalogueVersion }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     if (findStandardCatalogueMeal(catalogueMealId, catalogueVersion) === null) {
       return { status: "catalogue_unsupported" } as const;
     }
 
     const savedRecipe = await getOrCreateCatalogueRecipe(ctx, {
-      ownerSubject,
+      ownerId,
       catalogueMealId,
       catalogueVersion,
       saveToLibrary: true,
@@ -74,35 +74,29 @@ export const saveCatalogueMeal = mutation({
 });
 
 export const getMine = query({
-  args: { recipeId: v.string() },
+  args: { recipeId: v.id("recipes") },
   returns: v.union(recipeViewValidator, v.null()),
   handler: async (ctx, { recipeId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const normalisedRecipeId = ctx.db.normalizeId("recipes", recipeId);
-    if (normalisedRecipeId === null) return null;
+    const ownerId = await requireUserId(ctx);
+    const recipe = await ctx.db.get(recipeId);
 
-    const recipe = await ctx.db.get(normalisedRecipeId);
-
-    if (recipe === null || recipe.ownerSubject !== ownerSubject) return null;
+    if (recipe === null || recipe.ownerId !== ownerId) return null;
     return toRecipeView(recipe);
   },
 });
 
 export const removeMineFromLibrary = mutation({
-  args: { recipeId: v.string() },
+  args: { recipeId: v.id("recipes") },
   returns: v.union(
     v.object({ status: v.literal("removed") }),
     v.object({ status: v.literal("not_found") }),
   ),
   handler: async (ctx, { recipeId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const normalisedRecipeId = ctx.db.normalizeId("recipes", recipeId);
-    if (normalisedRecipeId === null) return { status: "not_found" } as const;
-
-    const recipe = await ctx.db.get(normalisedRecipeId);
+    const ownerId = await requireUserId(ctx);
+    const recipe = await ctx.db.get(recipeId);
     if (
       recipe === null ||
-      recipe.ownerSubject !== ownerSubject ||
+      recipe.ownerId !== ownerId ||
       recipe.savedAt === undefined
     ) {
       return { status: "not_found" } as const;
@@ -115,9 +109,7 @@ export const removeMineFromLibrary = mutation({
 
     const shoppingListItems = await ctx.db
       .query("shoppingListItems")
-      .withIndex("by_owner_and_updated_at", (q) =>
-        q.eq("ownerSubject", ownerSubject),
-      )
+      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
       .collect();
     const referencedInShoppingList = shoppingListItems.some((item) =>
       item.sourceRecipeIds.includes(recipe._id),
@@ -145,7 +137,7 @@ export const listSavedCatalogueMeals = query({
     }),
   ),
   handler: async (ctx, { catalogueVersion }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
 
     if (!Number.isInteger(catalogueVersion) || catalogueVersion < 1) {
       throw new ConvexError({
@@ -158,7 +150,7 @@ export const listSavedCatalogueMeals = query({
       .query("recipes")
       .withIndex("by_owner_and_catalogue_version", (q) =>
         q
-          .eq("ownerSubject", ownerSubject)
+          .eq("ownerId", ownerId)
           .eq("source.catalogueVersion", catalogueVersion),
       )
       .take(RECIPE_LIMITS.catalogueMeals + 1);
@@ -186,7 +178,7 @@ export const listMine = query({
   args: { paginationOpts: paginationOptsValidator },
   returns: paginationResultValidator(recipeViewValidator),
   handler: async (ctx, { paginationOpts }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const boundedPaginationOpts = {
       ...paginationOpts,
       numItems: Math.min(Math.max(paginationOpts.numItems, 1), maximumPageSize),
@@ -194,7 +186,7 @@ export const listMine = query({
     const result = await ctx.db
       .query("recipes")
       .withIndex("by_owner_and_saved_at", (q) =>
-        q.eq("ownerSubject", ownerSubject).gt("savedAt", 0),
+        q.eq("ownerId", ownerId).gt("savedAt", 0),
       )
       .order("desc")
       .paginate(boundedPaginationOpts);

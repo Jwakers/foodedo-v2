@@ -31,9 +31,9 @@ export function RecipeServingsControl({
     <div className={cn("flex flex-col gap-2.5", className)}>
       <div className="flex flex-wrap items-center text-14 leading-5 text-graphite">
         {durationLabel ? <span>{durationLabel}&nbsp;·&nbsp;</span> : null}
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+        <Button
+          variant="inline"
+          className="h-auto gap-1 text-14 font-medium"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
@@ -47,7 +47,7 @@ export function RecipeServingsControl({
             )}
             strokeWidth={1.8}
           />
-        </button>
+        </Button>
       </div>
 
       {open ? (
@@ -61,10 +61,8 @@ export function RecipeServingsControl({
           </div>
           <div className="flex items-center gap-1.5">
             <Button
-              type="button"
-              variant="ghost"
-              size="headerIcon"
-              className="rounded-surface border border-border"
+              variant="counter"
+              className="rounded-surface"
               aria-label="Decrease servings"
               disabled={displayServings <= 1}
               onClick={() => {
@@ -80,10 +78,8 @@ export function RecipeServingsControl({
               {displayServings}
             </span>
             <Button
-              type="button"
-              variant="ghost"
-              size="headerIcon"
-              className="rounded-surface border border-border"
+              variant="counter"
+              className="rounded-surface"
               aria-label="Increase servings"
               onClick={() => {
                 setDisplayServings((value) => value + 1);

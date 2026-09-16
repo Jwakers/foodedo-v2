@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils/cn";
  * `inline` + `block` is the full-width secondary text action.
  * `filter` is the quick-filter / filter-drawer chip (use `aria-pressed`).
  * `filter` + `filterIcon` is the circular open-filters control.
+ * `choice` is a pill-shaped option in a segmented choice group.
+ * `counter` is a circular increment / decrement control.
+ * `search` is the field-like trigger used to open recipe search.
  */
 export const buttonVariants = cva(
   "inline-flex items-center font-ui font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-not-allowed",
@@ -29,6 +32,12 @@ export const buttonVariants = cva(
         ghost: "justify-center text-ink hover:bg-mist",
         filter:
           "h-9.5 shrink-0 justify-center whitespace-nowrap rounded-full border border-border px-3.5 text-13 font-medium text-ink hover:bg-mist aria-pressed:border-transparent aria-pressed:bg-ink aria-pressed:text-paper",
+        choice:
+          "h-11 justify-center rounded-full border border-border bg-paper text-13 font-semibold text-ink hover:bg-mist aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:hover:bg-ink",
+        counter:
+          "size-11 shrink-0 justify-center rounded-full border border-border text-ink hover:border-ink disabled:text-control-muted",
+        search:
+          "h-12 w-full shrink-0 justify-start gap-2.5 rounded-md bg-mist px-3.5 text-left font-medium text-graphite hover:bg-border",
       },
       size: {
         default: "",

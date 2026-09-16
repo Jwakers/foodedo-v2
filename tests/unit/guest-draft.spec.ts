@@ -6,6 +6,7 @@ import {
   clearGuestPlanMeal,
   completeGuestPlanClaim,
   createGuestDraft,
+  planDatesRemovedByShortening,
   GUEST_DRAFT_SCHEMA_VERSION,
   guestDraftMatchesSavedPlan,
   readGuestDraftV1,
@@ -29,6 +30,8 @@ test("creates seven consecutive dated meal choices", () => {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     catalogueVersion: 1,
     planStartDate: "2026-08-29",
+    planDays: 7,
+    servings: 4,
     mealChoices: [
       { date: "2026-08-29", catalogueMealId: "meal-a" },
       { date: "2026-08-30", catalogueMealId: "meal-b" },
@@ -41,6 +44,23 @@ test("creates seven consecutive dated meal choices", () => {
     createdAt: 100,
     updatedAt: 100,
   });
+});
+
+test("reports removed dates only when shortening, not when rebasing", () => {
+  expect(
+    planDatesRemovedByShortening({
+      startDate: "2026-08-29",
+      currentPlanDays: 7,
+      nextPlanDays: 5,
+    }),
+  ).toEqual(["2026-09-03", "2026-09-04"]);
+  expect(
+    planDatesRemovedByShortening({
+      startDate: "2026-08-29",
+      currentPlanDays: 5,
+      nextPlanDays: 5,
+    }),
+  ).toEqual([]);
 });
 
 test("can leave selected days empty and keep them empty across shuffle", () => {

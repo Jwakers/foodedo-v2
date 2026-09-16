@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { createGuestDraft } from "../../src/lib/domain/guest-draft";
 import {
+  countPlanDays,
   formatGuestPlanSummary,
   formatMealDurationLabel,
   formatPlanDayParts,
   formatPlanDateRange,
+  formatPlanDateWithWeekday,
   formatPlanWeekdayLong,
   formatPlanWeekdayShort,
   formatProteinCategoryLabel,
@@ -32,6 +34,10 @@ test("formats day parts and week summary for plan review", () => {
   });
   expect(formatPlanWeekdayLong("2026-08-29")).toBe("Saturday");
   expect(formatPlanWeekdayShort("2026-08-29")).toBe("Sat");
+  expect(formatPlanDateWithWeekday("2026-09-03")).toBe("Thursday 3 Sep");
+  expect(
+    countPlanDays({ startDate: "2026-08-29", endDate: "2026-09-02" }),
+  ).toBe(5);
   expect(formatProteinCategoryLabel("chicken")).toBe("Chicken");
   expect(formatProteinCategoryLabel("meat-free")).toBe("Meat-free");
   expect(
@@ -171,7 +177,7 @@ test("features tonight or the next upcoming planned meal", () => {
   expect(tomorrowFocus?.timingLabel).toBe("TOMORROW");
 });
 
-test("fills free days when resolving an active week list", () => {
+test("fills free days only inside the active plan's date range", () => {
   const mealsById = new Map<string, CatalogueMeal>([
     [
       "meal-a",
@@ -190,6 +196,7 @@ test("fills free days when resolving an active week list", () => {
 
   const rows = resolveActivePlanWeekRows({
     startDate: "2026-08-29",
+    endDate: "2026-09-02",
     mealSlots: [
       {
         date: "2026-08-29",
@@ -217,7 +224,7 @@ test("fills free days when resolving an active week list", () => {
     mealsById,
   });
 
-  expect(rows).toHaveLength(7);
+  expect(rows).toHaveLength(5);
   expect(rows[0]?.kind).toBe("planned");
   expect(rows[1]?.kind).toBe("empty");
   expect(rows[2]?.kind).toBe("planned");

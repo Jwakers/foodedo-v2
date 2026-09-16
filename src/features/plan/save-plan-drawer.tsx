@@ -55,13 +55,14 @@ export function SavePlanDrawer({
             </DrawerDescription>
           </div>
           <DrawerClose asChild>
-            <button
-              type="button"
+            <Button
+              variant="quiet"
+              size="headerIcon"
               aria-label="Close and keep planning"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-mist text-ink transition-colors hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+              className="text-ink"
             >
               <X aria-hidden="true" className="size-5" />
-            </button>
+            </Button>
           </DrawerClose>
         </DrawerHeader>
 

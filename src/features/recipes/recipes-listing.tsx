@@ -60,10 +60,10 @@ export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
         </p>
       </header>
 
-      <button
-        type="button"
+      <Button
+        variant="search"
         aria-label="Search recipes"
-        className="flex h-12 w-full items-center gap-2.5 rounded-compact bg-mist px-3.5 text-left transition-colors hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+        className="rounded-compact"
         onClick={() => {
           markUnfinishedInteraction("Recipe search comes next.");
         }}
@@ -74,7 +74,7 @@ export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
           strokeWidth={1.8}
         />
         <span className="text-15 text-graphite">Search recipes</span>
-      </button>
+      </Button>
 
       {showScopes ? (
         <div
@@ -83,20 +83,16 @@ export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
           aria-label="Recipe scopes"
         >
           {scopes.map((label) => {
-            const active = activeScope === label;
             return (
-              <button
+              <Button
                 key={label}
-                type="button"
-                aria-pressed={active}
-                className={cn(
-                  "flex h-9 items-center justify-center rounded-full px-4.5 text-14 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium",
-                  active ? "bg-ink text-paper" : "text-graphite hover:bg-mist",
-                )}
+                variant="choice"
+                aria-pressed={activeScope === label}
+                className="h-9 border-transparent px-4.5 text-14 text-graphite aria-pressed:border-transparent"
                 onClick={() => setScope(label)}
               >
                 {label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -248,15 +244,15 @@ function YoursGrid({ imageFallbacks }: { imageFallbacks: CatalogueMeal[] }) {
       <CollectionHeading
         heading="Your recipes"
         trailing={
-          <button
-            type="button"
-            className="text-12 font-medium text-graphite transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+          <Button
+            variant="inline"
+            className="h-auto text-12 font-medium text-graphite hover:text-ink"
             onClick={() => {
               markUnfinishedInteraction("Importing recipes comes next.");
             }}
           >
             Import recipe →
-          </button>
+          </Button>
         }
       />
 

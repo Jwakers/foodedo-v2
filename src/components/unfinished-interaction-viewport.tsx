@@ -3,6 +3,7 @@
 import { Code2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   unfinishedInteractionEvent,
   type UnfinishedInteractionDetail,
@@ -77,10 +78,10 @@ export function UnfinishedInteractionViewport({
         </p>
         <p className="mt-1 text-13 leading-relaxed">{message}</p>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="headerIcon"
         aria-label="Dismiss reminder"
-        className="flex size-11 shrink-0 items-center justify-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
         onClick={() => {
           if (timeoutRef.current !== null) {
             clearTimeout(timeoutRef.current);
@@ -90,7 +91,7 @@ export function UnfinishedInteractionViewport({
         }}
       >
         <X aria-hidden="true" className="size-4" />
-      </button>
+      </Button>
     </div>
   );
 }

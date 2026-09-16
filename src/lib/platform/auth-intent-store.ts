@@ -4,6 +4,7 @@ import type {
 } from "@/lib/domain/auth-intents";
 import {
   localObjectStores,
+  observeTransactionComplete,
   openFoodedoDatabase,
   requestResult,
   transactionComplete,
@@ -26,10 +27,16 @@ function createAuthIntentStore<T>(key: string): AuthIntentStore<T> {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readonly");
+        const completed = transactionComplete(transaction);
         const request = transaction.objectStore(objectStoreName).get(key);
-        const result = await requestResult(request);
-        await transactionComplete(transaction);
-        return result ?? null;
+        try {
+          const result = await requestResult(request);
+          await completed;
+          return result ?? null;
+        } catch (error) {
+          await observeTransactionComplete(completed);
+          throw error;
+        }
       } finally {
         database.close();
       }
@@ -39,8 +46,9 @@ function createAuthIntentStore<T>(key: string): AuthIntentStore<T> {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         transaction.objectStore(objectStoreName).put(intent, key);
-        await transactionComplete(transaction);
+        await completed;
       } finally {
         database.close();
       }
@@ -50,8 +58,9 @@ function createAuthIntentStore<T>(key: string): AuthIntentStore<T> {
       const database = await openFoodedoDatabase();
       try {
         const transaction = database.transaction(objectStoreName, "readwrite");
+        const completed = transactionComplete(transaction);
         transaction.objectStore(objectStoreName).delete(key);
-        await transactionComplete(transaction);
+        await completed;
       } finally {
         database.close();
       }

@@ -53,6 +53,7 @@ export function SavedWeekPage() {
     <PlanSavedSuccess
       summary={formatGuestPlanSummary({
         planStartDate: currentPlan.startDate,
+        planEndDate: currentPlan.endDate,
         plannedMealCount,
       })}
     />

@@ -170,14 +170,14 @@ export function RecipeDetailContent({
             </p>
           </div>
           {showPageActions ? (
-            <button
-              type="button"
-              className="inline-flex h-7 items-center gap-1.5 text-13 font-semibold text-cadmium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+            <Button
+              variant="inline"
+              className="gap-1.5 font-semibold text-cadmium"
               onClick={handleStartCooking}
             >
               <Play aria-hidden="true" className="size-4" strokeWidth={1.8} />
               Start cooking
-            </button>
+            </Button>
           ) : null}
         </div>
 

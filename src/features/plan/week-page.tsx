@@ -38,6 +38,10 @@ export function WeekPage() {
     api.mealPlans.getRecentArchivedSummaries,
     isAuthenticated ? {} : "skip",
   );
+  const planningPreferences = useQuery(
+    api.planningPreferences.getCurrent,
+    isAuthenticated ? {} : "skip",
+  );
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
   );
@@ -54,7 +58,8 @@ export function WeekPage() {
   const isCheckingPlan =
     !isLoaded ||
     (isSignedIn && isConvexAuthLoading) ||
-    (isAuthenticated && currentPlan === undefined);
+    (isAuthenticated &&
+      (currentPlan === undefined || planningPreferences === undefined));
 
   if (isCheckingPlan) {
     return <PlanReviewLoading />;
@@ -104,8 +109,11 @@ export function WeekPage() {
       try {
         await beginReplannedGuestPlanDraft({
           planStartDate: activePlan.startDate,
+          servings: activePlan.servings,
+          occupiedDates: activePlan.mealSlots.map((slot) => slot.date),
           currentMealChoices: savedPlanMealChoices({
             planStartDate: activePlan.startDate,
+            planEndDate: activePlan.endDate,
             mealSlots: activePlan.mealSlots,
           }),
         });
@@ -124,7 +132,10 @@ export function WeekPage() {
 
       setPendingPlanAction("next");
       try {
-        await beginNextGuestPlanDraft();
+        await beginNextGuestPlanDraft({
+          planDays: planningPreferences?.usualPlanDays ?? 7,
+          servings: planningPreferences?.usualServings ?? 4,
+        });
         router.push("/week/new");
       } catch (error) {
         console.error("Failed to start the next plan.", error);

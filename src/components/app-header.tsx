@@ -118,12 +118,12 @@ function DefaultAccountControls() {
       <ClerkLoaded>
         <Show when="signed-out">
           <SignInButton mode="modal">
-            <button
-              type="button"
-              className="inline-flex min-h-11 items-center whitespace-nowrap px-1 text-13 font-bold leading-4 text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium"
+            <Button
+              variant="inline"
+              className="h-auto min-h-11 whitespace-nowrap px-1 leading-4 focus-visible:outline-offset-4"
             >
               Sign in
-            </button>
+            </Button>
           </SignInButton>
         </Show>
 

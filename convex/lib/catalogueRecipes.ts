@@ -3,17 +3,18 @@ import {
   RecipeValidationError,
 } from "../../src/lib/domain/recipes";
 import { findStandardCatalogueMeal } from "../../src/lib/domain/standard-catalogue";
+import type { Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 
 export async function getOrCreateCatalogueRecipe(
   ctx: MutationCtx,
   {
-    ownerSubject,
+    ownerId,
     catalogueMealId,
     catalogueVersion,
     saveToLibrary,
   }: {
-    ownerSubject: string;
+    ownerId: Id<"users">;
     catalogueMealId: string;
     catalogueVersion: number;
     saveToLibrary: boolean;
@@ -32,7 +33,7 @@ export async function getOrCreateCatalogueRecipe(
     .query("recipes")
     .withIndex("by_owner_and_catalogue_source", (q) =>
       q
-        .eq("ownerSubject", ownerSubject)
+        .eq("ownerId", ownerId)
         .eq("source.catalogueMealId", catalogueMealId)
         .eq("source.catalogueVersion", catalogueVersion),
     )
@@ -60,7 +61,7 @@ export async function getOrCreateCatalogueRecipe(
 
   const createdAt = Date.now();
   const recipeId = await ctx.db.insert("recipes", {
-    ownerSubject,
+    ownerId,
     ...content,
     source: {
       type: "catalogue",

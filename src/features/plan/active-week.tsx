@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ActivePlanAdjustDrawer } from "@/features/plan/active-plan-adjust-drawer";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
 import {
   formatActivePlanEndSummary,
@@ -11,17 +12,17 @@ import {
   isNearActivePlanEnd,
   resolveActivePlanWeekRows,
   todayPlanDate,
-  type GuestPlanMealRow,
 } from "@/lib/domain/plan-display";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 export type ActiveWeekPlan = {
   _id: string;
   startDate: string;
   endDate: string;
+  servings: number;
+  updatedAt: number;
   status: "active" | "archived";
   mealSlots: ReadonlyArray<{
     date: string;
@@ -65,9 +66,11 @@ export function ActiveWeek({
   const isArchived = plan.status === "archived";
   const rows = resolveActivePlanWeekRows({
     startDate: plan.startDate,
+    endDate: plan.endDate,
     mealSlots: plan.mealSlots,
     mealsById: standardMealsById,
   });
+  const hasPendingAction = isReplanning || isStartingNextPlan;
   const recipeHrefByDate = new Map(
     plan.mealSlots.flatMap((slot) =>
       slot.catalogueMealSlug
@@ -92,6 +95,7 @@ export function ActiveWeek({
         })
       : formatGuestPlanSummary({
           planStartDate: plan.startDate,
+          planEndDate: plan.endDate,
           plannedMealCount: plannedCount,
         });
 
@@ -101,12 +105,17 @@ export function ActiveWeek({
       className="mx-auto flex w-full max-w-175 flex-col px-page-inline pt-4.5 pb-8"
     >
       <div className="flex flex-col gap-1.5">
-        <h1
-          id="active-week-heading"
-          className="font-display text-30 font-semibold tracking-title text-ink"
-        >
-          {isArchived ? "Previous week" : "This week"}
-        </h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1
+            id="active-week-heading"
+            className="font-display text-30 font-semibold tracking-title text-ink"
+          >
+            {isArchived ? "Previous week" : "This week"}
+          </h1>
+          {isArchived ? null : (
+            <ActivePlanAdjustDrawer plan={plan} disabled={hasPendingAction} />
+          )}
+        </div>
         <p className="text-14 font-medium text-graphite">{summary}</p>
       </div>
 
@@ -141,9 +150,9 @@ export function ActiveWeek({
       <ul className="mt-5">
         {rows.map((row) => (
           <li key={row.date}>
-            <ActiveWeekMealRow
+            <PlanMealRow
               row={row}
-              readOnly={isArchived}
+              readOnly
               recipeHref={recipeHrefByDate.get(row.date)}
             />
           </li>
@@ -154,7 +163,7 @@ export function ActiveWeek({
         <div className="mt-4 flex items-center justify-between gap-3 pt-2">
           <Button
             variant="inline"
-            disabled={isReplanning || isStartingNextPlan}
+            disabled={hasPendingAction}
             aria-busy={isReplanning}
             className="h-auto px-0 text-14 font-medium text-graphite"
             onClick={() => {
@@ -165,7 +174,7 @@ export function ActiveWeek({
           </Button>
           <Button
             variant="inline"
-            disabled={isReplanning || isStartingNextPlan}
+            disabled={hasPendingAction}
             aria-busy={isStartingNextPlan}
             className={cn(
               "h-auto px-0 text-14",
@@ -186,29 +195,5 @@ export function ActiveWeek({
         </div>
       )}
     </main>
-  );
-}
-
-function ActiveWeekMealRow({
-  row,
-  readOnly,
-  recipeHref,
-}: {
-  row: GuestPlanMealRow;
-  readOnly: boolean;
-  recipeHref?: string;
-}) {
-  return (
-    <PlanMealRow
-      row={row}
-      readOnly={readOnly}
-      recipeHref={recipeHref}
-      onRemoveMeal={() => {
-        markUnfinishedInteraction("Removing a saved meal comes next.");
-      }}
-      onReplaceMeal={() => {
-        markUnfinishedInteraction("Swapping a saved meal comes next.");
-      }}
-    />
   );
 }

@@ -88,10 +88,9 @@ export function PlanMealSwap({
           <span className="shrink-0 text-13 text-graphite">{weekdayShort}</span>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="search"
           aria-label="Search recipes"
-          className="flex h-12 w-full shrink-0 items-center gap-2.5 rounded-md bg-mist px-3.5 text-left transition-colors hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
           onClick={() => {
             markUnfinishedInteraction("Recipe search comes next.");
           }}
@@ -102,7 +101,7 @@ export function PlanMealSwap({
             strokeWidth={2}
           />
           <span className="text-15 text-graphite">Search recipes</span>
-        </button>
+        </Button>
 
         <div className="mt-3 mb-1 flex shrink-0 items-center gap-2 py-1">
           <Button

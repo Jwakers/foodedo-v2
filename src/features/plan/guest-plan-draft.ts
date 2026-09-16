@@ -1,4 +1,5 @@
 import type { SavedPlanMealChoice } from "@/features/plan/saved-plan-meal-choices";
+import { clearPendingPrePlanSetup } from "@/features/plan/pre-plan-setup-store";
 import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
@@ -6,8 +7,12 @@ import {
   clearGuestPlanMeal,
   countPlannedGuestMeals,
   createGuestDraft,
+  extendGuestPlanByOneDay,
+  GUEST_PLAN_DAYS,
   GUEST_DRAFT_SCHEMA_VERSION,
   guestDraftMatchesSavedPlan,
+  isPlanDays,
+  type PlanDays,
   readGuestDraftV1,
   rebaseGuestPlanStartDate,
   requestGuestPlanClaim,
@@ -67,10 +72,14 @@ export async function loadGuestPlanDraftForReview(
 export async function ensureGuestPlanDraft({
   now = Date.now(),
   planStartDate = tomorrowPlanDate(),
+  planDays = GUEST_PLAN_DAYS,
+  servings = 4,
   store = guestDraftStore(),
 }: {
   now?: number;
   planStartDate?: string;
+  planDays?: PlanDays;
+  servings?: number;
   store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
   return store.runMutation((raw) => {
@@ -81,9 +90,50 @@ export async function ensureGuestPlanDraft({
       draft: createGuestDraft({
         catalogueVersion: standardCatalogue.version,
         planStartDate,
+        planDays,
+        servings,
         catalogueMealIds,
         now,
         emptySlotIndexes: generationFreeDayIndexes,
+      }),
+      write: true,
+    };
+  });
+}
+
+/** Starts a pre-plan draft from the settings the user just applied. */
+export async function beginConfiguredGuestPlanDraft({
+  planStartDate,
+  planDays,
+  servings,
+  preferredCatalogueMealIds = [],
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  planStartDate: string;
+  planDays: PlanDays;
+  servings: number;
+  preferredCatalogueMealIds?: readonly string[];
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<GuestDraftV1> {
+  const validMealIds = new Set(catalogueMealIds);
+  const preferredIds = preferredCatalogueMealIds.filter((mealId) =>
+    validMealIds.has(mealId),
+  );
+  const generationMealIds = [
+    ...new Set(preferredIds),
+    ...catalogueMealIds.filter((mealId) => !preferredIds.includes(mealId)),
+  ];
+  return store.runMutation(() => {
+    return {
+      draft: createGuestDraft({
+        catalogueVersion: standardCatalogue.version,
+        planStartDate,
+        planDays,
+        servings,
+        catalogueMealIds: generationMealIds,
+        now,
       }),
       write: true,
     };
@@ -99,15 +149,24 @@ export async function ensureGuestPlanDraft({
 export async function beginNextGuestPlanDraft({
   now = Date.now(),
   planStartDate = tomorrowPlanDate(),
+  planDays = GUEST_PLAN_DAYS,
+  servings = 4,
   store = guestDraftStore(),
 }: {
   now?: number;
   planStartDate?: string;
+  planDays?: PlanDays;
+  servings?: number;
   store?: GuestDraftStore;
 } = {}): Promise<GuestDraftV1> {
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw);
-    if (existing !== null && existing.acceptedAt === undefined) {
+    if (
+      existing !== null &&
+      existing.acceptedAt === undefined &&
+      existing.planDays === planDays &&
+      existing.servings === servings
+    ) {
       const rebased = rebaseGuestPlanStartDate(existing, planStartDate, now);
       return { draft: rebased, write: rebased !== existing };
     }
@@ -116,6 +175,8 @@ export async function beginNextGuestPlanDraft({
       draft: createGuestDraft({
         catalogueVersion: standardCatalogue.version,
         planStartDate,
+        planDays,
+        servings,
         catalogueMealIds,
         now,
         emptySlotIndexes: generationFreeDayIndexes,
@@ -127,25 +188,39 @@ export async function beginNextGuestPlanDraft({
 
 /**
  * Opens a fully editable replacement for the active plan's existing date
- * window. No slot is preserved by date or status: dates remain ordering labels,
- * and saving the reviewed draft is the only point that replaces the active plan.
+ * window. The structure stays intact: deliberate free days remain free while
+ * occupied slots receive different meals. Saving the reviewed draft is the
+ * only point that replaces the active plan.
  */
 export async function beginReplannedGuestPlanDraft({
   planStartDate,
   currentMealChoices,
+  occupiedDates,
+  servings,
   now = Date.now(),
   store = guestDraftStore(),
 }: {
   planStartDate: string;
   currentMealChoices: ReadonlyArray<SavedPlanMealChoice>;
+  occupiedDates: readonly string[];
+  servings: number;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
+  const planDays = isPlanDays(currentMealChoices.length)
+    ? currentMealChoices.length
+    : GUEST_PLAN_DAYS;
+  const occupiedDateSet = new Set(occupiedDates);
+  const intentionalFreeDayIndexes = currentMealChoices.flatMap(
+    (choice, index) => (occupiedDateSet.has(choice.date) ? [] : [index]),
+  );
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw);
     const hasEditableDraft =
       existing !== null &&
       existing.acceptedAt === undefined &&
+      existing.planDays === planDays &&
+      existing.servings === servings &&
       countPlannedGuestMeals(existing) > 0;
     if (
       hasEditableDraft &&
@@ -160,9 +235,11 @@ export async function beginReplannedGuestPlanDraft({
       : createGuestDraft({
           catalogueVersion: standardCatalogue.version,
           planStartDate,
+          planDays,
+          servings,
           catalogueMealIds,
           now,
-          emptySlotIndexes: generationFreeDayIndexes,
+          emptySlotIndexes: intentionalFreeDayIndexes,
         });
     let replanned = baseDraft;
     for (let variant = 0; variant < catalogueMealIds.length; variant += 1) {
@@ -259,6 +336,26 @@ export async function replaceGuestPlanMeal({
   });
 }
 
+export async function extendCurrentGuestPlanDraft({
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  now?: number;
+  store?: GuestDraftStore;
+} = {}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+
+    return {
+      draft: extendGuestPlanByOneDay(existing, catalogueMealIds, now),
+      write: true,
+    };
+  });
+}
+
 /**
  * Accept the local draft and persist a stable claim key before sign-in / claim.
  * Retries keep the first key so Convex claim stays idempotent.
@@ -304,6 +401,7 @@ export function guestPlanClaimMutationArgs(draft: GuestDraftV1) {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     catalogueVersion: draft.catalogueVersion,
     planStartDate: draft.planStartDate,
+    servings: draft.servings,
     mealChoices: draft.mealChoices.map((choice) => ({
       date: choice.date,
       catalogueMealId: choice.catalogueMealId,
@@ -319,10 +417,12 @@ export async function clearClaimedGuestPlanDraft({
   expectedDraft: GuestDraftV1;
   store?: GuestDraftStore;
 }): Promise<boolean> {
-  return await store.clearIf((raw) => {
+  const cleared = await store.clearIf((raw) => {
     const current = parseGuestDraft(raw);
     return current !== null && isSameDraftRevision(current, expectedDraft);
   });
+  if (cleared) clearPendingPrePlanSetup();
+  return cleared;
 }
 
 /** Stop automatic claim retries while preserving every local plan choice. */

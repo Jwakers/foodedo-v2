@@ -2,9 +2,12 @@ import { ConvexError, v } from "convex/values";
 import {
   addDaysToPlanDate,
   GUEST_DRAFT_SCHEMA_VERSION,
-  GUEST_PLAN_DAYS,
   isGuestClaimKey,
+  isPlanDays,
   isPlanDate,
+  MAXIMUM_PLAN_SERVINGS,
+  MINIMUM_PLAN_SERVINGS,
+  planDatesRemovedByShortening,
 } from "../src/lib/domain/guest-draft";
 import {
   findStandardCatalogueMeal,
@@ -14,13 +17,17 @@ import { selectRankedPlanCandidates } from "../src/lib/domain/meal-plan-selectio
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { requireAuthSubject } from "./lib/auth";
+import { requireUserId } from "./lib/auth";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
+import { patchPlanningPreferences } from "./lib/planningPreferences";
 
 const maximumPlanSlots = 31;
 const maximumActivePlanRecovery = 10;
 const maximumPersonalPlanCandidates = 50;
 const maximumRecentArchivedPlans = 11;
+const defaultPlanServings = 4;
+const minimumAdjustablePlanDays = 3;
+const maximumAdjustablePlanDays = 7;
 type PlanRecipeReference =
   | { type: "existing"; recipeId: Id<"recipes"> }
   | { type: "catalogue"; catalogueMealId: string };
@@ -64,6 +71,8 @@ const mealPlanViewValidator = v.object({
   _id: v.id("mealPlans"),
   startDate: v.string(),
   endDate: v.string(),
+  servings: v.number(),
+  updatedAt: v.number(),
   status: v.union(v.literal("active"), v.literal("archived")),
   hasActivePlanConflict: v.boolean(),
   mealSlots: v.array(mealSlotViewValidator),
@@ -78,7 +87,7 @@ const archivedMealPlanSummaryValidator = v.object({
 
 const mealChoiceValidator = v.object({
   date: v.string(),
-  // Null keeps a free day in the seven-day window without creating a slot.
+  // Null keeps a free day in the bounded plan window without creating a slot.
   catalogueMealId: v.union(v.string(), v.null()),
 });
 
@@ -149,17 +158,28 @@ const resolveActivePlanConflictResultValidator = v.union(
   v.object({ status: v.literal("too_many_active_plans") }),
 );
 
+const adjustActivePlanResultValidator = v.union(
+  v.object({
+    status: v.literal("adjusted"),
+    addedDays: v.number(),
+    removedDates: v.array(v.string()),
+  }),
+  v.object({ status: v.literal("plan_changed") }),
+  v.object({ status: v.literal("no_active_plan") }),
+  v.object({ status: v.literal("plan_unavailable") }),
+);
+
 export const getCurrent = query({
   args: {},
   returns: v.union(mealPlanViewValidator, v.null()),
   handler: async (ctx) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const activePlanState = await getActivePlanState(ctx, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const activePlanState = await getActivePlanState(ctx, ownerId);
     const mealPlan = activePlanState.mealPlan;
 
     if (mealPlan === null) return null;
 
-    return await buildMealPlanView(ctx, ownerSubject, mealPlan, {
+    return await buildMealPlanView(ctx, ownerId, mealPlan, {
       hasActivePlanConflict: activePlanState.hasConflict,
     });
   },
@@ -170,11 +190,11 @@ export const getRecentArchivedSummaries = query({
   args: {},
   returns: v.array(archivedMealPlanSummaryValidator),
   handler: async (ctx) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const mealPlans = await ctx.db
       .query("mealPlans")
       .withIndex("by_owner_and_status_and_updated_at", (q) =>
-        q.eq("ownerSubject", ownerSubject).eq("status", "archived"),
+        q.eq("ownerId", ownerId).eq("status", "archived"),
       )
       .order("desc")
       .take(maximumRecentArchivedPlans);
@@ -193,17 +213,17 @@ export const getArchived = query({
   args: { mealPlanId: v.id("mealPlans") },
   returns: v.union(mealPlanViewValidator, v.null()),
   handler: async (ctx, { mealPlanId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const mealPlan = await ctx.db.get(mealPlanId);
     if (
       mealPlan === null ||
-      mealPlan.ownerSubject !== ownerSubject ||
+      mealPlan.ownerId !== ownerId ||
       mealPlan.status !== "archived"
     ) {
       return null;
     }
 
-    return await buildMealPlanView(ctx, ownerSubject, mealPlan, {
+    return await buildMealPlanView(ctx, ownerId, mealPlan, {
       hasActivePlanConflict: false,
     });
   },
@@ -213,11 +233,11 @@ export const resolveActivePlanConflict = mutation({
   args: { keepMealPlanId: v.id("mealPlans") },
   returns: resolveActivePlanConflictResultValidator,
   handler: async (ctx, { keepMealPlanId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const activePlans = await ctx.db
       .query("mealPlans")
       .withIndex("by_owner_and_status_and_updated_at", (q) =>
-        q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+        q.eq("ownerId", ownerId).eq("status", "active"),
       )
       .order("desc")
       .take(maximumActivePlanRecovery + 1);
@@ -245,23 +265,19 @@ export const swapMeal = mutation({
   args: { mealSlotId: v.id("mealSlots") },
   returns: swapResultValidator,
   handler: async (ctx, { mealSlotId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const mealSlot = await ctx.db.get(mealSlotId);
-    if (mealSlot === null || mealSlot.ownerSubject !== ownerSubject) {
+    if (mealSlot === null || mealSlot.ownerId !== ownerId) {
       return { status: "not_found" } as const;
     }
 
-    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null || mealPlan._id !== mealSlot.mealPlanId) {
       return { status: "not_found" } as const;
     }
 
     const mealSlots = await getPlanSlots(ctx, mealPlan._id);
-    const recipesBySlot = await resolvePlanRecipes(
-      ctx,
-      mealSlots,
-      ownerSubject,
-    );
+    const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
     const currentRecipe = recipesBySlot.get(mealSlot._id);
     if (
       currentRecipe === undefined ||
@@ -270,7 +286,7 @@ export const swapMeal = mutation({
       return { status: "plan_unavailable" } as const;
     }
 
-    const candidatePool = await getPlanningCandidates(ctx, ownerSubject);
+    const candidatePool = await getPlanningCandidates(ctx, ownerId);
     const currentCandidateKey = candidateKeyForRecipe(currentRecipe);
     const currentPreferredIndex =
       candidatePool.preferredKeys.indexOf(currentCandidateKey);
@@ -291,7 +307,7 @@ export const swapMeal = mutation({
     }
     const replacementRecipeId = await resolveRecipeReference(
       ctx,
-      ownerSubject,
+      ownerId,
       replacement.recipe,
     );
     const updatedAt = Date.now();
@@ -311,9 +327,9 @@ export const getRegenerationProposal = query({
   args: { fromDate: v.string(), variant: v.number() },
   returns: regenerationProposalResultValidator,
   handler: async (ctx, args) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     validateProposalRequest(args);
-    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null) {
       return { status: "no_active_plan" } as const;
     }
@@ -321,7 +337,7 @@ export const getRegenerationProposal = query({
     const proposal = await buildRegenerationProposal(
       ctx,
       mealPlan,
-      ownerSubject,
+      ownerId,
       args.fromDate,
       args.variant,
     );
@@ -347,9 +363,9 @@ export const applyRegenerationProposal = mutation({
   },
   returns: applyProposalResultValidator,
   handler: async (ctx, args) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     validateProposalRequest(args);
-    const mealPlan = await getSingleActivePlan(ctx, ownerSubject);
+    const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null) {
       return { status: "no_active_plan" } as const;
     }
@@ -363,7 +379,7 @@ export const applyRegenerationProposal = mutation({
     const proposal = await buildRegenerationProposal(
       ctx,
       mealPlan,
-      ownerSubject,
+      ownerId,
       args.fromDate,
       args.variant,
     );
@@ -375,8 +391,9 @@ export const applyRegenerationProposal = mutation({
       updatedAt,
     });
     const mealPlanId = await createPlanFromRecipeChoices(ctx, {
-      ownerSubject,
+      ownerId,
       mealChoices: proposal.mealChoices,
+      servings: mealPlan.servings ?? defaultPlanServings,
       createdAt: updatedAt,
     });
 
@@ -400,8 +417,8 @@ export const undoPlanReplacement = mutation({
     ctx,
     { currentMealPlanId, previousMealPlanId, currentUpdatedAt },
   ) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const activePlan = await getSingleActivePlan(ctx, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const activePlan = await getSingleActivePlan(ctx, ownerId);
     if (
       activePlan === null ||
       activePlan._id !== currentMealPlanId ||
@@ -412,7 +429,7 @@ export const undoPlanReplacement = mutation({
     const previousPlan = await ctx.db.get(previousMealPlanId);
     if (
       previousPlan === null ||
-      previousPlan.ownerSubject !== ownerSubject ||
+      previousPlan.ownerId !== ownerId ||
       previousPlan.status !== "archived"
     ) {
       return { status: "not_found" } as const;
@@ -426,30 +443,174 @@ export const undoPlanReplacement = mutation({
   },
 });
 
+/**
+ * Changes the shape of the active plan without replacing it. Existing slots
+ * keep their recipe and status, are rebased by relative day, and are deleted
+ * only when they fall outside a shortened range. Extension fills new trailing
+ * days from the normal candidate pool.
+ */
+export const adjustActivePlan = mutation({
+  args: {
+    mealPlanId: v.id("mealPlans"),
+    expectedUpdatedAt: v.number(),
+    planDays: v.number(),
+    startDate: v.string(),
+    servings: v.number(),
+    persistForFuture: v.boolean(),
+  },
+  returns: adjustActivePlanResultValidator,
+  handler: async (ctx, args) => {
+    const ownerId = await requireUserId(ctx);
+    validateActivePlanAdjustment(args);
+    const mealPlan = await getSingleActivePlan(ctx, ownerId);
+    if (mealPlan === null) return { status: "no_active_plan" } as const;
+    if (
+      mealPlan._id !== args.mealPlanId ||
+      mealPlan.updatedAt !== args.expectedUpdatedAt
+    ) {
+      return { status: "plan_changed" } as const;
+    }
+
+    const currentPlanDays =
+      planDayOffset(mealPlan.startDate, mealPlan.endDate) + 1;
+    if (currentPlanDays < 1 || currentPlanDays > maximumPlanSlots) {
+      return { status: "plan_unavailable" } as const;
+    }
+
+    const mealSlots = await getPlanSlots(ctx, mealPlan._id);
+    const slotsWithOffsets = mealSlots.map((slot) => ({
+      slot,
+      offset: planDayOffset(mealPlan.startDate, slot.date),
+    }));
+    if (
+      slotsWithOffsets.some(
+        ({ offset }) => offset < 0 || offset >= currentPlanDays,
+      )
+    ) {
+      return { status: "plan_unavailable" } as const;
+    }
+
+    const addedDays = Math.max(args.planDays - currentPlanDays, 0);
+    let additionalCandidates: PlanCandidate[] = [];
+    if (addedDays > 0) {
+      const candidates = await selectAdditionalPlanCandidates(
+        ctx,
+        ownerId,
+        mealSlots,
+        addedDays,
+      );
+      if (candidates === null) {
+        return { status: "plan_unavailable" } as const;
+      }
+      additionalCandidates = candidates;
+    }
+
+    const retainedOffsets = new Set(
+      slotsWithOffsets
+        .filter(({ offset }) => offset < args.planDays)
+        .map(({ offset }) => offset),
+    );
+    const availableRetainedOffsets = Array.from(
+      { length: args.planDays },
+      (_, offset) => offset,
+    ).filter((offset) => !retainedOffsets.has(offset));
+    const relocatedOffsets = new Map<Id<"mealSlots">, number>();
+    for (const { slot, offset } of slotsWithOffsets) {
+      if (offset < args.planDays) continue;
+      const availableOffset = availableRetainedOffsets.shift();
+      if (availableOffset === undefined) break;
+      relocatedOffsets.set(slot._id, availableOffset);
+    }
+
+    const updatedAt = Math.max(Date.now(), mealPlan.updatedAt + 1);
+    for (const { slot, offset } of slotsWithOffsets) {
+      const nextOffset =
+        offset < args.planDays ? offset : relocatedOffsets.get(slot._id);
+      if (nextOffset === undefined) {
+        await ctx.db.delete(slot._id);
+        continue;
+      }
+      const nextDate = addDaysToPlanDate(args.startDate, nextOffset);
+      if (nextDate !== slot.date) {
+        await ctx.db.patch(slot._id, { date: nextDate, updatedAt });
+      }
+    }
+
+    for (let index = 0; index < additionalCandidates.length; index += 1) {
+      const candidate = additionalCandidates[index]!;
+      const offset = currentPlanDays + index;
+      const recipeId = await resolveRecipeReference(
+        ctx,
+        ownerId,
+        candidate.recipe,
+      );
+      await ctx.db.insert("mealSlots", {
+        mealPlanId: mealPlan._id,
+        ownerId,
+        date: addDaysToPlanDate(args.startDate, offset),
+        recipeId,
+        status: "planned",
+        createdAt: updatedAt,
+        updatedAt,
+      });
+    }
+
+    const removedDates = planDatesRemovedByShortening({
+      startDate: mealPlan.startDate,
+      currentPlanDays,
+      nextPlanDays: args.planDays,
+    });
+    await ctx.db.patch(mealPlan._id, {
+      startDate: args.startDate,
+      endDate: addDaysToPlanDate(args.startDate, args.planDays - 1),
+      servings: args.servings,
+      updatedAt,
+    });
+
+    if (args.persistForFuture) {
+      await patchPlanningPreferences(
+        ctx,
+        ownerId,
+        {
+          ...(isPlanDays(args.planDays)
+            ? { usualPlanDays: args.planDays }
+            : {}),
+          usualServings: args.servings,
+        },
+        updatedAt,
+      );
+    }
+
+    return { status: "adjusted", addedDays, removedDates } as const;
+  },
+});
+
 export const claimGuestDraft = mutation({
   args: {
     claimKey: v.string(),
     schemaVersion: v.literal(GUEST_DRAFT_SCHEMA_VERSION),
     catalogueVersion: v.number(),
     planStartDate: v.string(),
+    servings: v.number(),
     mealChoices: v.array(mealChoiceValidator),
   },
   returns: claimResultValidator,
   handler: async (
     ctx,
-    { claimKey, catalogueVersion, planStartDate, mealChoices },
+    { claimKey, catalogueVersion, planStartDate, servings, mealChoices },
   ) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const validation = validateGuestPlan({
       claimKey,
       catalogueVersion,
       planStartDate,
+      servings,
       mealChoices,
     });
     const existingClaim = await ctx.db
       .query("guestClaims")
       .withIndex("by_owner_and_claim_key", (q) =>
-        q.eq("ownerSubject", ownerSubject).eq("claimKey", claimKey),
+        q.eq("ownerId", ownerId).eq("claimKey", claimKey),
       )
       .unique();
 
@@ -464,7 +625,7 @@ export const claimGuestDraft = mutation({
     }
 
     const claimedAt = Date.now();
-    const activePlan = await getSingleActivePlan(ctx, ownerSubject);
+    const activePlan = await getSingleActivePlan(ctx, ownerId);
     if (activePlan !== null) {
       await ctx.db.patch(activePlan._id, {
         status: "archived",
@@ -473,14 +634,15 @@ export const claimGuestDraft = mutation({
     }
 
     const mealPlanId = await createPlanFromGuestMealChoices(ctx, {
-      ownerSubject,
+      ownerId,
       startDate: planStartDate,
+      servings,
       mealChoices,
       createdAt: claimedAt,
     });
 
     await ctx.db.insert("guestClaims", {
-      ownerSubject,
+      ownerId,
       claimKey,
       mealPlanId,
       claimedAt,
@@ -492,7 +654,7 @@ export const claimGuestDraft = mutation({
 
 async function buildMealPlanView(
   ctx: QueryCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
   mealPlan: Doc<"mealPlans">,
   { hasActivePlanConflict }: { hasActivePlanConflict: boolean },
 ) {
@@ -504,7 +666,7 @@ async function buildMealPlanView(
   );
   const mealSlotViews = mealSlots.map((mealSlot, index) => {
     const recipe = recipes[index] ?? null;
-    if (recipe === null || recipe.ownerSubject !== ownerSubject) {
+    if (recipe === null || recipe.ownerId !== ownerId) {
       return {
         _id: mealSlot._id,
         date: mealSlot.date,
@@ -552,6 +714,8 @@ async function buildMealPlanView(
     _id: mealPlan._id,
     startDate: mealPlan.startDate,
     endDate: mealPlan.endDate,
+    servings: mealPlan.servings ?? defaultPlanServings,
+    updatedAt: mealPlan.updatedAt,
     status: mealPlan.status,
     hasActivePlanConflict,
     mealSlots: mealSlotViews,
@@ -560,9 +724,9 @@ async function buildMealPlanView(
 
 async function getSingleActivePlan(
   ctx: QueryCtx | MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ): Promise<Doc<"mealPlans"> | null> {
-  const state = await getActivePlanState(ctx, ownerSubject);
+  const state = await getActivePlanState(ctx, ownerId);
   if (state.hasConflict) {
     throw new Error("Resolve multiple active meal plans before continuing.");
   }
@@ -571,12 +735,12 @@ async function getSingleActivePlan(
 
 async function getActivePlanState(
   ctx: QueryCtx | MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   const activePlans = await ctx.db
     .query("mealPlans")
     .withIndex("by_owner_and_status_and_updated_at", (q) =>
-      q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+      q.eq("ownerId", ownerId).eq("status", "active"),
     )
     .order("desc")
     .take(2);
@@ -605,7 +769,7 @@ async function getPlanSlots(
 async function buildRegenerationProposal(
   ctx: QueryCtx | MutationCtx,
   mealPlan: Doc<"mealPlans">,
-  ownerSubject: string,
+  ownerId: Id<"users">,
   fromDate: string,
   variant: number,
 ): Promise<
@@ -626,7 +790,7 @@ async function buildRegenerationProposal(
     }
 > {
   const mealSlots = await getPlanSlots(ctx, mealPlan._id);
-  const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerSubject);
+  const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
   if (mealSlots.length === 0 || recipesBySlot.size !== mealSlots.length) {
     return { status: "plan_unavailable" };
   }
@@ -636,7 +800,7 @@ async function buildRegenerationProposal(
     return { status: "no_future_meals" };
   }
 
-  const candidatePool = await getPlanningCandidates(ctx, ownerSubject);
+  const candidatePool = await getPlanningCandidates(ctx, ownerId);
   const currentCandidateKeys = mealSlots.map((slot) =>
     candidateKeyForRecipe(recipesBySlot.get(slot._id)!),
   );
@@ -704,12 +868,12 @@ async function buildRegenerationProposal(
 async function resolvePlanRecipes(
   ctx: QueryCtx | MutationCtx,
   mealSlots: Array<Doc<"mealSlots">>,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   const recipesBySlot = new Map<Id<"mealSlots">, Doc<"recipes">>();
   for (const mealSlot of mealSlots) {
     const recipe = await ctx.db.get(mealSlot.recipeId);
-    if (recipe?.ownerSubject === ownerSubject) {
+    if (recipe?.ownerId === ownerId) {
       recipesBySlot.set(mealSlot._id, recipe);
     }
   }
@@ -718,12 +882,12 @@ async function resolvePlanRecipes(
 
 async function getPlanningCandidates(
   ctx: QueryCtx | MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   const savedRecipes = await ctx.db
     .query("recipes")
     .withIndex("by_owner_and_saved_at", (q) =>
-      q.eq("ownerSubject", ownerSubject).gt("savedAt", 0),
+      q.eq("ownerId", ownerId).gt("savedAt", 0),
     )
     .order("desc")
     .take(maximumPersonalPlanCandidates);
@@ -748,6 +912,33 @@ async function getPlanningCandidates(
   }
 
   return { byKey, preferredKeys, fallbackKeys };
+}
+
+async function selectAdditionalPlanCandidates(
+  ctx: QueryCtx | MutationCtx,
+  ownerId: Id<"users">,
+  mealSlots: Array<Doc<"mealSlots">>,
+  numberOfMeals: number,
+): Promise<PlanCandidate[] | null> {
+  const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
+  if (recipesBySlot.size !== mealSlots.length) return null;
+
+  const candidatePool = await getPlanningCandidates(ctx, ownerId);
+  const selectedKeys = selectRankedPlanCandidates({
+    preferredCandidateIds: candidatePool.preferredKeys,
+    fallbackCandidateIds: candidatePool.fallbackKeys,
+    excludedCandidateIds: [...recipesBySlot.values()].map(
+      candidateKeyForRecipe,
+    ),
+    numberOfMeals,
+    variant: 1,
+  });
+  const candidates = selectedKeys.flatMap((key) => {
+    const candidate = candidatePool.byKey.get(key);
+    return candidate === undefined ? [] : [candidate];
+  });
+
+  return candidates.length === numberOfMeals ? candidates : null;
 }
 
 function planCandidateFromRecipe(recipe: Doc<"recipes">): PlanCandidate {
@@ -799,19 +990,19 @@ function candidateKeyForRecipe(recipe: Doc<"recipes">) {
 
 async function resolveRecipeReference(
   ctx: MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
   recipeReference: PlanRecipeReference,
 ) {
   if (recipeReference.type === "existing") {
     const recipe = await ctx.db.get(recipeReference.recipeId);
-    if (recipe?.ownerSubject !== ownerSubject) {
+    if (recipe?.ownerId !== ownerId) {
       throw new Error("A selected personal recipe could not be resolved.");
     }
     return recipe._id;
   }
 
   const recipe = await getOrCreateCatalogueRecipe(ctx, {
-    ownerSubject,
+    ownerId,
     catalogueMealId: recipeReference.catalogueMealId,
     catalogueVersion: standardCatalogue.version,
     saveToLibrary: false,
@@ -837,13 +1028,15 @@ function validateProposalRequest({
 async function createPlanFromGuestMealChoices(
   ctx: MutationCtx,
   {
-    ownerSubject,
+    ownerId,
     startDate,
+    servings,
     mealChoices,
     createdAt,
   }: {
-    ownerSubject: string;
+    ownerId: Id<"users">;
     startDate: string;
+    servings: number;
     mealChoices: ReadonlyArray<{
       date: string;
       catalogueMealId: string | null;
@@ -851,8 +1044,8 @@ async function createPlanFromGuestMealChoices(
     createdAt: number;
   },
 ) {
-  if (mealChoices.length !== GUEST_PLAN_DAYS) {
-    throw new Error("A meal plan must span seven consecutive days.");
+  if (!isPlanDays(mealChoices.length)) {
+    throw new Error("A meal plan must span between 3 and 7 consecutive days.");
   }
 
   const plannedChoices = mealChoices.filter(
@@ -864,22 +1057,23 @@ async function createPlanFromGuestMealChoices(
   }
 
   const mealPlanId = await ctx.db.insert("mealPlans", {
-    ownerSubject,
+    ownerId,
     startDate,
-    endDate: addDaysToPlanDate(startDate, GUEST_PLAN_DAYS - 1),
+    endDate: addDaysToPlanDate(startDate, mealChoices.length - 1),
+    servings,
     status: "active",
     createdAt,
     updatedAt: createdAt,
   });
 
   for (const choice of plannedChoices) {
-    const recipeId = await resolveRecipeReference(ctx, ownerSubject, {
+    const recipeId = await resolveRecipeReference(ctx, ownerId, {
       type: "catalogue",
       catalogueMealId: choice.catalogueMealId,
     });
     await ctx.db.insert("mealSlots", {
       mealPlanId,
-      ownerSubject,
+      ownerId,
       date: choice.date,
       recipeId,
       status: "planned",
@@ -894,12 +1088,14 @@ async function createPlanFromGuestMealChoices(
 async function createPlanFromRecipeChoices(
   ctx: MutationCtx,
   {
-    ownerSubject,
+    ownerId,
     mealChoices,
+    servings,
     createdAt,
   }: {
-    ownerSubject: string;
+    ownerId: Id<"users">;
     mealChoices: readonly PlanRecipeChoice[];
+    servings: number;
     createdAt: number;
   },
 ) {
@@ -910,23 +1106,20 @@ async function createPlanFromRecipeChoices(
   }
 
   const mealPlanId = await ctx.db.insert("mealPlans", {
-    ownerSubject,
+    ownerId,
     startDate: firstChoice.date,
     endDate: lastChoice.date,
+    servings,
     status: "active",
     createdAt,
     updatedAt: createdAt,
   });
 
   for (const choice of mealChoices) {
-    const recipeId = await resolveRecipeReference(
-      ctx,
-      ownerSubject,
-      choice.recipe,
-    );
+    const recipeId = await resolveRecipeReference(ctx, ownerId, choice.recipe);
     await ctx.db.insert("mealSlots", {
       mealPlanId,
-      ownerSubject,
+      ownerId,
       date: choice.date,
       recipeId,
       status: choice.status,
@@ -942,11 +1135,13 @@ function validateGuestPlan({
   claimKey,
   catalogueVersion,
   planStartDate,
+  servings,
   mealChoices,
 }: {
   claimKey: string;
   catalogueVersion: number;
   planStartDate: string;
+  servings: number;
   mealChoices: Array<{ date: string; catalogueMealId: string | null }>;
 }): "valid" | "catalogue_unsupported" {
   if (!isGuestClaimKey(claimKey)) {
@@ -955,8 +1150,17 @@ function validateGuestPlan({
   if (!Number.isInteger(catalogueVersion) || catalogueVersion < 1) {
     throwInvalidPlan("The catalogue version is invalid.");
   }
-  if (!isPlanDate(planStartDate) || mealChoices.length !== GUEST_PLAN_DAYS) {
-    throwInvalidPlan("The plan must contain seven consecutive dates.");
+  if (!isPlanDate(planStartDate) || !isPlanDays(mealChoices.length)) {
+    throwInvalidPlan(
+      "The plan must contain between 3 and 7 consecutive dates.",
+    );
+  }
+  if (
+    !Number.isInteger(servings) ||
+    servings < MINIMUM_PLAN_SERVINGS ||
+    servings > MAXIMUM_PLAN_SERVINGS
+  ) {
+    throwInvalidPlan("The plan serving count is invalid.");
   }
 
   for (let index = 0; index < mealChoices.length; index += 1) {
@@ -990,4 +1194,45 @@ function validateGuestPlan({
 
 function throwInvalidPlan(message: string): never {
   throw new ConvexError({ code: "INVALID_GUEST_PLAN", message });
+}
+
+function validateActivePlanAdjustment({
+  planDays,
+  startDate,
+  servings,
+}: {
+  planDays: number;
+  startDate: string;
+  servings: number;
+}) {
+  if (
+    !Number.isInteger(planDays) ||
+    planDays < minimumAdjustablePlanDays ||
+    planDays > maximumAdjustablePlanDays
+  ) {
+    throwInvalidPlan(
+      `A saved plan must span between ${minimumAdjustablePlanDays} and ${maximumAdjustablePlanDays} days.`,
+    );
+  }
+  if (!isPlanDate(startDate)) {
+    throwInvalidPlan("The plan start date is invalid.");
+  }
+  if (
+    !Number.isInteger(servings) ||
+    servings < MINIMUM_PLAN_SERVINGS ||
+    servings > MAXIMUM_PLAN_SERVINGS
+  ) {
+    throwInvalidPlan(
+      `Servings must be between ${MINIMUM_PLAN_SERVINGS} and ${MAXIMUM_PLAN_SERVINGS}.`,
+    );
+  }
+}
+
+function planDayOffset(startDate: string, date: string) {
+  if (!isPlanDate(startDate) || !isPlanDate(date)) return Number.NaN;
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const [year, month, day] = date.split("-").map(Number);
+  const start = Date.UTC(startYear!, startMonth! - 1, startDay!);
+  const end = Date.UTC(year!, month! - 1, day!);
+  return Math.round((end - start) / 86_400_000);
 }

@@ -12,7 +12,7 @@ Guest access does not create backend documents. Its bounded, versioned draft liv
 
 Account record synchronised from Clerk webhooks. The Clerk JWT subject is stored as the unguessable `authSubject`, with only the identity fields Foodedo currently needs: nullable email and name plus Clerk creation/update timestamps. Product preferences are kept in purpose-specific authenticated records rather than turning this Clerk-synchronised row into a generic settings document.
 
-There are no anonymous/guest `users` rows. A verified Clerk webhook creates or updates the profile record; personal Convex functions independently derive the caller from verified `ctx.auth` identity and never accept an owner ID from the client.
+There are no anonymous/guest `users` rows. A verified Clerk webhook creates or updates the profile record. Personal Convex functions resolve the verified `ctx.auth` subject through `by_auth_subject`, use the resulting `users` document ID for internal ownership, and never accept an owner ID from the client. Until the webhook-created row exists, personal operations return an account-not-synchronised error.
 
 **Index:** `by_auth_subject`.
 
@@ -22,7 +22,7 @@ There are no anonymous/guest `users` rows. A verified Clerk webhook creates or u
 
 The small set of reusable defaults required by the approved signed-in **Adjust your plan** MVP.
 
-- `ownerSubject`
+- `ownerId`
 - `usualPlanDays`: `3` | `5` | `7`
 - `usualServings`
 - `prioritiseSavedRecipes`
@@ -46,7 +46,7 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 ### recipes (private snapshots)
 
-The private Capture unit: something an account wants to cook. `ownerSubject` is always derived from the verified Clerk identity; it is never accepted from a client and does not depend on webhook timing.
+The private Capture unit: something an account wants to cook. `ownerId` is a typed `users` document ID resolved server-side from the verified Clerk identity; it is never accepted from a client.
 
 Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds a required `proteinCategory` (`chicken` | `beef` | `pork` | `lamb` | `fish` | `meat-free`), optional `costBand` (`budget` | `standard` | `premium`), explicit oven preheat, and authored step-timer cues. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
@@ -62,7 +62,7 @@ Catalogue, personal, and future published recipes remain distinct. Saving shared
 
 The durable identity of a plan. Foodedo normally plans around seven days, but the plan is not forced to be an exact calendar week.
 
-- `ownerSubject`
+- `ownerId`
 - `startDate`, `endDate` (`YYYY-MM-DD`)
 - `servings` used by this plan's Cook and Shop views
 - `status`: `active` | `archived`
@@ -81,6 +81,14 @@ archives a different active parent and creates the exact seven-day reviewed plan
 atomically. Week exposes a bounded list of recent plans with archived entries in a
 view-only state, so replacing a nearly elapsed plan does not erase its history.
 
+A pre-save plan shorter than seven days may be extended from its review screen
+one day at a time. Extension preserves every existing choice and intentional gap,
+then chooses one non-duplicate meal for the newly created trailing date. Four-
+and six-day plans are valid draft and saved-plan states, but the reusable
+`usualPlanDays` preference remains constrained to the deliberate 3, 5, or 7-day
+setup choices. A saved active week remains read-only; structural changes there
+continue to use **Adjust plan**.
+
 Convex transactions prevent ordinary mutations from creating multiple active plans. If historical, imported, or manually edited data violates that invariant, the app continues showing the most recently updated plan and blocks further plan edits. One explicit recovery mutation keeps that plan and archives the other active parents atomically; merely reading the plan never repairs data silently.
 
 ### mealSlots
@@ -88,7 +96,7 @@ Convex transactions prevent ordinary mutations from creating multiple active pla
 The independently editable meals belonging to a plan. Separate slots keep individual dates and recipe references indexable without making the plan itself an inferred collection of adjacent rows or an increasingly large embedded array.
 
 - `mealPlanId`
-- `ownerSubject`
+- `ownerId`
 - `date` (local calendar date as `YYYY-MM-DD`)
 - `recipeId`
 - `status`: `planned` | `cooked` | `skipped`
@@ -102,8 +110,8 @@ Recipe deletion must either be refused while slots reference the recipe or updat
 
 An authenticated shopping list is an editable snapshot derived from one active meal-plan revision.
 
-- List: `ownerSubject`, `mealPlanId`, `mealPlanUpdatedAt`, `status` (`active` | `archived`), timestamps
-- Item: `shoppingListId`, `ownerSubject`, `name`, bounded source detail lines and recipe IDs, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
+- List: `ownerId`, `mealPlanId`, `mealPlanUpdatedAt`, `status` (`active` | `archived`), timestamps
+- Item: `shoppingListId`, `ownerId`, `name`, bounded source detail lines and recipe IDs, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
 
 **Indexes:** lists by owner/status/update and meal plan; items by list/order and owner/update.
 
@@ -119,7 +127,7 @@ Retention has two bounds: keep at most 30 list snapshots per account, and delete
 
 Signals so Decide can surface neglected food.
 
-- `ownerSubject`, `recipeId`
+- `ownerId`, `recipeId`
 - `type`: `saved` | `cooked` | `suggested` | `dismissed`
 - `at`
 
@@ -131,24 +139,25 @@ Last cooked = latest `cooked` event. Neglect = saved/cooked gap. Do not start wi
 
 Idempotency records for moving a local guest draft into an authenticated account.
 
-- `ownerSubject`
+- `ownerId`
 - `claimKey` (random client-generated key, validated and bounded)
 - `mealPlanId`
 - `claimedAt`
 
 **Index:** `by_owner_and_claim_key`
 
-The claim mutation derives `ownerSubject` from `ctx.auth`, checks this index before writing, validates the complete seven-day payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan. A different active plan is archived in the same transaction before the reviewed draft becomes active; archived history does not block the claim. No guest payload is trusted as an owner reference.
+The claim mutation resolves `ownerId` from the verified `ctx.auth` subject and the indexed `users` row, checks this index before writing, validates the complete reviewed payload, copies referenced standard catalogue meals, and creates one plan with its meal slots. It records the resulting plan ID in the same atomic mutation. Repeating a claim returns its original plan. A different active plan is archived in the same transaction before the reviewed draft becomes active; archived history does not block the claim. No guest payload is trusted as an owner reference.
 
 ## Relationships (summary)
 
 ```
-authenticated identity 1—* recipes
-authenticated identity 1—0..1 planningPreferences
-authenticated identity 1—* mealPlans 1—* mealSlots *—1 recipes
-authenticated identity 1—* shoppingLists 1—* shoppingListItems
-authenticated identity 1—* recipeEvents *—1 recipes
-authenticated identity 1—* guestClaims
+authenticated identity 1—1 users
+users 1—* recipes
+users 1—0..1 planningPreferences
+users 1—* mealPlans 1—* mealSlots *—1 recipes
+users 1—* shoppingLists 1—* shoppingListItems
+users 1—* recipeEvents *—1 recipes
+users 1—* guestClaims
 ```
 
 Cook is **not** a table. It is a cooking-mode view of `recipes`.

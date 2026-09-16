@@ -9,7 +9,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { requireAuthSubject } from "./lib/auth";
+import { requireUserId } from "./lib/auth";
 
 const maximumActiveListRecovery = 10;
 const maximumPlanSlots = 31;
@@ -67,8 +67,8 @@ export const getCurrent = query({
   args: {},
   returns: currentShoppingListValidator,
   handler: async (ctx) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const activePlans = await getActivePlans(ctx, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const activePlans = await getActivePlans(ctx, ownerId);
     if (activePlans.length === 0) {
       return { status: "no_active_plan" } as const;
     }
@@ -77,7 +77,7 @@ export const getCurrent = query({
     }
 
     const mealPlan = activePlans[0]!;
-    const activeLists = await getActiveLists(ctx, ownerSubject);
+    const activeLists = await getActiveLists(ctx, ownerId);
     const list = activeLists[0];
     if (list === undefined) {
       return {
@@ -123,8 +123,8 @@ export const generateFromCurrentPlan = mutation({
   args: {},
   returns: generateResultValidator,
   handler: async (ctx) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const activePlans = await getActivePlans(ctx, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const activePlans = await getActivePlans(ctx, ownerId);
     if (activePlans.length === 0) {
       return { status: "no_active_plan" } as const;
     }
@@ -148,7 +148,7 @@ export const generateFromCurrentPlan = mutation({
     }> = [];
     for (const mealSlot of mealSlots) {
       const recipe = await ctx.db.get(mealSlot.recipeId);
-      if (recipe === null || recipe.ownerSubject !== ownerSubject) {
+      if (recipe === null || recipe.ownerId !== ownerId) {
         return { status: "plan_unavailable" } as const;
       }
       recipes.push({
@@ -163,7 +163,7 @@ export const generateFromCurrentPlan = mutation({
       return { status: "list_too_large" } as const;
     }
 
-    const activeLists = await getActiveLists(ctx, ownerSubject);
+    const activeLists = await getActiveLists(ctx, ownerId);
     if (activeLists.length > maximumActiveListRecovery) {
       return { status: "too_many_active_lists" } as const;
     }
@@ -174,7 +174,7 @@ export const generateFromCurrentPlan = mutation({
     }
 
     const shoppingListId = await ctx.db.insert("shoppingLists", {
-      ownerSubject,
+      ownerId,
       mealPlanId: mealPlan._id,
       mealPlanUpdatedAt: mealPlan.updatedAt,
       status: "active",
@@ -186,7 +186,7 @@ export const generateFromCurrentPlan = mutation({
       const item = derivedItems[order]!;
       await ctx.db.insert("shoppingListItems", {
         shoppingListId,
-        ownerSubject,
+        ownerId,
         name: item.name,
         detailLines: item.detailLines,
         sourceRecipeIds: item.sourceRecipeIds,
@@ -199,7 +199,7 @@ export const generateFromCurrentPlan = mutation({
       });
     }
 
-    await enforceOwnerListLimit(ctx, ownerSubject, shoppingListId);
+    await enforceOwnerListLimit(ctx, ownerId, shoppingListId);
 
     return { status: "generated", shoppingListId } as const;
   },
@@ -209,8 +209,8 @@ export const setItemChecked = mutation({
   args: { itemId: v.id("shoppingListItems"), checked: v.boolean() },
   returns: itemMutationResultValidator,
   handler: async (ctx, { itemId, checked }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const editableItem = await getEditableItem(ctx, itemId, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
 
     const updatedAt = Date.now();
@@ -231,13 +231,9 @@ export const addItem = mutation({
     v.object({ status: v.literal("list_full") }),
   ),
   handler: async (ctx, { shoppingListId, name }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
+    const ownerId = await requireUserId(ctx);
     const list = await ctx.db.get(shoppingListId);
-    if (
-      list === null ||
-      list.ownerSubject !== ownerSubject ||
-      list.status !== "active"
-    ) {
+    if (list === null || list.ownerId !== ownerId || list.status !== "active") {
       return { status: "not_found" } as const;
     }
 
@@ -256,7 +252,7 @@ export const addItem = mutation({
     const updatedAt = Date.now();
     const itemId = await ctx.db.insert("shoppingListItems", {
       shoppingListId,
-      ownerSubject,
+      ownerId,
       name: preparedName,
       detailLines: [],
       sourceRecipeIds: [],
@@ -277,8 +273,8 @@ export const removeItem = mutation({
   args: { itemId: v.id("shoppingListItems") },
   returns: itemMutationResultValidator,
   handler: async (ctx, { itemId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const editableItem = await getEditableItem(ctx, itemId, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
 
     const updatedAt = Date.now();
@@ -295,8 +291,8 @@ export const restoreItem = mutation({
   args: { itemId: v.id("shoppingListItems") },
   returns: itemMutationResultValidator,
   handler: async (ctx, { itemId }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    const editableItem = await getEditableItem(ctx, itemId, ownerSubject);
+    const ownerId = await requireUserId(ctx);
+    const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
 
     const updatedAt = Date.now();
@@ -328,12 +324,12 @@ export const deleteExpired = internalMutation({
 
 async function getActivePlans(
   ctx: QueryCtx | MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   return await ctx.db
     .query("mealPlans")
     .withIndex("by_owner_and_status_and_updated_at", (q) =>
-      q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+      q.eq("ownerId", ownerId).eq("status", "active"),
     )
     .order("desc")
     .take(2);
@@ -341,12 +337,12 @@ async function getActivePlans(
 
 async function getActiveLists(
   ctx: QueryCtx | MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   return await ctx.db
     .query("shoppingLists")
     .withIndex("by_owner_and_status_and_updated_at", (q) =>
-      q.eq("ownerSubject", ownerSubject).eq("status", "active"),
+      q.eq("ownerId", ownerId).eq("status", "active"),
     )
     .order("desc")
     .take(maximumActiveListRecovery + 1);
@@ -355,17 +351,13 @@ async function getActiveLists(
 async function getEditableItem(
   ctx: MutationCtx,
   itemId: Id<"shoppingListItems">,
-  ownerSubject: string,
+  ownerId: Id<"users">,
 ) {
   const item = await ctx.db.get(itemId);
-  if (item === null || item.ownerSubject !== ownerSubject) return null;
+  if (item === null || item.ownerId !== ownerId) return null;
 
   const list = await ctx.db.get(item.shoppingListId);
-  if (
-    list === null ||
-    list.ownerSubject !== ownerSubject ||
-    list.status !== "active"
-  ) {
+  if (list === null || list.ownerId !== ownerId || list.status !== "active") {
     return null;
   }
   return { item, list };
@@ -373,14 +365,12 @@ async function getEditableItem(
 
 async function enforceOwnerListLimit(
   ctx: MutationCtx,
-  ownerSubject: string,
+  ownerId: Id<"users">,
   currentShoppingListId: Id<"shoppingLists">,
 ) {
   const retainedLists = await ctx.db
     .query("shoppingLists")
-    .withIndex("by_owner_and_updated_at", (q) =>
-      q.eq("ownerSubject", ownerSubject),
-    )
+    .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
     .order("desc")
     .take(maximumShoppingListsPerOwner + 1);
   const oldestOverflowList = retainedLists.at(-1);
