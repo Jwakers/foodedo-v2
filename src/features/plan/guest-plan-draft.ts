@@ -87,6 +87,40 @@ export async function ensureGuestPlanDraft({
   });
 }
 
+/**
+ * Opens the replacement-plan workflow with tomorrow as its fixed start date.
+ * A draft already started for that date is resumed so refreshes and repeat taps
+ * cannot discard the user's edits. Older drafts are replaced by this explicit
+ * “Start next plan” action.
+ */
+export async function beginNextGuestPlanDraft({
+  now = Date.now(),
+  planStartDate = tomorrowPlanDate(),
+  store = guestDraftStore(),
+}: {
+  now?: number;
+  planStartDate?: string;
+  store?: GuestDraftStore;
+} = {}): Promise<GuestDraftV1> {
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw);
+    if (existing?.planStartDate === planStartDate) {
+      return { draft: existing, write: false };
+    }
+
+    return {
+      draft: createGuestDraft({
+        catalogueVersion: standardCatalogue.version,
+        planStartDate,
+        catalogueMealIds,
+        now,
+        emptySlotIndexes: generationFreeDayIndexes,
+      }),
+      write: true,
+    };
+  });
+}
+
 export async function shuffleCurrentGuestPlanDraft({
   now = Date.now(),
   store = guestDraftStore(),

@@ -2,8 +2,10 @@
 
 import { useAuth } from "@clerk/react";
 import { useConvexAuth, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
@@ -12,6 +14,7 @@ import {
   ActiveWeek,
   type ActiveWeekPlanSummary,
 } from "@/features/plan/active-week";
+import { beginNextGuestPlanDraft } from "@/features/plan/guest-plan-draft";
 import { PlanReview } from "@/features/plan/plan-review";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
 
@@ -20,6 +23,7 @@ import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
  * metadata stays cheap; a previous week's slots load only when selected.
  */
 export function WeekPage() {
+  const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
   const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const currentPlan = useQuery(
@@ -33,6 +37,7 @@ export function WeekPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
   );
+  const [isStartingNextPlan, setIsStartingNextPlan] = useState(false);
   const selectedArchivedPlan = useQuery(
     api.mealPlans.getArchived,
     isAuthenticated && selectedPlanId !== null
@@ -88,6 +93,22 @@ export function WeekPage() {
       <ActiveWeek
         plan={selectedArchivedPlan ?? currentPlan}
         plans={plans}
+        isStartingNextPlan={isStartingNextPlan}
+        onStartNextPlan={async () => {
+          if (isStartingNextPlan) return;
+
+          setIsStartingNextPlan(true);
+          try {
+            await beginNextGuestPlanDraft();
+            router.push("/week/new");
+          } catch (error) {
+            console.error("Failed to start the next plan.", error);
+            toast.error(
+              "Foodedo couldn’t start your next plan. Check storage access and try again.",
+            );
+            setIsStartingNextPlan(false);
+          }
+        }}
         onSelectPlan={(mealPlanId) => {
           setSelectedPlanId(
             mealPlanId === currentPlan._id

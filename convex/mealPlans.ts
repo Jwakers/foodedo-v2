@@ -10,10 +10,7 @@ import {
   findStandardCatalogueMeal,
   standardCatalogue,
 } from "../src/lib/domain/standard-catalogue";
-import {
-  rotatingMealPlanSelectionStrategy,
-  selectRankedPlanCandidates,
-} from "../src/lib/domain/meal-plan-selection";
+import { selectRankedPlanCandidates } from "../src/lib/domain/meal-plan-selection";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -24,8 +21,6 @@ const maximumPlanSlots = 31;
 const maximumActivePlanRecovery = 10;
 const maximumPersonalPlanCandidates = 50;
 const maximumRecentArchivedPlans = 11;
-const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
-
 type PlanRecipeReference =
   | { type: "existing"; recipeId: Id<"recipes"> }
   | { type: "catalogue"; catalogueMealId: string };
@@ -147,11 +142,6 @@ const undoReplacementResultValidator = v.union(
   v.object({ status: v.literal("not_found") }),
   v.object({ status: v.literal("plan_changed") }),
 );
-
-const startNewResultValidator = v.object({
-  status: v.literal("started"),
-  mealPlanId: v.id("mealPlans"),
-});
 
 const resolveActivePlanConflictResultValidator = v.union(
   v.object({ status: v.literal("resolved") }),
@@ -433,40 +423,6 @@ export const undoPlanReplacement = mutation({
     await ctx.db.patch(previousPlan._id, { status: "active", updatedAt });
 
     return { status: "restored" } as const;
-  },
-});
-
-export const startNew = mutation({
-  args: { startDate: v.string() },
-  returns: startNewResultValidator,
-  handler: async (ctx, { startDate }) => {
-    const ownerSubject = await requireAuthSubject(ctx);
-    if (!isPlanDate(startDate)) {
-      throwInvalidPlan("The plan start date is invalid.");
-    }
-
-    const currentPlan = await getSingleActivePlan(ctx, ownerSubject);
-    const updatedAt = Date.now();
-    if (currentPlan !== null) {
-      await ctx.db.patch(currentPlan._id, {
-        status: "archived",
-        updatedAt,
-      });
-    }
-
-    const selectedMealIds = rotatingMealPlanSelectionStrategy({
-      candidateMealIds: catalogueMealIds,
-      numberOfMeals: GUEST_PLAN_DAYS,
-      offset: planDateOffset(startDate),
-    });
-    const mealPlanId = await createPlanFromCatalogueMeals(ctx, {
-      ownerSubject,
-      startDate,
-      catalogueMealIds: selectedMealIds,
-      createdAt: updatedAt,
-    });
-
-    return { status: "started", mealPlanId } as const;
   },
 });
 
@@ -878,31 +834,6 @@ function validateProposalRequest({
   }
 }
 
-async function createPlanFromCatalogueMeals(
-  ctx: MutationCtx,
-  {
-    ownerSubject,
-    startDate,
-    catalogueMealIds: selectedMealIds,
-    createdAt,
-  }: {
-    ownerSubject: string;
-    startDate: string;
-    catalogueMealIds: readonly string[];
-    createdAt: number;
-  },
-) {
-  return createPlanFromGuestMealChoices(ctx, {
-    ownerSubject,
-    startDate,
-    mealChoices: selectedMealIds.map((catalogueMealId, index) => ({
-      date: addDaysToPlanDate(startDate, index),
-      catalogueMealId,
-    })),
-    createdAt,
-  });
-}
-
 async function createPlanFromGuestMealChoices(
   ctx: MutationCtx,
   {
@@ -1005,11 +936,6 @@ async function createPlanFromRecipeChoices(
   }
 
   return mealPlanId;
-}
-
-function planDateOffset(planDate: string) {
-  const [year, month, day] = planDate.split("-").map(Number);
-  return Math.floor(Date.UTC(year!, month! - 1, day!) / 86_400_000);
 }
 
 function validateGuestPlan({

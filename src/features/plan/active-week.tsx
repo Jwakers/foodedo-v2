@@ -49,10 +49,14 @@ export function ActiveWeek({
   plan,
   plans,
   onSelectPlan,
+  onStartNextPlan,
+  isStartingNextPlan,
 }: {
   plan: ActiveWeekPlan;
   plans: ReadonlyArray<ActiveWeekPlanSummary>;
   onSelectPlan: (mealPlanId: string) => void;
+  onStartNextPlan: () => void | Promise<void>;
+  isStartingNextPlan: boolean;
 }) {
   const isArchived = plan.status === "archived";
   const rows = resolveActivePlanWeekRows({
@@ -155,6 +159,8 @@ export function ActiveWeek({
           </Button>
           <Button
             variant="inline"
+            disabled={isStartingNextPlan}
+            aria-busy={isStartingNextPlan}
             className={cn(
               "h-auto px-0 text-14",
               nearEnd
@@ -162,10 +168,14 @@ export function ActiveWeek({
                 : "font-medium text-graphite",
             )}
             onClick={() => {
-              markUnfinishedInteraction("Starting the next plan comes next.");
+              void onStartNextPlan();
             }}
           >
-            {nearEnd ? "Start next plan →" : "Start next plan"}
+            {isStartingNextPlan
+              ? "Starting next plan…"
+              : nearEnd
+                ? "Start next plan →"
+                : "Start next plan"}
           </Button>
         </div>
       )}

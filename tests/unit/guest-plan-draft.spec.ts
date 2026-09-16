@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  beginNextGuestPlanDraft,
   ensureGuestPlanDraft,
   acceptAndPrepareGuestPlanClaim,
   cancelPendingGuestPlanClaim,
@@ -144,6 +145,48 @@ test("ensure still creates a draft when storage is empty", async () => {
   expect(draft.planStartDate).toBe("2026-08-29");
   expect(draft.mealChoices).toHaveLength(7);
   expect(store.writes).toBe(1);
+});
+
+test("starts a replacement plan tomorrow and replaces an older draft", async () => {
+  const olderDraft = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-20",
+    catalogueMealIds,
+    now: 100,
+  });
+  const store = createMemoryStore(olderDraft);
+
+  const next = await beginNextGuestPlanDraft({
+    now: 200,
+    planStartDate: "2026-08-29",
+    store,
+  });
+
+  expect(next.planStartDate).toBe("2026-08-29");
+  expect(next.mealChoices).toHaveLength(7);
+  expect(next.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(next.createdAt).toBe(200);
+  expect(store.writes).toBe(1);
+});
+
+test("resumes an in-progress replacement plan for tomorrow", async () => {
+  const tomorrowDraft = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-29",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [0, 2],
+  });
+  const store = createMemoryStore(tomorrowDraft);
+
+  const resumed = await beginNextGuestPlanDraft({
+    now: 200,
+    planStartDate: "2026-08-29",
+    store,
+  });
+
+  expect(resumed).toEqual(tomorrowDraft);
+  expect(store.writes).toBe(0);
 });
 
 test("remove rejects empty storage without persisting a draft", async () => {
