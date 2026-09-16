@@ -14,6 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { api } from "../../../convex/_generated/api";
+import { AccountConnectionError } from "@/components/account-connection-error";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
 import { PlanAction } from "@/features/dashboard/plan-action";
@@ -23,7 +24,7 @@ import { recipeDetailPath } from "@/lib/routing/recipes";
 
 export function Dashboard() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
@@ -33,7 +34,7 @@ export function Dashboard() {
   // for Convex so Home never flashes the guest “Plan my week” state.
   const isCheckingPlan =
     !isLoaded ||
-    (isSignedIn && !isAuthenticated) ||
+    (isSignedIn && isConvexAuthLoading) ||
     (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) {
@@ -48,6 +49,10 @@ export function Dashboard() {
         <div className="mt-6 h-52 rounded-hero bg-mist sm:h-72" />
       </section>
     );
+  }
+
+  if (isSignedIn && !isAuthenticated) {
+    return <AccountConnectionError embedded />;
   }
 
   if (currentPlan) {

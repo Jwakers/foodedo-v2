@@ -2,84 +2,99 @@
 
 import { useAuth } from "@clerk/react";
 import { useConvexAuth, useQuery } from "convex/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useState } from "react";
 
 import { api } from "../../../convex/_generated/api";
-import { ActiveWeek } from "@/features/plan/active-week";
+import { AccountConnectionError } from "@/components/account-connection-error";
+import { Button } from "@/components/ui/button";
+import {
+  ActiveWeek,
+  type ActiveWeekPlanSummary,
+} from "@/features/plan/active-week";
 import { PlanReview } from "@/features/plan/plan-review";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
-import { PlanSavedSuccess } from "@/features/plan/plan-saved-success";
-import { useHasSeenFirstSaveSuccess } from "@/features/plan/plan-lifecycle-prefs";
-import { formatGuestPlanSummary } from "@/lib/domain/plan-display";
 
 /**
- * Week tab: guest/temporary review vs signed-in active week.
- * First save may surface the Shopping discovery success once.
+ * Week tab: guest/temporary review vs signed-in active week. Archived plan
+ * metadata stays cheap; a previous week's slots load only when selected.
  */
 export function WeekPage() {
-  return (
-    <Suspense fallback={<PlanReviewLoading />}>
-      <WeekPageContent />
-    </Suspense>
-  );
-}
-
-function WeekPageContent() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
-  const { isAuthenticated } = useConvexAuth();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const showFirstSave = searchParams.get("firstSave") === "1";
-  const recentPlans = useQuery(
-    api.mealPlans.getRecent,
+  const { isLoaded, isSignedIn } = useAuth();
+  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const currentPlan = useQuery(
+    api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
   );
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const hasSeenFirstSave = useHasSeenFirstSaveSuccess(userId);
-  const currentPlan = recentPlans?.find((plan) => plan.status === "active");
-  const selectablePlans =
-    currentPlan === undefined
-      ? (recentPlans ?? [])
-      : [
-          currentPlan,
-          ...(recentPlans ?? []).filter((plan) => plan._id !== currentPlan._id),
-        ];
-  const selectedPlan =
-    recentPlans?.find((plan) => plan._id === selectedPlanId) ?? currentPlan;
+  const archivedPlanSummaries = useQuery(
+    api.mealPlans.getRecentArchivedSummaries,
+    isAuthenticated ? {} : "skip",
+  );
+  const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
+    null,
+  );
+  const selectedArchivedPlan = useQuery(
+    api.mealPlans.getArchived,
+    isAuthenticated && selectedPlanId !== null
+      ? { mealPlanId: selectedPlanId }
+      : "skip",
+  );
 
   const isCheckingPlan =
     !isLoaded ||
-    (isSignedIn && !isAuthenticated) ||
-    (isAuthenticated && recentPlans === undefined);
-
-  useEffect(() => {
-    if (!showFirstSave || !hasSeenFirstSave) return;
-    router.replace("/week");
-  }, [hasSeenFirstSave, router, showFirstSave]);
+    (isSignedIn && isConvexAuthLoading) ||
+    (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) {
     return <PlanReviewLoading />;
   }
 
-  if (currentPlan) {
-    const plannedMealCount = currentPlan.mealSlots.filter(
-      (slot) => slot.status === "planned",
-    ).length;
-    const summary = formatGuestPlanSummary({
-      planStartDate: currentPlan.startDate,
-      plannedMealCount,
-    });
+  if (isSignedIn && !isAuthenticated) {
+    return <AccountConnectionError />;
+  }
 
-    if (showFirstSave && !hasSeenFirstSave) {
-      return <PlanSavedSuccess summary={summary} />;
+  if (currentPlan) {
+    if (selectedPlanId !== null && selectedArchivedPlan === undefined) {
+      return <PlanReviewLoading />;
     }
+
+    if (selectedPlanId !== null && selectedArchivedPlan === null) {
+      return (
+        <main className="mx-auto flex min-h-[45vh] w-full max-w-175 flex-col items-start justify-center px-page-inline py-10">
+          <h1 className="font-display text-30 font-semibold tracking-title text-ink">
+            That previous week is no longer available
+          </h1>
+          <p className="mt-2 text-15 text-graphite">
+            Your active week is unchanged.
+          </p>
+          <Button
+            className="mt-5"
+            onClick={() => {
+              setSelectedPlanId(null);
+            }}
+          >
+            Return to this week
+          </Button>
+        </main>
+      );
+    }
+
+    const plans: ActiveWeekPlanSummary[] = [
+      currentPlan,
+      ...(archivedPlanSummaries ?? []),
+    ];
 
     return (
       <ActiveWeek
-        plan={selectedPlan ?? currentPlan}
-        plans={selectablePlans}
-        onSelectPlan={setSelectedPlanId}
+        plan={selectedArchivedPlan ?? currentPlan}
+        plans={plans}
+        onSelectPlan={(mealPlanId) => {
+          setSelectedPlanId(
+            mealPlanId === currentPlan._id
+              ? null
+              : (mealPlanId as Id<"mealPlans">),
+          );
+        }}
       />
     );
   }

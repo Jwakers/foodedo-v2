@@ -16,7 +16,7 @@ import {
 } from "@/lib/domain/plan-display";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 
 type ActiveMealPlan = NonNullable<
   FunctionReturnType<typeof api.mealPlans.getCurrent>
@@ -113,7 +113,7 @@ function TonightFocus({
         <Button
           className="min-w-0 flex-1"
           onClick={() => {
-            temporaryFeedback("Cook mode comes next.");
+            markUnfinishedInteraction("Cook mode comes next.");
           }}
         >
           Cook this meal
@@ -123,7 +123,7 @@ function TonightFocus({
           variant="secondary"
           className="shrink-0 px-5"
           onClick={() => {
-            temporaryFeedback("Swapping tonight’s meal comes next.");
+            markUnfinishedInteraction("Swapping tonight’s meal comes next.");
           }}
         >
           Swap

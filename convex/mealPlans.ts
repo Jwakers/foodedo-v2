@@ -23,7 +23,7 @@ import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 const maximumPlanSlots = 31;
 const maximumActivePlanRecovery = 10;
 const maximumPersonalPlanCandidates = 50;
-const maximumRecentPlans = 12;
+const maximumRecentArchivedPlans = 11;
 const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
 
 type PlanRecipeReference =
@@ -72,6 +72,13 @@ const mealPlanViewValidator = v.object({
   status: v.union(v.literal("active"), v.literal("archived")),
   hasActivePlanConflict: v.boolean(),
   mealSlots: v.array(mealSlotViewValidator),
+});
+
+const archivedMealPlanSummaryValidator = v.object({
+  _id: v.id("mealPlans"),
+  startDate: v.string(),
+  endDate: v.string(),
+  status: v.literal("archived"),
 });
 
 const mealChoiceValidator = v.object({
@@ -168,59 +175,47 @@ export const getCurrent = query({
   },
 });
 
-/**
- * Bounded Week history. Archived plans are view-only in the client.
- */
-export const getRecent = query({
+/** Cheap bounded metadata for the Week history selector. */
+export const getRecentArchivedSummaries = query({
   args: {},
-  returns: v.array(mealPlanViewValidator),
+  returns: v.array(archivedMealPlanSummaryValidator),
   handler: async (ctx) => {
     const ownerSubject = await requireAuthSubject(ctx);
-    const [activePlanState, recentMealPlans] = await Promise.all([
-      getActivePlanState(ctx, ownerSubject),
-      ctx.db
-        .query("mealPlans")
-        .withIndex("by_owner_and_updated_at", (q) =>
-          q.eq("ownerSubject", ownerSubject),
-        )
-        .order("desc")
-        .take(maximumRecentPlans),
-    ]);
-    const activePlan = activePlanState.mealPlan;
-    const mergedMealPlans =
-      activePlan === null ||
-      recentMealPlans.some((mealPlan) => mealPlan._id === activePlan._id)
-        ? recentMealPlans
-        : [...recentMealPlans, activePlan];
-    mergedMealPlans.sort(
-      (left, right) =>
-        right.updatedAt - left.updatedAt ||
-        right._creationTime - left._creationTime,
-    );
+    const mealPlans = await ctx.db
+      .query("mealPlans")
+      .withIndex("by_owner_and_status_and_updated_at", (q) =>
+        q.eq("ownerSubject", ownerSubject).eq("status", "archived"),
+      )
+      .order("desc")
+      .take(maximumRecentArchivedPlans);
 
-    let mealPlans = mergedMealPlans.slice(0, maximumRecentPlans);
+    return mealPlans.map((mealPlan) => ({
+      _id: mealPlan._id,
+      startDate: mealPlan.startDate,
+      endDate: mealPlan.endDate,
+      status: "archived" as const,
+    }));
+  },
+});
+
+/** Hydrate one archived week only after the user selects it. */
+export const getArchived = query({
+  args: { mealPlanId: v.id("mealPlans") },
+  returns: v.union(mealPlanViewValidator, v.null()),
+  handler: async (ctx, { mealPlanId }) => {
+    const ownerSubject = await requireAuthSubject(ctx);
+    const mealPlan = await ctx.db.get(mealPlanId);
     if (
-      activePlan !== null &&
-      !mealPlans.some((mealPlan) => mealPlan._id === activePlan._id)
+      mealPlan === null ||
+      mealPlan.ownerSubject !== ownerSubject ||
+      mealPlan.status !== "archived"
     ) {
-      mealPlans = [
-        ...mealPlans.slice(0, maximumRecentPlans - 1),
-        activePlan,
-      ].sort(
-        (left, right) =>
-          right.updatedAt - left.updatedAt ||
-          right._creationTime - left._creationTime,
-      );
+      return null;
     }
 
-    return await Promise.all(
-      mealPlans.map(async (mealPlan) => {
-        return await buildMealPlanView(ctx, ownerSubject, mealPlan, {
-          hasActivePlanConflict:
-            mealPlan.status === "active" && activePlanState.hasConflict,
-        });
-      }),
-    );
+    return await buildMealPlanView(ctx, ownerSubject, mealPlan, {
+      hasActivePlanConflict: false,
+    });
   },
 });
 

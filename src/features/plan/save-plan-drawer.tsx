@@ -20,8 +20,8 @@ const saveBenefits = [
     description: "Your swaps and free days stay as you’ve set them",
   },
   {
-    title: "Shopping list ready",
-    description: "Built from this week and synced to your account",
+    title: "Ready for Shopping later",
+    description: "This saved week can become a list when Shopping is ready",
   },
   {
     title: "Come back anytime",
@@ -51,8 +51,7 @@ export function SavePlanDrawer({
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <DrawerTitle>Save this week</DrawerTitle>
             <DrawerDescription>
-              Sign in to keep this plan, sync your shopping list and come back
-              to it anytime.
+              Sign in to keep this exact plan and come back to it on any device.
             </DrawerDescription>
           </div>
           <DrawerClose asChild>

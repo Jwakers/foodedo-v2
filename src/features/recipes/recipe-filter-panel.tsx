@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 
 const matterChips = ["Budget friendly", "Under 30 min"] as const;
 const proteinChips = ["Chicken", "Beef", "Fish", "Meat-free"] as const;
@@ -66,7 +66,7 @@ export function RecipeFilterPanel({
             type="button"
             className="flex h-13 w-full items-center justify-between border-y border-border text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
             onClick={() => {
-              temporaryFeedback("Sort options come next.");
+              markUnfinishedInteraction("Sort options come next.");
             }}
           >
             <span className="text-14 font-semibold text-ink">Sort by</span>
@@ -97,7 +97,7 @@ export function RecipeFilterPanel({
         <Button
           className="w-full"
           onClick={() => {
-            temporaryFeedback(
+            markUnfinishedInteraction(
               "Applying filters comes next. Showing all matches for now.",
             );
             onApply();

@@ -4,19 +4,23 @@ import { Code2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import {
-  foodedoFeedbackEvent,
-  type FoodedoFeedbackDetail,
-} from "@/lib/ui/temporary-feedback";
+  unfinishedInteractionEvent,
+  type UnfinishedInteractionDetail,
+} from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
-const feedbackDurationMs = 5_000;
+const reminderDurationMs = 5_000;
 
-export function FeedbackViewport({ dockVisible }: { dockVisible: boolean }) {
+export function UnfinishedInteractionViewport({
+  dockVisible,
+}: {
+  dockVisible: boolean;
+}) {
   const [message, setMessage] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function clearFeedback() {
+    function clearReminder() {
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -24,20 +28,26 @@ export function FeedbackViewport({ dockVisible }: { dockVisible: boolean }) {
       setMessage(null);
     }
 
-    function handleFeedback(event: Event) {
-      const detail = (event as CustomEvent<FoodedoFeedbackDetail>).detail;
+    function handleUnfinishedInteraction(event: Event) {
+      const detail = (event as CustomEvent<UnfinishedInteractionDetail>).detail;
       if (!detail?.message) return;
 
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
       }
       setMessage(detail.message);
-      timeoutRef.current = setTimeout(clearFeedback, feedbackDurationMs);
+      timeoutRef.current = setTimeout(clearReminder, reminderDurationMs);
     }
 
-    window.addEventListener(foodedoFeedbackEvent, handleFeedback);
+    window.addEventListener(
+      unfinishedInteractionEvent,
+      handleUnfinishedInteraction,
+    );
     return () => {
-      window.removeEventListener(foodedoFeedbackEvent, handleFeedback);
+      window.removeEventListener(
+        unfinishedInteractionEvent,
+        handleUnfinishedInteraction,
+      );
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
       }
@@ -63,14 +73,14 @@ export function FeedbackViewport({ dockVisible }: { dockVisible: boolean }) {
       />
       <div className="min-w-0 flex-1">
         <p className="text-10 font-bold tracking-overline text-cadmium uppercase">
-          Dev note · unfinished
+          Dev reminder · unfinished
         </p>
         <p className="mt-1 text-13 leading-relaxed">{message}</p>
       </div>
       <button
         type="button"
-        aria-label="Dismiss message"
-        className="flex size-7 shrink-0 items-center justify-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+        aria-label="Dismiss reminder"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
         onClick={() => {
           if (timeoutRef.current !== null) {
             clearTimeout(timeoutRef.current);

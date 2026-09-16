@@ -4,7 +4,7 @@ import { EllipsisVertical, Share } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 export function RecipeOverflowMenu({
@@ -58,7 +58,11 @@ export function RecipeOverflowMenu({
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((value) => !value)}
       >
-        <EllipsisVertical aria-hidden="true" className="size-5" strokeWidth={2} />
+        <EllipsisVertical
+          aria-hidden="true"
+          className="size-5"
+          strokeWidth={2}
+        />
       </Button>
 
       {open ? (
@@ -71,7 +75,7 @@ export function RecipeOverflowMenu({
             className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-14 font-semibold text-ink hover:bg-mist focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-cadmium"
             onClick={() => {
               setOpen(false);
-              temporaryFeedback(`Sharing “${recipeTitle}” comes next.`);
+              markUnfinishedInteraction(`Sharing “${recipeTitle}” comes next.`);
               focusTrigger();
             }}
           >

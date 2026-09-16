@@ -23,7 +23,7 @@ import {
   findStandardCatalogueMeal,
   standardCatalogue,
 } from "@/lib/domain/standard-catalogue";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 
 const catalogueMatchCount = Math.max(standardCatalogue.meals.length - 1, 0);
 
@@ -71,7 +71,7 @@ export function PlanMealRow({
             variant="leaf"
             size="chip"
             onClick={() => {
-              temporaryFeedback("Adding a meal comes next.");
+              markUnfinishedInteraction("Adding a meal comes next.");
             }}
           >
             Add meal
@@ -252,7 +252,7 @@ function PlanMealActionsDrawer({
               isRemoving={isRemoving}
               onChooseForMe={() => {
                 setOpen(false);
-                temporaryFeedback("Choosing for you comes next.");
+                markUnfinishedInteraction("Choosing for you comes next.");
               }}
               onRemove={() => {
                 if (!onRemoveMeal || isRemoving) return;

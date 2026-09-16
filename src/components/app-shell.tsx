@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { AppHeader } from "@/components/app-header";
 import { AppNavigation } from "@/components/app-navigation";
 import { AppToaster } from "@/components/app-toaster";
-import { FeedbackViewport } from "@/components/feedback-viewport";
+import { UnfinishedInteractionViewport } from "@/components/unfinished-interaction-viewport";
 import { useShowAppChrome } from "@/components/use-home-entry-state";
 import { GuestPlanClaimResume } from "@/features/plan/guest-plan-claim";
 import {
@@ -33,7 +33,7 @@ function AppShellChrome({ children }: { children: ReactNode }) {
       <CatalogueSaveIntentResume />
       <AppToaster dockVisible={showDock} />
       {process.env.NODE_ENV === "development" ? (
-        <FeedbackViewport dockVisible={showDock} />
+        <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}
       <GuestPlanClaimResume />
       {showChrome ? <AppHeader /> : null}

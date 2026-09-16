@@ -30,6 +30,7 @@ pnpm lint
 pnpm typecheck
 pnpm format:check
 pnpm test:unit
+pnpm test:convex
 pnpm build
 pnpm build:ios:web
 pnpm test:e2e

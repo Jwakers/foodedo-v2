@@ -18,6 +18,14 @@ pnpm test:unit
 
 They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein-category validation, catalogue ID/slug uniqueness, version-scoped catalogue lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping. Keep the suite small. Do not assert catalogue size, release version numbers, or other content that changes as meals are added.
 
+Authenticated Convex lifecycle tests run against the official in-memory test backend:
+
+```bash
+pnpm test:convex
+```
+
+They cover guest-plan claiming, free days, idempotent retries, replacement of an existing active plan, and failure without partial writes. Keep these tests at the function boundary so authorization, validators, and atomic writes are exercised together.
+
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 
 - the app shell renders and exposes its primary navigation
@@ -28,7 +36,7 @@ Playwright is installed with a Chromium production smoke suite in `tests/e2e/app
 
 Do not assert transient headings, marketing copy, or visual composition merely because they are currently on screen. Add an E2E assertion when it proves a durable route or user job; add a unit test only when deterministic domain behaviour would otherwise be easy to regress.
 
-CI (`.github/workflows/ci.yml`) runs formatting, linting, typechecking, unit tests, the iOS static-export build, the regular Vercel web build, and the Chromium smoke suite on push/PR.
+CI (`.github/workflows/ci.yml`) runs formatting, linting, typechecking, unit and Convex integration tests, the iOS static-export build, the regular Vercel web build, and the Chromium smoke suite on push/PR.
 
 Local setup:
 
@@ -45,7 +53,7 @@ CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, an
 ## Upcoming
 
 - Manually verify Keep/save prompts resume automatically after email and Google sign-in on web and iOS without discarding local intent.
-- Add an authenticated integration harness for current-plan hydration, IndexedDB cleanup after acknowledgement, idempotent claim retry, occupied-date conflict, and cross-user isolation without storing real Clerk credentials in tests.
+- Extend the authenticated integration harness to cover current-plan hydration, IndexedDB cleanup after acknowledgement, and cross-user isolation without storing real Clerk credentials in tests.
 - Cover plan hydration with a deliberately unavailable recipe reference so corrupted historical data cannot crash the app shell.
 - Unauthenticated clients cannot read or mutate personal Convex data.
 - Clerk sign-in yields a Convex-authenticated session and the user webhook creates exactly one indexed user document.

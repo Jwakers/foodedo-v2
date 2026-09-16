@@ -11,7 +11,7 @@ import {
 } from "@/lib/domain/recipe-display";
 import { formatMealDurationLabel } from "@/lib/domain/plan-display";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 export type RecipeDetailPresentation = "page" | "swapPreview";
@@ -43,14 +43,14 @@ export function RecipeDetailContent({
       onStartCooking();
       return;
     }
-    temporaryFeedback("Cook mode comes next.");
+    markUnfinishedInteraction("Cook mode comes next.");
   };
   const handlePlanMeal = () => {
     if (onPlanMeal) {
       onPlanMeal();
       return;
     }
-    temporaryFeedback("Planning this meal comes next.");
+    markUnfinishedInteraction("Planning this meal comes next.");
   };
 
   return (

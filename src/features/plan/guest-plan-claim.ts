@@ -3,7 +3,7 @@
 import { useAuth, useClerk } from "@clerk/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -14,7 +14,6 @@ import {
   guestPlanClaimMutationArgs,
   readCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
-import { hasSeenFirstSaveSuccess } from "@/features/plan/plan-lifecycle-prefs";
 import {
   addDaysToPlanDate,
   GUEST_PLAN_DAYS,
@@ -32,7 +31,7 @@ type ClaimGuestDraftResult = FunctionReturnType<
  * open Clerk; signed-in users claim immediately when Convex auth is ready.
  */
 export function useSaveGuestPlan() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
   const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
@@ -76,7 +75,6 @@ export function useSaveGuestPlan() {
       await handleClaimResult(result, {
         router,
         submittedDraft: draft,
-        accountId: userId,
       });
     } catch (error) {
       console.error("Failed to save guest plan.", error);
@@ -105,7 +103,6 @@ export function GuestPlanClaimResume() {
     api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
   );
-  const pathname = usePathname();
   const router = useRouter();
   const isResumingRef = useRef(false);
   const didHydrateClearRef = useRef(false);
@@ -139,11 +136,7 @@ export function GuestPlanClaimResume() {
 
           if (guestDraftMatchesSavedPlan(draft, savedChoices)) {
             await clearClaimedGuestPlanDraft({ expectedDraft: draft });
-            if (pathname === "/week") {
-              navigateAfterSuccessfulClaim(router, userId);
-            } else {
-              toast.success("Your week is already saved to your account.");
-            }
+            navigateAfterSuccessfulClaim(router);
             return;
           }
         }
@@ -154,7 +147,6 @@ export function GuestPlanClaimResume() {
         await handleClaimResult(result, {
           router,
           submittedDraft: draft,
-          accountId: userId,
         });
       } catch (error) {
         console.error("Failed to resume guest plan claim.", error);
@@ -165,15 +157,7 @@ export function GuestPlanClaimResume() {
         isResumingRef.current = false;
       }
     })();
-  }, [
-    claimGuestDraft,
-    currentPlan,
-    isAuthenticated,
-    isLoading,
-    pathname,
-    router,
-    userId,
-  ]);
+  }, [claimGuestDraft, currentPlan, isAuthenticated, isLoading, router]);
 
   useEffect(() => {
     didHydrateClearRef.current = false;
@@ -219,11 +203,9 @@ async function handleClaimResult(
   {
     router,
     submittedDraft,
-    accountId,
   }: {
     router: ReturnType<typeof useRouter>;
     submittedDraft: GuestDraftV1;
-    accountId: string | null | undefined;
   },
 ) {
   switch (result.status) {
@@ -238,7 +220,7 @@ async function handleClaimResult(
             "Foodedo couldn’t clear the local copy yet, but your account plan is safe.",
         });
       }
-      navigateAfterSuccessfulClaim(router, accountId);
+      navigateAfterSuccessfulClaim(router);
       return;
     case "catalogue_unsupported":
       await cancelPendingGuestPlanClaim({ expectedDraft: submittedDraft });
@@ -255,13 +237,8 @@ async function handleClaimResult(
 
 function navigateAfterSuccessfulClaim(
   router: ReturnType<typeof useRouter>,
-  accountId: string | null | undefined,
 ): void {
-  if (!hasSeenFirstSaveSuccess(accountId)) {
-    router.replace("/week?firstSave=1");
-    return;
-  }
-  router.replace("/week");
+  router.replace("/week/saved");
 }
 
 function mealChoicesFromActivePlan({

@@ -38,12 +38,7 @@ The approved Swap Meal flow needs a small set of recipe selection facets. Time a
 
 ```ts
 type ProteinCategory =
-  | "chicken"
-  | "beef"
-  | "pork"
-  | "lamb"
-  | "fish"
-  | "meat-free";
+  "chicken" | "beef" | "pork" | "lamb" | "fish" | "meat-free";
 
 type RecipeSelectionMetadata = {
   proteinCategory: ProteinCategory;

@@ -1,14 +1,9 @@
 "use client";
 
-import { useAuth } from "@clerk/react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
-import {
-  dismissWeekSavedBanner,
-  useShouldShowWeekSavedBanner,
-} from "@/features/plan/plan-lifecycle-prefs";
 import {
   formatActivePlanEndSummary,
   formatGuestPlanSummary,
@@ -20,7 +15,7 @@ import {
 } from "@/lib/domain/plan-display";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 export type ActiveWeekPlan = {
@@ -41,6 +36,11 @@ export type ActiveWeekPlan = {
   }>;
 };
 
+export type ActiveWeekPlanSummary = Pick<
+  ActiveWeekPlan,
+  "_id" | "startDate" | "endDate" | "status"
+>;
+
 const standardMealsById = new Map(
   standardCatalogue.meals.map((meal) => [meal.id, meal] as const),
 );
@@ -51,10 +51,9 @@ export function ActiveWeek({
   onSelectPlan,
 }: {
   plan: ActiveWeekPlan;
-  plans: ReadonlyArray<ActiveWeekPlan>;
+  plans: ReadonlyArray<ActiveWeekPlanSummary>;
   onSelectPlan: (mealPlanId: string) => void;
 }) {
-  const { userId } = useAuth();
   const isArchived = plan.status === "archived";
   const rows = resolveActivePlanWeekRows({
     startDate: plan.startDate,
@@ -87,9 +86,6 @@ export function ActiveWeek({
           planStartDate: plan.startDate,
           plannedMealCount: plannedCount,
         });
-
-  const shouldShowSavedBanner = useShouldShowWeekSavedBanner(userId);
-  const showSavedBanner = !isArchived && shouldShowSavedBanner;
 
   return (
     <main
@@ -134,27 +130,6 @@ export function ActiveWeek({
         </div>
       ) : null}
 
-      {showSavedBanner ? (
-        <div className="mt-5 flex items-start gap-2.5 rounded-md border border-leaf-soft bg-leaf-soft p-3">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-leaf text-leaf-soft">
-            <Check aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
-          </div>
-          <p className="min-w-0 flex-1 text-14 text-ink">
-            Saved to your account. Swap any meal — Shopping stays in sync.
-          </p>
-          <button
-            type="button"
-            aria-label="Dismiss saved confirmation"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full text-graphite transition-colors hover:bg-leaf/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-            onClick={() => {
-              dismissWeekSavedBanner(userId);
-            }}
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
-        </div>
-      ) : null}
-
       <ul className="mt-5">
         {rows.map((row) => (
           <li key={row.date}>
@@ -173,7 +148,7 @@ export function ActiveWeek({
             variant="inline"
             className="h-auto px-0 text-14 font-medium text-graphite"
             onClick={() => {
-              temporaryFeedback("Replanning this week comes next.");
+              markUnfinishedInteraction("Replanning this week comes next.");
             }}
           >
             Replan this week
@@ -187,7 +162,7 @@ export function ActiveWeek({
                 : "font-medium text-graphite",
             )}
             onClick={() => {
-              temporaryFeedback("Starting the next plan comes next.");
+              markUnfinishedInteraction("Starting the next plan comes next.");
             }}
           >
             {nearEnd ? "Start next plan →" : "Start next plan"}
@@ -213,10 +188,10 @@ function ActiveWeekMealRow({
       readOnly={readOnly}
       recipeHref={recipeHref}
       onRemoveMeal={() => {
-        temporaryFeedback("Removing a saved meal comes next.");
+        markUnfinishedInteraction("Removing a saved meal comes next.");
       }}
       onReplaceMeal={() => {
-        temporaryFeedback("Swapping a saved meal comes next.");
+        markUnfinishedInteraction("Swapping a saved meal comes next.");
       }}
     />
   );

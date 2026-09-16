@@ -24,7 +24,7 @@ import {
 } from "@/lib/domain/plan-display";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 const quickFilterLabels = [
@@ -93,7 +93,7 @@ export function PlanMealSwap({
           aria-label="Search recipes"
           className="flex h-12 w-full shrink-0 items-center gap-2.5 rounded-md bg-mist px-3.5 text-left transition-colors hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
           onClick={() => {
-            temporaryFeedback("Recipe search comes next.");
+            markUnfinishedInteraction("Recipe search comes next.");
           }}
         >
           <Search
@@ -127,7 +127,7 @@ export function PlanMealSwap({
                   aria-pressed={active}
                   onClick={() => {
                     if (label === "All") {
-                      temporaryFeedback("Recipe filters come next.");
+                      markUnfinishedInteraction("Recipe filters come next.");
                       return;
                     }
                     push(planMealDrawerViews.filters);

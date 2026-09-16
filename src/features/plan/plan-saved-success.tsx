@@ -1,27 +1,12 @@
-"use client";
-
-import { useAuth } from "@clerk/react";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { markFirstSaveSuccessSeen } from "@/features/plan/plan-lifecycle-prefs";
-import { temporaryFeedback } from "@/lib/ui/temporary-feedback";
+import { ButtonLink } from "@/components/ui/button";
 
 /**
- * First successfully saved plan — introduces Shopping once, then Week.
+ * Successful plan save — confirms the durable week before returning to Week.
  * See `src/features/shop/README.md` discovery contract.
  */
 export function PlanSavedSuccess({ summary }: { summary: string }) {
-  const { userId } = useAuth();
-  const router = useRouter();
-
-  function goToWeek() {
-    markFirstSaveSuccessSeen(userId);
-    temporaryFeedback("Shopping list comes next.");
-    router.replace("/week");
-  }
-
   return (
     <main
       aria-labelledby="plan-saved-heading"
@@ -59,9 +44,9 @@ export function PlanSavedSuccess({ summary }: { summary: string }) {
           Your saved meals will be ready to turn into one list when Shopping is
           available.
         </p>
-        <Button className="mt-4 w-full" onClick={goToWeek}>
+        <ButtonLink href="/week" className="mt-4 w-full">
           Continue to my week →
-        </Button>
+        </ButtonLink>
       </div>
 
       <p className="mt-4 text-center text-13 text-graphite">

@@ -23,10 +23,7 @@ export function GuestPlanReviewChromeProvider({
   children: ReactNode;
 }) {
   const [hideDock, setHideDock] = useState(false);
-  const value = useMemo(
-    () => ({ hideDock, setHideDock }),
-    [hideDock],
-  );
+  const value = useMemo(() => ({ hideDock, setHideDock }), [hideDock]);
 
   return (
     <GuestPlanReviewChromeContext.Provider value={value}>

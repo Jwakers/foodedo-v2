@@ -12,7 +12,6 @@ export function AppToaster({ dockVisible }: { dockVisible: boolean }) {
       position="bottom-center"
       offset={{ bottom: bottomOffset }}
       mobileOffset={{ bottom: bottomOffset }}
-      closeButton
       toastOptions={{
         duration: 5_000,
         classNames: {
@@ -22,7 +21,6 @@ export function AppToaster({ dockVisible }: { dockVisible: boolean }) {
           description: "text-13 text-graphite",
           actionButton: "bg-ink text-paper",
           cancelButton: "bg-mist text-ink",
-          closeButton: "border-border bg-paper text-ink",
         },
       }}
     />

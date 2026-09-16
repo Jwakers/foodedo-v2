@@ -1,6 +1,6 @@
 # Shopping List MVP
 
-Status: **approved and frozen for implementation**.
+Status: **approved for implementation; the current route remains a placeholder**.
 
 The Shopping List is entirely derived from the user's active meal plan. It is not a second source of truth and does not support manual list creation or maintenance.
 
@@ -24,19 +24,19 @@ active meal plan
 - Closing ingredient provenance returns to the exact prior Shopping List scroll position.
 - A completed list remains visible, reviewable, and reversible. Use one restrained completion message with lightweight progress information.
 
-## Plan synchronisation
+## Plan changes
 
-- Changes to the active plan update the derived Shopping List automatically.
-- Preserve checked state for ingredients that still exist after an update wherever logically possible.
-- `Shopping list updated` feedback is temporary contextual feedback, not permanent page content.
-- Once temporary feedback clears, restore the standard Shopping header and list state.
+- A Shopping List is a snapshot of the active plan revision used to create it.
+- Changes to the active plan make an existing list visibly out of date; they do not silently overwrite checks or manual edits.
+- Rebuilding is explicit. It archives the older list and creates a fresh list from the current plan.
+- Do not promise automatic synchronisation until a later product and architecture decision defines safe checked-state reconciliation.
 
 ## Discovery contract
 
-- The first successfully saved plan teaches Shopping once through the approved `Your week is sorted` success state.
-- Future plan saves return directly to the canonical active-plan experience. At most, show a short-lived confirmation.
-- The permanent Home entry is `Shopping list ready`, `18 items · from 7 planned meals`, and `View list`.
-- Use `View list` consistently for the Home Shopping action.
+- A successful save may use the dedicated `Your week is sorted` route to confirm that the plan is durable.
+- While Shopping remains a placeholder, success and Home copy must describe it as upcoming rather than ready or synced.
+- Once the Shopping route is implemented, the permanent Home entry may become `Shopping list ready`, `18 items · from 7 planned meals`, and `View list`.
+- Use `View list` consistently after that action is available.
 
 ## MVP boundary
 
