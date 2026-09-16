@@ -11,6 +11,7 @@ import {
   shuffleCurrentGuestPlanDraft,
 } from "../../src/features/plan/guest-plan-draft";
 import {
+  acceptGuestPlan,
   countPlannedGuestMeals,
   createGuestDraft,
   type GuestDraftV1,
@@ -147,14 +148,8 @@ test("ensure still creates a draft when storage is empty", async () => {
   expect(store.writes).toBe(1);
 });
 
-test("starts a replacement plan tomorrow and replaces an older draft", async () => {
-  const olderDraft = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
-    planStartDate: "2026-08-20",
-    catalogueMealIds,
-    now: 100,
-  });
-  const store = createMemoryStore(olderDraft);
+test("starts a replacement plan tomorrow when no editable draft exists", async () => {
+  const store = createMemoryStore(null);
 
   const next = await beginNextGuestPlanDraft({
     now: 200,
@@ -169,7 +164,34 @@ test("starts a replacement plan tomorrow and replaces an older draft", async () 
   expect(store.writes).toBe(1);
 });
 
-test("resumes an in-progress replacement plan for tomorrow", async () => {
+test("moves an editable replacement plan to tomorrow without losing choices", async () => {
+  const inProgressDraft = createGuestDraft({
+    catalogueVersion: standardCatalogue.version,
+    planStartDate: "2026-08-28",
+    catalogueMealIds,
+    now: 100,
+    emptySlotIndexes: [0, 2],
+  });
+  const store = createMemoryStore(inProgressDraft);
+
+  const resumed = await beginNextGuestPlanDraft({
+    now: 200,
+    planStartDate: "2026-08-29",
+    store,
+  });
+
+  expect(resumed.planStartDate).toBe("2026-08-29");
+  expect(resumed.mealChoices.map((choice) => choice.catalogueMealId)).toEqual(
+    inProgressDraft.mealChoices.map((choice) => choice.catalogueMealId),
+  );
+  expect(resumed.mealChoices[0]?.date).toBe("2026-08-29");
+  expect(resumed.mealChoices[6]?.date).toBe("2026-09-04");
+  expect(resumed.createdAt).toBe(100);
+  expect(resumed.updatedAt).toBe(200);
+  expect(store.writes).toBe(1);
+});
+
+test("reuses an editable replacement plan already starting tomorrow", async () => {
   const tomorrowDraft = createGuestDraft({
     catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
@@ -187,6 +209,30 @@ test("resumes an in-progress replacement plan for tomorrow", async () => {
 
   expect(resumed).toEqual(tomorrowDraft);
   expect(store.writes).toBe(0);
+});
+
+test("starts fresh instead of reopening an already accepted draft", async () => {
+  const acceptedDraft = acceptGuestPlan(
+    createGuestDraft({
+      catalogueVersion: standardCatalogue.version,
+      planStartDate: "2026-08-28",
+      catalogueMealIds,
+      now: 100,
+    }),
+    150,
+  );
+  const store = createMemoryStore(acceptedDraft);
+
+  const next = await beginNextGuestPlanDraft({
+    now: 200,
+    planStartDate: "2026-08-29",
+    store,
+  });
+
+  expect(next.planStartDate).toBe("2026-08-29");
+  expect(next.acceptedAt).toBeUndefined();
+  expect(next.createdAt).toBe(200);
+  expect(store.writes).toBe(1);
 });
 
 test("remove rejects empty storage without persisting a draft", async () => {

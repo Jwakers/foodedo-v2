@@ -7,6 +7,7 @@ import {
   createGuestDraft,
   GUEST_DRAFT_SCHEMA_VERSION,
   readGuestDraftV1,
+  rebaseGuestPlanStartDate,
   requestGuestPlanClaim,
   setGuestPlanMeal,
   shuffleGuestPlan,
@@ -89,9 +90,9 @@ export async function ensureGuestPlanDraft({
 
 /**
  * Opens the replacement-plan workflow with tomorrow as its fixed start date.
- * A draft already started for that date is resumed so refreshes and repeat taps
- * cannot discard the user's edits. Older drafts are replaced by this explicit
- * “Start next plan” action.
+ * An editable draft keeps its meal choices and is moved to tomorrow when the
+ * calendar date changes. An accepted draft represents an earlier save attempt
+ * and is replaced with a fresh plan.
  */
 export async function beginNextGuestPlanDraft({
   now = Date.now(),
@@ -104,8 +105,9 @@ export async function beginNextGuestPlanDraft({
 } = {}): Promise<GuestDraftV1> {
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw);
-    if (existing?.planStartDate === planStartDate) {
-      return { draft: existing, write: false };
+    if (existing !== null && existing.acceptedAt === undefined) {
+      const rebased = rebaseGuestPlanStartDate(existing, planStartDate, now);
+      return { draft: rebased, write: rebased !== existing };
     }
 
     return {

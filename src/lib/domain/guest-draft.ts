@@ -103,6 +103,29 @@ export function countPlannedGuestMeals(draft: GuestDraftV1) {
     .length;
 }
 
+/** Moves an editable plan window without changing its selected meals. */
+export function rebaseGuestPlanStartDate(
+  draft: GuestDraftV1,
+  planStartDate: string,
+  now: number,
+): GuestDraftV1 {
+  requirePlanDate(planStartDate);
+  requireTimestamp(now, "Update time");
+  if (draft.planStartDate === planStartDate) return draft;
+
+  return {
+    schemaVersion: draft.schemaVersion,
+    catalogueVersion: draft.catalogueVersion,
+    planStartDate,
+    mealChoices: draft.mealChoices.map((choice, index) => ({
+      date: addDaysToPlanDate(planStartDate, index),
+      catalogueMealId: choice.catalogueMealId,
+    })),
+    createdAt: draft.createdAt,
+    updatedAt: now,
+  };
+}
+
 export function readGuestDraftV1(
   input: unknown,
   {
