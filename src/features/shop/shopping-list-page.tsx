@@ -55,6 +55,7 @@ const categoryLabels: Record<ShoppingListCategory, string> = {
   dairy_and_eggs: "Dairy & eggs",
   pantry: "Pantry",
   bakery: "Bakery",
+  other: "Other",
 };
 
 const optimisticRemovedAt = Number.MAX_SAFE_INTEGER;

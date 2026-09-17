@@ -325,5 +325,88 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
   await expect(page.getByRole("button", { name: /Report/i })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Serves / }).click();
-  await expect(page.getByText("Quantity scaling comes next")).toBeVisible();
+  await expect(
+    page.getByText("Ingredient quantities update automatically"),
+  ).toBeVisible();
+});
+
+test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
+  await page.goto("/recipes/baked-chicken-and-rice-casserole");
+  await page.getByRole("button", { name: /Serves 4/ }).click();
+  await page.getByRole("button", { name: "Increase servings" }).click();
+  await expect(page.getByRole("button", { name: /Serves 5/ })).toBeVisible();
+  await expect(page.getByText("500 g")).toBeVisible();
+
+  await page.getByRole("button", { name: "Start cooking" }).first().click();
+  await expect(page).toHaveURL(/\/cook\?servings=5$/);
+  await expect(
+    page.getByRole("heading", { name: "Get everything ready" }),
+  ).toBeVisible();
+  await expect(page.getByText("Preheat oven to 180°C")).toBeVisible();
+  await expect(page.getByText("Scaled for 5")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
+    0,
+  );
+
+  const firstPreparation = page.getByRole("button", {
+    name: /Mark chicken breast prepared/,
+  });
+  await firstPreparation.click();
+  await expect(firstPreparation).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
+  await expect(page.getByText("Step 1 of 3")).toBeVisible();
+  await page.getByRole("button", { name: "Previous" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Get everything ready" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Start 45 min timer" }).click();
+  await expect(page.getByText(/Casserole · (45 min|44:59)/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Show ingredients" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Ingredients" }),
+  ).toBeVisible();
+  await expect(page.getByText("Scaled for 5")).toBeVisible();
+  await expect(page.getByText("500 g")).toBeVisible();
+  await expect(page.getByText(/Casserole ·/)).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Ingredients" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Casserole ·/)).toBeVisible();
+  await page.getByRole("button", { name: "Back to cooking" }).click();
+  await expect(page.getByText("Step 3 of 3")).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Timer options for Casserole" })
+    .click();
+  await expect(page.getByRole("menu", { name: /Timer options/ })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Restart timer" }).click();
+  await expect(page.getByText(/Casserole · (45 min|44:59)/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Dinner’s ready" }).click();
+  await expect(page.getByText("Time to serve.")).toBeVisible();
+  await page.getByRole("button", { name: "Back to recipe" }).click();
+  await page.getByRole("button", { name: "Start cooking" }).first().click();
+  await expect(
+    page.getByRole("heading", { name: "Get everything ready" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Mark chicken breast prepared/ }),
+  ).toHaveAttribute("aria-pressed", "false");
+});
+
+test("only shows Cook preheat when the recipe explicitly authors it", async ({
+  page,
+}) => {
+  await page.goto("/recipes/lemon-herb-grilled-chicken/cook");
+  await expect(
+    page.getByRole("heading", { name: "Get everything ready" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Preheat oven to/)).toHaveCount(0);
 });

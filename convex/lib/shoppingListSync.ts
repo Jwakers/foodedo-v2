@@ -3,6 +3,7 @@ import {
   shoppingItemIdentityKey,
   SHOPPING_LIST_LIMITS,
 } from "../../src/lib/domain/shopping-list";
+import { scaleIngredients } from "../../src/lib/domain/ingredient-scaling";
 import type { RecipeIngredientLine } from "../../src/lib/domain/recipes";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
@@ -73,10 +74,14 @@ export async function syncShoppingListForPlan(
       recipeId: recipe._id,
       title: recipe.title,
       date: mealSlot.date,
-      ingredients: recipe.ingredients.map((ingredient) => ({
-        ...ingredient,
-        shoppingCategory: ingredient.shoppingCategory ?? "pantry",
-      })),
+      ingredients: scaleIngredients(
+        recipe.ingredients.map((ingredient) => ({
+          ...ingredient,
+          shoppingCategory: ingredient.shoppingCategory ?? "other",
+        })),
+        recipe.servings,
+        mealPlan.servings ?? 2,
+      ),
     });
   }
 
@@ -123,7 +128,7 @@ export async function syncShoppingListForPlan(
       manualItems.push(item);
       continue;
     }
-    const key = shoppingItemIdentityKey(item.name, item.category ?? "pantry");
+    const key = shoppingItemIdentityKey(item.name, item.category ?? "other");
     const matchingItems = derivedByKey.get(key) ?? [];
     matchingItems.push(item);
     derivedByKey.set(key, matchingItems);

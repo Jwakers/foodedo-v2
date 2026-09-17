@@ -447,7 +447,7 @@ async function shoppingItemView(
     name: item.name,
     displayName:
       item.displayName ?? formatShoppingItemDisplayName(item.name, sources),
-    category: item.category ?? ("pantry" as const),
+    category: item.category ?? ("other" as const),
     detailLines: item.detailLines,
     sources,
     origin: item.origin,
@@ -486,7 +486,7 @@ async function reconstructLegacySources(
   }
 
   const itemName = normaliseIngredientName(item.name);
-  const itemCategory = item.category ?? "pantry";
+  const itemCategory = item.category ?? "other";
   const sources: Array<{
     recipeId: Id<"recipes">;
     recipeTitle: string;
@@ -499,7 +499,7 @@ async function reconstructLegacySources(
     if (recipe === null) continue;
     for (const ingredient of recipe.ingredients) {
       if (normaliseIngredientName(ingredient.name) !== itemName) continue;
-      if ((ingredient.shoppingCategory ?? "pantry") !== itemCategory) continue;
+      if ((ingredient.shoppingCategory ?? "other") !== itemCategory) continue;
       sources.push({
         recipeId: recipe._id,
         recipeTitle: recipe.title,

@@ -7,6 +7,15 @@ export function recipeDetailPath(slug: string): string {
   return `/recipes/${slug}`;
 }
 
+export function recipeCookPath(slug: string, servings?: number): string {
+  const path = `${recipeDetailPath(slug)}/cook`;
+  return servings === undefined ? path : `${path}?servings=${servings}`;
+}
+
+export function isCookPath(pathname: string): boolean {
+  return /^\/recipes\/[^/]+\/cook$/.test(pathname);
+}
+
 export function isRecipesSectionPath(pathname: string): boolean {
   return pathname === "/recipes" || pathname.startsWith("/recipes/");
 }

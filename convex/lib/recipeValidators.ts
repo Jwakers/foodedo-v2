@@ -6,6 +6,7 @@ export const shoppingCategoryValidator = v.union(
   v.literal("dairy_and_eggs"),
   v.literal("pantry"),
   v.literal("bakery"),
+  v.literal("other"),
 );
 
 export const recipeIngredientValidator = v.object({
@@ -31,6 +32,20 @@ export const recipeIngredientInputValidator = v.object({
 export const recipeStepValidator = v.object({
   id: v.string(),
   text: v.string(),
+  timerCues: v.optional(
+    v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        durationSeconds: v.number(),
+      }),
+    ),
+  ),
+});
+
+export const recipePreheatValidator = v.object({
+  appliance: v.literal("oven"),
+  temperatureC: v.number(),
 });
 
 export const proteinCategoryValidator = v.union(
@@ -60,6 +75,7 @@ export const recipeContentFields = {
   // prepareRecipeContent still requires proteinCategory for new writes.
   proteinCategory: v.optional(proteinCategoryValidator),
   costBand: v.optional(costBandValidator),
+  preheat: v.optional(recipePreheatValidator),
   imageSrc: v.optional(v.string()),
 };
 

@@ -6,26 +6,19 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
-/**
- * Servings disclosure UI only — does not scale ingredient quantities yet.
- */
 export function RecipeServingsControl({
   servings,
+  onServingsChange,
   durationLabel,
   className,
 }: {
   servings: number;
+  onServingsChange: (servings: number) => void;
   durationLabel?: string | null;
   className?: string;
 }) {
   const panelId = useId();
   const [open, setOpen] = useState(false);
-  const [displayServings, setDisplayServings] = useState(servings);
-  const [prevServings, setPrevServings] = useState(servings);
-  if (servings !== prevServings) {
-    setPrevServings(servings);
-    setDisplayServings(servings);
-  }
 
   return (
     <div className={cn("flex flex-col gap-2.5", className)}>
@@ -33,12 +26,12 @@ export function RecipeServingsControl({
         {durationLabel ? <span>{durationLabel}&nbsp;·&nbsp;</span> : null}
         <Button
           variant="inline"
-          className="h-auto gap-1 text-14 font-medium"
+          className="min-h-11 gap-1 px-1 text-14 font-medium"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
         >
-          Serves {displayServings}
+          Serves {servings}
           <ChevronDown
             aria-hidden="true"
             className={cn(
@@ -57,16 +50,18 @@ export function RecipeServingsControl({
         >
           <div className="flex flex-col gap-0.5">
             <p className="text-14 font-semibold text-ink">Servings</p>
-            <p className="text-11 text-graphite">Quantity scaling comes next</p>
+            <p className="text-11 text-graphite">
+              Ingredient quantities update automatically
+            </p>
           </div>
           <div className="flex items-center gap-1.5">
             <Button
               variant="counter"
               className="rounded-surface"
               aria-label="Decrease servings"
-              disabled={displayServings <= 1}
+              disabled={servings <= 1}
               onClick={() => {
-                setDisplayServings((value) => Math.max(1, value - 1));
+                onServingsChange(Math.max(1, servings - 1));
               }}
             >
               <Minus aria-hidden="true" className="size-4" strokeWidth={2} />
@@ -75,14 +70,15 @@ export function RecipeServingsControl({
               className="min-w-4.5 text-center text-16 font-semibold text-ink"
               aria-live="polite"
             >
-              {displayServings}
+              {servings}
             </span>
             <Button
               variant="counter"
               className="rounded-surface"
               aria-label="Increase servings"
+              disabled={servings >= 1_000}
               onClick={() => {
-                setDisplayServings((value) => value + 1);
+                onServingsChange(Math.min(1_000, servings + 1));
               }}
             >
               <Plus aria-hidden="true" className="size-4" strokeWidth={2} />

@@ -2,6 +2,7 @@
 
 import { CalendarPlus, Play } from "lucide-react";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RecipeServingsControl } from "@/features/recipes/recipe-servings-control";
@@ -10,9 +11,12 @@ import {
   formatIngredientName,
 } from "@/lib/domain/recipe-display";
 import { formatMealDurationLabel } from "@/lib/domain/plan-display";
+import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
+import { recipeCookPath } from "@/lib/routing/recipes";
+import { useRouter } from "next/navigation";
 
 export type RecipeDetailPresentation = "page" | "swapPreview";
 
@@ -33,6 +37,25 @@ export function RecipeDetailContent({
   onStartCooking?: () => void;
   onPlanMeal?: () => void;
 }) {
+  const router = useRouter();
+  const [servingSelection, setServingSelection] = useState(() => ({
+    recipeSlug: meal.slug,
+    servings: meal.servings ?? 1,
+  }));
+  if (servingSelection.recipeSlug !== meal.slug) {
+    setServingSelection({
+      recipeSlug: meal.slug,
+      servings: meal.servings ?? 1,
+    });
+  }
+  const selectedServings =
+    servingSelection.recipeSlug === meal.slug
+      ? servingSelection.servings
+      : (meal.servings ?? 1);
+  const ingredients = useMemo(
+    () => scaleIngredients(meal.ingredients, meal.servings, selectedServings),
+    [meal.ingredients, meal.servings, selectedServings],
+  );
   const durationLabel = formatMealDurationLabel(
     meal.prepMinutes,
     meal.cookMinutes,
@@ -43,7 +66,7 @@ export function RecipeDetailContent({
       onStartCooking();
       return;
     }
-    markUnfinishedInteraction("Cook mode comes next.");
+    router.push(recipeCookPath(meal.slug, selectedServings));
   };
   const handlePlanMeal = () => {
     if (onPlanMeal) {
@@ -78,7 +101,10 @@ export function RecipeDetailContent({
 
         {meal.servings != null ? (
           <RecipeServingsControl
-            servings={meal.servings}
+            servings={selectedServings}
+            onServingsChange={(servings) =>
+              setServingSelection({ recipeSlug: meal.slug, servings })
+            }
             durationLabel={durationLabel}
           />
         ) : durationLabel ? (
@@ -106,8 +132,8 @@ export function RecipeDetailContent({
           </Button>
           <Button
             type="button"
-            variant="secondary"
-            className="h-11 w-full border-0 font-semibold shadow-none"
+            variant="ghost"
+            className="w-full"
             onClick={handlePlanMeal}
           >
             <CalendarPlus
@@ -132,12 +158,11 @@ export function RecipeDetailContent({
             Ingredients
           </h2>
           <p className="text-12 text-graphite">
-            {meal.ingredients.length}{" "}
-            {meal.ingredients.length === 1 ? "item" : "items"}
+            {ingredients.length} {ingredients.length === 1 ? "item" : "items"}
           </p>
         </div>
         <ul>
-          {meal.ingredients.map((line) => (
+          {ingredients.map((line) => (
             <li
               key={line.id}
               className="flex min-h-11 items-start gap-3 border-b border-border py-2"

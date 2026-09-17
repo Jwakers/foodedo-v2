@@ -4,12 +4,20 @@ import {
   isRecipeDetailPath,
   isRecipesSectionPath,
   parseRecipeDetailSlug,
+  recipeCookPath,
   recipeDetailPath,
 } from "@/lib/routing/recipes";
 
 test("builds catalogue detail hrefs", () => {
   expect(recipeDetailPath("lemon-herb-grilled-chicken")).toBe(
     "/recipes/lemon-herb-grilled-chicken",
+  );
+});
+
+test("builds Cook paths with an optional serving selection", () => {
+  expect(recipeCookPath("tomato-pasta")).toBe("/recipes/tomato-pasta/cook");
+  expect(recipeCookPath("tomato-pasta", 6)).toBe(
+    "/recipes/tomato-pasta/cook?servings=6",
   );
 });
 

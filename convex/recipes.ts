@@ -237,6 +237,7 @@ function toRecipeView(recipe: Doc<"recipes">) {
       ? {}
       : { proteinCategory: recipe.proteinCategory }),
     ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
+    ...(recipe.preheat === undefined ? {} : { preheat: recipe.preheat }),
     ...(recipe.imageSrc === undefined ? {} : { imageSrc: recipe.imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),

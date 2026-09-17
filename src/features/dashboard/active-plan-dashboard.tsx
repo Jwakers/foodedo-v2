@@ -15,7 +15,7 @@ import {
   type ActivePlanMealSlot,
 } from "@/lib/domain/plan-display";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import { recipeCookPath, recipeDetailPath } from "@/lib/routing/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 
 type ActiveMealPlan = NonNullable<
@@ -110,15 +110,19 @@ function TonightFocus({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          className="min-w-0 flex-1"
-          onClick={() => {
-            markUnfinishedInteraction("Cook mode comes next.");
-          }}
-        >
-          Cook this meal
-          <ArrowRight aria-hidden="true" className="size-4.5" />
-        </Button>
+        {meal.catalogueMealSlug ? (
+          <ButtonLink
+            className="min-w-0 flex-1"
+            href={recipeCookPath(meal.catalogueMealSlug)}
+          >
+            Cook this meal
+            <ArrowRight aria-hidden="true" className="size-4.5" />
+          </ButtonLink>
+        ) : (
+          <Button className="min-w-0 flex-1" disabled>
+            Cook this meal
+          </Button>
+        )}
         <Button
           variant="secondary"
           className="shrink-0 px-5"

@@ -1,11 +1,12 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ComponentProps } from "react";
+import type { ComponentProps, ComponentPropsWithRef } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
 /**
  * Primary / secondary bake in the default filled measure.
+ * `ghost` is secondary’s filled measure without border or background.
  * `leaf` + `chip` is the empty plan-day “Add meal” control.
  * `quiet` + `icon` is the meal-row ellipsis.
  * `ghost` + `headerIcon` is the plain drawer-stack Back / Close control.
@@ -30,7 +31,8 @@ export const buttonVariants = cva(
         inline: "gap-1 text-ink disabled:text-graphite",
         leaf: "justify-center bg-leaf text-paper hover:opacity-90",
         quiet: "justify-center bg-mist text-graphite hover:bg-border",
-        ghost: "justify-center text-ink hover:bg-mist",
+        ghost:
+          "h-12 justify-center gap-2 rounded-compact px-page-inline text-ink text-sm hover:bg-mist disabled:text-graphite",
         filter:
           "h-9.5 shrink-0 justify-center whitespace-nowrap rounded-full border border-border px-3.5 text-13 font-medium text-ink hover:bg-mist aria-pressed:border-transparent aria-pressed:bg-ink aria-pressed:text-paper",
         choice:
@@ -45,7 +47,7 @@ export const buttonVariants = cva(
         chip: "h-6.5 whitespace-nowrap rounded-sm px-2.5 text-10 font-semibold",
         icon: "size-8 shrink-0 justify-center rounded-sm",
         // Plain 44px control used by drawer-stack headers.
-        headerIcon: "size-11 shrink-0 justify-center rounded-full",
+        headerIcon: "size-11 shrink-0 justify-center rounded-full p-0",
         // List-row trailing icon (Shopping remove / details) — pair with ghost.
         rowIcon: "h-14 w-11 shrink-0 justify-center rounded-sm p-0",
         // Circular open-filters control beside filter chips (Paper: 38×42).
@@ -89,10 +91,12 @@ export function Button({
   size,
   className,
   type = "button",
+  ref,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & ButtonVariantProps) {
+}: ComponentPropsWithRef<"button"> & ButtonVariantProps) {
   return (
     <button
+      ref={ref}
       type={type}
       className={buttonClassName({ variant, size, className })}
       {...props}

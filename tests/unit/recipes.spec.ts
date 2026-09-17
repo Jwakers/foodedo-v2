@@ -9,6 +9,7 @@ import {
   findStandardCatalogueMealBySlug,
   standardCatalogue,
 } from "../../src/lib/domain/standard-catalogue";
+import { scaleIngredientLine } from "../../src/lib/domain/ingredient-scaling";
 
 const validRecipe = {
   title: "Tomato pasta",
@@ -92,6 +93,59 @@ test("requires every ingredient to have a shopping category", () => {
       ],
     }),
   ).toThrow(RecipeValidationError);
+});
+
+test("validates authored Cook Mode preheat and timer cues", () => {
+  const prepared = prepareRecipeContent({
+    ...validRecipe,
+    preheat: { appliance: "oven", temperatureC: 200 },
+    steps: [
+      {
+        id: "step-1",
+        text: "Bake.",
+        timerCues: [{ id: "bake", label: "Bake", durationSeconds: 900 }],
+      },
+    ],
+  });
+  expect(prepared.preheat?.temperatureC).toBe(200);
+  expect(prepared.steps[0]?.timerCues?.[0]?.durationSeconds).toBe(900);
+});
+
+test("rejects timer cue IDs duplicated across recipe steps", () => {
+  expect(() =>
+    prepareRecipeContent({
+      ...validRecipe,
+      steps: [
+        {
+          id: "step-1",
+          text: "Simmer.",
+          timerCues: [{ id: "cook", label: "Simmer", durationSeconds: 300 }],
+        },
+        {
+          id: "step-2",
+          text: "Rest.",
+          timerCues: [{ id: "cook", label: "Rest", durationSeconds: 60 }],
+        },
+      ],
+    }),
+  ).toThrow("Recipe timer cue IDs must be unique.");
+});
+
+test("scales safe numeric quantities but leaves ambiguous authored amounts intact", () => {
+  const ingredient = validRecipe.ingredients[0]!;
+  expect(
+    scaleIngredientLine({ ...ingredient, quantity: "½" }, 2, 4).quantity,
+  ).toBe("1");
+  expect(
+    scaleIngredientLine({ ...ingredient, quantity: "250" }, 4, 2).quantity,
+  ).toBe("125");
+  expect(
+    scaleIngredientLine({ ...ingredient, quantity: "0.01" }, 100, 1).quantity,
+  ).toBe("0.0001");
+  expect(
+    scaleIngredientLine({ ...ingredient, quantity: "1.234" }, 1, 1).quantity,
+  ).toBe("1.23");
+  expect(scaleIngredientLine(ingredient, 2, 4).quantity).toBe("1 × 400g");
 });
 
 test("rejects catalogue meals that share an ID or slug", () => {

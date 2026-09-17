@@ -1,9 +1,10 @@
 const databaseName = "foodedo";
-const databaseVersion = 2;
+const databaseVersion = 3;
 
 export const localObjectStores = {
   guestDrafts: "guest-drafts",
   authIntents: "auth-intents",
+  cookSessions: "cook-sessions",
 } as const;
 
 export function openFoodedoDatabase() {

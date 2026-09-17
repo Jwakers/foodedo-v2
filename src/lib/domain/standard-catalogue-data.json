@@ -154,6 +154,7 @@
       "prepMinutes": 10,
       "cookMinutes": 45,
       "proteinCategory": "chicken",
+      "preheat": { "appliance": "oven", "temperatureC": 180 },
       "imageSrc": "/images/catalogue/baked-chicken-and-rice-casserole.png",
       "ingredients": [
         {
@@ -220,7 +221,10 @@
         },
         {
           "id": "step-3",
-          "text": "Add rice and bake: Stir in the rice and pour over the chicken stock. Add the peas, bring to a simmer, then cover with a tight-fitting lid and bake for 45 minutes until the rice is tender and has absorbed the liquid. Fluff with a fork and serve."
+          "text": "Add rice and bake: Stir in the rice and pour over the chicken stock. Add the peas, bring to a simmer, then cover with a tight-fitting lid and bake for 45 minutes until the rice is tender and has absorbed the liquid. Fluff with a fork and serve.",
+          "timerCues": [
+            { "id": "bake", "label": "Casserole", "durationSeconds": 2700 }
+          ]
         }
       ]
     },
@@ -233,6 +237,7 @@
       "prepMinutes": 15,
       "cookMinutes": 30,
       "proteinCategory": "chicken",
+      "preheat": { "appliance": "oven", "temperatureC": 200 },
       "imageSrc": "/images/catalogue/mediterranean-chicken-bake.png",
       "ingredients": [
         {
@@ -297,7 +302,10 @@
         },
         {
           "id": "step-3",
-          "text": "Add tomatoes and bake: Add the canned tomatoes, olives, garlic, mixed herbs, and the remaining oil. Stir around the chicken and bake uncovered for 30 minutes until the chicken is cooked through and the sauce is bubbling."
+          "text": "Add tomatoes and bake: Add the canned tomatoes, olives, garlic, mixed herbs, and the remaining oil. Stir around the chicken and bake uncovered for 30 minutes until the chicken is cooked through and the sauce is bubbling.",
+          "timerCues": [
+            { "id": "bake", "label": "Chicken bake", "durationSeconds": 1800 }
+          ]
         },
         {
           "id": "step-4",
@@ -1691,6 +1699,7 @@
       "prepMinutes": 20,
       "cookMinutes": 30,
       "proteinCategory": "fish",
+      "preheat": { "appliance": "oven", "temperatureC": 200 },
       "imageSrc": "/images/catalogue/fish-pie.png",
       "ingredients": [
         {
@@ -1757,7 +1766,11 @@
         },
         {
           "id": "step-3",
-          "text": "Top with mash and bake: Spoon or pipe the mash over the fish mixture. Bake for 25–30 minutes until golden and bubbling. Rest for 5 minutes before serving."
+          "text": "Top with mash and bake: Spoon or pipe the mash over the fish mixture. Bake for 25–30 minutes until golden and bubbling. Rest for 5 minutes before serving.",
+          "timerCues": [
+            { "id": "bake", "label": "Fish pie", "durationSeconds": 1500 },
+            { "id": "rest", "label": "Rest", "durationSeconds": 300 }
+          ]
         }
       ]
     },
@@ -1770,6 +1783,7 @@
       "prepMinutes": 10,
       "cookMinutes": 20,
       "proteinCategory": "fish",
+      "preheat": { "appliance": "oven", "temperatureC": 180 },
       "imageSrc": "/images/catalogue/oven-baked-cod-with-tomato-and-basil.png",
       "ingredients": [
         {
@@ -1818,7 +1832,10 @@
         },
         {
           "id": "step-2",
-          "text": "Bake and serve: Bake for 15–20 minutes until the cod is opaque and flakes easily. Rest for 1–2 minutes, then scatter with basil and serve with the tomato juices."
+          "text": "Bake and serve: Bake for 15–20 minutes until the cod is opaque and flakes easily. Rest for 1–2 minutes, then scatter with basil and serve with the tomato juices.",
+          "timerCues": [
+            { "id": "bake", "label": "Cod", "durationSeconds": 900 }
+          ]
         }
       ]
     },
@@ -1910,6 +1927,7 @@
       "prepMinutes": 15,
       "cookMinutes": 30,
       "proteinCategory": "meat-free",
+      "preheat": { "appliance": "oven", "temperatureC": 200 },
       "imageSrc": "/images/catalogue/veggie-stuffed-sweet-potatoes.png",
       "ingredients": [
         {
@@ -1975,7 +1993,14 @@
       "steps": [
         {
           "id": "step-1",
-          "text": "Roast the sweet potatoes: Preheat the oven to 200°C (180°C fan). Halve the sweet potatoes lengthways, drizzle with olive oil and a pinch of salt, and place cut-side down on a baking tray. Roast for 30–35 minutes until tender."
+          "text": "Roast the sweet potatoes: Preheat the oven to 200°C (180°C fan). Halve the sweet potatoes lengthways, drizzle with olive oil and a pinch of salt, and place cut-side down on a baking tray. Roast for 30–35 minutes until tender.",
+          "timerCues": [
+            {
+              "id": "roast",
+              "label": "Sweet potatoes",
+              "durationSeconds": 1800
+            }
+          ]
         },
         {
           "id": "step-2",
@@ -2449,6 +2474,7 @@
       "prepMinutes": 10,
       "cookMinutes": 25,
       "proteinCategory": "meat-free",
+      "preheat": { "appliance": "oven", "temperatureC": 200 },
       "imageSrc": "/images/catalogue/roasted-vegetable-and-hummus-wrap.png",
       "ingredients": [
         {
@@ -2500,7 +2526,14 @@
       "steps": [
         {
           "id": "step-1",
-          "text": "Roast the vegetables: Preheat the oven to 200°C (180°C fan). Toss the bell peppers, aubergine, and courgette with the olive oil, salt, and pepper on a baking tray. Spread in a single layer and roast for 25 minutes until tender and slightly charred."
+          "text": "Roast the vegetables: Preheat the oven to 200°C (180°C fan). Toss the bell peppers, aubergine, and courgette with the olive oil, salt, and pepper on a baking tray. Spread in a single layer and roast for 25 minutes until tender and slightly charred.",
+          "timerCues": [
+            {
+              "id": "roast",
+              "label": "Roasted vegetables",
+              "durationSeconds": 1500
+            }
+          ]
         },
         {
           "id": "step-2",

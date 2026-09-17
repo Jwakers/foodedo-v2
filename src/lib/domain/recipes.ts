@@ -13,6 +13,8 @@ export const RECIPE_LIMITS = {
   steps: 100,
   stepId: 64,
   stepText: 2_000,
+  timerCueId: 64,
+  timerCueLabel: 160,
   servings: 1_000,
   minutes: 10_080,
   imageSrc: 240,
@@ -39,6 +41,7 @@ export const SHOPPING_CATEGORIES = [
   "dairy_and_eggs",
   "pantry",
   "bakery",
+  "other",
 ] as const;
 
 export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
@@ -55,6 +58,18 @@ export type RecipeIngredientLine = {
 export type RecipeStep = {
   id: string;
   text: string;
+  timerCues?: RecipeTimerCue[];
+};
+
+export type RecipePreheat = {
+  appliance: "oven";
+  temperatureC: number;
+};
+
+export type RecipeTimerCue = {
+  id: string;
+  label: string;
+  durationSeconds: number;
 };
 
 export type RecipeContent = {
@@ -67,6 +82,7 @@ export type RecipeContent = {
   cookMinutes?: number;
   proteinCategory: ProteinCategory;
   costBand?: CostBand;
+  preheat?: RecipePreheat;
   imageSrc?: string;
 };
 
@@ -125,6 +141,7 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     RECIPE_LIMITS.imageSrc,
   );
   const costBand = optionalCostBand(input.costBand);
+  const preheat = optionalPreheat(input.preheat);
 
   return {
     title: requiredText(input.title, "Title", RECIPE_LIMITS.title),
@@ -136,6 +153,7 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     ...(cookMinutes === undefined ? {} : { cookMinutes }),
     proteinCategory: requiredProteinCategory(input.proteinCategory),
     ...(costBand === undefined ? {} : { costBand }),
+    ...(preheat === undefined ? {} : { preheat }),
     ...(imageSrc === undefined ? {} : { imageSrc }),
   };
 }
@@ -212,10 +230,51 @@ function prepareSteps(steps: RecipeStep[]): RecipeStep[] {
   boundedList(steps, "Steps", 1, RECIPE_LIMITS.steps);
   uniqueIds(steps, "Step");
 
-  return steps.map((step) => ({
+  const prepared = steps.map((step) => ({
     id: requiredText(step.id, "Step ID", RECIPE_LIMITS.stepId),
     text: requiredText(step.text, "Step text", RECIPE_LIMITS.stepText),
+    ...(step.timerCues === undefined
+      ? {}
+      : { timerCues: prepareTimerCues(step.timerCues) }),
   }));
+  uniqueValues(
+    prepared.flatMap((step) => step.timerCues?.map((cue) => cue.id) ?? []),
+    "Recipe timer cue IDs",
+  );
+  return prepared;
+}
+
+function prepareTimerCues(timerCues: RecipeTimerCue[]) {
+  boundedList(timerCues, "Timer cues", 0, RECIPE_LIMITS.steps);
+  uniqueIds(timerCues, "Timer cue");
+  return timerCues.map((cue) => ({
+    id: requiredText(cue.id, "Timer cue ID", RECIPE_LIMITS.timerCueId),
+    label: requiredText(
+      cue.label,
+      "Timer cue label",
+      RECIPE_LIMITS.timerCueLabel,
+    ),
+    durationSeconds: requiredPositiveWholeNumber(
+      cue.durationSeconds,
+      "Timer duration",
+      86_400,
+    ),
+  }));
+}
+
+function optionalPreheat(value: RecipePreheat | undefined) {
+  if (value === undefined) return undefined;
+  if (value.appliance !== "oven") {
+    throw new RecipeValidationError("Preheat appliance must be oven.");
+  }
+  return {
+    appliance: "oven" as const,
+    temperatureC: requiredPositiveWholeNumber(
+      value.temperatureC,
+      "Preheat temperature",
+      300,
+    ),
+  };
 }
 
 function requiredText(value: string, label: string, maximum: number) {
@@ -262,6 +321,19 @@ function optionalWholeNumber(
   return value;
 }
 
+function requiredPositiveWholeNumber(
+  value: number,
+  label: string,
+  maximum: number,
+) {
+  if (!Number.isInteger(value) || value < 1 || value > maximum) {
+    throw new RecipeValidationError(
+      `${label} must be a whole number between 1 and ${maximum}.`,
+    );
+  }
+  return value;
+}
+
 function requiredSlug(value: string) {
   const slug = requiredText(
     value,
@@ -288,7 +360,7 @@ function requiredProteinCategory(value: ProteinCategory): ProteinCategory {
 function requiredShoppingCategory(value: ShoppingCategory): ShoppingCategory {
   if (!SHOPPING_CATEGORIES.includes(value)) {
     throw new RecipeValidationError(
-      "Shopping category must be fruit and veg, meat and fish, dairy and eggs, pantry, or bakery.",
+      "Shopping category must be fruit and veg, meat and fish, dairy and eggs, pantry, bakery, or other.",
     );
   }
   return value;
