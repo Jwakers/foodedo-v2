@@ -3,7 +3,7 @@
 import { ChevronRight, Ellipsis, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -65,17 +65,17 @@ export function PlanMealRow({
           </p>
         </div>
 
-        {readOnly ? null : (
-          <Button
-            type="button"
-            variant="leaf"
-            size="chip"
-            onClick={() => {
-              markUnfinishedInteraction("Adding a meal comes next.");
-            }}
-          >
-            Add meal
-          </Button>
+        {readOnly || !onReplaceMeal ? null : (
+          <PlanMealActionsDrawer
+            date={row.date}
+            mealTitle="Add a meal"
+            onReplaceMeal={onReplaceMeal}
+            trigger={
+              <Button type="button" variant="leaf" size="chip">
+                Add meal
+              </Button>
+            }
+          />
         )}
       </div>
     );
@@ -171,9 +171,21 @@ function PlannedMealRow({
 
       {readOnly ? null : (
         <PlanMealActionsDrawer
-          row={row}
+          date={row.date}
+          mealTitle={row.meal.title}
+          currentMeal={row.meal}
           onRemoveMeal={onRemoveMeal}
           onReplaceMeal={onReplaceMeal}
+          trigger={
+            <Button
+              type="button"
+              variant="quiet"
+              size="icon"
+              aria-label={`Actions for ${row.meal.title}`}
+            >
+              <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
+            </Button>
+          }
         />
       )}
     </div>
@@ -181,16 +193,22 @@ function PlannedMealRow({
 }
 
 function PlanMealActionsDrawer({
-  row,
+  date,
+  mealTitle,
+  currentMeal,
   onRemoveMeal,
   onReplaceMeal,
+  trigger,
 }: {
-  row: Extract<GuestPlanMealRow, { kind: "planned" }>;
+  date: string;
+  mealTitle: string;
+  currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
   onRemoveMeal?: (date: string) => Promise<unknown> | void;
   onReplaceMeal?: (
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  trigger: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [stackKey, setStackKey] = useState(0);
@@ -217,7 +235,7 @@ function PlanMealActionsDrawer({
       void (async () => {
         setIsSwapping(true);
         try {
-          await onReplaceMeal(row.date, catalogueMealId);
+          await onReplaceMeal(date, catalogueMealId);
           setOpen(false);
         } catch (error) {
           console.error("Failed to swap guest plan meal.", error);
@@ -229,54 +247,53 @@ function PlanMealActionsDrawer({
         }
       })();
     },
-    [isSwapping, onReplaceMeal, row.date],
+    [date, isSwapping, onReplaceMeal],
   );
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
-      <DrawerTrigger asChild>
-        <Button
-          type="button"
-          variant="quiet"
-          size="icon"
-          aria-label={`Actions for ${row.meal.title}`}
-        >
-          <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
-        </Button>
-      </DrawerTrigger>
+      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="max-h-[min(92dvh,52rem)]">
         <DrawerStack key={stackKey} rootId={planMealDrawerViews.actions}>
           <DrawerStackView id={planMealDrawerViews.actions} layout="hug">
             <MealActionsPane
-              mealTitle={row.meal.title}
+              mealTitle={mealTitle}
               isRemoving={isRemoving}
               onChooseForMe={() => {
                 setOpen(false);
                 markUnfinishedInteraction("Choosing for you comes next.");
               }}
-              onRemove={() => {
-                if (!onRemoveMeal || isRemoving) return;
-                void (async () => {
-                  setIsRemoving(true);
-                  setOpen(false);
-                  try {
-                    await onRemoveMeal(row.date);
-                  } catch (error) {
-                    console.error("Failed to remove guest plan meal.", error);
-                    toast.error(
-                      "Foodedo couldn’t remove that meal. Check storage access and try again.",
-                    );
-                  } finally {
-                    setIsRemoving(false);
-                  }
-                })();
-              }}
+              onRemove={
+                onRemoveMeal
+                  ? () => {
+                      if (isRemoving) return;
+                      void (async () => {
+                        setIsRemoving(true);
+                        setOpen(false);
+                        try {
+                          await onRemoveMeal(date);
+                        } catch (error) {
+                          console.error(
+                            "Failed to remove guest plan meal.",
+                            error,
+                          );
+                          toast.error(
+                            "Foodedo couldn’t remove that meal. Check storage access and try again.",
+                          );
+                        } finally {
+                          setIsRemoving(false);
+                        }
+                      })();
+                    }
+                  : undefined
+              }
             />
           </DrawerStackView>
 
           <DrawerStackView id={planMealDrawerViews.swap} layout="fill">
             <SwapPane
-              row={row}
+              date={date}
+              currentMeal={currentMeal}
               isSwapping={isSwapping}
               onSwap={runSwap}
               onOpenPreview={setPreviewMealId}
@@ -311,7 +328,7 @@ function MealActionsPane({
   mealTitle: string;
   isRemoving: boolean;
   onChooseForMe: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   const { push } = useDrawerStack();
 
@@ -327,12 +344,14 @@ function MealActionsPane({
 }
 
 function SwapPane({
-  row,
+  date,
+  currentMeal,
   isSwapping,
   onSwap,
   onOpenPreview,
 }: {
-  row: Extract<GuestPlanMealRow, { kind: "planned" }>;
+  date: string;
+  currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
   isSwapping: boolean;
   onSwap: (catalogueMealId: string) => void;
   onOpenPreview: (catalogueMealId: string) => void;
@@ -341,7 +360,8 @@ function SwapPane({
 
   return (
     <PlanMealSwap
-      row={row}
+      date={date}
+      currentMeal={currentMeal}
       isSwapping={isSwapping}
       onSwap={onSwap}
       onOpenPreview={(catalogueMealId) => {

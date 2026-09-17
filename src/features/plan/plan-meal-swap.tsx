@@ -20,7 +20,6 @@ import {
   formatPlanWeekdayLong,
   formatPlanWeekdayShort,
   formatProteinCategoryLabel,
-  type GuestPlanMealRow,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { standardCatalogue } from "@/lib/domain/standard-catalogue";
@@ -35,58 +34,68 @@ const quickFilterLabels = [
 ] as const;
 
 export function PlanMealSwap({
-  row,
+  date,
+  currentMeal,
   isSwapping = false,
   onSwap,
   onOpenPreview,
 }: {
-  row: Extract<GuestPlanMealRow, { kind: "planned" }>;
+  date: string;
+  currentMeal?: CatalogueMeal;
   isSwapping?: boolean;
   onSwap: (catalogueMealId: string) => Promise<unknown> | void;
   onOpenPreview: (catalogueMealId: string) => void;
 }) {
   const { push } = useDrawerStack();
   const candidates = standardCatalogue.meals.filter(
-    (meal) => meal.id !== row.meal.id,
+    (meal) => meal.id !== currentMeal?.id,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedMeal =
     candidates.find((meal) => meal.id === selectedId) ?? null;
 
-  const weekdayLong = formatPlanWeekdayLong(row.date);
-  const weekdayShort = formatPlanWeekdayShort(row.date);
+  const weekdayLong = formatPlanWeekdayLong(date);
+  const weekdayShort = formatPlanWeekdayShort(date);
 
   return (
     <>
       <DrawerStackHeader
-        title={`Swap ${weekdayLong}’s meal`}
+        title={
+          currentMeal
+            ? `Swap ${weekdayLong}’s meal`
+            : `Choose ${weekdayLong}’s meal`
+        }
         description="Choose a better fit for your week"
         closeLabel="Close recipe picker"
       />
 
       <DrawerBody className="flex min-h-0 flex-1 flex-col gap-0 pb-4">
-        <div className="flex shrink-0 items-center gap-3 pb-4">
-          <div className="relative h-12.5 w-14.5 shrink-0 overflow-hidden rounded-sm bg-mist">
-            {row.meal.imageSrc ? (
-              <Image
-                src={row.meal.imageSrc}
-                alt=""
-                fill
-                sizes="58px"
-                className="object-cover"
-              />
-            ) : null}
+        {currentMeal ? (
+          <div className="flex shrink-0 items-center gap-3 pb-4">
+            <div className="relative h-12.5 w-14.5 shrink-0 overflow-hidden rounded-sm bg-mist">
+              {currentMeal.imageSrc ? (
+                <Image
+                  src={currentMeal.imageSrc}
+                  alt=""
+                  fill
+                  sizes="58px"
+                  className="object-cover"
+                />
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="text-12 font-semibold tracking-label text-cadmium uppercase">
+                Replacing
+              </p>
+              <p className="truncate text-15 font-semibold text-ink">
+                {currentMeal.title}
+              </p>
+            </div>
+            <span className="shrink-0 text-13 text-graphite">
+              {weekdayShort}
+            </span>
           </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="text-12 font-semibold tracking-label text-cadmium uppercase">
-              Replacing
-            </p>
-            <p className="truncate text-15 font-semibold text-ink">
-              {row.meal.title}
-            </p>
-          </div>
-          <span className="shrink-0 text-13 text-graphite">{weekdayShort}</span>
-        </div>
+        ) : null}
 
         <Button
           variant="search"
@@ -176,7 +185,9 @@ export function PlanMealSwap({
           }}
         >
           <span className="truncate">
-            {selectedMeal ? `Swap in ${selectedMeal.title}` : "Choose a recipe"}
+            {selectedMeal
+              ? `${currentMeal ? "Swap in" : "Add"} ${selectedMeal.title}`
+              : "Choose a recipe"}
           </span>
           <ArrowRight aria-hidden="true" className="size-4.5 shrink-0" />
         </Button>

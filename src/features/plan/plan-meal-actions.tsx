@@ -23,7 +23,7 @@ export function PlanMealActions({
   isRemoving?: boolean;
   onChooseRecipe: () => void;
   onChooseForMe: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   return (
     <>
@@ -68,19 +68,26 @@ export function PlanMealActions({
           onClick={onChooseForMe}
         />
 
-        <div className="h-px shrink-0 bg-border" role="separator" />
-
-        <MealActionRow
-          icon={
-            <Trash2 aria-hidden="true" className="size-3.5" strokeWidth={1.8} />
-          }
-          iconClassName="bg-cadmium-soft text-cadmium"
-          title="Remove from plan"
-          titleClassName="text-cadmium"
-          disabled={isRemoving}
-          busy={isRemoving}
-          onClick={onRemove}
-        />
+        {onRemove ? (
+          <>
+            <div className="h-px shrink-0 bg-border" role="separator" />
+            <MealActionRow
+              icon={
+                <Trash2
+                  aria-hidden="true"
+                  className="size-3.5"
+                  strokeWidth={1.8}
+                />
+              }
+              iconClassName="bg-cadmium-soft text-cadmium"
+              title="Remove from plan"
+              titleClassName="text-cadmium"
+              disabled={isRemoving}
+              busy={isRemoving}
+              onClick={onRemove}
+            />
+          </>
+        ) : null}
       </DrawerBody>
     </>
   );

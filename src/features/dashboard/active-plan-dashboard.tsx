@@ -6,7 +6,6 @@ import Link from "next/link";
 
 import type { FunctionReturnType } from "convex/server";
 
-import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   formatPlanWeekdayUpper,
@@ -16,7 +15,7 @@ import {
 } from "@/lib/domain/plan-display";
 import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
 import { recipeCookPath, recipeDetailPath } from "@/lib/routing/recipes";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
+import { api } from "../../../convex/_generated/api";
 
 type ActiveMealPlan = NonNullable<
   FunctionReturnType<typeof api.mealPlans.getCurrent>
@@ -123,15 +122,6 @@ function TonightFocus({
             Cook this meal
           </Button>
         )}
-        <Button
-          variant="secondary"
-          className="shrink-0 px-5"
-          onClick={() => {
-            markUnfinishedInteraction("Swapping tonight’s meal comes next.");
-          }}
-        >
-          Swap
-        </Button>
       </div>
     </article>
   );
