@@ -48,7 +48,7 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 The private Capture unit: something an account wants to cook. `ownerId` is a typed `users` document ID resolved server-side from the verified Clerk identity; it is never accepted from a client.
 
-Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds a required `proteinCategory` (`chicken` | `beef` | `pork` | `lamb` | `fish` | `meat-free`), optional `costBand` (`budget` | `standard` | `premium`), explicit oven preheat, and authored step-timer cues. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
+Recipe content contains title, optional description, bounded ingredient lines and steps, optional servings/times, provenance, `savedAt?`, and `updatedAt`. The MVP enrichment slice adds a required `proteinCategory` (`chicken` | `beef` | `pork` | `lamb` | `fish` | `meat-free`), optional `costBand` (`budget` | `standard` | `premium`), explicit oven preheat, and authored step-timer cues. Every newly authored ingredient line also requires one narrow `shoppingCategory` (`fruit_and_veg` | `meat_and_fish` | `dairy_and_eggs` | `pantry` | `bakery`) so Shopping can group new recipes without maintaining name allowlists. Ingredient, step, and timer-cue IDs remain stable inside the recipe. Human-readable ingredient quantity is preserved as text rather than forced into a numeric amount.
 
 `savedAt` is explicit library membership. Manual creation sets it immediately; choosing **Save recipe** sets it on a catalogue snapshot. A meal plan may create the same private snapshot solely to preserve what was planned without adding it to **My recipes**. Removing a recipe from the library clears `savedAt` rather than deleting a snapshot still referenced by a plan.
 
@@ -56,7 +56,7 @@ Recipe content contains title, optional description, bounded ingredient lines an
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
-**Deferred vs V1:** canonical ingredients, broad categories, cuisine unions, generator flags, images, search, import, public slugs, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
+**Deferred vs V1:** canonical ingredient identity and synonym merging, broader ingredient or nutritional taxonomies beyond the five shopping groups, cuisine unions, generator flags, images, search, import, public slugs, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
 
 ### mealPlans
 
@@ -108,18 +108,20 @@ Recipe deletion must either be refused while slots reference the recipe or updat
 
 ### shoppingLists / shoppingListItems
 
-An authenticated shopping list is an editable snapshot derived from one active meal-plan revision.
+An authenticated shopping list is the editable shopping companion for exactly one meal plan. Each plan has at most one list, and the active plan's list is the default Shop view.
 
 - List: `ownerId`, `mealPlanId`, `mealPlanUpdatedAt`, `status` (`active` | `archived`), timestamps
-- Item: `shoppingListId`, `ownerId`, `name`, bounded source detail lines and recipe IDs, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
+- Item: `shoppingListId`, `ownerId`, `name`, optional `displayName`, optional `category` constrained to `fruit_and_veg` | `meat_and_fish` | `dairy_and_eggs` | `pantry` | `bakery` (derived ingredients store the authored category; reads may default missing legacy values to `pantry`), bounded source detail lines and recipe IDs, optional per-occurrence `sources`, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
 
 **Indexes:** lists by owner/status/update and meal plan; items by list/order and owner/update.
 
-Generation groups only normalised exact ingredient names. It keeps each recipe's authored quantity, unit, and note as a readable source line instead of inventing totals or conversions. Manual additions and checks live on the derived snapshot. Removing an item sets `deletedAt`; it remains in a small **Removed items** section until restored or the parent list expires.
+Derivation groups normalised exact ingredient names within the same shopping category. It keeps each recipe's authored quantity, unit, and note as a readable source line instead of inventing totals or conversions. Manual additions and checks live on the linked list. Removing an item sets `deletedAt`; it remains in a small **Removed items** section until restored or the parent list expires.
 
-The list records the source plan's `updatedAt`. A later meal swap or plan replacement makes the list visibly out of date but never rewrites it. Explicit regeneration archives every older active list and creates a fresh snapshot atomically. This protects manual edits while retaining a simple one-current-list model.
+The list records its plan's `updatedAt`. Plan creation creates the linked list in the same transaction; any later meal change reconciles that same list transactionally. An exact-name derived ingredient that still exists preserves its checked and removed state, a newly required ingredient starts unchecked, and an obsolete derived ingredient is removed. Manual items are untouched. Activating a replacement plan therefore switches Shop to that plan's own list rather than rebuilding or repurposing another list.
 
-Retention has two bounds: keep at most 30 list snapshots per account, and delete any list after 30 days without list activity. A daily internal Convex job removes expired items in bounded batches before deleting each parent. Checking, adding, removing, or restoring an item refreshes the parent activity timestamp.
+Shopping history follows the same bounded-summary pattern as meal-plan history: load a small set of recent linked-list metadata first, then hydrate one selected list. The list date acts as the progressive-disclosure trigger, and selection is represented in the Shop URL so browser back and refresh preserve context. Previous-plan lists remain editable for delayed shopping.
+
+The list follows its meal plan's lifetime. Account deletion removes list items before lists, and a future explicit plan-deletion flow must do the same; there is no independent list inactivity expiry that can break the relationship.
 
 **Deferred vs V1:** leftover include modes, chalkboard linkage, household privacy, serving-scale metadata forests. Add scaling when Cook/Shop prove it.
 

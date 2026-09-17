@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import {
   recipeContentFields,
   recipeSourceValidator,
+  shoppingCategoryValidator,
 } from "./lib/recipeValidators";
 
 export default defineSchema({
@@ -98,8 +99,20 @@ export default defineSchema({
     shoppingListId: v.id("shoppingLists"),
     ownerId: v.id("users"),
     name: v.string(),
+    displayName: v.optional(v.string()),
+    category: v.optional(shoppingCategoryValidator),
     detailLines: v.array(v.string()),
     sourceRecipeIds: v.array(v.id("recipes")),
+    sources: v.optional(
+      v.array(
+        v.object({
+          recipeId: v.id("recipes"),
+          recipeTitle: v.string(),
+          date: v.union(v.string(), v.null()),
+          amount: v.string(),
+        }),
+      ),
+    ),
     origin: v.union(v.literal("derived"), v.literal("manual")),
     checked: v.boolean(),
     deletedAt: v.optional(v.number()),

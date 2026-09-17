@@ -1,5 +1,14 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { Suspense } from "react";
+
+import {
+  ShoppingListPage,
+  ShoppingListPageFallback,
+} from "@/features/shop/shopping-list-page";
 
 export default function ShopPage() {
-  return <PagePlaceholder eyebrow="Route placeholder" title="Shopping" />;
+  return (
+    <Suspense fallback={<ShoppingListPageFallback />}>
+      <ShoppingListPage />
+    </Suspense>
+  );
 }

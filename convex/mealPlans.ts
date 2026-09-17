@@ -20,6 +20,10 @@ import { mutation, query } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 import { patchPlanningPreferences } from "./lib/planningPreferences";
+import {
+  syncShoppingListForPlan,
+  archiveShoppingListForPlan,
+} from "./lib/shoppingListSync";
 
 const maximumPlanSlots = 31;
 const maximumActivePlanRecovery = 10;
@@ -253,9 +257,11 @@ export const resolveActivePlanConflict = mutation({
     for (const plan of activePlans) {
       if (plan._id !== keepMealPlanId) {
         await ctx.db.patch(plan._id, { status: "archived", updatedAt });
+        await archiveShoppingListForPlan(ctx, ownerId, plan._id, updatedAt);
       }
     }
     await ctx.db.patch(keepMealPlanId, { updatedAt });
+    await syncShoppingListForPlan(ctx, ownerId, keepMealPlanId);
 
     return { status: "resolved" } as const;
   },
@@ -318,6 +324,7 @@ export const swapMeal = mutation({
       updatedAt,
     });
     await ctx.db.patch(mealPlan._id, { updatedAt });
+    await syncShoppingListForPlan(ctx, ownerId, mealPlan._id);
 
     return { status: "swapped" } as const;
   },
@@ -390,6 +397,7 @@ export const applyRegenerationProposal = mutation({
       status: "archived",
       updatedAt,
     });
+    await archiveShoppingListForPlan(ctx, ownerId, mealPlan._id, updatedAt);
     const mealPlanId = await createPlanFromRecipeChoices(ctx, {
       ownerId,
       mealChoices: proposal.mealChoices,
@@ -437,7 +445,9 @@ export const undoPlanReplacement = mutation({
 
     const updatedAt = Date.now();
     await ctx.db.patch(activePlan._id, { status: "archived", updatedAt });
+    await archiveShoppingListForPlan(ctx, ownerId, activePlan._id, updatedAt);
     await ctx.db.patch(previousPlan._id, { status: "active", updatedAt });
+    await syncShoppingListForPlan(ctx, ownerId, previousPlan._id);
 
     return { status: "restored" } as const;
   },
@@ -581,6 +591,8 @@ export const adjustActivePlan = mutation({
       );
     }
 
+    await syncShoppingListForPlan(ctx, ownerId, mealPlan._id);
+
     return { status: "adjusted", addedDays, removedDates } as const;
   },
 });
@@ -631,6 +643,7 @@ export const claimGuestDraft = mutation({
         status: "archived",
         updatedAt: claimedAt,
       });
+      await archiveShoppingListForPlan(ctx, ownerId, activePlan._id, claimedAt);
     }
 
     const mealPlanId = await createPlanFromGuestMealChoices(ctx, {
@@ -1082,6 +1095,8 @@ async function createPlanFromGuestMealChoices(
     });
   }
 
+  await syncShoppingListForPlan(ctx, ownerId, mealPlanId);
+
   return mealPlanId;
 }
 
@@ -1127,6 +1142,8 @@ async function createPlanFromRecipeChoices(
       updatedAt: createdAt,
     });
   }
+
+  await syncShoppingListForPlan(ctx, ownerId, mealPlanId);
 
   return mealPlanId;
 }

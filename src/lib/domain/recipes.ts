@@ -33,9 +33,20 @@ export const COST_BANDS = ["budget", "standard", "premium"] as const;
 
 export type CostBand = (typeof COST_BANDS)[number];
 
+export const SHOPPING_CATEGORIES = [
+  "fruit_and_veg",
+  "meat_and_fish",
+  "dairy_and_eggs",
+  "pantry",
+  "bakery",
+] as const;
+
+export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
+
 export type RecipeIngredientLine = {
   id: string;
   name: string;
+  shoppingCategory: ShoppingCategory;
   quantity?: string;
   unit?: string;
   note?: string;
@@ -189,6 +200,7 @@ function prepareIngredients(
         "Ingredient name",
         RECIPE_LIMITS.ingredientName,
       ),
+      shoppingCategory: requiredShoppingCategory(ingredient.shoppingCategory),
       ...(quantity === undefined ? {} : { quantity }),
       ...(unit === undefined ? {} : { unit }),
       ...(note === undefined ? {} : { note }),
@@ -268,6 +280,15 @@ function requiredProteinCategory(value: ProteinCategory): ProteinCategory {
   if (!PROTEIN_CATEGORIES.includes(value)) {
     throw new RecipeValidationError(
       "Protein category must be chicken, beef, pork, lamb, fish, or meat-free.",
+    );
+  }
+  return value;
+}
+
+function requiredShoppingCategory(value: ShoppingCategory): ShoppingCategory {
+  if (!SHOPPING_CATEGORIES.includes(value)) {
+    throw new RecipeValidationError(
+      "Shopping category must be fruit and veg, meat and fish, dairy and eggs, pantry, or bakery.",
     );
   }
   return value;

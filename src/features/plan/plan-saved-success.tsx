@@ -38,19 +38,19 @@ export function PlanSavedSuccess({ summary }: { summary: string }) {
           <Check aria-hidden="true" className="size-4.5" strokeWidth={2.4} />
         </div>
         <p className="mt-3 font-display text-22 font-semibold text-ink">
-          Shopping list coming soon
+          Shopping list ready
         </p>
         <p className="mt-1.5 text-14 leading-relaxed text-graphite">
-          Your saved meals will be ready to turn into one list when Shopping is
-          available.
+          Your saved meals are ready to turn into one clean list.
         </p>
-        <ButtonLink href="/week" className="mt-4 w-full">
-          Continue to my week →
+        <ButtonLink href="/shop" className="mt-4 w-full">
+          View list →
         </ButtonLink>
       </div>
 
       <p className="mt-4 text-center text-13 text-graphite">
-        Your saved plan is ready whenever you come back.
+        Your saved plan is ready whenever you come back. You can also review it
+        from Week.
       </p>
     </main>
   );

@@ -1,26 +1,36 @@
 import { ConvexError, v } from "convex/values";
 import {
-  deriveShoppingListItems,
+  formatShoppingItemDisplayName,
+  normaliseIngredientName,
   prepareManualShoppingItemName,
   SHOPPING_LIST_LIMITS,
   ShoppingListValidationError,
 } from "../src/lib/domain/shopping-list";
-import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
+import { shoppingCategoryValidator } from "./lib/recipeValidators";
+import { syncShoppingListForPlan } from "./lib/shoppingListSync";
 
-const maximumActiveListRecovery = 10;
 const maximumPlanSlots = 31;
-const maximumShoppingListsPerOwner = 30;
-const shoppingListRetentionMs = 30 * 24 * 60 * 60 * 1_000;
-const cleanupItemBatchSize = 100;
+const maximumRecentListCandidates = 30;
+const maximumRecentShoppingLists = 12;
 
 const shoppingListItemViewValidator = v.object({
   _id: v.id("shoppingListItems"),
   name: v.string(),
+  displayName: v.string(),
+  category: shoppingCategoryValidator,
   detailLines: v.array(v.string()),
+  sources: v.array(
+    v.object({
+      recipeId: v.id("recipes"),
+      recipeTitle: v.string(),
+      date: v.union(v.string(), v.null()),
+      amount: v.string(),
+    }),
+  ),
   origin: v.union(v.literal("derived"), v.literal("manual")),
   checked: v.boolean(),
   deletedAt: v.union(v.number(), v.null()),
@@ -33,12 +43,17 @@ const currentShoppingListValidator = v.union(
   v.object({
     status: v.literal("ready"),
     currentMealPlanId: v.id("mealPlans"),
+    startDate: v.string(),
+    endDate: v.string(),
+    mealCount: v.number(),
     list: v.union(
       v.object({
         _id: v.id("shoppingLists"),
         mealPlanId: v.id("mealPlans"),
-        isOutOfDate: v.boolean(),
-        hasActiveListConflict: v.boolean(),
+        startDate: v.string(),
+        endDate: v.string(),
+        mealCount: v.number(),
+        needsSync: v.boolean(),
         items: v.array(shoppingListItemViewValidator),
       }),
       v.null(),
@@ -46,21 +61,43 @@ const currentShoppingListValidator = v.union(
   }),
 );
 
-const generateResultValidator = v.union(
+const ensureResultValidator = v.union(
   v.object({
-    status: v.literal("generated"),
+    status: v.literal("ready"),
     shoppingListId: v.id("shoppingLists"),
   }),
   v.object({ status: v.literal("no_active_plan") }),
   v.object({ status: v.literal("active_plan_conflict") }),
   v.object({ status: v.literal("plan_unavailable") }),
-  v.object({ status: v.literal("list_too_large") }),
-  v.object({ status: v.literal("too_many_active_lists") }),
 );
 
 const itemMutationResultValidator = v.union(
   v.object({ status: v.literal("updated") }),
   v.object({ status: v.literal("not_found") }),
+);
+
+const shoppingListSummaryValidator = v.object({
+  _id: v.id("shoppingLists"),
+  startDate: v.string(),
+  endDate: v.string(),
+  status: v.union(v.literal("active"), v.literal("archived")),
+  itemCount: v.number(),
+  checkedCount: v.number(),
+  mealCount: v.number(),
+  createdAt: v.number(),
+});
+
+const selectedShoppingListValidator = v.union(
+  v.object({
+    _id: v.id("shoppingLists"),
+    mealPlanId: v.id("mealPlans"),
+    startDate: v.string(),
+    endDate: v.string(),
+    mealCount: v.number(),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    items: v.array(shoppingListItemViewValidator),
+  }),
+  v.null(),
 );
 
 export const getCurrent = query({
@@ -77,12 +114,26 @@ export const getCurrent = query({
     }
 
     const mealPlan = activePlans[0]!;
-    const activeLists = await getActiveLists(ctx, ownerId);
-    const list = activeLists[0];
+    const planLists = await ctx.db
+      .query("shoppingLists")
+      .withIndex("by_meal_plan", (q) => q.eq("mealPlanId", mealPlan._id))
+      .order("desc")
+      .take(2);
+    const list = planLists[0];
+    const mealSlots = await ctx.db
+      .query("mealSlots")
+      .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", mealPlan._id))
+      .take(maximumPlanSlots + 1);
+    if (mealSlots.length > maximumPlanSlots) {
+      throw new Error("An active meal plan exceeds the supported slot limit.");
+    }
     if (list === undefined) {
       return {
         status: "ready",
         currentMealPlanId: mealPlan._id,
+        startDate: mealPlan.startDate,
+        endDate: mealPlan.endDate,
+        mealCount: mealSlots.length,
         list: null,
       } as const;
     }
@@ -94,34 +145,143 @@ export const getCurrent = query({
     if (items.length > SHOPPING_LIST_LIMITS.items) {
       throw new Error("A shopping list exceeds the supported item limit.");
     }
-
     return {
       status: "ready",
       currentMealPlanId: mealPlan._id,
+      startDate: mealPlan.startDate,
+      endDate: mealPlan.endDate,
+      mealCount: mealSlots.length,
       list: {
         _id: list._id,
         mealPlanId: list.mealPlanId,
-        isOutOfDate:
-          list.mealPlanId !== mealPlan._id ||
-          list.mealPlanUpdatedAt !== mealPlan.updatedAt,
-        hasActiveListConflict: activeLists.length > 1,
-        items: items.map((item) => ({
-          _id: item._id,
-          name: item.name,
-          detailLines: item.detailLines,
-          origin: item.origin,
-          checked: item.checked,
-          deletedAt: item.deletedAt ?? null,
-          order: item.order,
-        })),
+        startDate: mealPlan.startDate,
+        endDate: mealPlan.endDate,
+        mealCount: mealSlots.length,
+        needsSync:
+          planLists.length > 1 || list.mealPlanUpdatedAt !== mealPlan.updatedAt,
+        items: await Promise.all(
+          items.map((item) => shoppingItemView(ctx, item, mealSlots)),
+        ),
       },
     } as const;
   },
 });
 
-export const generateFromCurrentPlan = mutation({
+/** Bounded metadata for the recent-list picker; full items load on selection. */
+export const getRecentSummaries = query({
   args: {},
-  returns: generateResultValidator,
+  returns: v.array(shoppingListSummaryValidator),
+  handler: async (ctx) => {
+    const ownerId = await requireUserId(ctx);
+    const retainedLists = await ctx.db
+      .query("shoppingLists")
+      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
+      .order("desc")
+      .take(maximumRecentListCandidates);
+    const recentLists = [
+      ...retainedLists
+        .toSorted((a, b) => b.createdAt - a.createdAt)
+        .reduce((byPlan, list) => {
+          if (!byPlan.has(list.mealPlanId)) byPlan.set(list.mealPlanId, list);
+          return byPlan;
+        }, new Map<Id<"mealPlans">, Doc<"shoppingLists">>())
+        .values(),
+    ].slice(0, maximumRecentShoppingLists);
+
+    const summaries = await Promise.all(
+      recentLists.map(async (list) => {
+        const [mealPlan, mealSlots, items] = await Promise.all([
+          ctx.db.get(list.mealPlanId),
+          ctx.db
+            .query("mealSlots")
+            .withIndex("by_plan_and_date", (q) =>
+              q.eq("mealPlanId", list.mealPlanId),
+            )
+            .take(maximumPlanSlots + 1),
+          ctx.db
+            .query("shoppingListItems")
+            .withIndex("by_list_and_order", (q) =>
+              q.eq("shoppingListId", list._id),
+            )
+            .take(SHOPPING_LIST_LIMITS.items + 1),
+        ]);
+        if (items.length > SHOPPING_LIST_LIMITS.items) {
+          throw new Error("A shopping list exceeds the supported item limit.");
+        }
+        if (mealSlots.length > maximumPlanSlots) {
+          throw new Error("A meal plan exceeds the supported slot limit.");
+        }
+        if (mealPlan === null || mealPlan.ownerId !== ownerId) return null;
+
+        return {
+          _id: list._id,
+          startDate: mealPlan.startDate,
+          endDate: mealPlan.endDate,
+          status: mealPlan.status,
+          itemCount: items.filter((item) => item.deletedAt === undefined)
+            .length,
+          checkedCount: items.filter(
+            (item) => item.deletedAt === undefined && item.checked,
+          ).length,
+          mealCount: mealSlots.length,
+          createdAt: list.createdAt,
+        };
+      }),
+    );
+    return summaries.filter((summary) => summary !== null);
+  },
+});
+
+/** Hydrate one previous plan's list only after the user selects it. */
+export const getById = query({
+  args: { shoppingListId: v.id("shoppingLists") },
+  returns: selectedShoppingListValidator,
+  handler: async (ctx, { shoppingListId }) => {
+    const ownerId = await requireUserId(ctx);
+    const list = await ctx.db.get(shoppingListId);
+    if (list === null || list.ownerId !== ownerId) return null;
+
+    const mealPlan = await ctx.db.get(list.mealPlanId);
+    if (mealPlan === null || mealPlan.ownerId !== ownerId) return null;
+
+    const [items, mealSlots] = await Promise.all([
+      ctx.db
+        .query("shoppingListItems")
+        .withIndex("by_list_and_order", (q) =>
+          q.eq("shoppingListId", shoppingListId),
+        )
+        .take(SHOPPING_LIST_LIMITS.items + 1),
+      ctx.db
+        .query("mealSlots")
+        .withIndex("by_plan_and_date", (q) =>
+          q.eq("mealPlanId", list.mealPlanId),
+        )
+        .take(maximumPlanSlots + 1),
+    ]);
+    if (items.length > SHOPPING_LIST_LIMITS.items) {
+      throw new Error("A shopping list exceeds the supported item limit.");
+    }
+    if (mealSlots.length > maximumPlanSlots) {
+      throw new Error("A meal plan exceeds the supported slot limit.");
+    }
+
+    return {
+      _id: list._id,
+      mealPlanId: list.mealPlanId,
+      startDate: mealPlan.startDate,
+      endDate: mealPlan.endDate,
+      mealCount: mealSlots.length,
+      status: mealPlan.status,
+      items: await Promise.all(
+        items.map((item) => shoppingItemView(ctx, item, mealSlots)),
+      ),
+    };
+  },
+});
+
+export const ensureForCurrentPlan = mutation({
+  args: {},
+  returns: ensureResultValidator,
   handler: async (ctx) => {
     const ownerId = await requireUserId(ctx);
     const activePlans = await getActivePlans(ctx, ownerId);
@@ -133,75 +293,17 @@ export const generateFromCurrentPlan = mutation({
     }
 
     const mealPlan = activePlans[0]!;
-    const mealSlots = await ctx.db
-      .query("mealSlots")
-      .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", mealPlan._id))
-      .take(maximumPlanSlots + 1);
-    if (mealSlots.length === 0 || mealSlots.length > maximumPlanSlots) {
+    try {
+      const shoppingListId = await syncShoppingListForPlan(
+        ctx,
+        ownerId,
+        mealPlan._id,
+      );
+      return { status: "ready", shoppingListId } as const;
+    } catch (error) {
+      console.error("Failed to synchronize a shopping list.", error);
       return { status: "plan_unavailable" } as const;
     }
-
-    const recipes: Array<{
-      recipeId: Id<"recipes">;
-      title: string;
-      ingredients: Doc<"recipes">["ingredients"];
-    }> = [];
-    for (const mealSlot of mealSlots) {
-      const recipe = await ctx.db.get(mealSlot.recipeId);
-      if (recipe === null || recipe.ownerId !== ownerId) {
-        return { status: "plan_unavailable" } as const;
-      }
-      recipes.push({
-        recipeId: recipe._id,
-        title: recipe.title,
-        ingredients: recipe.ingredients,
-      });
-    }
-
-    const derivedItems = deriveShoppingListItems(recipes);
-    if (derivedItems.length > SHOPPING_LIST_LIMITS.items) {
-      return { status: "list_too_large" } as const;
-    }
-
-    const activeLists = await getActiveLists(ctx, ownerId);
-    if (activeLists.length > maximumActiveListRecovery) {
-      return { status: "too_many_active_lists" } as const;
-    }
-
-    const updatedAt = Date.now();
-    for (const activeList of activeLists) {
-      await ctx.db.patch(activeList._id, { status: "archived", updatedAt });
-    }
-
-    const shoppingListId = await ctx.db.insert("shoppingLists", {
-      ownerId,
-      mealPlanId: mealPlan._id,
-      mealPlanUpdatedAt: mealPlan.updatedAt,
-      status: "active",
-      createdAt: updatedAt,
-      updatedAt,
-    });
-
-    for (let order = 0; order < derivedItems.length; order += 1) {
-      const item = derivedItems[order]!;
-      await ctx.db.insert("shoppingListItems", {
-        shoppingListId,
-        ownerId,
-        name: item.name,
-        detailLines: item.detailLines,
-        sourceRecipeIds: item.sourceRecipeIds,
-        origin: "derived",
-        checked: false,
-        deletedAt: undefined,
-        order,
-        createdAt: updatedAt,
-        updatedAt,
-      });
-    }
-
-    await enforceOwnerListLimit(ctx, ownerId, shoppingListId);
-
-    return { status: "generated", shoppingListId } as const;
   },
 });
 
@@ -233,7 +335,7 @@ export const addItem = mutation({
   handler: async (ctx, { shoppingListId, name }) => {
     const ownerId = await requireUserId(ctx);
     const list = await ctx.db.get(shoppingListId);
-    if (list === null || list.ownerId !== ownerId || list.status !== "active") {
+    if (list === null || list.ownerId !== ownerId) {
       return { status: "not_found" } as const;
     }
 
@@ -305,23 +407,6 @@ export const restoreItem = mutation({
   },
 });
 
-export const deleteExpired = internalMutation({
-  args: {},
-  returns: v.null(),
-  handler: async (ctx) => {
-    const cutoff = Date.now() - shoppingListRetentionMs;
-    const expiredList = await ctx.db
-      .query("shoppingLists")
-      .withIndex("by_updated_at", (q) => q.lt("updatedAt", cutoff))
-      .first();
-    if (expiredList === null) return null;
-
-    await deleteListInBatches(ctx, expiredList._id);
-    await ctx.scheduler.runAfter(0, internal.shoppingLists.deleteExpired, {});
-    return null;
-  },
-});
-
 async function getActivePlans(
   ctx: QueryCtx | MutationCtx,
   ownerId: Id<"users">,
@@ -335,19 +420,6 @@ async function getActivePlans(
     .take(2);
 }
 
-async function getActiveLists(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
-) {
-  return await ctx.db
-    .query("shoppingLists")
-    .withIndex("by_owner_and_status_and_updated_at", (q) =>
-      q.eq("ownerId", ownerId).eq("status", "active"),
-    )
-    .order("desc")
-    .take(maximumActiveListRecovery + 1);
-}
-
 async function getEditableItem(
   ctx: MutationCtx,
   itemId: Id<"shoppingListItems">,
@@ -357,66 +429,32 @@ async function getEditableItem(
   if (item === null || item.ownerId !== ownerId) return null;
 
   const list = await ctx.db.get(item.shoppingListId);
-  if (list === null || list.ownerId !== ownerId || list.status !== "active") {
+  if (list === null || list.ownerId !== ownerId) {
     return null;
   }
   return { item, list };
 }
 
-async function enforceOwnerListLimit(
-  ctx: MutationCtx,
-  ownerId: Id<"users">,
-  currentShoppingListId: Id<"shoppingLists">,
+async function shoppingItemView(
+  ctx: QueryCtx,
+  item: Doc<"shoppingListItems">,
+  mealSlots: Doc<"mealSlots">[],
 ) {
-  const retainedLists = await ctx.db
-    .query("shoppingLists")
-    .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-    .order("desc")
-    .take(maximumShoppingListsPerOwner + 1);
-  const oldestOverflowList = retainedLists.at(-1);
-  if (
-    retainedLists.length <= maximumShoppingListsPerOwner ||
-    oldestOverflowList === undefined ||
-    oldestOverflowList._id === currentShoppingListId
-  ) {
-    return;
-  }
-
-  await deleteCompleteList(ctx, oldestOverflowList._id);
-}
-
-async function deleteCompleteList(
-  ctx: MutationCtx,
-  shoppingListId: Id<"shoppingLists">,
-) {
-  const items = await ctx.db
-    .query("shoppingListItems")
-    .withIndex("by_list_and_order", (q) =>
-      q.eq("shoppingListId", shoppingListId),
-    )
-    .take(SHOPPING_LIST_LIMITS.items + 1);
-  if (items.length > SHOPPING_LIST_LIMITS.items) {
-    throw new Error("A shopping list exceeds the supported item limit.");
-  }
-  for (const item of items) await ctx.db.delete(item._id);
-  await ctx.db.delete(shoppingListId);
-}
-
-async function deleteListInBatches(
-  ctx: MutationCtx,
-  shoppingListId: Id<"shoppingLists">,
-) {
-  const items = await ctx.db
-    .query("shoppingListItems")
-    .withIndex("by_list_and_order", (q) =>
-      q.eq("shoppingListId", shoppingListId),
-    )
-    .take(cleanupItemBatchSize + 1);
-  const batch = items.slice(0, cleanupItemBatchSize);
-  for (const item of batch) await ctx.db.delete(item._id);
-
-  if (items.length > cleanupItemBatchSize) return;
-  await ctx.db.delete(shoppingListId);
+  const sources =
+    item.sources ?? (await reconstructLegacySources(ctx, item, mealSlots));
+  return {
+    _id: item._id,
+    name: item.name,
+    displayName:
+      item.displayName ?? formatShoppingItemDisplayName(item.name, sources),
+    category: item.category ?? ("pantry" as const),
+    detailLines: item.detailLines,
+    sources,
+    origin: item.origin,
+    checked: item.checked,
+    deletedAt: item.deletedAt ?? null,
+    order: item.order,
+  };
 }
 
 function prepareManualNameOrThrow(name: string) {
@@ -431,4 +469,68 @@ function prepareManualNameOrThrow(name: string) {
     }
     throw error;
   }
+}
+
+/**
+ * Rebuilds per-occurrence sources for legacy items that only stored
+ * deduplicated sourceRecipeIds. Walks meal slots so repeated recipes keep
+ * A, A, B ordering instead of indexing the deduplicated ID list.
+ */
+async function reconstructLegacySources(
+  ctx: QueryCtx,
+  item: Doc<"shoppingListItems">,
+  mealSlots: Doc<"mealSlots">[],
+) {
+  if (item.origin === "manual" || item.sourceRecipeIds.length === 0) {
+    return [];
+  }
+
+  const itemName = normaliseIngredientName(item.name);
+  const itemCategory = item.category ?? "pantry";
+  const sources: Array<{
+    recipeId: Id<"recipes">;
+    recipeTitle: string;
+    date: string | null;
+    amount: string;
+  }> = [];
+
+  for (const mealSlot of mealSlots) {
+    const recipe = await ctx.db.get(mealSlot.recipeId);
+    if (recipe === null) continue;
+    for (const ingredient of recipe.ingredients) {
+      if (normaliseIngredientName(ingredient.name) !== itemName) continue;
+      if ((ingredient.shoppingCategory ?? "pantry") !== itemCategory) continue;
+      sources.push({
+        recipeId: recipe._id,
+        recipeTitle: recipe.title,
+        date: mealSlot.date,
+        amount: [ingredient.quantity, ingredient.unit]
+          .filter((value): value is string => value !== undefined)
+          .join(" "),
+      });
+    }
+  }
+
+  if (sources.length > 0) return sources;
+
+  return item.detailLines
+    .map((detailLine, index) => {
+      const separatorIndex = detailLine.lastIndexOf(" · ");
+      const amount =
+        separatorIndex === -1 ? "" : detailLine.slice(0, separatorIndex);
+      const recipeTitle =
+        separatorIndex === -1
+          ? detailLine
+          : detailLine.slice(separatorIndex + 3);
+      const recipeId =
+        item.sourceRecipeIds[Math.min(index, item.sourceRecipeIds.length - 1)];
+      if (recipeId === undefined) return null;
+      return {
+        recipeId,
+        recipeTitle,
+        date: null as string | null,
+        amount,
+      };
+    })
+    .filter((source) => source !== null);
 }

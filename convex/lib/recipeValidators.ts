@@ -1,8 +1,28 @@
 import { v } from "convex/values";
 
+export const shoppingCategoryValidator = v.union(
+  v.literal("fruit_and_veg"),
+  v.literal("meat_and_fish"),
+  v.literal("dairy_and_eggs"),
+  v.literal("pantry"),
+  v.literal("bakery"),
+);
+
 export const recipeIngredientValidator = v.object({
   id: v.string(),
   name: v.string(),
+  // Optional only while existing stored recipe snapshots are migrated.
+  // Domain validation and all new recipe writes require a category.
+  shoppingCategory: v.optional(shoppingCategoryValidator),
+  quantity: v.optional(v.string()),
+  unit: v.optional(v.string()),
+  note: v.optional(v.string()),
+});
+
+export const recipeIngredientInputValidator = v.object({
+  id: v.string(),
+  name: v.string(),
+  shoppingCategory: shoppingCategoryValidator,
   quantity: v.optional(v.string()),
   unit: v.optional(v.string()),
   note: v.optional(v.string()),

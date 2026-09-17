@@ -45,7 +45,7 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
 
       {restOfWeek.length > 0 ? <RestOfWeekCarousel meals={restOfWeek} /> : null}
 
-      <ShoppingListReadyStub />
+      <ShoppingListReady mealCount={plan.mealSlots.length} />
       <SaveRecipesNudge imageSrc={nudgeImage} />
     </section>
   );
@@ -222,7 +222,7 @@ function RestOfWeekCard({ meal }: { meal: ActivePlanMealSlot }) {
   );
 }
 
-function ShoppingListReadyStub() {
+function ShoppingListReady({ mealCount }: { mealCount: number }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-surface bg-leaf-soft px-3.5 py-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -230,15 +230,16 @@ function ShoppingListReadyStub() {
           <Check aria-hidden="true" className="size-4" strokeWidth={2.4} />
         </div>
         <div className="min-w-0">
-          <p className="text-14 font-bold text-ink">
-            Shopping list coming soon
+          <p className="text-14 font-bold text-ink">Shopping list ready</p>
+          <p className="text-12 text-graphite">
+            Built from {mealCount} planned {mealCount === 1 ? "meal" : "meals"}
           </p>
-          <p className="text-12 text-graphite">Built from your saved week</p>
         </div>
       </div>
-      <Button variant="inline" className="shrink-0 text-leaf" disabled>
-        Coming soon
-      </Button>
+      <ButtonLink href="/shop" variant="inline" className="shrink-0 text-leaf">
+        View list
+        <ArrowRight aria-hidden="true" className="size-3.5" />
+      </ButtonLink>
     </div>
   );
 }

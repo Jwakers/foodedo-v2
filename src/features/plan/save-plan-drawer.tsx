@@ -20,8 +20,8 @@ const saveBenefits = [
     description: "Your swaps and free days stay as you’ve set them",
   },
   {
-    title: "Ready for Shopping later",
-    description: "This saved week can become a list when Shopping is ready",
+    title: "One clean shopping list",
+    description: "Your saved meals become a checkable list in Shopping",
   },
   {
     title: "Come back anytime",

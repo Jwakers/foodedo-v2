@@ -10,6 +10,7 @@ test("formats ingredient amount and name for recipe detail rows", () => {
     formatIngredientAmount({
       id: "1",
       name: "olive oil",
+      shoppingCategory: "pantry",
       quantity: "2",
       unit: "tbsp",
     }),
@@ -18,12 +19,14 @@ test("formats ingredient amount and name for recipe detail rows", () => {
     formatIngredientAmount({
       id: "2",
       name: "salt",
+      shoppingCategory: "pantry",
     }),
   ).toBe("—");
   expect(
     formatIngredientName({
       id: "3",
       name: "chicken thighs",
+      shoppingCategory: "meat_and_fish",
       note: "skinless",
     }),
   ).toBe("chicken thighs, skinless");
@@ -31,6 +34,7 @@ test("formats ingredient amount and name for recipe detail rows", () => {
     formatIngredientName({
       id: "4",
       name: "olive oil",
+      shoppingCategory: "pantry",
     }),
   ).toBe("olive oil");
 });

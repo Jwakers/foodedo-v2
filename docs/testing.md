@@ -16,7 +16,7 @@ Pure recipe-domain tests run without a browser or web server:
 pnpm test:unit
 ```
 
-They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein-category validation, catalogue ID/slug uniqueness, version-scoped catalogue lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping. Keep the suite small. Do not assert catalogue size, release version numbers, or other content that changes as meals are added.
+They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein- and shopping-category validation, catalogue ID/slug uniqueness, version-scoped catalogue lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping (including same-name items kept separate across shopping categories). Keep the suite small. Do not assert catalogue size, release version numbers, or other content that changes as meals are added.
 
 Authenticated Convex lifecycle tests run against the official in-memory test backend:
 
@@ -24,7 +24,7 @@ Authenticated Convex lifecycle tests run against the official in-memory test bac
 pnpm test:convex
 ```
 
-They cover guest-plan claiming, free days, idempotent retries, replacement of an existing active plan, and failure without partial writes. Keep these tests at the function boundary so authorization, validators, and atomic writes are exercised together.
+They cover guest-plan claiming, free days, idempotent retries, replacement of an existing active plan, and failure without partial writes. Shopping-list Convex coverage in `shoppingLists.test.ts` includes one list per plan, plan reconciliation, historical-list access, and owner isolation. Soft-delete item restoration is exercised by the product API but is not yet covered by a dedicated Convex test. Keep these tests at the function boundary so authorization, validators, and atomic writes are exercised together.
 
 Playwright is installed with a Chromium production smoke suite in `tests/e2e/app-shell.spec.ts`. It verifies:
 

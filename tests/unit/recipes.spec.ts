@@ -17,6 +17,7 @@ const validRecipe = {
     {
       id: "ingredient-1",
       name: "chopped tomatoes",
+      shoppingCategory: "pantry" as const,
       quantity: "1 × 400g",
       unit: "tin",
       note: "drained",
@@ -37,6 +38,7 @@ test("preserves authored ingredient quantity text while normalising whitespace",
       {
         id: "ingredient-1",
         name: "  chopped tomatoes  ",
+        shoppingCategory: "pantry",
         quantity: "  1 × 400g  ",
         unit: "  tin  ",
         note: "  drained  ",
@@ -48,6 +50,7 @@ test("preserves authored ingredient quantity text while normalising whitespace",
   expect(prepared.ingredients[0]).toEqual({
     id: "ingredient-1",
     name: "chopped tomatoes",
+    shoppingCategory: "pantry",
     quantity: "1 × 400g",
     unit: "tin",
     note: "drained",
@@ -72,6 +75,21 @@ test("requires a valid protein category", () => {
       ...validRecipe,
       // @ts-expect-error intentional invalid fixture
       proteinCategory: "duck",
+    }),
+  ).toThrow(RecipeValidationError);
+});
+
+test("requires every ingredient to have a shopping category", () => {
+  expect(() =>
+    prepareRecipeContent({
+      ...validRecipe,
+      ingredients: [
+        {
+          ...validRecipe.ingredients[0]!,
+          // @ts-expect-error intentional invalid fixture
+          shoppingCategory: "produce",
+        },
+      ],
     }),
   ).toThrow(RecipeValidationError);
 });

@@ -14,6 +14,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
 import type * as lib_recipeValidators from "../lib/recipeValidators.js";
+import type * as lib_shoppingListSync from "../lib/shoppingListSync.js";
 import type * as mealPlans from "../mealPlans.js";
 import type * as planningPreferences from "../planningPreferences.js";
 import type * as recipes from "../recipes.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
   "lib/planningPreferences": typeof lib_planningPreferences;
   "lib/recipeValidators": typeof lib_recipeValidators;
+  "lib/shoppingListSync": typeof lib_shoppingListSync;
   mealPlans: typeof mealPlans;
   planningPreferences: typeof planningPreferences;
   recipes: typeof recipes;

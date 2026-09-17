@@ -8,6 +8,7 @@ import { mutation, query } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
 import {
   proteinCategoryValidator,
+  recipeIngredientInputValidator,
   recipeContentFields,
   recipeViewValidator,
 } from "./lib/recipeValidators";
@@ -25,6 +26,7 @@ export const create = mutation({
   args: {
     recipe: v.object({
       ...recipeContentFields,
+      ingredients: v.array(recipeIngredientInputValidator),
       proteinCategory: proteinCategoryValidator,
     }),
   },

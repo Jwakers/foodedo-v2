@@ -29,6 +29,14 @@ PROTEIN_MAP = {
     "vegetarian": "meat-free",
 }
 
+SHOPPING_CATEGORIES = {
+    "fruit_and_veg",
+    "meat_and_fish",
+    "dairy_and_eggs",
+    "pantry",
+    "bakery",
+}
+
 PREFERRED_SLUGS = [
     "chicken-fajitas",
     "lemon-herb-grilled-chicken",
@@ -193,7 +201,16 @@ def main() -> None:
 
         ingredients = []
         for ingredient in row["ingredients"]:
-            line = {"id": ingredient["id"], "name": ingredient["name"]}
+            shopping_category = ingredient.get("shoppingCategory")
+            if shopping_category not in SHOPPING_CATEGORIES:
+                raise ValueError(
+                    f"{slug}: ingredient {ingredient['name']!r} needs a valid shoppingCategory"
+                )
+            line = {
+                "id": ingredient["id"],
+                "name": ingredient["name"],
+                "shoppingCategory": shopping_category,
+            }
             quantity = format_amount(ingredient.get("amount"))
             if quantity is not None:
                 line["quantity"] = quantity
