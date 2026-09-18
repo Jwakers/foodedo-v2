@@ -19,13 +19,26 @@ import {
   shuffleGuestPlan,
   type GuestDraftV1,
 } from "../../src/lib/domain/guest-draft";
-import { standardCatalogue } from "../../src/lib/domain/standard-catalogue";
 import type {
   GuestDraftMutationResult,
   GuestDraftStore,
 } from "../../src/lib/platform/guest-draft-store";
 
-const catalogueMealIds = standardCatalogue.meals.map((meal) => meal.id);
+const catalogueMealIds = Array.from(
+  { length: 30 },
+  (_, index) => `meal-${index + 1}`,
+);
+const catalogueFixture = {
+  meals: catalogueMealIds.map((id) => ({ id, version: 2 })),
+};
+const catalogueMeals = catalogueFixture.meals.map((meal) => ({
+  catalogueMealId: meal.id,
+  catalogueVersion: meal.version,
+}));
+const catalogue = {
+  currentMeals: catalogueMeals,
+  readableMeals: catalogueMeals,
+};
 
 function createMemoryStore(
   initial: GuestDraftV1 | null = null,
@@ -82,17 +95,16 @@ function createMemoryStore(
 
 test("serializes concurrent meal removals so both clears persist", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed, { readDelayMs: 20 });
   const before = countPlannedGuestMeals(seed);
 
   const [first, second] = await Promise.all([
-    removeGuestPlanMeal({ date: "2026-08-29", now: 200, store }),
-    removeGuestPlanMeal({ date: "2026-08-30", now: 300, store }),
+    removeGuestPlanMeal({ catalogue, date: "2026-08-29", now: 200, store }),
+    removeGuestPlanMeal({ catalogue, date: "2026-08-30", now: 300, store }),
   ]);
 
   expect(countPlannedGuestMeals(first)).toBe(before - 1);
@@ -112,16 +124,15 @@ test("serializes concurrent meal removals so both clears persist", async () => {
 
 test("serializes shuffle after remove against the latest snapshot", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed, { readDelayMs: 20 });
 
   const [, shuffled] = await Promise.all([
-    removeGuestPlanMeal({ date: "2026-08-29", now: 200, store }),
-    shuffleCurrentGuestPlanDraft({ now: 300, store }),
+    removeGuestPlanMeal({ catalogue, date: "2026-08-29", now: 200, store }),
+    shuffleCurrentGuestPlanDraft({ catalogue, now: 300, store }),
   ]);
 
   // Remove clears day 0; shuffle then re-applies the generation free-day (index 2).
@@ -141,6 +152,7 @@ test("serializes shuffle after remove against the latest snapshot", async () => 
 test("ensure still creates a draft when storage is empty", async () => {
   const store = createMemoryStore(null);
   const draft = await ensureGuestPlanDraft({
+    catalogue,
     now: 100,
     planStartDate: "2026-08-29",
     store,
@@ -153,15 +165,18 @@ test("ensure still creates a draft when storage is empty", async () => {
 
 test("adds one trailing draft day at a time and stops at seven", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
     planDays: 5,
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed);
 
-  const sixDays = await extendCurrentGuestPlanDraft({ now: 200, store });
+  const sixDays = await extendCurrentGuestPlanDraft({
+    catalogue,
+    now: 200,
+    store,
+  });
   expect(sixDays.planDays).toBe(6);
   expect(sixDays.mealChoices.slice(0, 5)).toEqual(seed.mealChoices);
   expect(sixDays.mealChoices[5]).toMatchObject({ date: "2026-09-03" });
@@ -172,13 +187,17 @@ test("adds one trailing draft day at a time and stops at seven", async () => {
     ),
   ).toBe(false);
 
-  const sevenDays = await extendCurrentGuestPlanDraft({ now: 300, store });
+  const sevenDays = await extendCurrentGuestPlanDraft({
+    catalogue,
+    now: 300,
+    store,
+  });
   expect(sevenDays.planDays).toBe(7);
   expect(sevenDays.mealChoices.slice(0, 6)).toEqual(sixDays.mealChoices);
   expect(sevenDays.mealChoices[6]).toMatchObject({ date: "2026-09-04" });
 
   await expect(
-    extendCurrentGuestPlanDraft({ now: 400, store }),
+    extendCurrentGuestPlanDraft({ catalogue, now: 400, store }),
   ).rejects.toThrow("This plan already has seven days.");
   expect(store.writes).toBe(2);
 });
@@ -187,6 +206,7 @@ test("starts a replacement plan tomorrow when no editable draft exists", async (
   const store = createMemoryStore(null);
 
   const next = await beginNextGuestPlanDraft({
+    catalogue,
     now: 200,
     planStartDate: "2026-08-29",
     store,
@@ -201,15 +221,15 @@ test("starts a replacement plan tomorrow when no editable draft exists", async (
 
 test("moves an editable replacement plan to tomorrow without losing choices", async () => {
   const inProgressDraft = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-28",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [0, 2],
   });
   const store = createMemoryStore(inProgressDraft);
 
   const resumed = await beginNextGuestPlanDraft({
+    catalogue,
     now: 200,
     planStartDate: "2026-08-29",
     store,
@@ -228,15 +248,15 @@ test("moves an editable replacement plan to tomorrow without losing choices", as
 
 test("reuses an editable replacement plan already starting tomorrow", async () => {
   const tomorrowDraft = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [0, 2],
   });
   const store = createMemoryStore(tomorrowDraft);
 
   const resumed = await beginNextGuestPlanDraft({
+    catalogue,
     now: 200,
     planStartDate: "2026-08-29",
     store,
@@ -249,9 +269,8 @@ test("reuses an editable replacement plan already starting tomorrow", async () =
 test("starts fresh instead of reopening an already accepted draft", async () => {
   const acceptedDraft = acceptGuestPlan(
     createGuestDraft({
-      catalogueVersion: standardCatalogue.version,
       planStartDate: "2026-08-28",
-      catalogueMealIds,
+      catalogueMeals,
       now: 100,
     }),
     150,
@@ -259,6 +278,7 @@ test("starts fresh instead of reopening an already accepted draft", async () => 
   const store = createMemoryStore(acceptedDraft);
 
   const next = await beginNextGuestPlanDraft({
+    catalogue,
     now: 200,
     planStartDate: "2026-08-29",
     store,
@@ -273,21 +293,21 @@ test("starts fresh instead of reopening an already accepted draft", async () => 
 test("replans the active date window with a fresh meal selection", async () => {
   const store = createMemoryStore(null);
   const initial = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-20",
-    catalogueMealIds,
+    catalogueMeals,
     now: 200,
     emptySlotIndexes: [1, 5],
   });
   // The first generated alternative is this shuffled variant, so the replan
   // must advance again rather than accidentally returning the active plan.
-  const active = shuffleGuestPlan(initial, catalogueMealIds, 200);
+  const active = shuffleGuestPlan(initial, catalogueMeals, 200);
   // A personal recipe has no catalogue ID but still occupies its date.
   const activeChoices = active.mealChoices.map((choice, index) =>
     index === 3 ? { ...choice, catalogueMealId: null } : choice,
   );
 
   const replanned = await beginReplannedGuestPlanDraft({
+    catalogue,
     planStartDate: "2026-08-20",
     currentMealChoices: activeChoices,
     occupiedDates: active.mealChoices.flatMap((choice) =>
@@ -309,17 +329,17 @@ test("replans the active date window with a fresh meal selection", async () => {
 
 test("resumes an editable replan for the same active date window", async () => {
   const inProgress = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-20",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [1, 4],
   });
   const store = createMemoryStore(inProgress);
 
   const resumed = await beginReplannedGuestPlanDraft({
+    catalogue,
     planStartDate: "2026-08-20",
-    currentMealChoices: shuffleGuestPlan(inProgress, catalogueMealIds, 150)
+    currentMealChoices: shuffleGuestPlan(inProgress, catalogueMeals, 150)
       .mealChoices,
     occupiedDates: inProgress.mealChoices.flatMap((choice) =>
       choice.catalogueMealId === null ? [] : [choice.date],
@@ -335,15 +355,15 @@ test("resumes an editable replan for the same active date window", async () => {
 
 test("refreshes a local draft that still matches the active plan", async () => {
   const active = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-20",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [2],
   });
   const store = createMemoryStore(active);
 
   const replanned = await beginReplannedGuestPlanDraft({
+    catalogue,
     planStartDate: "2026-08-20",
     currentMealChoices: active.mealChoices,
     occupiedDates: active.mealChoices.flatMap((choice) =>
@@ -362,7 +382,7 @@ test("remove rejects empty storage without persisting a draft", async () => {
   const store = createMemoryStore(null);
 
   await expect(
-    removeGuestPlanMeal({ date: "2026-08-29", now: 200, store }),
+    removeGuestPlanMeal({ catalogue, date: "2026-08-29", now: 200, store }),
   ).rejects.toThrow("There is no guest plan on this device to update.");
   expect(store.writes).toBe(0);
   expect(await store.read()).toBeNull();
@@ -370,9 +390,8 @@ test("remove rejects empty storage without persisting a draft", async () => {
 
 test("replaces a planned meal with a chosen catalogue recipe", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed);
@@ -382,6 +401,7 @@ test("replaces a planned meal with a chosen catalogue recipe", async () => {
   expect(nextMealId).toBeTruthy();
 
   const replaced = await replaceGuestPlanMeal({
+    catalogue,
     date: "2026-08-29",
     catalogueMealId: nextMealId!,
     now: 200,
@@ -398,6 +418,7 @@ test("replace rejects empty storage without persisting a draft", async () => {
 
   await expect(
     replaceGuestPlanMeal({
+      catalogue,
       date: "2026-08-29",
       catalogueMealId: catalogueMealIds[0]!,
       now: 200,
@@ -409,20 +430,21 @@ test("replace rejects empty storage without persisting a draft", async () => {
 
 test("accepts a draft and keeps one claim key across retries", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [2],
   });
   const store = createMemoryStore(seed);
 
   const prepared = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 200,
     claimKey: "claim_key_1234567890",
     store,
   });
   const retried = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 300,
     claimKey: "different_key_123456",
     store,
@@ -441,20 +463,21 @@ test("accepts a draft and keeps one claim key across retries", async () => {
 
 test("cancels a pending claim but preserves the exact local draft", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [2],
   });
   const store = createMemoryStore(seed);
   const prepared = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 200,
     claimKey: "claim_key_1234567890",
     store,
   });
 
   await cancelPendingGuestPlanClaim({
+    catalogue,
     expectedDraft: prepared,
     now: 300,
     store,
@@ -469,13 +492,13 @@ test("cancels a pending claim but preserves the exact local draft", async () => 
 
 test("clears only the draft revision acknowledged by a claim", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed);
   const submitted = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 200,
     claimKey: "claim_key_1234567890",
     store,
@@ -485,12 +508,14 @@ test("clears only the draft revision acknowledged by a claim", async () => {
   )!;
 
   const newerDraft = await replaceGuestPlanMeal({
+    catalogue,
     date: submitted.mealChoices[0]!.date,
     catalogueMealId: replacementMealId,
     now: 300,
     store,
   });
   const cleared = await clearClaimedGuestPlanDraft({
+    catalogue,
     expectedDraft: submitted,
     store,
   });
@@ -501,13 +526,13 @@ test("clears only the draft revision acknowledged by a claim", async () => {
 
 test("does not cancel a newer claim prepared in another tab", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
   });
   const store = createMemoryStore(seed);
   const firstClaim = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 200,
     claimKey: "claim_key_1234567890",
     store,
@@ -516,18 +541,21 @@ test("does not cancel a newer claim prepared in another tab", async () => {
     (id) => id !== firstClaim.mealChoices[0]?.catalogueMealId,
   )!;
   await replaceGuestPlanMeal({
+    catalogue,
     date: firstClaim.mealChoices[0]!.date,
     catalogueMealId: replacementMealId,
     now: 300,
     store,
   });
   const newerClaim = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
     now: 400,
     claimKey: "new_claim_key_123456",
     store,
   });
 
   await cancelPendingGuestPlanClaim({
+    catalogue,
     expectedDraft: firstClaim,
     now: 500,
     store,
@@ -538,9 +566,8 @@ test("does not cancel a newer claim prepared in another tab", async () => {
 
 test("refuses to prepare a claim when every day is empty", async () => {
   const seed = createGuestDraft({
-    catalogueVersion: standardCatalogue.version,
     planStartDate: "2026-08-29",
-    catalogueMealIds,
+    catalogueMeals,
     now: 100,
     emptySlotIndexes: [0, 1, 2, 3, 4, 5, 6],
   });
@@ -548,6 +575,7 @@ test("refuses to prepare a claim when every day is empty", async () => {
 
   await expect(
     acceptAndPrepareGuestPlanClaim({
+      catalogue,
       now: 200,
       claimKey: "claim_key_1234567890",
       store,

@@ -16,7 +16,7 @@ Pure recipe-domain tests run without a browser or web server:
 pnpm test:unit
 ```
 
-They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein- and shopping-category validation, catalogue ID/slug uniqueness, version-scoped catalogue lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping (including same-name items kept separate across shopping categories). Keep the suite small. Do not assert catalogue size, release version numbers, or other content that changes as meals are added.
+They cover deterministic domain risks that are easy to regress without a browser: lossless ingredient quantity text, stable line IDs, protein- and shopping-category validation, catalogue ID/slug uniqueness, exact meal-revision lookup, guest-plan construction/claim reconciliation, meal-plan selection, and shopping-list grouping (including same-name items kept separate across shopping categories). Keep the suite small. Do not assert catalogue size, individual meal version numbers, or other content that changes as meals are added.
 
 Authenticated Convex lifecycle tests run against the official in-memory test backend:
 
@@ -48,7 +48,7 @@ pnpm test:e2e
 
 The Playwright web server runs `next start`, so the regular production build must exist first.
 
-CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. A missing value fails the relevant Next.js build before tests run.
+CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. Set `SITE_URL` to the canonical web origin for sitemap generation. A missing required public value fails the relevant Next.js build before tests run.
 
 ## Upcoming
 

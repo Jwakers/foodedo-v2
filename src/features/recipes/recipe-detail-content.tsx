@@ -66,7 +66,12 @@ export function RecipeDetailContent({
       onStartCooking();
       return;
     }
-    router.push(recipeCookPath(meal.slug, selectedServings));
+    router.push(
+      recipeCookPath(meal.slug, selectedServings, {
+        catalogueMealId: meal.id,
+        catalogueVersion: meal.version,
+      }),
+    );
   };
   const handlePlanMeal = () => {
     if (onPlanMeal) {

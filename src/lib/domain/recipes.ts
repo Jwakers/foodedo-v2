@@ -17,7 +17,6 @@ export const RECIPE_LIMITS = {
   timerCueLabel: 160,
   servings: 1_000,
   minutes: 10_080,
-  imageSrc: 240,
 } as const;
 
 export const PROTEIN_CATEGORIES = [
@@ -83,7 +82,6 @@ export type RecipeContent = {
   proteinCategory: ProteinCategory;
   costBand?: CostBand;
   preheat?: RecipePreheat;
-  imageSrc?: string;
 };
 
 export type RecipeSource =
@@ -91,16 +89,38 @@ export type RecipeSource =
   | {
       type: "catalogue";
       catalogueMealId: string;
+      /** The immutable revision of this individual meal, not a catalogue release. */
       catalogueVersion: number;
     };
 
-export type CatalogueMeal = RecipeContent & {
-  id: string;
-  slug: string;
+/** Identifies one immutable revision of one catalogue meal. */
+export type CatalogueMealReference = {
+  catalogueMealId: string;
+  catalogueVersion: number;
 };
 
-export type StandardCatalogue = {
+/** Stable key for maps and sets indexed by an exact catalogue meal revision. */
+export function catalogueMealReferenceKey({
+  catalogueMealId,
+  catalogueVersion,
+}: CatalogueMealReference) {
+  return `${catalogueMealId}:${catalogueVersion}`;
+}
+
+export type CatalogueMeal = RecipeContent & {
+  id: string;
   version: number;
+  slug: string;
+  position: number;
+  imageSrc?: string;
+};
+
+export type CatalogueMealSummary = Omit<
+  CatalogueMeal,
+  "ingredients" | "steps" | "preheat"
+>;
+
+export type Catalogue = {
   meals: CatalogueMeal[];
 };
 
@@ -135,11 +155,6 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     0,
     RECIPE_LIMITS.minutes,
   );
-  const imageSrc = optionalText(
-    input.imageSrc,
-    "Image path",
-    RECIPE_LIMITS.imageSrc,
-  );
   const costBand = optionalCostBand(input.costBand);
   const preheat = optionalPreheat(input.preheat);
 
@@ -154,33 +169,51 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
     proteinCategory: requiredProteinCategory(input.proteinCategory),
     ...(costBand === undefined ? {} : { costBand }),
     ...(preheat === undefined ? {} : { preheat }),
-    ...(imageSrc === undefined ? {} : { imageSrc }),
   };
 }
 
-export function prepareStandardCatalogue(
-  input: StandardCatalogue,
-): StandardCatalogue {
-  if (!Number.isInteger(input.version) || input.version < 1) {
-    throw new RecipeValidationError(
-      "Catalogue version must be a positive whole number.",
-    );
-  }
-
+export function prepareCatalogue(input: Catalogue): Catalogue {
   boundedList(input.meals, "Catalogue meals", 1, RECIPE_LIMITS.catalogueMeals);
   uniqueIds(input.meals, "Catalogue meal");
   uniqueValues(
     input.meals.map((meal) => meal.slug),
     "Catalogue meal slugs",
   );
+  uniqueValues(
+    input.meals.map((meal) => String(meal.position)),
+    "Catalogue meal positions",
+  );
 
   return {
-    version: input.version,
-    meals: input.meals.map(({ id, slug, ...content }) => ({
-      id: requiredText(id, "Catalogue meal ID", RECIPE_LIMITS.catalogueMealId),
-      slug: requiredSlug(slug),
-      ...prepareRecipeContent(content),
-    })),
+    meals: input.meals.map(
+      ({ id, version, slug, position, imageSrc, ...content }, index) => {
+        if (!Number.isInteger(version) || version < 1) {
+          throw new RecipeValidationError(
+            `Catalogue meal ${index + 1} version must be a positive whole number.`,
+          );
+        }
+        const preparedImageSrc = optionalText(imageSrc, "Image URL", 2_000);
+        return {
+          id: requiredText(
+            id,
+            "Catalogue meal ID",
+            RECIPE_LIMITS.catalogueMealId,
+          ),
+          version,
+          slug: requiredSlug(slug),
+          position: requiredWholeNumber(
+            position,
+            "Catalogue meal position",
+            0,
+            999,
+          ),
+          ...(preparedImageSrc === undefined
+            ? {}
+            : { imageSrc: preparedImageSrc }),
+          ...prepareRecipeContent(content),
+        };
+      },
+    ),
   };
 }
 
@@ -329,6 +362,20 @@ function requiredPositiveWholeNumber(
   if (!Number.isInteger(value) || value < 1 || value > maximum) {
     throw new RecipeValidationError(
       `${label} must be a whole number between 1 and ${maximum}.`,
+    );
+  }
+  return value;
+}
+
+function requiredWholeNumber(
+  value: number,
+  label: string,
+  minimum: number,
+  maximum: number,
+) {
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw new RecipeValidationError(
+      `${label} must be a whole number between ${minimum} and ${maximum}.`,
     );
   }
   return value;

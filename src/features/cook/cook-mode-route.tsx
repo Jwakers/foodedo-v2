@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { RecipeDetailContent } from "@/features/recipes/recipe-detail-content";
+import { CookModePage } from "@/features/cook/cook-mode-page";
+import { Button } from "@/components/ui/button";
 import {
   useCatalogueMeal,
   useCurrentCatalogueMeal,
 } from "@/features/recipes/use-catalogue";
-import { Button } from "@/components/ui/button";
 import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
 
-export function RecipeDetailPage() {
+export function CookModeRoute() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
   const reference = parseRecipeCatalogueReference(searchParams);
@@ -22,21 +21,14 @@ export function RecipeDetailPage() {
   const currentMeal = useCurrentCatalogueMeal(reference === null ? slug : null);
   const meal = reference === null ? currentMeal : pinnedMeal;
 
-  useEffect(() => {
-    if (meal) document.title = `${meal.title} · Foodedo`;
-    return () => {
-      document.title = "Foodedo";
-    };
-  }, [meal]);
-
   if (slug === null || meal === null) {
     return (
-      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
+      <main className="min-h-dvh bg-paper px-page-inline py-16 text-center">
         <h1 className="font-display text-28 font-semibold text-ink">
           Recipe unavailable
         </h1>
         <p className="mt-2 text-14 text-graphite">
-          This recipe could not be found in the current catalogue.
+          This recipe could not be opened in Cook Mode.
         </p>
         <Button className="mt-5" onClick={() => window.location.reload()}>
           Try again
@@ -44,18 +36,10 @@ export function RecipeDetailPage() {
       </main>
     );
   }
-
   if (meal === undefined) {
     return (
-      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
-        Loading recipe…
-      </main>
+      <main className="min-h-dvh bg-paper" aria-label="Loading cook mode" />
     );
   }
-
-  return (
-    <div className="mx-auto w-full max-w-175">
-      <RecipeDetailContent meal={meal} presentation="page" />
-    </div>
-  );
+  return <CookModePage meal={meal} catalogueVersion={meal.version} />;
 }

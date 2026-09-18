@@ -15,14 +15,14 @@ import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
 import { useDrawerStack } from "@/components/ui/drawer-stack";
 import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import {
   formatMealDurationLabel,
   formatPlanWeekdayLong,
   formatPlanWeekdayShort,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
-import type { CatalogueMeal } from "@/lib/domain/recipes";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
+import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
@@ -41,13 +41,14 @@ export function PlanMealSwap({
   onOpenPreview,
 }: {
   date: string;
-  currentMeal?: CatalogueMeal;
+  currentMeal?: CatalogueMealSummary;
   isSwapping?: boolean;
   onSwap: (catalogueMealId: string) => Promise<unknown> | void;
   onOpenPreview: (catalogueMealId: string) => void;
 }) {
   const { push } = useDrawerStack();
-  const candidates = standardCatalogue.meals.filter(
+  const catalogue = useCurrentCatalogue();
+  const candidates = (catalogue?.meals ?? []).filter(
     (meal) => meal.id !== currentMeal?.id,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -203,7 +204,7 @@ function SwapCandidateRow({
   onSelect,
   onOpenPreview,
 }: {
-  meal: CatalogueMeal;
+  meal: CatalogueMealSummary;
   selected: boolean;
   disabled: boolean;
   onSelect: () => void;

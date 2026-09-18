@@ -33,6 +33,7 @@ export function RecipeDetailHeaderActions({
         onClick={() => {
           void toggleSave({
             catalogueMealId: recipe.id,
+            catalogueVersion: recipe.version,
             title: recipe.title,
           });
         }}

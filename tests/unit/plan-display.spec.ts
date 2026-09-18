@@ -64,7 +64,9 @@ test("resolves draft rows with duration labels when times exist", () => {
   const meals: CatalogueMeal[] = [
     {
       id: "meal-a",
+      version: 1,
       slug: "meal-a",
+      position: 0,
       title: "Meal A",
       proteinCategory: "chicken",
       ingredients: [],
@@ -74,23 +76,29 @@ test("resolves draft rows with duration labels when times exist", () => {
     },
     {
       id: "meal-b",
+      version: 1,
       slug: "meal-b",
+      position: 1,
       title: "Meal B",
       proteinCategory: "fish",
       ingredients: [],
       steps: [],
     },
   ];
-  const mealsById = new Map(meals.map((meal) => [meal.id, meal]));
+  const mealsByReference = new Map(
+    meals.map((meal) => [`${meal.id}:${meal.version}`, meal]),
+  );
   const draft = createGuestDraft({
-    catalogueVersion: 1,
     planStartDate: "2026-08-29",
-    catalogueMealIds: meals.map((meal) => meal.id),
+    catalogueMeals: meals.map((meal) => ({
+      catalogueMealId: meal.id,
+      catalogueVersion: meal.version,
+    })),
     now: 1,
     emptySlotIndexes: [2],
   });
 
-  const rows = resolveGuestPlanMealRows({ draft, mealsById });
+  const rows = resolveGuestPlanMealRows({ draft, mealsByReference });
 
   expect(rows).toHaveLength(7);
   expect(rows[0]).toMatchObject({
@@ -178,12 +186,14 @@ test("features tonight or the next upcoming planned meal", () => {
 });
 
 test("fills free days only inside the active plan's date range", () => {
-  const mealsById = new Map<string, CatalogueMeal>([
+  const mealsByReference = new Map<string, CatalogueMeal>([
     [
-      "meal-a",
+      "meal-a:1",
       {
         id: "meal-a",
+        version: 1,
         slug: "meal-a",
+        position: 0,
         title: "Meal A",
         proteinCategory: "chicken",
         ingredients: [],
@@ -205,6 +215,7 @@ test("fills free days only inside the active plan's date range", () => {
         description: null,
         imageSrc: null,
         catalogueMealId: "meal-a",
+        catalogueVersion: 1,
         catalogueMealSlug: "meal-a",
         prepMinutes: 10,
         cookMinutes: 15,
@@ -216,12 +227,13 @@ test("fills free days only inside the active plan's date range", () => {
         description: null,
         imageSrc: null,
         catalogueMealId: "meal-a",
+        catalogueVersion: 1,
         catalogueMealSlug: "meal-a",
         prepMinutes: 10,
         cookMinutes: 15,
       },
     ],
-    mealsById,
+    mealsByReference,
   });
 
   expect(rows).toHaveLength(5);

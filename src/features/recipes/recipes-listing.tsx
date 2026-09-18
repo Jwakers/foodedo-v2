@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/drawer";
 import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
 import { RecipeCard } from "@/features/recipes/recipe-card";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import {
   RecipeFilterPanel,
   recipeQuickFilterLabels,
@@ -22,7 +23,7 @@ import {
   formatMealDurationLabel,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
-import type { CatalogueMeal } from "@/lib/domain/recipes";
+import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
@@ -30,7 +31,8 @@ import { cn } from "@/lib/utils/cn";
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
 
-export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
+export function RecipesListing() {
+  const catalogue = useCurrentCatalogue();
   const { isLoaded, isSignedIn } = useAuth();
   const {
     isLibraryLoading,
@@ -41,6 +43,28 @@ export function RecipesListing({ meals }: { meals: CatalogueMeal[] }) {
   } = useCatalogueRecipeLibrary();
   const [scope, setScope] = useState<RecipeScope>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  if (catalogue === undefined) {
+    return (
+      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
+        Loading recipes…
+      </main>
+    );
+  }
+  if (catalogue === null || catalogue.meals.length === 0) {
+    return (
+      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
+        <h1 className="font-display text-28 font-semibold text-ink">
+          Recipes are unavailable
+        </h1>
+        <p className="mt-2 text-14 text-graphite">Please try again shortly.</p>
+        <Button className="mt-5" onClick={() => window.location.reload()}>
+          Try again
+        </Button>
+      </main>
+    );
+  }
+  const meals = catalogue.meals;
 
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
@@ -200,11 +224,12 @@ function CatalogueGrid({
 }: {
   heading: string;
   countLabel: string;
-  meals: CatalogueMeal[];
+  meals: CatalogueMealSummary[];
   isSaved: (catalogueMealId: string) => boolean;
   isSavePending: (catalogueMealId: string) => boolean;
   onToggleSave: (args: {
     catalogueMealId: string;
+    catalogueVersion: number;
     title: string;
   }) => Promise<unknown> | void;
 }) {
@@ -225,6 +250,7 @@ function CatalogueGrid({
               onToggleSave={() =>
                 onToggleSave({
                   catalogueMealId: meal.id,
+                  catalogueVersion: meal.version,
                   title: meal.title,
                 })
               }
@@ -236,7 +262,11 @@ function CatalogueGrid({
   );
 }
 
-function YoursGrid({ imageFallbacks }: { imageFallbacks: CatalogueMeal[] }) {
+function YoursGrid({
+  imageFallbacks,
+}: {
+  imageFallbacks: CatalogueMealSummary[];
+}) {
   const placeholders = yoursPlaceholders(imageFallbacks);
 
   return (
@@ -322,7 +352,7 @@ function CollectionHeading({
   );
 }
 
-function catalogueMealMeta(meal: CatalogueMeal) {
+function catalogueMealMeta(meal: CatalogueMealSummary) {
   const duration = formatMealDurationLabel(meal.prepMinutes, meal.cookMinutes);
   const protein = formatProteinCategoryLabel(meal.proteinCategory);
   return [duration, protein].filter(Boolean).join(" · ");
@@ -336,7 +366,7 @@ function recipeCountLabel(count: number) {
  * Light placeholder “Yours” cards — not real user recipes yet.
  * Images borrow catalogue assets by slug so paths don’t drift.
  */
-function yoursPlaceholders(meals: CatalogueMeal[]) {
+function yoursPlaceholders(meals: CatalogueMealSummary[]) {
   const imageBySlug = (slug: string) =>
     meals.find((meal) => meal.slug === slug)?.imageSrc ?? null;
 

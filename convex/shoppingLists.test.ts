@@ -34,6 +34,7 @@ test("one plan keeps one list and reconciles changed ingredients", async () => {
         },
       ],
       steps: [{ id: "step", text: "Cook." }],
+      proteinCategory: "chicken",
       source: { type: "manual" },
       updatedAt: 1,
     });
@@ -55,6 +56,7 @@ test("one plan keeps one list and reconciles changed ingredients", async () => {
         },
       ],
       steps: [{ id: "step", text: "Cook." }],
+      proteinCategory: "meat-free",
       source: { type: "manual" },
       updatedAt: 1,
     });

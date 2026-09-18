@@ -72,9 +72,7 @@ export function CookModePage({
         ? "ingredients"
         : "step";
   const scrollKey =
-    session.phase.name === "step"
-      ? `step:${session.phase.stepIndex}`
-      : surface;
+    session.phase.name === "step" ? `step:${session.phase.stepIndex}` : surface;
   useCookScrollRecovery({
     loaded: loaded && session.phase.name !== "complete",
     surface,
@@ -85,7 +83,12 @@ export function CookModePage({
 
   const exit = () => {
     void setCookScreenAwake(false);
-    router.push(recipeDetailPath(meal.slug));
+    router.push(
+      recipeDetailPath(meal.slug, {
+        catalogueMealId: meal.id,
+        catalogueVersion: meal.version,
+      }),
+    );
   };
   const dispatchAtCurrentTime = (
     action: Omit<
@@ -141,7 +144,14 @@ export function CookModePage({
     return (
       <CompleteScreen
         meal={meal}
-        onRecipe={() => router.push(recipeDetailPath(meal.slug))}
+        onRecipe={() =>
+          router.push(
+            recipeDetailPath(meal.slug, {
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            }),
+          )
+        }
         onWeek={() => router.push("/week")}
         onExit={exit}
       />

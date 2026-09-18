@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { AppHeader } from "@/components/app-header";
 import { AppNavigation } from "@/components/app-navigation";
@@ -40,7 +40,11 @@ function AppShellChrome({ children }: { children: ReactNode }) {
         <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}
       <GuestPlanClaimResume />
-      {showChrome && !isCooking ? <AppHeader /> : null}
+      {showChrome && !isCooking ? (
+        <Suspense fallback={null}>
+          <AppHeader />
+        </Suspense>
+      ) : null}
       <div className={cn("flex-1", showDock && "pb-(--app-nav-height)")}>
         {children}
       </div>

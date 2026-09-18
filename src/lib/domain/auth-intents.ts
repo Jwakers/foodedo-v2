@@ -5,7 +5,7 @@ import { RECIPE_LIMITS } from "./recipes";
  * the app can resume one job after authentication (OAuth redirect, reload, or
  * modal completion). Validate on read; clear after success or abandon.
  *
- * Guest plan claiming is different — the claim key lives on `GuestDraftV1` and
+ * Guest plan claiming is different — the claim key lives on `GuestDraft` and
  * is submitted with the draft payload, not stored here.
  */
 export const CATALOGUE_SAVE_INTENT_SCHEMA_VERSION = 1 as const;

@@ -1,8 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/react";
 import type { OptimisticLocalStore } from "convex/browser";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import {
   ArrowRight,
@@ -21,6 +20,7 @@ import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AccountConnectionError } from "@/components/account-connection-error";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Drawer,
@@ -136,8 +136,7 @@ export function ShoppingListPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const { status, isAuthenticated } = useFoodedoAuth();
   const current = useQuery(
     api.shoppingLists.getCurrent,
     isAuthenticated ? {} : "skip",
@@ -172,14 +171,13 @@ export function ShoppingListPage() {
   }, [pathname, recentLists, requestedList, requestedListId, router]);
 
   if (
-    !isLoaded ||
-    (isSignedIn && isConvexAuthLoading) ||
+    status === "loading" ||
     (isAuthenticated && (current === undefined || recentLists === undefined))
   ) {
     return <ShoppingListLoading />;
   }
 
-  if (isSignedIn && !isAuthenticated) {
+  if (status === "connection_error") {
     return <AccountConnectionError />;
   }
 

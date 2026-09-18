@@ -36,9 +36,9 @@ The pre-plan sheet resolves its initial values from this record and then Foodedo
 
 ### catalogue meals (standard content)
 
-Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same complete standard catalogue for a given release. It is currently a versioned in-code bundle with stable catalogue IDs, real meal content (~30 system meals), hero images under `public/images/catalogue/`, and required `proteinCategory` selection metadata. This keeps the contract flexible while MVP surfaces settle.
+Foodedo's standard meal catalogue is product content, not user-owned data. Guests and account holders receive the same current set of published meal revisions through unauthenticated Convex queries.
 
-Move catalogue content to explicit public, non-personal Convex reads before introducing generation, administration, frequent independent updates, or further substantial catalogue growth. Persist authoring candidates separately from immutable published revisions: generation creates a draft, validation and review promote it, and only published standard revisions are returned to guests. Saving continues to copy the trusted published revision into a private recipe snapshot.
+`catalogueMeals` stores a stable catalogue identity, positive per-meal version, status (`staging`, `published`, or `retired`), unique current slug, deterministic current position, validated recipe content, publication timestamps, and an optional typed Convex storage image ID. Exactly one revision per stable meal may be published. Published and retired revisions are immutable/readable; staging revisions are not public. Status/order, meal-ID/version, meal-ID/status, and status/slug indexes support current and exact-revision reads. Saving copies a trusted published or retired revision into a private recipe snapshot. There is no catalogue-wide release entity.
 
 An early catalogue can be small because the product is early. Do not model a separate guest subset or use authentication to gate standard meals.
 
@@ -52,11 +52,11 @@ Recipe content contains title, optional description, bounded ingredient lines an
 
 `savedAt` is explicit library membership. Manual creation sets it immediately; choosing **Save recipe** sets it on a catalogue snapshot. A meal plan may create the same private snapshot solely to preserve what was planned without adding it to **My recipes**. Removing a recipe from the library clears `savedAt` rather than deleting a snapshot still referenced by a plan.
 
-**Indexes:** `by_owner_and_updated_at`, `by_owner_and_saved_at`, `by_owner_and_catalogue_source`, and `by_owner_and_catalogue_version`. The saved index paginates explicit library membership; the source index makes one meal revision idempotent; the version index hydrates saved state for the visible catalogue without scanning a user's recipe library.
+**Indexes:** `by_owner_and_updated_at`, `by_owner_and_saved_at`, and `by_owner_and_catalogue_source`. The saved index paginates explicit library membership; the source index supports both stable-identity saved-state lookup and exact-revision idempotency without scanning a user's recipe library.
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
-**Deferred vs V1:** canonical ingredient identity and synonym merging, broader ingredient or nutritional taxonomies beyond the five shopping groups, cuisine unions, generator flags, images, search, import, public slugs, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
+**Deferred vs V1:** canonical ingredient identity and synonym merging, broader ingredient or nutritional taxonomies beyond the five shopping groups, cuisine unions, generator flags, manual image upload, search, import, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
 
 ### mealPlans
 

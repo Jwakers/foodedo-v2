@@ -1,4 +1,4 @@
-import type { GuestDraftV1 } from "@/lib/domain/guest-draft";
+import type { GuestDraft } from "@/lib/domain/guest-draft";
 import {
   localObjectStores,
   observeTransactionComplete,
@@ -8,14 +8,14 @@ import {
 } from "./local-database";
 
 export type GuestDraftMutationResult = {
-  draft: GuestDraftV1;
+  draft: GuestDraft;
   /** When false, storage is left unchanged after the exclusive read. */
   write: boolean;
 };
 
 export interface GuestDraftStore {
   read(): Promise<unknown | null>;
-  write(draft: GuestDraftV1): Promise<void>;
+  write(draft: GuestDraft): Promise<void>;
   clear(): Promise<void>;
   /**
    * Atomically delete the current draft only when it is still the expected
@@ -29,7 +29,7 @@ export interface GuestDraftStore {
    */
   runMutation(
     mutate: (current: unknown | null) => GuestDraftMutationResult,
-  ): Promise<GuestDraftV1>;
+  ): Promise<GuestDraft>;
 }
 
 const objectStoreName = localObjectStores.guestDrafts;

@@ -1,10 +1,10 @@
-import { RECIPE_LIMITS } from "./recipes";
+import { RECIPE_LIMITS, type CatalogueMealReference } from "./recipes";
 import {
   rotatingMealPlanSelectionStrategy,
   selectReplacementMeal,
 } from "./meal-plan-selection";
 
-export const GUEST_DRAFT_SCHEMA_VERSION = 2 as const;
+export const GUEST_DRAFT_SCHEMA_VERSION = 3 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
 export const PLAN_DAY_OPTIONS = [3, 5, 7] as const;
 export const MINIMUM_PLAN_SERVINGS = 1 as const;
@@ -17,49 +17,56 @@ const maximumClaimKeyLength = 100;
 const claimKeyPattern = /^[A-Za-z0-9_-]+$/;
 const planDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-export type GuestMealChoiceV1 = {
+export type GuestMealChoice = {
   date: string;
   catalogueMealId: string | null;
+  catalogueVersion: number | null;
 };
 
-export type GuestPlanClaimV1 = {
+export type GuestPlanClaim = {
   key: string;
   requestedAt: number;
   completedAt?: number;
 };
 
-export type GuestDraftV1 = {
+/** Current in-memory shape; persisted schema versions are an implementation detail. */
+export type GuestDraft = {
   schemaVersion: typeof GUEST_DRAFT_SCHEMA_VERSION;
-  catalogueVersion: number;
   planStartDate: string;
   planDays: PlanDays;
   servings: number;
-  mealChoices: GuestMealChoiceV1[];
+  mealChoices: GuestMealChoice[];
   acceptedAt?: number;
-  claim?: GuestPlanClaimV1;
+  claim?: GuestPlanClaim;
   createdAt: number;
   updatedAt: number;
 };
 
+/** @deprecated Prefer the unversioned domain name; this alias reads schema v2/v3. */
+export type GuestDraftV1 = GuestDraft;
+/** @deprecated Prefer the unversioned domain name. */
+export type GuestMealChoiceV1 = GuestMealChoice;
+/** @deprecated Prefer the unversioned domain name. */
+export type GuestPlanClaimV1 = GuestPlanClaim;
+
 export function createGuestDraft({
-  catalogueVersion,
   planStartDate,
-  catalogueMealIds,
+  catalogueMeals,
   now,
   planDays = GUEST_PLAN_DAYS,
   servings = 4,
   emptySlotIndexes = [],
 }: {
-  catalogueVersion: number;
   planStartDate: string;
-  catalogueMealIds: readonly string[];
+  catalogueMeals: readonly CatalogueMealReference[];
   now: number;
   planDays?: PlanDays;
   servings?: number;
   emptySlotIndexes?: readonly number[];
 }): GuestDraftV1 {
-  requirePositiveWholeNumber(catalogueVersion, "Catalogue version");
   requirePlanDate(planStartDate);
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Creation time");
   requirePlanDays(planDays);
@@ -69,20 +76,23 @@ export function createGuestDraft({
   let mealCursor = 0;
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion,
     planStartDate,
     planDays,
     servings,
     mealChoices: Array.from({ length: planDays }, (_, index) => {
       const date = addDaysToPlanDate(planStartDate, index);
       if (emptySlots.has(index)) {
-        return { date, catalogueMealId: null };
+        return { date, catalogueMealId: null, catalogueVersion: null };
       }
 
       const catalogueMealId =
         catalogueMealIds[mealCursor % catalogueMealIds.length]!;
       mealCursor += 1;
-      return { date, catalogueMealId };
+      return {
+        date,
+        catalogueMealId,
+        catalogueVersion: catalogueVersions.get(catalogueMealId)!,
+      };
     }),
     createdAt: now,
     updatedAt: now,
@@ -98,7 +108,9 @@ export function applyGuestPlanEmptySlots(
   requireTimestamp(now, "Update time");
   const emptySlots = requireEmptySlotIndexes(emptySlotIndexes, draft.planDays);
   const mealChoices = draft.mealChoices.map((choice, index) =>
-    emptySlots.has(index) ? { ...choice, catalogueMealId: null } : choice,
+    emptySlots.has(index)
+      ? { ...choice, catalogueMealId: null, catalogueVersion: null }
+      : choice,
   );
 
   if (
@@ -121,9 +133,11 @@ export function countPlannedGuestMeals(draft: GuestDraftV1) {
 /** Adds one chosen meal to the end of an editable plan, up to seven days. */
 export function extendGuestPlanByOneDay(
   draft: GuestDraftV1,
-  catalogueMealIds: readonly string[],
+  catalogueMeals: readonly CatalogueMealReference[],
   now: number,
 ): GuestDraftV1 {
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
   if (draft.planDays >= GUEST_PLAN_DAYS) {
@@ -149,7 +163,6 @@ export function extendGuestPlanByOneDay(
 
   return {
     schemaVersion: draft.schemaVersion,
-    catalogueVersion: draft.catalogueVersion,
     planStartDate: draft.planStartDate,
     planDays,
     servings: draft.servings,
@@ -158,6 +171,7 @@ export function extendGuestPlanByOneDay(
       {
         date: addDaysToPlanDate(draft.planStartDate, draft.planDays),
         catalogueMealId,
+        catalogueVersion: catalogueVersions.get(catalogueMealId)!,
       },
     ],
     createdAt: draft.createdAt,
@@ -177,42 +191,42 @@ export function rebaseGuestPlanStartDate(
 
   return {
     schemaVersion: draft.schemaVersion,
-    catalogueVersion: draft.catalogueVersion,
     planStartDate,
     planDays: draft.planDays,
     servings: draft.servings,
     mealChoices: draft.mealChoices.map((choice, index) => ({
       date: addDaysToPlanDate(planStartDate, index),
       catalogueMealId: choice.catalogueMealId,
+      catalogueVersion: choice.catalogueVersion,
     })),
     createdAt: draft.createdAt,
     updatedAt: now,
   };
 }
 
-export function readGuestDraftV1(
+/** Reads and upgrades any supported persisted guest draft schema. */
+export function readGuestDraft(
   input: unknown,
-  {
-    catalogueVersion,
-    catalogueMealIds,
-  }: {
-    catalogueVersion: number;
-    catalogueMealIds: readonly string[];
-  },
+  { catalogueMeals }: { catalogueMeals: readonly CatalogueMealReference[] },
 ): GuestDraftV1 | null {
   if (!isRecord(input)) return null;
-  if (input.schemaVersion !== GUEST_DRAFT_SCHEMA_VERSION) return null;
-  if (input.catalogueVersion !== catalogueVersion) return null;
+  const isLegacyDraft = input.schemaVersion === 2;
+  if (!isLegacyDraft && input.schemaVersion !== GUEST_DRAFT_SCHEMA_VERSION) {
+    return null;
+  }
   if (typeof input.planStartDate !== "string") return null;
   if (!isPlanDate(input.planStartDate)) return null;
   if (!isPlanDays(input.planDays) || !isServings(input.servings)) return null;
 
-  const validMealIds = new Set(catalogueMealIds);
+  const validMeals = requireCatalogueMeals(catalogueMeals);
   const mealChoices = readMealChoices(
     input.mealChoices,
     input.planStartDate,
     input.planDays,
-    validMealIds,
+    validMeals,
+    isLegacyDraft && typeof input.catalogueVersion === "number"
+      ? input.catalogueVersion
+      : undefined,
   );
   if (mealChoices === null) return null;
 
@@ -232,7 +246,6 @@ export function readGuestDraftV1(
 
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion,
     planStartDate: input.planStartDate,
     planDays: input.planDays,
     servings: input.servings,
@@ -244,12 +257,17 @@ export function readGuestDraftV1(
   };
 }
 
+/** @deprecated Prefer `readGuestDraft`; persisted schema versions are internal. */
+export const readGuestDraftV1 = readGuestDraft;
+
 export function swapGuestPlanMeal(
   draft: GuestDraftV1,
   date: string,
-  catalogueMealIds: readonly string[],
+  catalogueMeals: readonly CatalogueMealReference[],
   now: number,
 ): GuestDraftV1 {
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
 
@@ -271,20 +289,28 @@ export function swapGuestPlanMeal(
       .filter((mealId): mealId is string => mealId !== null),
   });
   const mealChoices = draft.mealChoices.map((choice, index) =>
-    index === choiceIndex ? { ...choice, catalogueMealId: nextMealId } : choice,
+    index === choiceIndex
+      ? {
+          ...choice,
+          catalogueMealId: nextMealId,
+          catalogueVersion: catalogueVersions.get(nextMealId)!,
+        }
+      : choice,
   );
 
   return editableDraft(draft, mealChoices, now);
 }
 
-/** Replaces one planned day with a chosen catalogue meal. Clears acceptance/claim. */
+/** Sets or replaces one day with a chosen catalogue meal. Clears acceptance/claim. */
 export function setGuestPlanMeal(
   draft: GuestDraftV1,
   date: string,
   catalogueMealId: string,
-  catalogueMealIds: readonly string[],
+  catalogueMeals: readonly CatalogueMealReference[],
   now: number,
 ): GuestDraftV1 {
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
   requireMealId(catalogueMealId);
   requireTimestamp(now, "Update time");
@@ -299,14 +325,16 @@ export function setGuestPlanMeal(
   if (choiceIndex === -1) throw new Error("That date is not in this plan.");
 
   const currentMealId = draft.mealChoices[choiceIndex]!.catalogueMealId;
-  if (currentMealId === null) {
-    throw new Error("That day has no meal to swap.");
-  }
-
   if (currentMealId === catalogueMealId) return draft;
 
   const mealChoices = draft.mealChoices.map((choice, index) =>
-    index === choiceIndex ? { ...choice, catalogueMealId } : choice,
+    index === choiceIndex
+      ? {
+          ...choice,
+          catalogueMealId,
+          catalogueVersion: catalogueVersions.get(catalogueMealId)!,
+        }
+      : choice,
   );
 
   return editableDraft(draft, mealChoices, now);
@@ -334,9 +362,11 @@ export function clearGuestPlanMeal(
 
 export function shuffleGuestPlan(
   draft: GuestDraftV1,
-  catalogueMealIds: readonly string[],
+  catalogueMeals: readonly CatalogueMealReference[],
   now: number,
 ): GuestDraftV1 {
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
 
@@ -363,7 +393,11 @@ export function shuffleGuestPlan(
     if (choice.catalogueMealId === null) return choice;
     const catalogueMealId = selectedMealIds[filledCursor]!;
     filledCursor += 1;
-    return { ...choice, catalogueMealId };
+    return {
+      ...choice,
+      catalogueMealId,
+      catalogueVersion: catalogueVersions.get(catalogueMealId)!,
+    };
   });
 
   return editableDraft(draft, mealChoices, now);
@@ -554,7 +588,6 @@ function editableDraft(
 ): GuestDraftV1 {
   return {
     schemaVersion: draft.schemaVersion,
-    catalogueVersion: draft.catalogueVersion,
     planStartDate: draft.planStartDate,
     planDays: draft.planDays,
     servings: draft.servings,
@@ -568,7 +601,8 @@ function readMealChoices(
   input: unknown,
   planStartDate: string,
   planDays: PlanDays,
-  validMealIds: ReadonlySet<string>,
+  validMeals: ReadonlyMap<string, number>,
+  legacyCatalogueVersion?: number,
 ): GuestMealChoiceV1[] | null {
   if (!Array.isArray(input) || input.length !== planDays) return null;
 
@@ -583,13 +617,28 @@ function readMealChoices(
     }
 
     if (choice.catalogueMealId === null) {
-      choices.push({ date: choice.date, catalogueMealId: null });
+      if (
+        choice.catalogueVersion !== null &&
+        choice.catalogueVersion !== undefined
+      ) {
+        return null;
+      }
+      choices.push({
+        date: choice.date,
+        catalogueMealId: null,
+        catalogueVersion: null,
+      });
       continue;
     }
 
+    const catalogueVersion =
+      typeof choice.catalogueVersion === "number"
+        ? choice.catalogueVersion
+        : legacyCatalogueVersion;
     if (
       typeof choice.catalogueMealId !== "string" ||
-      !validMealIds.has(choice.catalogueMealId)
+      typeof catalogueVersion !== "number" ||
+      validMeals.get(choice.catalogueMealId) !== catalogueVersion
     ) {
       return null;
     }
@@ -597,9 +646,26 @@ function readMealChoices(
     choices.push({
       date: choice.date,
       catalogueMealId: choice.catalogueMealId,
+      catalogueVersion,
     });
   }
   return choices;
+}
+
+function requireCatalogueMeals(
+  meals: readonly CatalogueMealReference[],
+): ReadonlyMap<string, number> {
+  const versions = new Map<string, number>();
+  for (const meal of meals) {
+    requireMealId(meal.catalogueMealId);
+    requirePositiveWholeNumber(meal.catalogueVersion, "Catalogue meal version");
+    if (versions.has(meal.catalogueMealId)) {
+      throw new Error("Catalogue meal IDs must be unique.");
+    }
+    versions.set(meal.catalogueMealId, meal.catalogueVersion);
+  }
+  if (versions.size === 0) throw new Error("The catalogue must not be empty.");
+  return versions;
 }
 
 function requireEmptySlotIndexes(indexes: readonly number[], planDays: number) {

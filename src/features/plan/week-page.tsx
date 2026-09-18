@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useState } from "react";
@@ -21,6 +20,8 @@ import {
 import { PlanReview } from "@/features/plan/plan-review";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
 import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 /**
  * Week tab: guest/temporary review vs signed-in active week. Archived plan
@@ -28,8 +29,7 @@ import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
  */
 export function WeekPage() {
   const router = useRouter();
-  const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
@@ -42,6 +42,7 @@ export function WeekPage() {
     api.planningPreferences.getCurrent,
     isAuthenticated ? {} : "skip",
   );
+  const catalogue = useCurrentCatalogue();
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
   );
@@ -56,8 +57,8 @@ export function WeekPage() {
   );
 
   const isCheckingPlan =
-    !isLoaded ||
-    (isSignedIn && isConvexAuthLoading) ||
+    status === "loading" ||
+    catalogue === undefined ||
     (isAuthenticated &&
       (currentPlan === undefined || planningPreferences === undefined));
 
@@ -65,9 +66,36 @@ export function WeekPage() {
     return <PlanReviewLoading />;
   }
 
-  if (isSignedIn && !isAuthenticated) {
+  if (status === "connection_error") {
     return <AccountConnectionError />;
   }
+
+  if (catalogue === null) {
+    return (
+      <main className="mx-auto flex min-h-[45vh] w-full max-w-175 flex-col items-start justify-center px-page-inline py-10">
+        <h1 className="font-display text-30 font-semibold tracking-title text-ink">
+          Recipes are temporarily unavailable
+        </h1>
+        <p className="mt-2 text-15 text-graphite">
+          Try again before planning another week.
+        </p>
+        <Button className="mt-5" onClick={() => window.location.reload()}>
+          Try again
+        </Button>
+      </main>
+    );
+  }
+
+  const catalogueContract = {
+    currentMeals: catalogue.meals.map((meal) => ({
+      catalogueMealId: meal.id,
+      catalogueVersion: meal.version,
+    })),
+    readableMeals: catalogue.meals.map((meal) => ({
+      catalogueMealId: meal.id,
+      catalogueVersion: meal.version,
+    })),
+  };
 
   if (currentPlan) {
     const activePlan = currentPlan;
@@ -108,6 +136,7 @@ export function WeekPage() {
       setPendingPlanAction("replan");
       try {
         await beginReplannedGuestPlanDraft({
+          catalogue: catalogueContract,
           planStartDate: activePlan.startDate,
           servings: activePlan.servings,
           occupiedDates: activePlan.mealSlots.map((slot) => slot.date),
@@ -133,6 +162,7 @@ export function WeekPage() {
       setPendingPlanAction("next");
       try {
         await beginNextGuestPlanDraft({
+          catalogue: catalogueContract,
           planDays: planningPreferences?.usualPlanDays ?? 7,
           servings: planningPreferences?.usualServings ?? 4,
         });

@@ -8,13 +8,36 @@ import {
   restoreCookSession,
   type CookRecipeContext,
 } from "../../src/lib/domain/cook-session";
-import { standardCatalogue } from "../../src/lib/domain/standard-catalogue";
+import type { CatalogueMeal } from "../../src/lib/domain/recipes";
 
-const meal = standardCatalogue.meals.find(
-  (candidate) => candidate.slug === "baked-chicken-and-rice-casserole",
-)!;
+const catalogueFixture = { version: 2 };
+const meal: CatalogueMeal = {
+  id: "cook-test-meal",
+  version: 2,
+  slug: "cook-test-meal",
+  position: 0,
+  title: "Cook test meal",
+  servings: 4,
+  proteinCategory: "chicken",
+  ingredients: [
+    {
+      id: "ingredient-1",
+      name: "test ingredient",
+      shoppingCategory: "pantry",
+    },
+  ],
+  steps: [
+    { id: "step-1", text: "Prepare the ingredient." },
+    { id: "step-2", text: "Add it to the pan." },
+    {
+      id: "step-3",
+      text: "Cook until ready.",
+      timerCues: [{ id: "cook", label: "Cook", durationSeconds: 600 }],
+    },
+  ],
+};
 const context: CookRecipeContext = {
-  catalogueVersion: standardCatalogue.version,
+  catalogueVersion: catalogueFixture.version,
   meal,
   servings: meal.servings!,
 };
@@ -24,7 +47,7 @@ const timerId = cookTimerId(meal.steps[2]!.id, cue.id);
 test("creates a versioned recoverable Cook session per recipe", () => {
   expect(emptyCookSession(context)).toEqual({
     schemaVersion: 1,
-    catalogueVersion: standardCatalogue.version,
+    catalogueVersion: catalogueFixture.version,
     recipeSlug: meal.slug,
     servings: 4,
     phase: { name: "preparation" },

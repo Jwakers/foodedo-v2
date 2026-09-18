@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth, useClerk } from "@clerk/react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useClerk } from "@clerk/react";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,11 +11,12 @@ import {
   createCatalogueSaveIntent,
   readCatalogueSaveIntent,
 } from "@/lib/domain/auth-intents";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { createCatalogueSaveIntentStore } from "@/lib/platform/auth-intent-store";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 type ToggleCatalogueSaveArgs = {
   catalogueMealId: string;
+  catalogueVersion: number;
   title: string;
 };
 
@@ -26,12 +27,12 @@ const emptySavedRecipeMap: ReadonlyMap<string, Id<"recipes">> = new Map();
  * surfaces. Guests persist one intent before Clerk opens.
  */
 export function useCatalogueRecipeLibrary() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { status, isClerkLoaded, isSignedIn, isAuthenticated } =
+    useFoodedoAuth();
   const { openSignIn } = useClerk();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const savedRecipes = useQuery(
     api.recipes.listSavedCatalogueMeals,
-    isAuthenticated ? { catalogueVersion: standardCatalogue.version } : "skip",
+    isAuthenticated ? {} : "skip",
   );
   const saveCatalogueMeal = useMutation(api.recipes.saveCatalogueMeal);
   const removeMineFromLibrary = useMutation(api.recipes.removeMineFromLibrary);
@@ -53,11 +54,12 @@ export function useCatalogueRecipeLibrary() {
 
   async function toggleSave({
     catalogueMealId,
+    catalogueVersion,
     title,
   }: ToggleCatalogueSaveArgs) {
     if (pendingMealIdsRef.current.has(catalogueMealId)) return;
 
-    if (!isLoaded) {
+    if (!isClerkLoaded) {
       toast.info("Foodedo is still checking your account. Try again.");
       return;
     }
@@ -65,7 +67,7 @@ export function useCatalogueRecipeLibrary() {
     if (!isSignedIn) {
       try {
         await createCatalogueSaveIntentStore().write(
-          createCurrentCatalogueSaveIntent(catalogueMealId),
+          createCurrentCatalogueSaveIntent(catalogueMealId, catalogueVersion),
         );
       } catch (error) {
         console.error("Failed to store catalogue-save resume intent.", error);
@@ -79,7 +81,7 @@ export function useCatalogueRecipeLibrary() {
       return;
     }
 
-    if (isConvexAuthLoading || !isAuthenticated) {
+    if (status !== "authenticated") {
       toast.error(
         "Foodedo couldn’t connect your account yet. Try saving again.",
       );
@@ -106,7 +108,7 @@ export function useCatalogueRecipeLibrary() {
 
       const result = await saveCatalogueMeal({
         catalogueMealId,
-        catalogueVersion: standardCatalogue.version,
+        catalogueVersion,
       });
       if (result.status === "catalogue_unsupported") {
         toast.error("This recipe can’t be saved right now.");
@@ -129,9 +131,11 @@ export function useCatalogueRecipeLibrary() {
   }
 
   const isLibraryLoading = Boolean(
-    isLoaded &&
+    isClerkLoaded &&
     isSignedIn &&
-    (isConvexAuthLoading || !isAuthenticated || savedRecipes === undefined),
+    (status === "loading" ||
+      status === "connection_error" ||
+      savedRecipes === undefined),
   );
 
   return {
@@ -150,12 +154,14 @@ export function useCatalogueRecipeLibrary() {
  * Mounted once at app-shell level so returning on any route completes the job.
  */
 export function CatalogueSaveIntentResume() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { status, isAuthenticated } = useFoodedoAuth();
   const saveCatalogueMeal = useMutation(api.recipes.saveCatalogueMeal);
   const isResumingRef = useRef(false);
 
   useEffect(() => {
-    if (isLoading || !isAuthenticated || isResumingRef.current) return;
+    if (status === "loading" || !isAuthenticated || isResumingRef.current) {
+      return;
+    }
 
     isResumingRef.current = true;
 
@@ -184,14 +190,17 @@ export function CatalogueSaveIntentResume() {
         isResumingRef.current = false;
       }
     })();
-  }, [isAuthenticated, isLoading, saveCatalogueMeal]);
+  }, [isAuthenticated, saveCatalogueMeal, status]);
 
   return null;
 }
 
-function createCurrentCatalogueSaveIntent(catalogueMealId: string) {
+function createCurrentCatalogueSaveIntent(
+  catalogueMealId: string,
+  catalogueVersion: number,
+) {
   return createCatalogueSaveIntent({
-    catalogueVersion: standardCatalogue.version,
+    catalogueVersion,
     catalogueMealId,
     now: Date.now(),
   });

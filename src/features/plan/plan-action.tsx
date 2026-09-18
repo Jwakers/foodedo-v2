@@ -5,10 +5,9 @@ import {
   ClerkLoaded,
   ClerkLoading,
   Show,
-  useAuth,
   useClerk,
 } from "@clerk/react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { ArrowRight, CircleCheck, Minus, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -39,6 +38,7 @@ import {
 } from "@/features/plan/plan-adjustment-controls";
 import type { PrePlanSetup } from "@/features/plan/pre-plan-setup-store";
 import { usePrePlanSetup } from "@/features/plan/use-pre-plan-setup";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import {
   isPlanDayOption,
   MAXIMUM_PLAN_SERVINGS,
@@ -46,8 +46,8 @@ import {
   PLAN_DAY_OPTIONS,
 } from "@/lib/domain/guest-draft";
 import { todayPlanDate, tomorrowPlanDate } from "@/lib/domain/plan-display";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 import { createAdjustPlanIntentStore } from "@/lib/platform/auth-intent-store";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 const guestBenefits = [
   {
@@ -72,16 +72,16 @@ export function PlanAction({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPlanning, setIsPlanning] = useState(false);
-  const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated } = useConvexAuth();
+  const { status, isSignedIn, isAuthenticated } = useFoodedoAuth();
   const { openSignIn } = useClerk();
+  const catalogue = useCurrentCatalogue();
   const preferences = useQuery(
     api.planningPreferences.getCurrent,
     isAuthenticated ? {} : "skip",
   );
   const savedCatalogueMeals = useQuery(
     api.recipes.listSavedCatalogueMeals,
-    isAuthenticated ? { catalogueVersion: standardCatalogue.version } : "skip",
+    isAuthenticated ? {} : "skip",
   );
   // Vaul treats nested Clerk modal clicks as outside-dismiss. Close the drawer
   // before opening Clerk, and keep the intent for post-auth Adjust resume.
@@ -102,7 +102,7 @@ export function PlanAction({
   const { setup, applySetup } = usePrePlanSetup(fallbackSetup);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (status !== "authenticated") return;
 
     let cancelled = false;
 
@@ -123,7 +123,7 @@ export function PlanAction({
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn]);
+  }, [status]);
 
   function handleDrawerOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
@@ -161,7 +161,20 @@ export function PlanAction({
     if (isPlanning) return;
     setIsPlanning(true);
     try {
+      if (catalogue === undefined || catalogue === null) {
+        throw new Error("The catalogue is unavailable.");
+      }
       await beginConfiguredGuestPlanDraft({
+        catalogue: {
+          currentMeals: catalogue.meals.map((meal) => ({
+            catalogueMealId: meal.id,
+            catalogueVersion: meal.version,
+          })),
+          readableMeals: catalogue.meals.map((meal) => ({
+            catalogueMealId: meal.id,
+            catalogueVersion: meal.version,
+          })),
+        },
         planStartDate: setup.startDate,
         planDays: setup.planDays,
         servings: setup.servings,
@@ -189,6 +202,9 @@ export function PlanAction({
         className="w-full"
         disabled={
           isPlanning ||
+          catalogue === undefined ||
+          catalogue === null ||
+          catalogue.meals.length === 0 ||
           (isAuthenticated &&
             (preferences === undefined || savedCatalogueMeals === undefined))
         }

@@ -1,26 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   ensureGuestPlanDraft,
   extendCurrentGuestPlanDraft,
   loadGuestPlanDraftForReview,
+  readStoredGuestPlanDraftMealReferences,
   removeGuestPlanMeal,
   replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
-import type { GuestDraftV1 } from "@/lib/domain/guest-draft";
+import {
+  useCatalogueMeals,
+  useCurrentCatalogue,
+} from "@/features/recipes/use-catalogue";
+import type { GuestDraft } from "@/lib/domain/guest-draft";
+import {
+  catalogueMealReferenceKey,
+  type CatalogueMealSummary,
+} from "@/lib/domain/recipes";
 import {
   resolveGuestPlanMealRows,
   summarizeGuestPlanDraft,
   type GuestPlanMealRow,
 } from "@/lib/domain/plan-display";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
-
-const mealsById = new Map(
-  standardCatalogue.meals.map((meal) => [meal.id, meal]),
-);
 
 const loadErrorMessage =
   "Foodedo couldn’t open your plan on this device. Check storage access and try again.";
@@ -31,29 +35,36 @@ export type GuestPlanDraftState =
   | { status: "error"; message: string }
   | {
       status: "ready";
-      draft: GuestDraftV1;
+      draft: GuestDraft;
       rows: GuestPlanMealRow[];
       summary: string;
     };
 
+type GuestDraftCatalogueSelection = {
+  meals: CatalogueMealSummary[];
+  readableMeals: CatalogueMealSummary[];
+};
+
 function toReadyState(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
+  mealsByReference: ReadonlyMap<string, CatalogueMealSummary>,
 ): Extract<GuestPlanDraftState, { status: "ready" }> {
   return {
     status: "ready",
     draft,
-    rows: resolveGuestPlanMealRows({ draft, mealsById }),
+    rows: resolveGuestPlanMealRows({ draft, mealsByReference }),
     summary: summarizeGuestPlanDraft(draft),
   };
 }
 
-async function readDraftState(): Promise<
-  Exclude<GuestPlanDraftState, { status: "loading" }>
-> {
+async function readDraftState(
+  catalogue: Parameters<typeof loadGuestPlanDraftForReview>[0],
+  mealsByReference: Parameters<typeof toReadyState>[1],
+): Promise<Exclude<GuestPlanDraftState, { status: "loading" }>> {
   try {
-    const draft = await loadGuestPlanDraftForReview();
+    const draft = await loadGuestPlanDraftForReview(catalogue);
     if (!draft) return { status: "empty" };
-    return toReadyState(draft);
+    return toReadyState(draft, mealsByReference);
   } catch (error) {
     console.error("Failed to read guest plan draft.", error);
     return { status: "error", message: loadErrorMessage };
@@ -61,60 +72,113 @@ async function readDraftState(): Promise<
 }
 
 export function useGuestPlanDraft() {
+  const { catalogue: selectedCatalogue, refreshStoredReferences } =
+    useGuestDraftCatalogue();
+  const catalogue = useMemo(
+    () =>
+      selectedCatalogue
+        ? {
+            currentMeals: selectedCatalogue.meals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+            readableMeals: selectedCatalogue.readableMeals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+          }
+        : null,
+    [selectedCatalogue],
+  );
+  const mealsByReference = useMemo(
+    () =>
+      new Map(
+        selectedCatalogue?.readableMeals.map(
+          (meal) =>
+            [
+              catalogueMealReferenceKey({
+                catalogueMealId: meal.id,
+                catalogueVersion: meal.version,
+              }),
+              meal,
+            ] as const,
+        ) ?? [],
+      ),
+    [selectedCatalogue],
+  );
   const [state, setState] = useState<GuestPlanDraftState>({
     status: "loading",
   });
 
   useEffect(() => {
+    if (catalogue === null) return;
     let cancelled = false;
 
     void (async () => {
-      const next = await readDraftState();
+      const next = await readDraftState(catalogue, mealsByReference);
       if (!cancelled) setState(next);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [catalogue, mealsByReference]);
 
   const retry = useCallback(async () => {
+    if (catalogue === null) return;
     setState({ status: "loading" });
-    setState(await readDraftState());
-  }, []);
+    setState(await readDraftState(catalogue, mealsByReference));
+  }, [catalogue, mealsByReference]);
 
   const startPlan = useCallback(async () => {
-    const draft = await ensureGuestPlanDraft();
-    setState(toReadyState(draft));
+    if (catalogue === null) throw new Error("The catalogue is unavailable.");
+    const draft = await ensureGuestPlanDraft({ catalogue });
+    await refreshStoredReferences();
+    setState(toReadyState(draft, mealsByReference));
     return draft;
-  }, []);
+  }, [catalogue, mealsByReference, refreshStoredReferences]);
 
   const tryAnotherWeek = useCallback(async () => {
-    const draft = await shuffleCurrentGuestPlanDraft();
-    setState(toReadyState(draft));
+    if (catalogue === null) throw new Error("The catalogue is unavailable.");
+    const draft = await shuffleCurrentGuestPlanDraft({ catalogue });
+    await refreshStoredReferences();
+    setState(toReadyState(draft, mealsByReference));
     return draft;
-  }, []);
+  }, [catalogue, mealsByReference, refreshStoredReferences]);
 
-  const removeMeal = useCallback(async (date: string) => {
-    const draft = await removeGuestPlanMeal({ date });
-    setState(toReadyState(draft));
-    return draft;
-  }, []);
+  const removeMeal = useCallback(
+    async (date: string) => {
+      if (catalogue === null) throw new Error("The catalogue is unavailable.");
+      const draft = await removeGuestPlanMeal({ catalogue, date });
+      await refreshStoredReferences();
+      setState(toReadyState(draft, mealsByReference));
+      return draft;
+    },
+    [catalogue, mealsByReference, refreshStoredReferences],
+  );
 
   const replaceMeal = useCallback(
     async (date: string, catalogueMealId: string) => {
-      const draft = await replaceGuestPlanMeal({ date, catalogueMealId });
-      setState(toReadyState(draft));
+      if (catalogue === null) throw new Error("The catalogue is unavailable.");
+      const draft = await replaceGuestPlanMeal({
+        catalogue,
+        date,
+        catalogueMealId,
+      });
+      await refreshStoredReferences();
+      setState(toReadyState(draft, mealsByReference));
       return draft;
     },
-    [],
+    [catalogue, mealsByReference, refreshStoredReferences],
   );
 
   const addDay = useCallback(async () => {
-    const draft = await extendCurrentGuestPlanDraft();
-    setState(toReadyState(draft));
+    if (catalogue === null) throw new Error("The catalogue is unavailable.");
+    const draft = await extendCurrentGuestPlanDraft({ catalogue });
+    await refreshStoredReferences();
+    setState(toReadyState(draft, mealsByReference));
     return draft;
-  }, []);
+  }, [catalogue, mealsByReference, refreshStoredReferences]);
 
   return {
     state,
@@ -125,4 +189,64 @@ export function useGuestPlanDraft() {
     replaceMeal,
     addDay,
   };
+}
+
+export function useGuestDraftCatalogue(): {
+  catalogue: GuestDraftCatalogueSelection | null | undefined;
+  refreshStoredReferences: () => Promise<void>;
+} {
+  const currentCatalogue = useCurrentCatalogue();
+  const [storedReferences, setStoredReferences] = useState<
+    | Awaited<ReturnType<typeof readStoredGuestPlanDraftMealReferences>>
+    | undefined
+  >(undefined);
+
+  const refreshStoredReferences = useCallback(async () => {
+    try {
+      setStoredReferences(await readStoredGuestPlanDraftMealReferences());
+    } catch (error) {
+      console.error("Failed to inspect the guest plan draft.", error);
+      setStoredReferences(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readStoredGuestPlanDraftMealReferences()
+      .then((references) => {
+        if (!cancelled) setStoredReferences(references);
+      })
+      .catch((error) => {
+        console.error("Failed to inspect the guest plan draft.", error);
+        if (!cancelled) setStoredReferences(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const pinnedMeals = useCatalogueMeals(storedReferences ?? null);
+
+  const catalogue = useMemo(() => {
+    if (storedReferences === undefined || currentCatalogue === undefined) {
+      return undefined;
+    }
+    if (storedReferences !== null && pinnedMeals === undefined)
+      return undefined;
+    if (currentCatalogue === null && storedReferences === null) return null;
+
+    const currentMeals = currentCatalogue?.meals ?? [];
+    const readableByReference = new Map(
+      currentMeals.map((meal) => [`${meal.id}:${meal.version}`, meal] as const),
+    );
+    for (const meal of pinnedMeals ?? []) {
+      readableByReference.set(`${meal.id}:${meal.version}`, meal);
+    }
+    return {
+      meals: currentMeals,
+      readableMeals: [...readableByReference.values()],
+    };
+  }, [currentCatalogue, pinnedMeals, storedReferences]);
+
+  return { catalogue, refreshStoredReferences };
 }

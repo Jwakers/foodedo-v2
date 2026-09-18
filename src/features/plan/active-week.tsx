@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ActivePlanAdjustDrawer } from "@/features/plan/active-plan-adjust-drawer";
@@ -13,8 +14,12 @@ import {
   resolveActivePlanWeekRows,
   todayPlanDate,
 } from "@/lib/domain/plan-display";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
+import {
+  useCatalogueMeals,
+  useCurrentCatalogue,
+} from "@/features/recipes/use-catalogue";
 import { recipeDetailPath } from "@/lib/routing/recipes";
+import { catalogueMealReferenceKey } from "@/lib/domain/recipes";
 import { cn } from "@/lib/utils/cn";
 
 export type ActiveWeekPlan = {
@@ -31,6 +36,7 @@ export type ActiveWeekPlan = {
     description: string | null;
     imageSrc: string | null;
     catalogueMealId: string | null;
+    catalogueVersion: number | null;
     catalogueMealSlug: string | null;
     prepMinutes: number | null;
     cookMinutes: number | null;
@@ -41,10 +47,6 @@ export type ActiveWeekPlanSummary = Pick<
   ActiveWeekPlan,
   "_id" | "startDate" | "endDate" | "status"
 >;
-
-const standardMealsById = new Map(
-  standardCatalogue.meals.map((meal) => [meal.id, meal] as const),
-);
 
 export function ActiveWeek({
   plan,
@@ -63,18 +65,87 @@ export function ActiveWeek({
   onStartNextPlan: () => void | Promise<void>;
   isStartingNextPlan: boolean;
 }) {
+  const catalogue = useCurrentCatalogue();
+  const pinnedReferences = useMemo(() => {
+    const references = new Map<
+      string,
+      { catalogueMealId: string; catalogueVersion: number }
+    >();
+    for (const slot of plan.mealSlots) {
+      if (
+        slot.catalogueMealId === null ||
+        slot.catalogueVersion === null ||
+        !Number.isInteger(slot.catalogueVersion) ||
+        slot.catalogueVersion < 1
+      ) {
+        continue;
+      }
+      references.set(
+        catalogueMealReferenceKey({
+          catalogueMealId: slot.catalogueMealId,
+          catalogueVersion: slot.catalogueVersion,
+        }),
+        {
+          catalogueMealId: slot.catalogueMealId,
+          catalogueVersion: slot.catalogueVersion,
+        },
+      );
+    }
+    return [...references.values()];
+  }, [plan.mealSlots]);
+  const pinnedMeals = useCatalogueMeals(
+    pinnedReferences.length > 0 ? pinnedReferences : null,
+  );
+  const mealsById = useMemo(
+    () =>
+      new Map(catalogue?.meals.map((meal) => [meal.id, meal] as const) ?? []),
+    [catalogue],
+  );
+  const mealsByReference = useMemo(() => {
+    const byReference = new Map(
+      catalogue?.meals.map(
+        (meal) =>
+          [
+            catalogueMealReferenceKey({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            }),
+            meal,
+          ] as const,
+      ) ?? [],
+    );
+    for (const meal of pinnedMeals ?? []) {
+      byReference.set(
+        catalogueMealReferenceKey({
+          catalogueMealId: meal.id,
+          catalogueVersion: meal.version,
+        }),
+        meal,
+      );
+    }
+    return byReference;
+  }, [catalogue, pinnedMeals]);
   const isArchived = plan.status === "archived";
   const rows = resolveActivePlanWeekRows({
     startDate: plan.startDate,
     endDate: plan.endDate,
     mealSlots: plan.mealSlots,
-    mealsById: standardMealsById,
+    mealsByReference,
+    mealsById,
   });
   const hasPendingAction = isReplanning || isStartingNextPlan;
   const recipeHrefByDate = new Map(
     plan.mealSlots.flatMap((slot) =>
       slot.catalogueMealSlug
-        ? [[slot.date, recipeDetailPath(slot.catalogueMealSlug)] as const]
+        ? [
+            [
+              slot.date,
+              recipeDetailPath(slot.catalogueMealSlug, {
+                catalogueMealId: slot.catalogueMealId ?? undefined,
+                catalogueVersion: slot.catalogueVersion ?? undefined,
+              }),
+            ] as const,
+          ]
         : [],
     ),
   );

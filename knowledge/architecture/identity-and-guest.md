@@ -22,19 +22,19 @@ The full pre-generation adjustment sheet is an authenticated personalisation cap
 
 Guest access is an activation path, not the later Discover job. It must not become a generic recipe feed or a second product.
 
-Authentication protects durable personal data; it does not unlock the standard meal catalogue. The initial catalogue may be small because the product is early, but guests and account holders must see the same complete standard catalogue for that release.
+Authentication protects durable personal data; it does not unlock the standard meal catalogue. The initial catalogue may be small because the product is early, but guests and account holders must see the same current set of published standard meals.
 
 ## Guest data
 
-- Use a versioned standard meal catalogue shared by guests and account holders. The initial implementation may bundle it with the app, but bundling is a delivery choice—not a guest access tier or a separate “starter” collection.
+- Read the same published catalogue from public Convex queries for guests and account holders. Every occupied draft day pins its meal's exact version; retired meal revisions remain readable so an existing draft can still be reviewed and claimed.
 - Store only a bounded draft locally (prefer IndexedDB behind a platform adapter): seven consecutive dated catalogue meal choices, acceptance/claim state, schema version, and timestamps.
 - Do not put guest-owned recipes, plans, settings, or synthetic guest users in Convex.
 - Do not store secrets or treat a device identifier as identity.
 - Give the user an obvious way to clear the draft.
 
-This avoids abandoned anonymous accounts, retention cleanup, and authorization ambiguity. The guest draft remains independent of the backend; while the initial catalogue is bundled, the iOS app can render it without reaching the web origin.
+This avoids abandoned anonymous accounts, retention cleanup, and authorization ambiguity. The guest draft remains local, but catalogue content requires connectivity and has no bundled fallback.
 
-`GuestDraftV1` represents a seven-day meal plan: catalogue/schema versions, a local start date, seven consecutive dated meal choices, acceptance state, an optional idempotent claim key, and timestamps. It is validated when restored from IndexedDB; unknown versions, catalogue revisions, malformed dates, and unknown meal IDs are replaced with a fresh draft. Editing the plan clears acceptance and claim state. A storage failure is disclosed, and sign-in is not opened when the continuation cannot first be stored safely.
+`GuestDraft` represents a bounded meal plan: schema version, a local start date, consecutive dated choices containing exact catalogue meal versions, acceptance state, an optional idempotent claim key, and timestamps. It is validated and upgraded when restored from IndexedDB; unknown schema or meal revisions, malformed dates, and unknown meal IDs are replaced with a fresh draft. Legacy release-2 drafts are translated to per-meal revision 2 when read. Editing the plan clears acceptance and claim state. A storage failure is disclosed, and sign-in is not opened when the continuation cannot first be stored safely.
 
 ## Future premium meals
 
@@ -98,7 +98,7 @@ The provider decision is recorded in [ADR 0008](../decisions/0008-convex-and-cle
 Build the recipe prerequisite, then one identity vertical slice:
 
 1. **Recipe kernel — foundation complete:** bounded recipe content and `CatalogueMeal`, lossless ingredient lines, private authenticated create/read/list operations, owner indexes, and a catalogue-view/save proof now exist.
-2. **Guest contract — complete:** `GuestDraftV1`, platform storage, IndexedDB persistence, and a seven-day adjustable plan now exist around the shared catalogue.
+2. **Guest contract — complete:** `GuestDraft`, platform storage, IndexedDB persistence, and a seven-day adjustable plan now exist around the shared catalogue.
 3. **New Convex project — complete:** V2 has a separate project and development deployment; no V1 keys or deployments are shared.
 4. **Core schema — in progress:** `users`, `recipes`, `mealPlans`, `mealSlots`, `shoppingLists`, `shoppingListItems`, and `guestClaims` support the current recipe-to-shop loop. Remember events remain deferred.
 5. **Authorization boundary:** derive every owner from `ctx.auth` and use owner indexes from the first personal operation.
@@ -112,7 +112,7 @@ Do not begin with a full recipe importer, settings surface, ingredient taxonomy,
 
 ## Authorization boundary
 
-- Public/unauthenticated standard-catalogue reads, if introduced later, must be explicit, bounded, and non-personal.
+- Public/unauthenticated standard-catalogue reads are explicit, bounded, and non-personal.
 - Premium catalogue reads, when introduced, require server-verified authentication and subscription entitlement.
 - Every persistent personal mutation requires authentication and derives ownership server-side.
 - Every personal query scopes through an owner index; never fetch broadly and filter afterward.

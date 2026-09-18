@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
+  catalogueMealStatusValidator,
   recipeContentFields,
   recipeSourceValidator,
   shoppingCategoryValidator,
@@ -28,9 +29,25 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
+  catalogueMeals: defineTable({
+    catalogueMealId: v.string(),
+    version: v.number(),
+    status: catalogueMealStatusValidator,
+    slug: v.string(),
+    position: v.number(),
+    ...recipeContentFields,
+    imageStorageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    publishedAt: v.optional(v.number()),
+  })
+    .index("by_status_and_position", ["status", "position"])
+    .index("by_meal_id_and_version", ["catalogueMealId", "version"])
+    .index("by_meal_id_and_status", ["catalogueMealId", "status"])
+    .index("by_status_and_slug", ["status", "slug"]),
   recipes: defineTable({
     ownerId: v.id("users"),
     ...recipeContentFields,
+    imageStorageId: v.optional(v.id("_storage")),
     source: recipeSourceValidator,
     savedAt: v.optional(v.number()),
     updatedAt: v.number(),
@@ -41,11 +58,6 @@ export default defineSchema({
       "ownerId",
       "source.catalogueMealId",
       "source.catalogueVersion",
-    ])
-    .index("by_owner_and_catalogue_version", [
-      "ownerId",
-      "source.catalogueVersion",
-      "source.catalogueMealId",
     ]),
   mealPlans: defineTable({
     ownerId: v.id("users"),

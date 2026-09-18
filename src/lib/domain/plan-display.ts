@@ -1,5 +1,9 @@
-import { countPlannedGuestMeals, type GuestDraftV1 } from "./guest-draft";
-import type { CatalogueMeal, ProteinCategory } from "./recipes";
+import { countPlannedGuestMeals, type GuestDraft } from "./guest-draft";
+import {
+  catalogueMealReferenceKey,
+  type CatalogueMealSummary,
+  type ProteinCategory,
+} from "./recipes";
 
 export type GuestPlanMealRow = {
   date: string;
@@ -8,7 +12,7 @@ export type GuestPlanMealRow = {
 } & (
   | {
       kind: "planned";
-      meal: CatalogueMeal;
+      meal: CatalogueMealSummary;
       durationLabel: string | null;
     }
   | {
@@ -133,6 +137,8 @@ export type ActivePlanMealSlot = {
   title: string;
   description: string | null;
   imageSrc: string | null;
+  catalogueMealId?: string | null;
+  catalogueVersion?: number | null;
   catalogueMealSlug: string | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
@@ -211,10 +217,10 @@ export function formatProteinCategoryLabel(category: ProteinCategory): string {
 
 export function resolveGuestPlanMealRows({
   draft,
-  mealsById,
+  mealsByReference,
 }: {
-  draft: GuestDraftV1;
-  mealsById: ReadonlyMap<string, CatalogueMeal>;
+  draft: GuestDraft;
+  mealsByReference: ReadonlyMap<string, CatalogueMealSummary>;
 }): GuestPlanMealRow[] {
   return draft.mealChoices.map((choice) => {
     const day = formatPlanDayParts(choice.date);
@@ -227,8 +233,18 @@ export function resolveGuestPlanMealRows({
         dayOfMonth: day.dayOfMonth,
       };
     }
+    if (choice.catalogueVersion === null) {
+      throw new Error(
+        `Catalogue meal is missing its revision: ${choice.catalogueMealId}`,
+      );
+    }
 
-    const meal = mealsById.get(choice.catalogueMealId);
+    const meal = mealsByReference.get(
+      catalogueMealReferenceKey({
+        catalogueMealId: choice.catalogueMealId,
+        catalogueVersion: choice.catalogueVersion,
+      }),
+    );
     if (!meal) {
       throw new Error(`Unknown catalogue meal: ${choice.catalogueMealId}`);
     }
@@ -247,7 +263,7 @@ export function resolveGuestPlanMealRows({
   });
 }
 
-export function summarizeGuestPlanDraft(draft: GuestDraftV1) {
+export function summarizeGuestPlanDraft(draft: GuestDraft) {
   return formatGuestPlanSummary({
     planStartDate: draft.planStartDate,
     planEndDate: addCalendarDays(draft.planStartDate, draft.planDays - 1),
@@ -262,6 +278,7 @@ export type ActivePlanWeekSlot = {
   description: string | null;
   imageSrc: string | null;
   catalogueMealId: string | null;
+  catalogueVersion: number | null;
   catalogueMealSlug: string | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
@@ -275,12 +292,14 @@ export function resolveActivePlanWeekRows({
   startDate,
   endDate,
   mealSlots,
+  mealsByReference,
   mealsById,
 }: {
   startDate: string;
   endDate: string;
   mealSlots: ReadonlyArray<ActivePlanWeekSlot>;
-  mealsById: ReadonlyMap<string, CatalogueMeal>;
+  mealsByReference: ReadonlyMap<string, CatalogueMealSummary>;
+  mealsById?: ReadonlyMap<string, CatalogueMealSummary>;
 }): GuestPlanMealRow[] {
   const byDate = new Map(mealSlots.map((slot) => [slot.date, slot] as const));
   const planDays = countPlanDays({ startDate, endDate });
@@ -305,16 +324,23 @@ export function resolveActivePlanWeekRows({
     const catalogueMeal =
       slot.catalogueMealId === null
         ? undefined
-        : mealsById.get(slot.catalogueMealId);
-    const meal: CatalogueMeal = catalogueMeal ?? {
+        : slot.catalogueVersion !== null
+          ? mealsByReference.get(
+              catalogueMealReferenceKey({
+                catalogueMealId: slot.catalogueMealId,
+                catalogueVersion: slot.catalogueVersion,
+              }),
+            )
+          : mealsById?.get(slot.catalogueMealId);
+    const meal: CatalogueMealSummary = catalogueMeal ?? {
       id: slot.catalogueMealId ?? `slot:${date}`,
+      version: slot.catalogueVersion ?? 1,
       slug: slot.catalogueMealSlug ?? `slot-${date}`,
+      position: 0,
       title: slot.title,
       description: slot.description ?? undefined,
       imageSrc: slot.imageSrc ?? undefined,
       proteinCategory: "meat-free",
-      ingredients: [],
-      steps: [],
       prepMinutes: slot.prepMinutes ?? undefined,
       cookMinutes: slot.cookMinutes ?? undefined,
     };

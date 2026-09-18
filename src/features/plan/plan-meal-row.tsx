@@ -18,14 +18,12 @@ import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
 import { PlanMealFilters } from "@/features/plan/plan-meal-filters";
 import { PlanMealRecipePreview } from "@/features/plan/plan-meal-recipe-preview";
 import { PlanMealSwap } from "@/features/plan/plan-meal-swap";
-import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
 import {
-  findStandardCatalogueMeal,
-  standardCatalogue,
-} from "@/lib/domain/standard-catalogue";
+  useCatalogueMeal,
+  useCurrentCatalogue,
+} from "@/features/recipes/use-catalogue";
+import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
-
-const catalogueMatchCount = Math.max(standardCatalogue.meals.length - 1, 0);
 
 export function PlanMealRow({
   row,
@@ -210,6 +208,7 @@ function PlanMealActionsDrawer({
   ) => Promise<unknown> | void;
   trigger: ReactNode;
 }) {
+  const catalogue = useCurrentCatalogue();
   const [open, setOpen] = useState(false);
   const [stackKey, setStackKey] = useState(0);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -224,10 +223,11 @@ function PlanMealActionsDrawer({
     }
   }, []);
 
-  const previewMeal =
-    previewMealId === null
-      ? null
-      : findStandardCatalogueMeal(previewMealId, standardCatalogue.version);
+  const previewMeal = useCatalogueMeal(
+    previewMealId,
+    catalogue?.meals.find((meal) => meal.id === previewMealId)?.version ?? null,
+  );
+  const catalogueMatchCount = Math.max((catalogue?.meals.length ?? 1) - 1, 0);
 
   const runSwap = useCallback(
     (catalogueMealId: string) => {
@@ -365,14 +365,6 @@ function SwapPane({
       isSwapping={isSwapping}
       onSwap={onSwap}
       onOpenPreview={(catalogueMealId) => {
-        const meal = findStandardCatalogueMeal(
-          catalogueMealId,
-          standardCatalogue.version,
-        );
-        if (meal === null) {
-          toast.error("That recipe isn’t available to preview.");
-          return;
-        }
         onOpenPreview(catalogueMealId);
         push(planMealDrawerViews.preview);
       }}

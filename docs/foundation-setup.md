@@ -80,7 +80,7 @@ This is the historical record of the original shell foundation: a runnable Next.
 
 The **recipe kernel** is now established: bounded recipe content, lossless ingredient lines, provenance, private authenticated persistence, and a small versioned catalogue with retry-safe saving. Catalogue content remains separate from personal recipes; canonical taxonomy and publishing remain deferred. See [`recipes-and-ingredients.md`](../knowledge/architecture/recipes-and-ingredients.md).
 
-Then prove a **guest → account identity slice**: a visitor reaches a useful Decide/Plan result from the same standard meal catalogue available to account holders, chooses to keep it, authenticates, and sees the same draft safely claimed into V2. The early catalogue may be small and bundled, but it is not a guest access tier. See [`identity-and-guest.md`](../knowledge/architecture/identity-and-guest.md).
+Then prove a **guest → account identity slice**: a visitor reaches a useful Decide/Plan result from the same standard meal catalogue available to account holders, chooses to keep it, authenticates, and sees the same draft safely claimed into V2. The catalogue is now delivered by public Convex reads and is not a guest access tier. See [`identity-and-guest.md`](../knowledge/architecture/identity-and-guest.md).
 
 Then ship the first personal **Capture → Decide** vertical slice — not settings, households, discovery, or a dashboard.
 

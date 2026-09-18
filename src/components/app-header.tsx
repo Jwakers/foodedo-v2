@@ -9,19 +9,20 @@ import {
   UserButton,
 } from "@clerk/react";
 import { ChevronLeft } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { HeaderModeSlot } from "@/components/header-mode-slot";
 import { Button } from "@/components/ui/button";
 import { RecipeDetailHeaderActions } from "@/features/recipes/recipe-detail-header-actions";
-import { findStandardCatalogueMealBySlug } from "@/lib/domain/standard-catalogue";
+import { useCurrentCatalogueMeal } from "@/features/recipes/use-catalogue";
 import { parseRecipeDetailSlug } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 
 export function AppHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   // Track prior in-app path so Back can distinguish SPA history from deep links.
   // (history.length / history.state.idx are unreliable across browsers and this Next version.)
@@ -32,12 +33,9 @@ export function AppHeader() {
   if (pathHistory.current !== pathname) {
     setPathHistory({ current: pathname, previous: pathHistory.current });
   }
-  const recipeSlug = parseRecipeDetailSlug(pathname);
-  const recipe =
-    recipeSlug === null ? null : findStandardCatalogueMealBySlug(recipeSlug);
-  // Only enter recipe chrome when the slug resolves — avoids fake chrome on 404s
-  // and future `/recipes/…` routes that are not catalogue detail pages.
-  const isRecipeDetail = recipe !== null;
+  const recipeSlug = parseRecipeDetailSlug(pathname, searchParams);
+  const recipe = useCurrentCatalogueMeal(recipeSlug);
+  const isRecipeDetail = recipeSlug !== null;
 
   return (
     <header className="sticky top-0 z-40 bg-paper pt-[env(safe-area-inset-top)]">

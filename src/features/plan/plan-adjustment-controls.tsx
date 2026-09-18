@@ -4,7 +4,6 @@ import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 export function PlanCounterButton({
@@ -75,13 +74,9 @@ export function DietaryPreferencesStub() {
       <Button
         variant="inline"
         className="h-11 shrink-0 text-12 font-semibold text-leaf"
-        onClick={() =>
-          markUnfinishedInteraction(
-            "Dietary preferences are intentionally unfinished.",
-          )
-        }
+        disabled
       >
-        Manage
+        Coming soon
       </Button>
     </div>
   );

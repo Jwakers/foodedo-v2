@@ -1,10 +1,10 @@
 "use client";
 
-import { useAuth, useClerk } from "@clerk/react";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useClerk } from "@clerk/react";
+import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -14,12 +14,15 @@ import {
   guestPlanClaimMutationArgs,
   readCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
+import type { GuestCatalogueContract } from "@/features/plan/guest-plan-draft";
 import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
+import { useGuestDraftCatalogue } from "@/features/plan/use-guest-plan-draft";
 import {
   guestDraftMatchesSavedPlan,
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
 import { api } from "../../../convex/_generated/api";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 type ClaimGuestDraftResult = FunctionReturnType<
   typeof api.mealPlans.claimGuestDraft
@@ -30,40 +33,66 @@ type ClaimGuestDraftResult = FunctionReturnType<
  * open Clerk; signed-in users claim immediately when Convex auth is ready.
  */
 export function useSaveGuestPlan() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { status, isClerkLoaded, isSignedIn } = useFoodedoAuth();
   const { openSignIn } = useClerk();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const { catalogue } = useGuestDraftCatalogue();
+
+  const catalogueContract = useMemo(
+    () =>
+      catalogue
+        ? {
+            currentMeals: catalogue.meals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+            readableMeals: catalogue.readableMeals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+          }
+        : null,
+    [catalogue],
+  );
 
   async function prepareGuestSaveSignIn() {
-    if (!isLoaded) {
+    if (!isClerkLoaded) {
       throw new Error("Foodedo is still checking your account. Try again.");
     }
 
-    await acceptAndPrepareGuestPlanClaim();
+    if (!catalogueContract) {
+      throw new Error("The recipe catalogue is unavailable. Try again.");
+    }
+
+    await acceptAndPrepareGuestPlanClaim({ catalogue: catalogueContract });
     openSignIn({});
   }
 
   async function savePlan() {
     if (isSaving) return;
 
-    if (!isLoaded) {
+    if (!isClerkLoaded) {
       toast.info("Foodedo is still checking your account. Try again.");
       return;
     }
 
     setIsSaving(true);
     try {
-      const draft = await acceptAndPrepareGuestPlanClaim();
+      if (!catalogueContract) {
+        throw new Error("The recipe catalogue is unavailable. Try again.");
+      }
+      const draft = await acceptAndPrepareGuestPlanClaim({
+        catalogue: catalogueContract,
+      });
 
       if (!isSignedIn) {
         openSignIn({});
         return;
       }
 
-      if (isConvexAuthLoading || !isAuthenticated) {
+      if (status !== "authenticated") {
         toast.error(
           "Foodedo couldn’t connect your account yet. Try saving again.",
         );
@@ -72,6 +101,7 @@ export function useSaveGuestPlan() {
 
       const result = await claimGuestDraft(guestPlanClaimMutationArgs(draft));
       await handleClaimResult(result, {
+        catalogue: catalogueContract,
         router,
         submittedDraft: draft,
       });
@@ -95,8 +125,7 @@ export function useSaveGuestPlan() {
  * Mount once at app-shell so any route can finish the save.
  */
 export function GuestPlanClaimResume() {
-  const { userId } = useAuth();
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { status, userId, isAuthenticated } = useFoodedoAuth();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
@@ -105,12 +134,30 @@ export function GuestPlanClaimResume() {
   const router = useRouter();
   const isResumingRef = useRef(false);
   const didHydrateClearRef = useRef(false);
+  const { catalogue } = useGuestDraftCatalogue();
+  const catalogueContract = useMemo(
+    () =>
+      catalogue
+        ? {
+            currentMeals: catalogue.meals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+            readableMeals: catalogue.readableMeals.map((meal) => ({
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            })),
+          }
+        : null,
+    [catalogue],
+  );
 
   useEffect(() => {
     if (
-      isLoading ||
+      status === "loading" ||
       !isAuthenticated ||
       currentPlan === undefined ||
+      catalogueContract === null ||
       isResumingRef.current
     ) {
       return;
@@ -120,10 +167,13 @@ export function GuestPlanClaimResume() {
 
     void (async () => {
       try {
-        const draft = await readCurrentGuestPlanDraft();
+        const draft = await readCurrentGuestPlanDraft(catalogueContract);
         if (!draft?.acceptedAt || draft.claim === undefined) return;
         if (draft.claim.completedAt !== undefined) {
-          await clearClaimedGuestPlanDraft({ expectedDraft: draft });
+          await clearClaimedGuestPlanDraft({
+            catalogue: catalogueContract,
+            expectedDraft: draft,
+          });
           return;
         }
 
@@ -135,7 +185,10 @@ export function GuestPlanClaimResume() {
           });
 
           if (guestDraftMatchesSavedPlan(draft, savedChoices)) {
-            await clearClaimedGuestPlanDraft({ expectedDraft: draft });
+            await clearClaimedGuestPlanDraft({
+              catalogue: catalogueContract,
+              expectedDraft: draft,
+            });
             navigateAfterSuccessfulClaim(router);
             return;
           }
@@ -145,6 +198,7 @@ export function GuestPlanClaimResume() {
         // authentication. Convex atomically archives a different active plan.
         const result = await claimGuestDraft(guestPlanClaimMutationArgs(draft));
         await handleClaimResult(result, {
+          catalogue: catalogueContract,
           router,
           submittedDraft: draft,
         });
@@ -157,7 +211,14 @@ export function GuestPlanClaimResume() {
         isResumingRef.current = false;
       }
     })();
-  }, [claimGuestDraft, currentPlan, isAuthenticated, isLoading, router]);
+  }, [
+    catalogueContract,
+    claimGuestDraft,
+    currentPlan,
+    isAuthenticated,
+    status,
+    router,
+  ]);
 
   useEffect(() => {
     didHydrateClearRef.current = false;
@@ -169,13 +230,14 @@ export function GuestPlanClaimResume() {
       !isAuthenticated ||
       currentPlan === undefined ||
       currentPlan === null ||
+      catalogueContract === null ||
       didHydrateClearRef.current
     ) {
       return;
     }
 
     void (async () => {
-      const draft = await readCurrentGuestPlanDraft();
+      const draft = await readCurrentGuestPlanDraft(catalogueContract);
       if (!draft) return;
 
       const savedChoices = savedPlanMealChoices({
@@ -188,13 +250,14 @@ export function GuestPlanClaimResume() {
 
       try {
         didHydrateClearRef.current = await clearClaimedGuestPlanDraft({
+          catalogue: catalogueContract,
           expectedDraft: draft,
         });
       } catch (error) {
         console.error("Failed to clear matching guest plan draft.", error);
       }
     })();
-  }, [currentPlan, isAuthenticated]);
+  }, [catalogueContract, currentPlan, isAuthenticated]);
 
   return null;
 }
@@ -202,9 +265,11 @@ export function GuestPlanClaimResume() {
 async function handleClaimResult(
   result: ClaimGuestDraftResult,
   {
+    catalogue,
     router,
     submittedDraft,
   }: {
+    catalogue: GuestCatalogueContract;
     router: ReturnType<typeof useRouter>;
     submittedDraft: GuestDraftV1;
   },
@@ -213,7 +278,10 @@ async function handleClaimResult(
     case "claimed":
     case "already_claimed":
       try {
-        await clearClaimedGuestPlanDraft({ expectedDraft: submittedDraft });
+        await clearClaimedGuestPlanDraft({
+          catalogue,
+          expectedDraft: submittedDraft,
+        });
       } catch (error) {
         console.error("Plan saved, but local draft cleanup failed.", error);
         toast.warning("Your plan was saved.", {
@@ -224,7 +292,10 @@ async function handleClaimResult(
       navigateAfterSuccessfulClaim(router);
       return;
     case "catalogue_unsupported":
-      await cancelPendingGuestPlanClaim({ expectedDraft: submittedDraft });
+      await cancelPendingGuestPlanClaim({
+        catalogue,
+        expectedDraft: submittedDraft,
+      });
       toast.error(
         "This plan uses an older recipe catalogue. Plan a new week to continue.",
       );

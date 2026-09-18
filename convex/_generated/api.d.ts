@@ -8,9 +8,11 @@
  * @module
  */
 
+import type * as catalogue from "../catalogue.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_catalogue from "../lib/catalogue.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
 import type * as lib_recipeValidators from "../lib/recipeValidators.js";
@@ -28,9 +30,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  catalogue: typeof catalogue;
   crons: typeof crons;
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  "lib/catalogue": typeof lib_catalogue;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
   "lib/planningPreferences": typeof lib_planningPreferences;
   "lib/recipeValidators": typeof lib_recipeValidators;

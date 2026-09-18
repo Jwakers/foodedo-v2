@@ -2,7 +2,7 @@
 
 The code integration contains no secrets. V2 uses its own Convex project and must use V2 Clerk configuration; never copy V1 deployment values or secret keys.
 
-Clerk and Convex are required infrastructure. Next.js refuses to start or build without `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NEXT_PUBLIC_CONVEX_URL`; Capacitor builds additionally require `NEXT_PUBLIC_CONVEX_SITE_URL`. Product components therefore assume their providers exist instead of maintaining an unconfigured runtime mode.
+Clerk and Convex are required infrastructure. Next.js refuses to start or build without `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL`. Product components therefore assume their providers exist instead of maintaining an unconfigured runtime mode.
 
 ## Architecture
 
@@ -70,6 +70,8 @@ Open the **Foodedo V2 development deployment**, then **Settings → Environment 
 | `CLERK_WEBHOOK_SECRET`   | Add after creating the Clerk webhook; starts with `whsec_` |
 
 The Convex CLI has already written the ignored V2 `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` values to `.env.local`.
+
+Set `SITE_URL` in the Next.js/Vercel build environment to the canonical web origin used by `app/sitemap.ts`. Local builds default to `https://foodedo.com`.
 
 After adding the Frontend API URL, push the functions and regenerate bindings:
 

@@ -7,12 +7,16 @@ import {
   addDaysToPlanDate,
   GUEST_DRAFT_SCHEMA_VERSION,
 } from "../src/lib/domain/guest-draft";
-import { standardCatalogue } from "../src/lib/domain/standard-catalogue";
 
 const modules = import.meta.glob("./**/*.ts");
 const authSubject = "test-user";
 const planStartDate = "2026-09-21";
 const claimKey = "claim_key_123456789";
+const catalogueVersion = 2;
+const catalogueMealIds = Array.from(
+  { length: 12 },
+  (_, index) => `catalogue-meal-${index + 1}`,
+);
 
 function createTestContext() {
   return convexTest(schema, modules);
@@ -22,6 +26,7 @@ async function authenticateTestUser(
   t: ReturnType<typeof createTestContext>,
   subject = authSubject,
 ) {
+  await seedCatalogue(t);
   const ownerId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
       authSubject: subject,
@@ -37,14 +42,61 @@ async function authenticateTestUser(
   };
 }
 
+async function seedCatalogue(t: ReturnType<typeof createTestContext>) {
+  await t.run(async (ctx) => {
+    const existing = await ctx.db
+      .query("catalogueMeals")
+      .withIndex("by_meal_id_and_version", (q) =>
+        q
+          .eq("catalogueMealId", catalogueMealIds[0]!)
+          .eq("version", catalogueVersion),
+      )
+      .unique();
+    if (existing !== null) return;
+
+    const imageStorageId = await ctx.storage.store(
+      new Blob(["image"], { type: "image/webp" }),
+    );
+    for (const [position, catalogueMealId] of catalogueMealIds.entries()) {
+      await ctx.db.insert("catalogueMeals", {
+        catalogueMealId,
+        version: catalogueVersion,
+        status: "published",
+        slug: catalogueMealId,
+        position,
+        title: `Catalogue meal ${position + 1}`,
+        description: "A synthetic catalogue recipe for Convex tests.",
+        ingredients: [
+          {
+            id: "ingredient-1",
+            name: "ingredient",
+            shoppingCategory: "pantry",
+            quantity: "1",
+          },
+        ],
+        steps: [{ id: "step-1", text: "Cook the ingredient." }],
+        servings: 4,
+        prepMinutes: 5,
+        cookMinutes: 10,
+        proteinCategory: "meat-free",
+        costBand: "budget",
+        imageStorageId,
+        createdAt: 1,
+        publishedAt: 2,
+      });
+    }
+  });
+}
+
 function guestMealChoices(planDays = 7) {
-  const mealIds = standardCatalogue.meals.slice(0, 5).map((meal) => meal.id);
+  const mealIds = catalogueMealIds.slice(0, 5);
   return Array.from({ length: planDays }, (_, index) => ({
     date: addDaysToPlanDate(planStartDate, index),
     catalogueMealId:
       index === 2 || index === 5
         ? null
         : (mealIds[index % mealIds.length] ?? null),
+    catalogueVersion: index === 2 || index === 5 ? null : catalogueVersion,
   }));
 }
 
@@ -64,7 +116,6 @@ test("claim is idempotent, archives the prior plan, and preserves free days", as
   const args = {
     claimKey,
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version,
     planStartDate,
     servings: 4,
     mealChoices: guestMealChoices(),
@@ -124,10 +175,13 @@ test("an unsupported catalogue leaves the existing active plan untouched", async
   const result = await asUser.mutation(api.mealPlans.claimGuestDraft, {
     claimKey: "unsupported_claim_12345",
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version + 1,
     planStartDate,
     servings: 4,
-    mealChoices: guestMealChoices(),
+    mealChoices: guestMealChoices().map((choice) =>
+      choice.catalogueMealId === null
+        ? choice
+        : { ...choice, catalogueVersion: catalogueVersion + 1 },
+    ),
   });
   expect(result).toEqual({ status: "catalogue_unsupported" });
 
@@ -146,7 +200,6 @@ test("claiming a guest plan requires an authenticated identity", async () => {
     t.mutation(api.mealPlans.claimGuestDraft, {
       claimKey,
       schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-      catalogueVersion: standardCatalogue.version,
       planStartDate,
       servings: 4,
       mealChoices: guestMealChoices(),
@@ -161,7 +214,6 @@ test("claims an intermediate six-day draft created during plan review", async ()
   const result = await asUser.mutation(api.mealPlans.claimGuestDraft, {
     claimKey,
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version,
     planStartDate,
     servings: 4,
     mealChoices: guestMealChoices(6),
@@ -192,7 +244,6 @@ test("a signed-in user cannot read another user's active plan", async () => {
   await owner.mutation(api.mealPlans.claimGuestDraft, {
     claimKey,
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version,
     planStartDate,
     servings: 4,
     mealChoices: guestMealChoices(),
@@ -212,7 +263,6 @@ test("active adjustment rebases and trims without replacing preserved meals", as
   await asUser.mutation(api.mealPlans.claimGuestDraft, {
     claimKey,
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version,
     planStartDate,
     servings: 4,
     mealChoices: guestMealChoices(),
@@ -296,7 +346,6 @@ test("extending an adjusted plan fills only new trailing days", async () => {
   await asUser.mutation(api.mealPlans.claimGuestDraft, {
     claimKey,
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
-    catalogueVersion: standardCatalogue.version,
     planStartDate,
     servings: 4,
     mealChoices: guestMealChoices(),

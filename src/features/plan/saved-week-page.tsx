@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
@@ -9,23 +8,21 @@ import { ButtonLink } from "@/components/ui/button";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
 import { PlanSavedSuccess } from "@/features/plan/plan-saved-success";
 import { formatGuestPlanSummary } from "@/lib/domain/plan-display";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 export function SavedWeekPage() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
   );
 
   const isCheckingPlan =
-    !isLoaded ||
-    (isSignedIn && isConvexAuthLoading) ||
-    (isAuthenticated && currentPlan === undefined);
+    status === "loading" || (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) return <PlanReviewLoading />;
 
-  if (isSignedIn && !isAuthenticated) {
+  if (status === "connection_error") {
     return <AccountConnectionError />;
   }
 

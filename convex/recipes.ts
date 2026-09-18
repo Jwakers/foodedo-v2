@@ -4,7 +4,7 @@ import {
 } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
 import {
   proteinCategoryValidator,
@@ -17,8 +17,8 @@ import {
   RECIPE_LIMITS,
   RecipeValidationError,
 } from "../src/lib/domain/recipes";
-import { findStandardCatalogueMeal } from "../src/lib/domain/standard-catalogue";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
+import { getCatalogueMeal } from "./lib/catalogue";
 
 const maximumPageSize = 50;
 
@@ -61,7 +61,9 @@ export const saveCatalogueMeal = mutation({
   ),
   handler: async (ctx, { catalogueMealId, catalogueVersion }) => {
     const ownerId = await requireUserId(ctx);
-    if (findStandardCatalogueMeal(catalogueMealId, catalogueVersion) === null) {
+    if (
+      (await getCatalogueMeal(ctx, catalogueMealId, catalogueVersion)) === null
+    ) {
       return { status: "catalogue_unsupported" } as const;
     }
 
@@ -83,7 +85,7 @@ export const getMine = query({
     const recipe = await ctx.db.get(recipeId);
 
     if (recipe === null || recipe.ownerId !== ownerId) return null;
-    return toRecipeView(recipe);
+    return await toRecipeView(ctx, recipe);
   },
 });
 
@@ -131,29 +133,19 @@ export const removeMineFromLibrary = mutation({
 });
 
 export const listSavedCatalogueMeals = query({
-  args: { catalogueVersion: v.number() },
+  args: {},
   returns: v.array(
     v.object({
       catalogueMealId: v.string(),
       recipeId: v.id("recipes"),
     }),
   ),
-  handler: async (ctx, { catalogueVersion }) => {
+  handler: async (ctx) => {
     const ownerId = await requireUserId(ctx);
-
-    if (!Number.isInteger(catalogueVersion) || catalogueVersion < 1) {
-      throw new ConvexError({
-        code: "INVALID_CATALOGUE_VERSION",
-        message: "Catalogue version must be a positive whole number.",
-      });
-    }
-
     const recipes = await ctx.db
       .query("recipes")
-      .withIndex("by_owner_and_catalogue_version", (q) =>
-        q
-          .eq("ownerId", ownerId)
-          .eq("source.catalogueVersion", catalogueVersion),
+      .withIndex("by_owner_and_saved_at", (q) =>
+        q.eq("ownerId", ownerId).gt("savedAt", 0),
       )
       .take(RECIPE_LIMITS.catalogueMeals + 1);
 
@@ -163,16 +155,18 @@ export const listSavedCatalogueMeals = query({
       );
     }
 
-    return recipes.flatMap((recipe) =>
-      recipe.savedAt !== undefined && recipe.source.type === "catalogue"
-        ? [
-            {
-              catalogueMealId: recipe.source.catalogueMealId,
-              recipeId: recipe._id,
-            },
-          ]
-        : [],
-    );
+    const seen = new Set<string>();
+    return recipes.flatMap((recipe) => {
+      if (recipe.source.type !== "catalogue") return [];
+      if (seen.has(recipe.source.catalogueMealId)) return [];
+      seen.add(recipe.source.catalogueMealId);
+      return [
+        {
+          catalogueMealId: recipe.source.catalogueMealId,
+          recipeId: recipe._id,
+        },
+      ];
+    });
   },
 });
 
@@ -195,7 +189,9 @@ export const listMine = query({
 
     return {
       ...result,
-      page: result.page.map(toRecipeView),
+      page: await Promise.all(
+        result.page.map((recipe) => toRecipeView(ctx, recipe)),
+      ),
     };
   },
 });
@@ -216,7 +212,11 @@ function prepareRecipeOrThrow(
   }
 }
 
-function toRecipeView(recipe: Doc<"recipes">) {
+async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
+  const imageSrc =
+    recipe.imageStorageId === undefined
+      ? undefined
+      : ((await ctx.storage.getUrl(recipe.imageStorageId)) ?? undefined);
   return {
     _id: recipe._id,
     _creationTime: recipe._creationTime,
@@ -233,12 +233,10 @@ function toRecipeView(recipe: Doc<"recipes">) {
     ...(recipe.cookMinutes === undefined
       ? {}
       : { cookMinutes: recipe.cookMinutes }),
-    ...(recipe.proteinCategory === undefined
-      ? {}
-      : { proteinCategory: recipe.proteinCategory }),
+    proteinCategory: recipe.proteinCategory ?? "meat-free",
     ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
     ...(recipe.preheat === undefined ? {} : { preheat: recipe.preheat }),
-    ...(recipe.imageSrc === undefined ? {} : { imageSrc: recipe.imageSrc }),
+    ...(imageSrc === undefined ? {} : { imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),
     updatedAt: recipe.updatedAt,

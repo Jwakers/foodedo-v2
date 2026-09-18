@@ -6,9 +6,8 @@ import {
   ClerkLoading,
   Show,
   SignInButton,
-  useAuth,
 } from "@clerk/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,14 +16,15 @@ import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { PlanAction } from "@/features/plan/plan-action";
-import type { CatalogueMeal } from "@/lib/domain/recipes";
-import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
+import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { recipeDetailPath } from "@/lib/routing/recipes";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 export function Dashboard() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const { isAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const catalogue = useCurrentCatalogue();
+  const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
     isAuthenticated ? {} : "skip",
@@ -33,9 +33,7 @@ export function Dashboard() {
   // Resolve Clerk before choosing guest/account UI. Signed-in users also wait
   // for Convex so Home never flashes the guest “Plan my week” state.
   const isCheckingPlan =
-    !isLoaded ||
-    (isSignedIn && isConvexAuthLoading) ||
-    (isAuthenticated && currentPlan === undefined);
+    status === "loading" || (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) {
     return (
@@ -51,12 +49,14 @@ export function Dashboard() {
     );
   }
 
-  if (isSignedIn && !isAuthenticated) {
+  if (status === "connection_error") {
     return <AccountConnectionError embedded />;
   }
 
   if (currentPlan) {
-    return <ActivePlanDashboard plan={currentPlan} />;
+    return (
+      <ActivePlanDashboard plan={currentPlan} meals={catalogue?.meals ?? []} />
+    );
   }
 
   return (
@@ -68,7 +68,7 @@ export function Dashboard() {
       <DashboardImage />
       <PlanAction />
       <AccountNotice />
-      <IdeasForYourWeek />
+      <IdeasForYourWeek catalogue={catalogue} />
     </section>
   );
 }
@@ -150,8 +150,12 @@ function AccountNotice() {
   );
 }
 
-function IdeasForYourWeek() {
-  const ideas = selectDashboardWeekIdeas();
+function IdeasForYourWeek({
+  catalogue,
+}: {
+  catalogue: ReturnType<typeof useCurrentCatalogue>;
+}) {
+  const ideas = catalogue?.meals.slice(0, 6) ?? [];
 
   return (
     <section
@@ -176,6 +180,28 @@ function IdeasForYourWeek() {
       </div>
 
       <div className="-mx-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8">
+        {catalogue === undefined ? (
+          <p className="px-page-inline text-13 text-graphite sm:px-8">
+            Loading ideas…
+          </p>
+        ) : null}
+        {catalogue === null ? (
+          <div className="px-page-inline text-13 text-graphite sm:px-8">
+            <p>Recipe ideas are unavailable right now.</p>
+            <Button
+              variant="inline"
+              className="mt-1 h-auto p-0 text-13"
+              onClick={() => window.location.reload()}
+            >
+              Try again
+            </Button>
+          </div>
+        ) : null}
+        {catalogue?.meals.length === 0 ? (
+          <p className="px-page-inline text-13 text-graphite sm:px-8">
+            No recipe ideas are available yet.
+          </p>
+        ) : null}
         <ul className="flex w-max snap-x snap-mandatory gap-2 px-page-inline sm:px-8">
           {ideas.map((meal) => (
             <li key={meal.id} className="w-37 shrink-0 snap-start">
@@ -188,7 +214,7 @@ function IdeasForYourWeek() {
   );
 }
 
-function WeekIdeaCard({ meal }: { meal: CatalogueMeal }) {
+function WeekIdeaCard({ meal }: { meal: CatalogueMealSummary }) {
   return (
     <Link
       href={recipeDetailPath(meal.slug)}

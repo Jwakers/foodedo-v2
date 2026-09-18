@@ -124,14 +124,14 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   ).toBeVisible();
 
   const previewCandidate = page.getByRole("button", {
-    name: "View Baked Chicken and Rice Casserole",
+    name: "View Beef Stroganoff",
   });
   await previewCandidate.click();
   await expect(
     page.getByRole("heading", { name: "Recipe details" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Baked Chicken and Rice Casserole" }),
+    page.getByRole("heading", { name: "Beef Stroganoff" }),
   ).toBeVisible();
   await expect(page.getByText("Foodedo recipe").first()).toBeVisible();
   await expect(
@@ -142,18 +142,16 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("heading", { name: /Swap .+’s meal/ }),
   ).toBeVisible();
 
-  await page
-    .getByRole("button", { name: "Select Baked Chicken and Rice Casserole" })
-    .click();
+  await page.getByRole("button", { name: "Select Beef Stroganoff" }).click();
   const swapButton = page.getByRole("button", {
-    name: "Swap in Baked Chicken and Rice Casserole",
+    name: "Swap in Beef Stroganoff",
   });
   await swapButton.click();
   await expect(page.getByRole("button", { name: /^Swap in / })).toHaveCount(0);
   await expect(
     page
       .getByRole("button", {
-        name: "Actions for Baked Chicken and Rice Casserole",
+        name: "Actions for Beef Stroganoff",
       })
       .first(),
   ).toBeVisible();
@@ -188,12 +186,8 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByRole("heading", { name: /^Choose .+’s meal$/ }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Select Baked Chicken and Rice Casserole" })
-    .click();
-  await page
-    .getByRole("button", { name: "Add Baked Chicken and Rice Casserole" })
-    .click();
+  await page.getByRole("button", { name: "Select Beef Stroganoff" }).click();
+  await page.getByRole("button", { name: "Add Beef Stroganoff" }).click();
 
   await expect(page.getByText("No meal planned")).toHaveCount(0);
   await expect(page.getByText(/7 planned dinners/)).toBeVisible();
@@ -319,6 +313,32 @@ test("exposes valid home-screen metadata and icons", async ({ request }) => {
   }
 });
 
+test("serves the published catalogue sitemap", async ({ request }) => {
+  const response = await request.get("/sitemap.xml");
+  expect(response.ok()).toBeTruthy();
+  const xml = await response.text();
+  expect(xml.match(/<url>/g)?.length).toBeGreaterThan(0);
+  expect(xml).toContain("<urlset");
+  expect(xml).toContain("/recipes/view?slug=");
+  expect(xml).toContain("/recipes/view?slug=chicken-fajitas");
+  expect(xml).not.toContain("/recipes/cook");
+});
+
+test("shows unavailable states for malformed recipe links", async ({
+  page,
+}) => {
+  await page.goto("/recipes/view");
+  await expect(
+    page.getByRole("heading", { name: "Recipe unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+
+  await page.goto("/recipes/cook?slug=missing-recipe");
+  await expect(
+    page.getByRole("heading", { name: "Recipe unavailable" }),
+  ).toBeVisible();
+});
+
 test("opens a catalogue recipe detail page with shared content chrome", async ({
   page,
 }) => {
@@ -360,14 +380,16 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
 });
 
 test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
-  await page.goto("/recipes/baked-chicken-and-rice-casserole");
+  await page.goto("/recipes/view?slug=baked-chicken-and-rice-casserole");
   await page.getByRole("button", { name: /Serves 4/ }).click();
   await page.getByRole("button", { name: "Increase servings" }).click();
   await expect(page.getByRole("button", { name: /Serves 5/ })).toBeVisible();
   await expect(page.getByText("500 g")).toBeVisible();
 
   await page.getByRole("button", { name: "Start cooking" }).first().click();
-  await expect(page).toHaveURL(/\/cook\?servings=5$/);
+  await expect(page).toHaveURL(
+    /\/recipes\/cook\?slug=baked-chicken-and-rice-casserole&servings=5&catalogueMealId=baked-chicken-and-rice-casserole&catalogueVersion=2$/,
+  );
   await expect(
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();
@@ -433,7 +455,7 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
 test("only shows Cook preheat when the recipe explicitly authors it", async ({
   page,
 }) => {
-  await page.goto("/recipes/lemon-herb-grilled-chicken/cook");
+  await page.goto("/recipes/cook?slug=lemon-herb-grilled-chicken");
   await expect(
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();

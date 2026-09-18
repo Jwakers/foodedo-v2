@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { RecipesListing } from "@/features/recipes/recipes-listing";
-import { standardCatalogue } from "@/lib/domain/standard-catalogue";
 
 export const metadata: Metadata = {
   title: "Recipes · Foodedo",
@@ -9,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function RecipesPage() {
-  return <RecipesListing meals={standardCatalogue.meals} />;
+  return <RecipesListing />;
 }

@@ -12,9 +12,7 @@ export const shoppingCategoryValidator = v.union(
 export const recipeIngredientValidator = v.object({
   id: v.string(),
   name: v.string(),
-  // Optional only while existing stored recipe snapshots are migrated.
-  // Domain validation and all new recipe writes require a category.
-  shoppingCategory: v.optional(shoppingCategoryValidator),
+  shoppingCategory: shoppingCategoryValidator,
   quantity: v.optional(v.string()),
   unit: v.optional(v.string()),
   note: v.optional(v.string()),
@@ -71,12 +69,9 @@ export const recipeContentFields = {
   servings: v.optional(v.number()),
   prepMinutes: v.optional(v.number()),
   cookMinutes: v.optional(v.number()),
-  // Optional in Convex until existing private snapshots are backfilled; domain
-  // prepareRecipeContent still requires proteinCategory for new writes.
-  proteinCategory: v.optional(proteinCategoryValidator),
+  proteinCategory: proteinCategoryValidator,
   costBand: v.optional(costBandValidator),
   preheat: v.optional(recipePreheatValidator),
-  imageSrc: v.optional(v.string()),
 };
 
 export const recipeContentValidator = v.object(recipeContentFields);
@@ -94,7 +89,42 @@ export const recipeViewValidator = v.object({
   _id: v.id("recipes"),
   _creationTime: v.number(),
   ...recipeContentFields,
+  imageSrc: v.optional(v.string()),
   source: recipeSourceValidator,
   savedAt: v.optional(v.number()),
   updatedAt: v.number(),
+});
+
+export const catalogueMealStatusValidator = v.union(
+  v.literal("staging"),
+  v.literal("published"),
+  v.literal("retired"),
+);
+
+export const catalogueMealSummaryValidator = v.object({
+  id: v.string(),
+  version: v.number(),
+  slug: v.string(),
+  position: v.number(),
+  title: v.string(),
+  description: v.optional(v.string()),
+  servings: v.optional(v.number()),
+  prepMinutes: v.optional(v.number()),
+  cookMinutes: v.optional(v.number()),
+  proteinCategory: proteinCategoryValidator,
+  costBand: v.optional(costBandValidator),
+  imageSrc: v.optional(v.string()),
+});
+
+export const catalogueMealViewValidator = v.object({
+  id: v.string(),
+  version: v.number(),
+  slug: v.string(),
+  position: v.number(),
+  ...recipeContentFields,
+  imageSrc: v.optional(v.string()),
+});
+
+export const catalogueViewValidator = v.object({
+  meals: v.array(catalogueMealSummaryValidator),
 });

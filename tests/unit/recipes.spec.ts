@@ -1,14 +1,9 @@
 import { expect, test } from "@playwright/test";
 import {
   prepareRecipeContent,
-  prepareStandardCatalogue,
+  prepareCatalogue,
   RecipeValidationError,
 } from "../../src/lib/domain/recipes";
-import {
-  findStandardCatalogueMeal,
-  findStandardCatalogueMealBySlug,
-  standardCatalogue,
-} from "../../src/lib/domain/standard-catalogue";
 import { scaleIngredientLine } from "../../src/lib/domain/ingredient-scaling";
 
 const validRecipe = {
@@ -150,36 +145,67 @@ test("scales safe numeric quantities but leaves ambiguous authored amounts intac
 
 test("rejects catalogue meals that share an ID or slug", () => {
   expect(() =>
-    prepareStandardCatalogue({
-      version: 1,
+    prepareCatalogue({
       meals: [
-        { id: "same-meal", slug: "first-meal", ...validRecipe },
-        { id: "same-meal", slug: "second-meal", ...validRecipe },
+        {
+          id: "same-meal",
+          version: 1,
+          slug: "first-meal",
+          position: 0,
+          ...validRecipe,
+        },
+        {
+          id: "same-meal",
+          version: 1,
+          slug: "second-meal",
+          position: 1,
+          ...validRecipe,
+        },
       ],
     }),
   ).toThrow("Catalogue meal IDs must be unique.");
 
   expect(() =>
-    prepareStandardCatalogue({
-      version: 1,
+    prepareCatalogue({
       meals: [
-        { id: "meal-1", slug: "same-meal", ...validRecipe },
-        { id: "meal-2", slug: "same-meal", ...validRecipe },
+        {
+          id: "meal-1",
+          version: 1,
+          slug: "same-meal",
+          position: 0,
+          ...validRecipe,
+        },
+        {
+          id: "meal-2",
+          version: 1,
+          slug: "same-meal",
+          position: 1,
+          ...validRecipe,
+        },
       ],
     }),
   ).toThrow("Catalogue meal slugs must be unique.");
 });
 
-test("resolves catalogue meals only for the current catalogue version", () => {
-  const sample = standardCatalogue.meals[0];
-  expect(sample).toBeDefined();
-  if (sample === undefined) return;
-
-  expect(
-    findStandardCatalogueMeal(sample.id, standardCatalogue.version),
-  ).toMatchObject({ id: sample.id, slug: sample.slug });
-  expect(
-    findStandardCatalogueMeal(sample.id, standardCatalogue.version + 1),
-  ).toBeNull();
-  expect(findStandardCatalogueMealBySlug("missing-meal")).toBeNull();
+test("rejects duplicate catalogue positions", () => {
+  expect(() =>
+    prepareCatalogue({
+      meals: [
+        {
+          id: "meal-1",
+          version: 1,
+          slug: "meal-one",
+          position: 0,
+          ...validRecipe,
+        },
+        {
+          id: "meal-2",
+          version: 1,
+          slug: "meal-two",
+          position: 0,
+          ...validRecipe,
+        },
+      ],
+    }),
+  ).toThrow("Catalogue meal positions must be unique.");
 });

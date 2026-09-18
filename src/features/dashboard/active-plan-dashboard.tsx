@@ -13,7 +13,7 @@ import {
   resolveActivePlanRestOfWeek,
   type ActivePlanMealSlot,
 } from "@/lib/domain/plan-display";
-import { selectDashboardWeekIdeas } from "@/lib/domain/standard-catalogue";
+import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { recipeCookPath, recipeDetailPath } from "@/lib/routing/recipes";
 import { api } from "../../../convex/_generated/api";
 
@@ -21,15 +21,19 @@ type ActiveMealPlan = NonNullable<
   FunctionReturnType<typeof api.mealPlans.getCurrent>
 >;
 
-export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
+export function ActivePlanDashboard({
+  plan,
+  meals,
+}: {
+  plan: ActiveMealPlan;
+  meals: CatalogueMealSummary[];
+}) {
   const focus = resolveActivePlanFocus({ mealSlots: plan.mealSlots });
   const restOfWeek = resolveActivePlanRestOfWeek({
     mealSlots: plan.mealSlots,
     focusDate: focus?.meal.date ?? null,
   });
-  const nudgeImage =
-    selectDashboardWeekIdeas(1)[0]?.imageSrc ??
-    "/images/recipes/fish-tacos.jpg";
+  const nudgeImage = meals[0]?.imageSrc ?? "/images/recipes/fish-tacos.jpg";
 
   return (
     <section
@@ -60,7 +64,10 @@ function TonightFocus({
     ? `${timingLabel} · ${durationLabel.toUpperCase()}`
     : timingLabel;
   const href = meal.catalogueMealSlug
-    ? recipeDetailPath(meal.catalogueMealSlug)
+    ? recipeDetailPath(meal.catalogueMealSlug, {
+        catalogueMealId: meal.catalogueMealId ?? undefined,
+        catalogueVersion: meal.catalogueVersion ?? undefined,
+      })
     : null;
 
   return (
@@ -112,7 +119,10 @@ function TonightFocus({
         {meal.catalogueMealSlug ? (
           <ButtonLink
             className="min-w-0 flex-1"
-            href={recipeCookPath(meal.catalogueMealSlug)}
+            href={recipeCookPath(meal.catalogueMealSlug, undefined, {
+              catalogueMealId: meal.catalogueMealId ?? undefined,
+              catalogueVersion: meal.catalogueVersion ?? undefined,
+            })}
           >
             Cook this meal
             <ArrowRight aria-hidden="true" className="size-4.5" />
@@ -178,11 +188,14 @@ function RestOfWeekCarousel({ meals }: { meals: ActivePlanMealSlot[] }) {
 
 function RestOfWeekCard({ meal }: { meal: ActivePlanMealSlot }) {
   const href = meal.catalogueMealSlug
-    ? recipeDetailPath(meal.catalogueMealSlug)
+    ? recipeDetailPath(meal.catalogueMealSlug, {
+        catalogueMealId: meal.catalogueMealId ?? undefined,
+        catalogueVersion: meal.catalogueVersion ?? undefined,
+      })
     : null;
   const content = (
     <>
-      <div className="relative aspect-[111/70] overflow-hidden rounded-sm bg-mist">
+      <div className="relative aspect-111/70 overflow-hidden rounded-sm bg-mist">
         {meal.imageSrc ? (
           <Image
             src={meal.imageSrc}

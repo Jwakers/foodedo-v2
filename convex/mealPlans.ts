@@ -9,16 +9,13 @@ import {
   MINIMUM_PLAN_SERVINGS,
   planDatesRemovedByShortening,
 } from "../src/lib/domain/guest-draft";
-import {
-  findStandardCatalogueMeal,
-  standardCatalogue,
-} from "../src/lib/domain/standard-catalogue";
 import { selectRankedPlanCandidates } from "../src/lib/domain/meal-plan-selection";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
+import { getCatalogueMeal, getCurrentCatalogueMeals } from "./lib/catalogue";
 import { patchPlanningPreferences } from "./lib/planningPreferences";
 import {
   syncShoppingListForPlan,
@@ -34,7 +31,11 @@ const minimumAdjustablePlanDays = 3;
 const maximumAdjustablePlanDays = 7;
 type PlanRecipeReference =
   | { type: "existing"; recipeId: Id<"recipes"> }
-  | { type: "catalogue"; catalogueMealId: string };
+  | {
+      type: "catalogue";
+      catalogueMealId: string;
+      catalogueVersion: number;
+    };
 
 type PlanRecipeChoice = {
   date: string;
@@ -58,6 +59,7 @@ const mealSlotViewValidator = v.object({
   recipeId: v.id("recipes"),
   isAvailable: v.boolean(),
   catalogueMealId: v.union(v.string(), v.null()),
+  catalogueVersion: v.union(v.number(), v.null()),
   catalogueMealSlug: v.union(v.string(), v.null()),
   title: v.string(),
   description: v.union(v.string(), v.null()),
@@ -93,6 +95,7 @@ const mealChoiceValidator = v.object({
   date: v.string(),
   // Null keeps a free day in the bounded plan window without creating a slot.
   catalogueMealId: v.union(v.string(), v.null()),
+  catalogueVersion: v.union(v.number(), v.null()),
 });
 
 const claimResultValidator = v.union(
@@ -601,20 +604,15 @@ export const claimGuestDraft = mutation({
   args: {
     claimKey: v.string(),
     schemaVersion: v.literal(GUEST_DRAFT_SCHEMA_VERSION),
-    catalogueVersion: v.number(),
     planStartDate: v.string(),
     servings: v.number(),
     mealChoices: v.array(mealChoiceValidator),
   },
   returns: claimResultValidator,
-  handler: async (
-    ctx,
-    { claimKey, catalogueVersion, planStartDate, servings, mealChoices },
-  ) => {
+  handler: async (ctx, { claimKey, planStartDate, servings, mealChoices }) => {
     const ownerId = await requireUserId(ctx);
-    const validation = validateGuestPlan({
+    const validation = await validateGuestPlan(ctx, {
       claimKey,
-      catalogueVersion,
       planStartDate,
       servings,
       mealChoices,
@@ -677,51 +675,62 @@ async function buildMealPlanView(
       return await ctx.db.get(mealSlot.recipeId);
     }),
   );
-  const mealSlotViews = mealSlots.map((mealSlot, index) => {
-    const recipe = recipes[index] ?? null;
-    if (recipe === null || recipe.ownerId !== ownerId) {
+  const mealSlotViews = await Promise.all(
+    mealSlots.map(async (mealSlot, index) => {
+      const recipe = recipes[index] ?? null;
+      if (recipe === null || recipe.ownerId !== ownerId) {
+        return {
+          _id: mealSlot._id,
+          date: mealSlot.date,
+          recipeId: mealSlot.recipeId,
+          isAvailable: false,
+          catalogueMealId: null,
+          catalogueVersion: null,
+          catalogueMealSlug: null,
+          title: "Recipe unavailable",
+          description: null,
+          imageSrc: null,
+          prepMinutes: null,
+          cookMinutes: null,
+          status: mealSlot.status,
+        };
+      }
+
+      const catalogueMeal =
+        recipe.source.type === "catalogue"
+          ? await getCatalogueMeal(
+              ctx,
+              recipe.source.catalogueMealId,
+              recipe.source.catalogueVersion,
+            )
+          : null;
+
       return {
         _id: mealSlot._id,
         date: mealSlot.date,
-        recipeId: mealSlot.recipeId,
-        isAvailable: false,
-        catalogueMealId: null,
-        catalogueMealSlug: null,
-        title: "Recipe unavailable",
-        description: null,
-        imageSrc: null,
-        prepMinutes: null,
-        cookMinutes: null,
+        recipeId: recipe._id,
+        isAvailable: true,
+        catalogueMealId:
+          recipe.source.type === "catalogue"
+            ? recipe.source.catalogueMealId
+            : null,
+        catalogueVersion:
+          recipe.source.type === "catalogue"
+            ? recipe.source.catalogueVersion
+            : null,
+        catalogueMealSlug: catalogueMeal?.slug ?? null,
+        title: recipe.title,
+        description: recipe.description ?? catalogueMeal?.description ?? null,
+        imageSrc:
+          recipe.imageStorageId === undefined
+            ? null
+            : await ctx.storage.getUrl(recipe.imageStorageId),
+        prepMinutes: recipe.prepMinutes ?? null,
+        cookMinutes: recipe.cookMinutes ?? null,
         status: mealSlot.status,
       };
-    }
-
-    const catalogueMeal =
-      recipe.source.type === "catalogue"
-        ? findStandardCatalogueMeal(
-            recipe.source.catalogueMealId,
-            recipe.source.catalogueVersion,
-          )
-        : null;
-
-    return {
-      _id: mealSlot._id,
-      date: mealSlot.date,
-      recipeId: recipe._id,
-      isAvailable: true,
-      catalogueMealId:
-        recipe.source.type === "catalogue"
-          ? recipe.source.catalogueMealId
-          : null,
-      catalogueMealSlug: catalogueMeal?.slug ?? null,
-      title: recipe.title,
-      description: recipe.description ?? catalogueMeal?.description ?? null,
-      imageSrc: recipe.imageSrc ?? catalogueMeal?.imageSrc ?? null,
-      prepMinutes: recipe.prepMinutes ?? null,
-      cookMinutes: recipe.cookMinutes ?? null,
-      status: mealSlot.status,
-    };
-  });
+    }),
+  );
 
   return {
     _id: mealPlan._id,
@@ -829,19 +838,20 @@ async function buildRegenerationProposal(
   );
   let replacementIndex = 0;
 
-  const mealChoices = mealSlots.map((slot) => {
+  const mealChoices: PlanRecipeChoice[] = [];
+  for (const slot of mealSlots) {
     const shouldReplace = slot.date >= fromDate;
     const recipe = recipesBySlot.get(slot._id)!;
     const selectedCandidate = shouldReplace
       ? selectedCandidates[replacementIndex++]!
-      : planCandidateFromRecipe(recipe);
+      : await planCandidateFromRecipe(ctx, recipe);
 
-    return {
+    mealChoices.push({
       date: slot.date,
       recipe: selectedCandidate.recipe,
       status: shouldReplace ? ("planned" as const) : slot.status,
-    };
-  });
+    });
+  }
   replacementIndex = 0;
   const proposalMealSlots: Array<{
     date: string;
@@ -858,7 +868,7 @@ async function buildRegenerationProposal(
     const currentRecipe = recipesBySlot.get(mealSlot._id)!;
     const candidate = shouldReplace
       ? selectedCandidates[replacementIndex++]!
-      : planCandidateFromRecipe(currentRecipe);
+      : await planCandidateFromRecipe(ctx, currentRecipe);
 
     proposalMealSlots.push({
       date: mealSlot.date,
@@ -908,15 +918,16 @@ async function getPlanningCandidates(
   const preferredKeys: string[] = [];
 
   for (const recipe of savedRecipes) {
-    const candidate = planCandidateFromRecipe(recipe);
+    const candidate = await planCandidateFromRecipe(ctx, recipe);
     if (!byKey.has(candidate.key)) {
       byKey.set(candidate.key, candidate);
       preferredKeys.push(candidate.key);
     }
   }
 
+  const currentCatalogue = await getCurrentCatalogueMeals(ctx);
   const fallbackKeys: string[] = [];
-  for (const catalogueMeal of standardCatalogue.meals) {
+  for (const catalogueMeal of currentCatalogue) {
     const candidate = planCandidateFromCatalogue(catalogueMeal);
     if (!byKey.has(candidate.key)) {
       byKey.set(candidate.key, candidate);
@@ -954,10 +965,14 @@ async function selectAdditionalPlanCandidates(
   return candidates.length === numberOfMeals ? candidates : null;
 }
 
-function planCandidateFromRecipe(recipe: Doc<"recipes">): PlanCandidate {
+async function planCandidateFromRecipe(
+  ctx: QueryCtx | MutationCtx,
+  recipe: Doc<"recipes">,
+): Promise<PlanCandidate> {
   const catalogueMeal =
     recipe.source.type === "catalogue"
-      ? findStandardCatalogueMeal(
+      ? await getCatalogueMeal(
+          ctx,
           recipe.source.catalogueMealId,
           recipe.source.catalogueVersion,
         )
@@ -966,7 +981,7 @@ function planCandidateFromRecipe(recipe: Doc<"recipes">): PlanCandidate {
   return {
     key: candidateKeyForRecipe(recipe),
     recipe: { type: "existing", recipeId: recipe._id },
-    catalogueMealId: catalogueMeal?.id ?? null,
+    catalogueMealId: catalogueMeal?.catalogueMealId ?? null,
     catalogueMealSlug: catalogueMeal?.slug ?? null,
     title: recipe.title,
     prepMinutes: recipe.prepMinutes ?? null,
@@ -975,12 +990,16 @@ function planCandidateFromRecipe(recipe: Doc<"recipes">): PlanCandidate {
 }
 
 function planCandidateFromCatalogue(
-  catalogueMeal: (typeof standardCatalogue.meals)[number],
+  catalogueMeal: Doc<"catalogueMeals">,
 ): PlanCandidate {
   return {
-    key: `catalogue:${catalogueMeal.id}`,
-    recipe: { type: "catalogue", catalogueMealId: catalogueMeal.id },
-    catalogueMealId: catalogueMeal.id,
+    key: `catalogue:${catalogueMeal.catalogueMealId}`,
+    recipe: {
+      type: "catalogue",
+      catalogueMealId: catalogueMeal.catalogueMealId,
+      catalogueVersion: catalogueMeal.version,
+    },
+    catalogueMealId: catalogueMeal.catalogueMealId,
     catalogueMealSlug: catalogueMeal.slug,
     title: catalogueMeal.title,
     prepMinutes: catalogueMeal.prepMinutes ?? null,
@@ -989,13 +1008,7 @@ function planCandidateFromCatalogue(
 }
 
 function candidateKeyForRecipe(recipe: Doc<"recipes">) {
-  if (
-    recipe.source.type === "catalogue" &&
-    findStandardCatalogueMeal(
-      recipe.source.catalogueMealId,
-      recipe.source.catalogueVersion,
-    ) !== null
-  ) {
+  if (recipe.source.type === "catalogue") {
     return `catalogue:${recipe.source.catalogueMealId}`;
   }
   return `recipe:${recipe._id}`;
@@ -1017,7 +1030,7 @@ async function resolveRecipeReference(
   const recipe = await getOrCreateCatalogueRecipe(ctx, {
     ownerId,
     catalogueMealId: recipeReference.catalogueMealId,
-    catalogueVersion: standardCatalogue.version,
+    catalogueVersion: recipeReference.catalogueVersion,
     saveToLibrary: false,
   });
   return recipe.recipeId;
@@ -1053,6 +1066,7 @@ async function createPlanFromGuestMealChoices(
     mealChoices: ReadonlyArray<{
       date: string;
       catalogueMealId: string | null;
+      catalogueVersion: number | null;
     }>;
     createdAt: number;
   },
@@ -1062,8 +1076,13 @@ async function createPlanFromGuestMealChoices(
   }
 
   const plannedChoices = mealChoices.filter(
-    (choice): choice is { date: string; catalogueMealId: string } =>
-      choice.catalogueMealId !== null,
+    (
+      choice,
+    ): choice is {
+      date: string;
+      catalogueMealId: string;
+      catalogueVersion: number;
+    } => choice.catalogueMealId !== null && choice.catalogueVersion !== null,
   );
   if (plannedChoices.length === 0) {
     throwInvalidPlan("Save at least one dinner before keeping this plan.");
@@ -1083,6 +1102,7 @@ async function createPlanFromGuestMealChoices(
     const recipeId = await resolveRecipeReference(ctx, ownerId, {
       type: "catalogue",
       catalogueMealId: choice.catalogueMealId,
+      catalogueVersion: choice.catalogueVersion,
     });
     await ctx.db.insert("mealSlots", {
       mealPlanId,
@@ -1148,24 +1168,26 @@ async function createPlanFromRecipeChoices(
   return mealPlanId;
 }
 
-function validateGuestPlan({
-  claimKey,
-  catalogueVersion,
-  planStartDate,
-  servings,
-  mealChoices,
-}: {
-  claimKey: string;
-  catalogueVersion: number;
-  planStartDate: string;
-  servings: number;
-  mealChoices: Array<{ date: string; catalogueMealId: string | null }>;
-}): "valid" | "catalogue_unsupported" {
+async function validateGuestPlan(
+  ctx: QueryCtx | MutationCtx,
+  {
+    claimKey,
+    planStartDate,
+    servings,
+    mealChoices,
+  }: {
+    claimKey: string;
+    planStartDate: string;
+    servings: number;
+    mealChoices: Array<{
+      date: string;
+      catalogueMealId: string | null;
+      catalogueVersion: number | null;
+    }>;
+  },
+): Promise<"valid" | "catalogue_unsupported"> {
   if (!isGuestClaimKey(claimKey)) {
     throwInvalidPlan("The plan claim key is invalid.");
-  }
-  if (!Number.isInteger(catalogueVersion) || catalogueVersion < 1) {
-    throwInvalidPlan("The catalogue version is invalid.");
   }
   if (!isPlanDate(planStartDate) || !isPlanDays(mealChoices.length)) {
     throwInvalidPlan(
@@ -1187,19 +1209,30 @@ function validateGuestPlan({
     }
   }
 
-  if (catalogueVersion !== standardCatalogue.version) {
-    return "catalogue_unsupported";
-  }
-
   let plannedMealCount = 0;
   for (const choice of mealChoices) {
-    if (choice.catalogueMealId === null) continue;
+    if (choice.catalogueMealId === null) {
+      if (choice.catalogueVersion !== null) {
+        throwInvalidPlan("A free day contains a catalogue version.");
+      }
+      continue;
+    }
+    if (
+      choice.catalogueVersion === null ||
+      !Number.isInteger(choice.catalogueVersion) ||
+      choice.catalogueVersion < 1
+    ) {
+      throwInvalidPlan("The plan contains an invalid catalogue meal version.");
+    }
     plannedMealCount += 1;
     if (
-      findStandardCatalogueMeal(choice.catalogueMealId, catalogueVersion) ===
-      null
+      (await getCatalogueMeal(
+        ctx,
+        choice.catalogueMealId,
+        choice.catalogueVersion,
+      )) === null
     ) {
-      throwInvalidPlan("The plan contains an invalid catalogue meal.");
+      return "catalogue_unsupported";
     }
   }
   if (plannedMealCount === 0) {
