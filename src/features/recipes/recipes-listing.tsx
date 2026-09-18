@@ -24,6 +24,7 @@ import {
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
+import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
@@ -43,6 +44,7 @@ export function RecipesListing() {
   } = useCatalogueRecipeLibrary();
   const [scope, setScope] = useState<RecipeScope>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (catalogue === undefined) {
     return (
@@ -70,6 +72,11 @@ export function RecipesListing() {
   const showScopes = Boolean(isLoaded && isSignedIn);
   const activeScope: RecipeScope = showScopes ? scope : "All";
   const savedMeals = meals.filter((meal) => savedRecipeIdByMealId.has(meal.id));
+  const matchingMeals = filterCatalogueMealsBySearch(meals, searchQuery);
+  const matchingSavedMeals = filterCatalogueMealsBySearch(
+    savedMeals,
+    searchQuery,
+  );
   const savedIsEmpty =
     activeScope === "Saved" && !isLibraryLoading && savedMeals.length === 0;
 
@@ -84,21 +91,34 @@ export function RecipesListing() {
         </p>
       </header>
 
-      <Button
-        variant="search"
-        aria-label="Search recipes"
-        className="rounded-compact"
-        onClick={() => {
-          markUnfinishedInteraction("Recipe search comes next.");
-        }}
-      >
+      <div className="flex h-12 w-full items-center gap-2.5 rounded-compact bg-mist px-3.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cadmium">
         <Search
           aria-hidden="true"
           className="size-5 shrink-0 text-graphite"
           strokeWidth={1.8}
         />
-        <span className="text-15 text-graphite">Search recipes</span>
-      </Button>
+        <input
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search recipes"
+          aria-label="Search recipes"
+          className="min-w-0 flex-1 bg-transparent text-15 text-ink outline-none placeholder:text-graphite"
+        />
+        {searchQuery ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Clear recipe search"
+            className="-mr-2 h-8 w-8 rounded-full p-0"
+            onClick={() => setSearchQuery("")}
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
+        ) : null}
+      </div>
 
       {showScopes ? (
         <div
@@ -158,8 +178,8 @@ export function RecipesListing() {
       {activeScope === "All" ? (
         <CatalogueGrid
           heading="Ideas for you"
-          countLabel={recipeCountLabel(meals.length)}
-          meals={meals}
+          countLabel={recipeCountLabel(matchingMeals.length)}
+          meals={matchingMeals}
           isSaved={isSaved}
           isSavePending={isSavePending}
           onToggleSave={toggleSave}
@@ -179,15 +199,17 @@ export function RecipesListing() {
       {activeScope === "Saved" && !isLibraryLoading && !savedIsEmpty ? (
         <CatalogueGrid
           heading="Saved favourites"
-          countLabel={`${savedMeals.length} saved`}
-          meals={savedMeals}
+          countLabel={`${matchingSavedMeals.length} saved`}
+          meals={matchingSavedMeals}
           isSaved={isSaved}
           isSavePending={isSavePending}
           onToggleSave={toggleSave}
         />
       ) : null}
 
-      {activeScope === "Yours" ? <YoursGrid imageFallbacks={meals} /> : null}
+      {activeScope === "Yours" ? (
+        <YoursGrid imageFallbacks={meals} searchQuery={searchQuery} />
+      ) : null}
 
       <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
         <DrawerContent className="max-h-[min(92dvh,52rem)]">
@@ -204,7 +226,7 @@ export function RecipesListing() {
             </DrawerClose>
           </DrawerHeader>
           <RecipeFilterPanel
-            matchCount={meals.length}
+            matchCount={matchingMeals.length}
             description="Narrow recipes to what you want to cook."
             onApply={() => setFiltersOpen(false)}
           />
@@ -224,7 +246,7 @@ function CatalogueGrid({
 }: {
   heading: string;
   countLabel: string;
-  meals: CatalogueMealSummary[];
+  meals: ReadonlyArray<CatalogueMealSummary>;
   isSaved: (catalogueMealId: string) => boolean;
   isSavePending: (catalogueMealId: string) => boolean;
   onToggleSave: (args: {
@@ -237,37 +259,46 @@ function CatalogueGrid({
     <section className="pt-2">
       <CollectionHeading heading={heading} trailing={countLabel} />
 
-      <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
-        {meals.map((meal) => (
-          <li key={meal.id}>
-            <RecipeCard
-              href={recipeDetailPath(meal.slug)}
-              title={meal.title}
-              meta={catalogueMealMeta(meal)}
-              imageSrc={meal.imageSrc}
-              saved={isSaved(meal.id)}
-              isSavePending={isSavePending(meal.id)}
-              onToggleSave={() =>
-                onToggleSave({
-                  catalogueMealId: meal.id,
-                  catalogueVersion: meal.version,
-                  title: meal.title,
-                })
-              }
-            />
-          </li>
-        ))}
-      </ul>
+      {meals.length === 0 ? (
+        <SearchEmptyState />
+      ) : (
+        <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
+          {meals.map((meal) => (
+            <li key={meal.id}>
+              <RecipeCard
+                href={recipeDetailPath(meal.slug)}
+                title={meal.title}
+                meta={catalogueMealMeta(meal)}
+                imageSrc={meal.imageSrc}
+                saved={isSaved(meal.id)}
+                isSavePending={isSavePending(meal.id)}
+                onToggleSave={() =>
+                  onToggleSave({
+                    catalogueMealId: meal.id,
+                    catalogueVersion: meal.version,
+                    title: meal.title,
+                  })
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
 
 function YoursGrid({
   imageFallbacks,
+  searchQuery,
 }: {
   imageFallbacks: CatalogueMealSummary[];
+  searchQuery: string;
 }) {
-  const placeholders = yoursPlaceholders(imageFallbacks);
+  const placeholders = filterCatalogueMealsBySearch(
+    yoursPlaceholders(imageFallbacks),
+    searchQuery,
+  );
 
   return (
     <section className="pt-2">
@@ -286,29 +317,41 @@ function YoursGrid({
         }
       />
 
-      <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
-        {placeholders.map((recipe) => (
-          <li key={recipe.id}>
-            <RecipeCard
-              title={recipe.title}
-              meta={recipe.meta}
-              imageSrc={recipe.imageSrc}
-              saved={recipe.saved}
-              onToggleSave={() => {
-                markUnfinishedInteraction(
-                  "Saving your own recipes comes next.",
-                );
-              }}
-              onOpen={() => {
-                markUnfinishedInteraction(
-                  `Opening “${recipe.title}” comes next — your recipes aren’t wired yet.`,
-                );
-              }}
-            />
-          </li>
-        ))}
-      </ul>
+      {placeholders.length === 0 ? (
+        <SearchEmptyState />
+      ) : (
+        <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
+          {placeholders.map((recipe) => (
+            <li key={recipe.id}>
+              <RecipeCard
+                title={recipe.title}
+                meta={recipe.meta}
+                imageSrc={recipe.imageSrc}
+                saved={recipe.saved}
+                onToggleSave={() => {
+                  markUnfinishedInteraction(
+                    "Saving your own recipes comes next.",
+                  );
+                }}
+                onOpen={() => {
+                  markUnfinishedInteraction(
+                    `Opening “${recipe.title}” comes next — your recipes aren’t wired yet.`,
+                  );
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
+  );
+}
+
+function SearchEmptyState() {
+  return (
+    <p className="py-12 text-center text-14 text-graphite" role="status">
+      No recipes match your search.
+    </p>
   );
 }
 

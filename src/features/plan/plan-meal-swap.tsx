@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Search,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -23,6 +24,7 @@ import {
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
+import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
@@ -52,8 +54,18 @@ export function PlanMealSwap({
     (meal) => meal.id !== currentMeal?.id,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const matchingCandidates = filterCatalogueMealsBySearch(
+    candidates,
+    searchQuery,
+  );
   const selectedMeal =
     candidates.find((meal) => meal.id === selectedId) ?? null;
+
+  function updateSearchQuery(query: string) {
+    setSearchQuery(query);
+    setSelectedId(null);
+  }
 
   const weekdayLong = formatPlanWeekdayLong(date);
   const weekdayShort = formatPlanWeekdayShort(date);
@@ -98,20 +110,33 @@ export function PlanMealSwap({
           </div>
         ) : null}
 
-        <Button
-          variant="search"
-          aria-label="Search recipes"
-          onClick={() => {
-            markUnfinishedInteraction("Recipe search comes next.");
-          }}
-        >
+        <div className="flex h-12 w-full shrink-0 items-center gap-2.5 rounded-md bg-mist px-3.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cadmium">
           <Search
             aria-hidden="true"
             className="size-5 shrink-0 text-graphite"
             strokeWidth={2}
           />
-          <span className="text-15 text-graphite">Search recipes</span>
-        </Button>
+          <input
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            value={searchQuery}
+            onChange={(event) => updateSearchQuery(event.target.value)}
+            placeholder="Search recipes"
+            aria-label="Search recipes"
+            className="min-w-0 flex-1 bg-transparent text-15 text-ink outline-none placeholder:text-graphite"
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              aria-label="Clear recipe search"
+              className="-mr-2 flex size-8 shrink-0 items-center justify-center rounded-full text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+              onClick={() => updateSearchQuery("")}
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          ) : null}
+        </div>
 
         <div className="mt-3 mb-1 flex shrink-0 items-center gap-2 py-1">
           <Button
@@ -154,7 +179,8 @@ export function PlanMealSwap({
             Good matches
           </h3>
           <p className="text-12 text-graphite">
-            {candidates.length} {candidates.length === 1 ? "recipe" : "recipes"}
+            {matchingCandidates.length}{" "}
+            {matchingCandidates.length === 1 ? "recipe" : "recipes"}
           </p>
         </div>
 
@@ -162,7 +188,7 @@ export function PlanMealSwap({
           className="flex min-h-0 flex-1 flex-col"
           aria-label="Recipe matches"
         >
-          {candidates.map((meal) => (
+          {matchingCandidates.map((meal) => (
             <SwapCandidateRow
               key={meal.id}
               meal={meal}
@@ -172,6 +198,14 @@ export function PlanMealSwap({
               onOpenPreview={() => onOpenPreview(meal.id)}
             />
           ))}
+          {matchingCandidates.length === 0 ? (
+            <li
+              className="py-12 text-center text-14 text-graphite"
+              role="status"
+            >
+              No recipes match your search.
+            </li>
+          ) : null}
         </ul>
       </DrawerBody>
 
