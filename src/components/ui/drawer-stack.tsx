@@ -73,8 +73,8 @@ const HEIGHT_MS = 320;
  * iOS-style push/pop stack for drawer bodies.
  *
  * Height rules:
- * - root / hug panes size to their content
- * - fill panes use the expanded sheet height
+ * - each `hug` pane sizes to its own content, at any stack depth
+ * - `fill` panes use the expanded sheet height for long, scrollable content
  * - height is always an explicit pixel value so CSS can animate both directions
  *
  * Pushed panes should use `DrawerStackHeader` for Back / title / Close chrome.
@@ -154,7 +154,11 @@ export function DrawerStack({
   const activeIndex = Math.max(0, stack.length - 1);
   const canPop = stack.length > 1;
   const depth = stack.length - 1;
-  const activeIsHug = depth === 0;
+  const activeView = viewsById.get(currentId);
+  const activeLayout = isValidElement(activeView)
+    ? (activeView.props.layout ?? "hug")
+    : "hug";
+  const activeIsHug = activeLayout === "hug";
 
   const contextValue = useMemo<DrawerStackContextValue>(
     () => ({
@@ -183,16 +187,16 @@ export function DrawerStack({
     if (!active?.node) return;
 
     const maxHeight = getStackMaxHeight();
-    // Root always hugs content; every pushed pane uses the expanded sheet height.
+    // A pane's own layout—not its position in the stack—controls sheet height.
     const nextHeight =
-      depth === 0
+      active.layout === "hug"
         ? Math.min(measureHugHeight(active.node), maxHeight)
         : maxHeight;
 
     setViewportHeight((previous) =>
       previous === nextHeight ? previous : nextHeight,
     );
-  }, [currentId, depth]);
+  }, [currentId]);
 
   useLayoutEffect(() => {
     measure();

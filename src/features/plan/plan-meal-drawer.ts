@@ -3,6 +3,7 @@ export const planMealDrawerViews = {
   actions: "actions",
   swap: "swap",
   filters: "filters",
+  sort: "sort",
   preview: "preview",
 } as const;
 

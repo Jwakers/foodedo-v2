@@ -5,25 +5,33 @@ import { Heart, ListFilter, Search, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+  DrawerStack,
+  DrawerStackView,
+  useDrawerStack,
+} from "@/components/ui/drawer-stack";
+import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
 import { RecipeCard } from "@/features/recipes/recipe-card";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
+import { RecipeFilterPanel } from "@/features/recipes/recipe-filter-panel";
+import { RecipeSortStackPane } from "@/features/recipes/recipe-sort-stack-pane";
 import {
-  RecipeFilterPanel,
   recipeQuickFilterLabels,
-} from "@/features/recipes/recipe-filter-panel";
+  useRecipeFilters,
+} from "@/features/recipes/use-recipe-filters";
 import {
   formatMealDurationLabel,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
+import {
+  filterRecipes,
+  sortRecipes,
+  type RecipeFilters,
+  type RecipeSort,
+} from "@/lib/domain/recipe-filtering";
 import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
@@ -31,6 +39,8 @@ import { cn } from "@/lib/utils/cn";
 
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
+
+const recipeDrawerViews = { filters: "filters", sort: "sort" } as const;
 
 export function RecipesListing() {
   const catalogue = useCurrentCatalogue();
@@ -44,7 +54,16 @@ export function RecipesListing() {
   } = useCatalogueRecipeLibrary();
   const [scope, setScope] = useState<RecipeScope>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterStackKey, setFilterStackKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const {
+    filters: recipeFilters,
+    sort: recipeSort,
+    setFilters: setRecipeFilters,
+    setSort: setRecipeSort,
+    isQuickFilterActive,
+    toggleQuickFilter,
+  } = useRecipeFilters();
 
   if (catalogue === undefined) {
     return (
@@ -67,15 +86,21 @@ export function RecipesListing() {
     );
   }
   const meals = catalogue.meals;
+  const ownRecipes = yoursPlaceholders(meals);
 
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
   const activeScope: RecipeScope = showScopes ? scope : "All";
   const savedMeals = meals.filter((meal) => savedRecipeIdByMealId.has(meal.id));
-  const matchingMeals = filterCatalogueMealsBySearch(meals, searchQuery);
-  const matchingSavedMeals = filterCatalogueMealsBySearch(
-    savedMeals,
-    searchQuery,
+  const filteredMeals = filterRecipes(meals, recipeFilters);
+  const filteredSavedMeals = filterRecipes(savedMeals, recipeFilters);
+  const matchingMeals = sortRecipes(
+    filterCatalogueMealsBySearch(filteredMeals, searchQuery),
+    recipeSort,
+  );
+  const matchingSavedMeals = sortRecipes(
+    filterCatalogueMealsBySearch(filteredSavedMeals, searchQuery),
+    recipeSort,
   );
   const savedIsEmpty =
     activeScope === "Saved" && !isLibraryLoading && savedMeals.length === 0;
@@ -166,7 +191,8 @@ export function RecipesListing() {
               <Button
                 key={label}
                 variant="filter"
-                onClick={() => setFiltersOpen(true)}
+                aria-pressed={isQuickFilterActive(recipeFilters, label)}
+                onClick={() => toggleQuickFilter(label)}
               >
                 {label}
               </Button>
@@ -180,6 +206,7 @@ export function RecipesListing() {
           heading="Ideas for you"
           countLabel={recipeCountLabel(matchingMeals.length)}
           meals={matchingMeals}
+          hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
           isSavePending={isSavePending}
           onToggleSave={toggleSave}
@@ -201,6 +228,7 @@ export function RecipesListing() {
           heading="Saved favourites"
           countLabel={`${matchingSavedMeals.length} saved`}
           meals={matchingSavedMeals}
+          hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
           isSavePending={isSavePending}
           onToggleSave={toggleSave}
@@ -208,38 +236,114 @@ export function RecipesListing() {
       ) : null}
 
       {activeScope === "Yours" ? (
-        <YoursGrid imageFallbacks={meals} searchQuery={searchQuery} />
+        <YoursGrid
+          recipes={ownRecipes}
+          filters={recipeFilters}
+          sort={recipeSort}
+          searchQuery={searchQuery}
+        />
       ) : null}
 
-      <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
+      <Drawer
+        open={filtersOpen}
+        onOpenChange={(nextOpen) => {
+          setFiltersOpen(nextOpen);
+          if (!nextOpen) setFilterStackKey((current) => current + 1);
+        }}
+      >
         <DrawerContent className="max-h-[min(92dvh,52rem)]">
-          <DrawerHeader className="items-center gap-2 pt-1">
-            <DrawerTitle>Filter recipes</DrawerTitle>
-            <DrawerClose asChild>
-              <Button
-                variant="ghost"
-                size="headerIcon"
-                aria-label="Close recipe filters"
-              >
-                <X aria-hidden="true" className="size-5" />
-              </Button>
-            </DrawerClose>
-          </DrawerHeader>
-          <RecipeFilterPanel
-            matchCount={matchingMeals.length}
-            description="Narrow recipes to what you want to cook."
-            onApply={() => setFiltersOpen(false)}
-          />
+          <DrawerStack key={filterStackKey} rootId={recipeDrawerViews.filters}>
+            <DrawerStackView id={recipeDrawerViews.filters} layout="hug">
+              <RecipesFilterPane
+                filters={recipeFilters}
+                sort={recipeSort}
+                meals={meals}
+                savedMeals={savedMeals}
+                ownRecipes={ownRecipes}
+                activeScope={activeScope}
+                searchQuery={searchQuery}
+                onApply={setRecipeFilters}
+                onClose={() => setFiltersOpen(false)}
+              />
+            </DrawerStackView>
+            <DrawerStackView id={recipeDrawerViews.sort} layout="hug">
+              <RecipeSortStackPane sort={recipeSort} onChange={setRecipeSort} />
+            </DrawerStackView>
+          </DrawerStack>
         </DrawerContent>
       </Drawer>
     </main>
   );
 }
 
+function RecipesFilterPane({
+  filters,
+  sort,
+  meals,
+  savedMeals,
+  ownRecipes,
+  activeScope,
+  searchQuery,
+  onApply,
+  onClose,
+}: {
+  filters: RecipeFilters;
+  sort: RecipeSort;
+  meals: ReadonlyArray<RecipeFilterSearchable>;
+  savedMeals: ReadonlyArray<RecipeFilterSearchable>;
+  ownRecipes: ReadonlyArray<RecipePlaceholder>;
+  activeScope: RecipeScope;
+  searchQuery: string;
+  onApply: (filters: RecipeFilters) => void;
+  onClose: () => void;
+}) {
+  const { push } = useDrawerStack();
+
+  return (
+    <>
+      <DrawerStackHeader
+        title="Filter recipes"
+        closeLabel="Close recipe filters"
+      />
+      <RecipeFilterPanel
+        filters={filters}
+        sort={sort}
+        onOpenSort={() => push(recipeDrawerViews.sort)}
+        getMatchCount={(draftFilters) => {
+          const matchingScopeMeals: ReadonlyArray<RecipeFilterSearchable> =
+            activeScope === "Saved"
+              ? filterRecipes(savedMeals, draftFilters)
+              : activeScope === "Yours"
+                ? filterRecipes(ownRecipes, draftFilters)
+                : filterRecipes(meals, draftFilters);
+
+          return filterCatalogueMealsBySearch(matchingScopeMeals, searchQuery)
+            .length;
+        }}
+        description="Narrow recipes to what you want to cook."
+        onApply={(nextFilters) => {
+          onApply(nextFilters);
+          onClose();
+        }}
+      />
+    </>
+  );
+}
+
+type RecipeFilterSearchable = {
+  title: string;
+  description?: string;
+  prepMinutes?: number;
+  cookMinutes?: number;
+  proteinCategory: RecipeFilters["proteinCategories"][number];
+  costBand?: "budget" | "standard" | "premium";
+};
+
 function CatalogueGrid({
   heading,
   countLabel,
   meals,
+  hasActiveFilters,
   isSaved,
   isSavePending,
   onToggleSave,
@@ -247,6 +351,7 @@ function CatalogueGrid({
   heading: string;
   countLabel: string;
   meals: ReadonlyArray<CatalogueMealSummary>;
+  hasActiveFilters: boolean;
   isSaved: (catalogueMealId: string) => boolean;
   isSavePending: (catalogueMealId: string) => boolean;
   onToggleSave: (args: {
@@ -260,7 +365,7 @@ function CatalogueGrid({
       <CollectionHeading heading={heading} trailing={countLabel} />
 
       {meals.length === 0 ? (
-        <SearchEmptyState />
+        <SearchEmptyState hasActiveFilters={hasActiveFilters} />
       ) : (
         <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
           {meals.map((meal) => (
@@ -289,15 +394,19 @@ function CatalogueGrid({
 }
 
 function YoursGrid({
-  imageFallbacks,
+  recipes,
+  filters,
+  sort,
   searchQuery,
 }: {
-  imageFallbacks: CatalogueMealSummary[];
+  recipes: ReadonlyArray<RecipePlaceholder>;
+  filters: RecipeFilters;
+  sort: RecipeSort;
   searchQuery: string;
 }) {
-  const placeholders = filterCatalogueMealsBySearch(
-    yoursPlaceholders(imageFallbacks),
-    searchQuery,
+  const placeholders = sortRecipes(
+    filterCatalogueMealsBySearch(filterRecipes(recipes, filters), searchQuery),
+    sort,
   );
 
   return (
@@ -318,7 +427,9 @@ function YoursGrid({
       />
 
       {placeholders.length === 0 ? (
-        <SearchEmptyState />
+        <SearchEmptyState
+          hasActiveFilters={hasActiveRecipeFilters(filters)}
+        />
       ) : (
         <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
           {placeholders.map((recipe) => (
@@ -347,10 +458,16 @@ function YoursGrid({
   );
 }
 
-function SearchEmptyState() {
+function SearchEmptyState({
+  hasActiveFilters,
+}: {
+  hasActiveFilters: boolean;
+}) {
   return (
     <p className="py-12 text-center text-14 text-graphite" role="status">
-      No recipes match your search.
+      {hasActiveFilters
+        ? "No recipes match your search or filters."
+        : "No recipes match your search."}
     </p>
   );
 }
@@ -405,6 +522,14 @@ function recipeCountLabel(count: number) {
   return `${count} ${count === 1 ? "recipe" : "recipes"}`;
 }
 
+function hasActiveRecipeFilters(filters: RecipeFilters) {
+  return (
+    filters.under30Minutes ||
+    filters.budgetFriendly ||
+    filters.proteinCategories.length > 0
+  );
+}
+
 /**
  * Light placeholder “Yours” cards — not real user recipes yet.
  * Images borrow catalogue assets by slug so paths don’t drift.
@@ -420,6 +545,10 @@ function yoursPlaceholders(meals: CatalogueMealSummary[]) {
       meta: "YOUR RECIPE · 1 hr 40 min",
       saved: true,
       imageSrc: imageBySlug("lemon-herb-grilled-chicken"),
+      prepMinutes: 20,
+      cookMinutes: 80,
+      proteinCategory: "chicken" as const,
+      costBand: "standard" as const,
     },
     {
       id: "yours-miso",
@@ -427,6 +556,10 @@ function yoursPlaceholders(meals: CatalogueMealSummary[]) {
       meta: "IMPORTED · 25 min",
       saved: false,
       imageSrc: imageBySlug("thai-noodle-soup"),
+      prepMinutes: 10,
+      cookMinutes: 15,
+      proteinCategory: "meat-free" as const,
+      costBand: "budget" as const,
     },
     {
       id: "yours-pasta",
@@ -434,6 +567,10 @@ function yoursPlaceholders(meals: CatalogueMealSummary[]) {
       meta: "YOUR RECIPE · 45 min",
       saved: false,
       imageSrc: null,
+      prepMinutes: 15,
+      cookMinutes: 30,
+      proteinCategory: "meat-free" as const,
+      costBand: "budget" as const,
     },
     {
       id: "yours-salad",
@@ -441,6 +578,12 @@ function yoursPlaceholders(meals: CatalogueMealSummary[]) {
       meta: "IMPORTED · 15 min",
       saved: true,
       imageSrc: null,
+      prepMinutes: 15,
+      cookMinutes: 0,
+      proteinCategory: "meat-free" as const,
+      costBand: "premium" as const,
     },
   ] as const;
 }
+
+type RecipePlaceholder = ReturnType<typeof yoursPlaceholders>[number];

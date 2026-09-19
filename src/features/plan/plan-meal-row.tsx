@@ -18,11 +18,17 @@ import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
 import { PlanMealFilters } from "@/features/plan/plan-meal-filters";
 import { PlanMealRecipePreview } from "@/features/plan/plan-meal-recipe-preview";
 import { PlanMealSwap } from "@/features/plan/plan-meal-swap";
+import { RecipeSortStackPane } from "@/features/recipes/recipe-sort-stack-pane";
 import {
   useCatalogueMeal,
   useCurrentCatalogue,
 } from "@/features/recipes/use-catalogue";
 import type { GuestPlanMealRow } from "@/lib/domain/plan-display";
+import { useRecipeFilters } from "@/features/recipes/use-recipe-filters";
+import {
+  type RecipeFilters,
+  type RecipeSort,
+} from "@/lib/domain/recipe-filtering";
 import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 
 export function PlanMealRow({
@@ -214,6 +220,12 @@ function PlanMealActionsDrawer({
   const [isRemoving, setIsRemoving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [previewMealId, setPreviewMealId] = useState<string | null>(null);
+  const {
+    filters: recipeFilters,
+    sort: recipeSort,
+    setFilters: setRecipeFilters,
+    setSort: setRecipeSort,
+  } = useRecipeFilters();
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -227,7 +239,9 @@ function PlanMealActionsDrawer({
     previewMealId,
     catalogue?.meals.find((meal) => meal.id === previewMealId)?.version ?? null,
   );
-  const catalogueMatchCount = Math.max((catalogue?.meals.length ?? 1) - 1, 0);
+  const candidates = (catalogue?.meals ?? []).filter(
+    (meal) => meal.id !== currentMeal?.id,
+  );
 
   const runSwap = useCallback(
     (catalogueMealId: string) => {
@@ -295,13 +309,28 @@ function PlanMealActionsDrawer({
               date={date}
               currentMeal={currentMeal}
               isSwapping={isSwapping}
+              filters={recipeFilters}
+              sort={recipeSort}
+              onFiltersChange={setRecipeFilters}
               onSwap={runSwap}
               onOpenPreview={setPreviewMealId}
             />
           </DrawerStackView>
 
-          <DrawerStackView id={planMealDrawerViews.filters} layout="fill">
-            <PlanMealFilters matchCount={catalogueMatchCount} />
+          <DrawerStackView id={planMealDrawerViews.filters} layout="hug">
+            <PlanMealFilters
+              meals={candidates}
+              filters={recipeFilters}
+              sort={recipeSort}
+              onApply={(filters, sort) => {
+                setRecipeFilters(filters);
+                setRecipeSort(sort);
+              }}
+            />
+          </DrawerStackView>
+
+          <DrawerStackView id={planMealDrawerViews.sort} layout="hug">
+            <RecipeSortStackPane sort={recipeSort} onChange={setRecipeSort} />
           </DrawerStackView>
 
           <DrawerStackView id={planMealDrawerViews.preview} layout="fill">
@@ -347,12 +376,18 @@ function SwapPane({
   date,
   currentMeal,
   isSwapping,
+  filters,
+  sort,
+  onFiltersChange,
   onSwap,
   onOpenPreview,
 }: {
   date: string;
   currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
   isSwapping: boolean;
+  filters: RecipeFilters;
+  sort: RecipeSort;
+  onFiltersChange: (filters: RecipeFilters) => void;
   onSwap: (catalogueMealId: string) => void;
   onOpenPreview: (catalogueMealId: string) => void;
 }) {
@@ -363,6 +398,9 @@ function SwapPane({
       date={date}
       currentMeal={currentMeal}
       isSwapping={isSwapping}
+      filters={filters}
+      sort={sort}
+      onFiltersChange={onFiltersChange}
       onSwap={onSwap}
       onOpenPreview={(catalogueMealId) => {
         onOpenPreview(catalogueMealId);

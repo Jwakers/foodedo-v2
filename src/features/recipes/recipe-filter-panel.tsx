@@ -1,34 +1,62 @@
 "use client";
 
-import { Check, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
+import {
+  type RecipeFilters,
+  type RecipeSort,
+} from "@/lib/domain/recipe-filtering";
+import type { ProteinCategory } from "@/lib/domain/recipes";
+import { recipeSortLabel } from "@/features/recipes/recipe-sort-stack-pane";
 
-const matterChips = ["Budget friendly", "Under 30 min"] as const;
-const proteinChips = ["Chicken", "Beef", "Fish", "Meat-free"] as const;
+const matterChips = [
+  { label: "Under 30 min", key: "under30Minutes" },
+  { label: "Budget friendly", key: "budgetFriendly" },
+] as const;
 
-/** Browse-bar chips that open the full filter drawer (Paper §08 / §03). */
-export const recipeQuickFilterLabels = ["Under 30 min", "Meat-free"] as const;
+const proteinChips: ReadonlyArray<{
+  label: string;
+  value: ProteinCategory;
+}> = [
+  { label: "Chicken", value: "chicken" },
+  { label: "Beef", value: "beef" },
+  { label: "Pork", value: "pork" },
+  { label: "Lamb", value: "lamb" },
+  { label: "Fish", value: "fish" },
+  { label: "Meat-free", value: "meat-free" },
+];
 
 /**
  * Shared filter body + footer used by meal-swap (drawer stack) and the
- * recipes listing (standalone drawer). Apply/sort remain temporary stubs.
+ * recipes listing (standalone drawer).
  */
 export function RecipeFilterPanel({
-  matchCount,
+  filters,
+  sort,
+  onOpenSort,
+  getMatchCount,
   description,
   onApply,
 }: {
-  matchCount: number;
+  filters: RecipeFilters;
+  sort: RecipeSort;
+  onOpenSort: () => void;
+  getMatchCount: (filters: RecipeFilters) => number;
   /** Context-specific lead-in; required so swap vs browse copy stays intentional. */
   description: string;
-  onApply: () => void;
+  onApply: (filters: RecipeFilters) => void;
 }) {
-  const [matters, setMatters] = useState<string[]>([]);
-  const [proteins, setProteins] = useState<string[]>([]);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  const [prevFilters, setPrevFilters] = useState(filters);
+  if (filters !== prevFilters) {
+    setPrevFilters(filters);
+    setDraftFilters(filters);
+  }
+
+  const matchCount = getMatchCount(draftFilters);
 
   return (
     <>
@@ -41,9 +69,12 @@ export function RecipeFilterPanel({
           </h3>
           <FilterChipGroup
             labels={matterChips}
-            selected={matters}
-            onToggle={(label) => {
-              setMatters((current) => toggleLabel(current, label));
+            selected={(chip) => draftFilters[chip.key]}
+            onToggle={(chip) => {
+              setDraftFilters((current) => ({
+                ...current,
+                [chip.key]: !current[chip.key],
+              }));
             }}
           />
         </div>
@@ -55,9 +86,17 @@ export function RecipeFilterPanel({
             </p>
             <FilterChipGroup
               labels={proteinChips}
-              selected={proteins}
-              onToggle={(label) => {
-                setProteins((current) => toggleLabel(current, label));
+              selected={(chip) =>
+                draftFilters.proteinCategories.includes(chip.value)
+              }
+              onToggle={(chip) => {
+                setDraftFilters((current) => ({
+                  ...current,
+                  proteinCategories: toggleValue(
+                    current.proteinCategories,
+                    chip.value,
+                  ),
+                }));
               }}
             />
           </div>
@@ -65,13 +104,11 @@ export function RecipeFilterPanel({
           <Button
             variant="ghost"
             className="h-13 w-full justify-between rounded-none border-y border-border bg-paper px-0 text-left font-normal hover:bg-paper"
-            onClick={() => {
-              markUnfinishedInteraction("Sort options come next.");
-            }}
+            onClick={onOpenSort}
           >
             <span className="text-14 font-semibold text-ink">Sort by</span>
             <span className="flex items-center gap-2 text-13 text-graphite">
-              Recommended
+              {recipeSortLabel(sort)}
               <ChevronRight
                 aria-hidden="true"
                 className="size-4"
@@ -79,17 +116,6 @@ export function RecipeFilterPanel({
               />
             </span>
           </Button>
-
-          <div className="flex items-center gap-2.5">
-            <Check
-              aria-hidden="true"
-              className="size-4 shrink-0 text-leaf"
-              strokeWidth={2}
-            />
-            <p className="text-11 text-leaf">
-              Your dietary preferences are already applied
-            </p>
-          </div>
         </div>
       </DrawerBody>
 
@@ -97,10 +123,7 @@ export function RecipeFilterPanel({
         <Button
           className="w-full"
           onClick={() => {
-            markUnfinishedInteraction(
-              "Applying filters comes next. Showing all matches for now.",
-            );
-            onApply();
+            onApply(draftFilters);
           }}
         >
           Show {matchCount} {matchCount === 1 ? "recipe" : "recipes"}
@@ -110,33 +133,33 @@ export function RecipeFilterPanel({
   );
 }
 
-function FilterChipGroup({
+function FilterChipGroup<T extends { label: string }>({
   labels,
   selected,
   onToggle,
 }: {
-  labels: readonly string[];
-  selected: readonly string[];
-  onToggle: (label: string) => void;
+  labels: ReadonlyArray<T>;
+  selected: (chip: T) => boolean;
+  onToggle: (chip: T) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
       {labels.map((label) => (
         <Button
-          key={label}
+          key={label.label}
           variant="filter"
-          aria-pressed={selected.includes(label)}
+          aria-pressed={selected(label)}
           onClick={() => onToggle(label)}
         >
-          {label}
+          {label.label}
         </Button>
       ))}
     </div>
   );
 }
 
-function toggleLabel(current: string[], label: string) {
-  return current.includes(label)
-    ? current.filter((item) => item !== label)
-    : [...current, label];
+function toggleValue<T>(current: ReadonlyArray<T>, value: T): T[] {
+  return current.includes(value)
+    ? current.filter((item) => item !== value)
+    : [...current, value];
 }

@@ -18,14 +18,24 @@ import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import {
+  isQuickFilterActive,
+  toggleRecipeQuickFilter,
+} from "@/features/recipes/use-recipe-filters";
+import {
   formatMealDurationLabel,
   formatPlanWeekdayLong,
   formatPlanWeekdayShort,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
+import {
+  emptyRecipeFilters,
+  filterRecipes,
+  sortRecipes,
+  type RecipeFilters,
+  type RecipeSort,
+} from "@/lib/domain/recipe-filtering";
 import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 
 const quickFilterLabels = [
@@ -39,12 +49,18 @@ export function PlanMealSwap({
   date,
   currentMeal,
   isSwapping = false,
+  filters = emptyRecipeFilters,
+  sort = "recommended",
+  onFiltersChange,
   onSwap,
   onOpenPreview,
 }: {
   date: string;
   currentMeal?: CatalogueMealSummary;
   isSwapping?: boolean;
+  filters?: RecipeFilters;
+  sort?: RecipeSort;
+  onFiltersChange?: (filters: RecipeFilters) => void;
   onSwap: (catalogueMealId: string) => Promise<unknown> | void;
   onOpenPreview: (catalogueMealId: string) => void;
 }) {
@@ -55,15 +71,21 @@ export function PlanMealSwap({
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const matchingCandidates = filterCatalogueMealsBySearch(
-    candidates,
-    searchQuery,
+  const filteredCandidates = filterRecipes(candidates, filters);
+  const matchingCandidates = sortRecipes(
+    filterCatalogueMealsBySearch(filteredCandidates, searchQuery),
+    sort,
   );
   const selectedMeal =
-    candidates.find((meal) => meal.id === selectedId) ?? null;
+    matchingCandidates.find((meal) => meal.id === selectedId) ?? null;
 
   function updateSearchQuery(query: string) {
     setSearchQuery(query);
+    setSelectedId(null);
+  }
+
+  function updateFilters(nextFilters: RecipeFilters) {
+    onFiltersChange?.(nextFilters);
     setSelectedId(null);
   }
 
@@ -152,8 +174,16 @@ export function PlanMealSwap({
             />
           </Button>
           <div className="scrollbar-none -mr-page-inline flex min-w-0 flex-1 gap-2 overflow-x-auto pr-page-inline">
-            {quickFilterLabels.map((label, index) => {
-              const active = index === 0;
+            {quickFilterLabels.map((label) => {
+              const active =
+                label === "All"
+                  ? !filters.under30Minutes &&
+                    !filters.budgetFriendly &&
+                    filters.proteinCategories.length === 0
+                  : isQuickFilterActive(
+                      filters,
+                      label === "Vegetarian" ? "Meat-free" : label,
+                    );
               return (
                 <Button
                   key={label}
@@ -161,10 +191,15 @@ export function PlanMealSwap({
                   aria-pressed={active}
                   onClick={() => {
                     if (label === "All") {
-                      markUnfinishedInteraction("Recipe filters come next.");
+                      updateFilters(emptyRecipeFilters);
                       return;
                     }
-                    push(planMealDrawerViews.filters);
+                    updateFilters(
+                      toggleRecipeQuickFilter(
+                        filters,
+                        label === "Vegetarian" ? "Meat-free" : label,
+                      ),
+                    );
                   }}
                 >
                   {label}
