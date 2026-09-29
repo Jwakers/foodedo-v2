@@ -48,7 +48,7 @@ pnpm test:e2e
 
 The Playwright web server runs `next start`, so the regular production build must exist first.
 
-CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. Set `SITE_URL` to the canonical web origin for sitemap generation. A missing required public value fails the relevant Next.js build before tests run.
+CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`, and `NEXT_PUBLIC_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. `NEXT_PUBLIC_SITE_URL` is the canonical public origin used by links shared from iOS; set `SITE_URL` to the canonical web origin for sitemap generation. A missing required public value fails the relevant Next.js build before tests run.
 
 ## Upcoming
 

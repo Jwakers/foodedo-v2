@@ -4,14 +4,18 @@ import { EllipsisVertical, Share } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
+import { shareRecipe } from "@/lib/platform/recipe-share";
+import { recipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
+import { toast } from "sonner";
 
 export function RecipeOverflowMenu({
   recipeTitle,
+  recipeSlug,
   className,
 }: {
   recipeTitle: string;
+  recipeSlug: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -47,6 +51,22 @@ export function RecipeOverflowMenu({
     };
   }, [open]);
 
+  const handleShare = async () => {
+    setOpen(false);
+    focusTrigger();
+
+    const result = await shareRecipe({
+      title: recipeTitle,
+      path: recipeDetailPath(recipeSlug),
+    });
+
+    if (result === "copied") {
+      toast.success("Recipe link copied.");
+    } else if (result === "failed") {
+      toast.error("Foodedo couldn't share that recipe. Please try again.");
+    }
+  };
+
   return (
     <div ref={rootRef} className={cn("relative", className)}>
       <Button
@@ -73,11 +93,7 @@ export function RecipeOverflowMenu({
           <Button
             variant="ghost"
             className="h-auto w-full justify-start gap-2.5 rounded-none px-3.5 py-2.5 text-left text-14 font-semibold focus-visible:-outline-offset-2"
-            onClick={() => {
-              setOpen(false);
-              markUnfinishedInteraction(`Sharing “${recipeTitle}” comes next.`);
-              focusTrigger();
-            }}
+            onClick={() => void handleShare()}
           >
             <Share aria-hidden="true" className="size-4" strokeWidth={2} />
             Share

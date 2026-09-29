@@ -44,7 +44,7 @@ export function RecipeDetailHeaderActions({
           strokeWidth={1.8}
         />
       </Button>
-      <RecipeOverflowMenu recipeTitle={recipe.title} />
+      <RecipeOverflowMenu recipeTitle={recipe.title} recipeSlug={recipe.slug} />
     </>
   );
 }
