@@ -1,8 +1,8 @@
 "use client";
 
-import { CalendarPlus, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RecipeServingsControl } from "@/features/recipes/recipe-servings-control";
@@ -13,7 +13,6 @@ import {
 import { formatMealDurationLabel } from "@/lib/domain/plan-display";
 import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
 import { recipeCookPath } from "@/lib/routing/recipes";
 import { useRouter } from "next/navigation";
@@ -29,13 +28,13 @@ export function RecipeDetailContent({
   presentation,
   className,
   onStartCooking,
-  onPlanMeal,
+  planMealAction,
 }: {
   meal: CatalogueMeal;
   presentation: RecipeDetailPresentation;
   className?: string;
   onStartCooking?: () => void;
-  onPlanMeal?: () => void;
+  planMealAction?: ReactNode;
 }) {
   const router = useRouter();
   const [servingSelection, setServingSelection] = useState(() => ({
@@ -73,14 +72,6 @@ export function RecipeDetailContent({
       }),
     );
   };
-  const handlePlanMeal = () => {
-    if (onPlanMeal) {
-      onPlanMeal();
-      return;
-    }
-    markUnfinishedInteraction("Planning this meal comes next.");
-  };
-
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="relative h-67 w-full overflow-hidden bg-mist">
@@ -135,19 +126,7 @@ export function RecipeDetailContent({
             />
             Start cooking
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full"
-            onClick={handlePlanMeal}
-          >
-            <CalendarPlus
-              aria-hidden="true"
-              className="size-4.5"
-              strokeWidth={2}
-            />
-            Plan this meal
-          </Button>
+          {planMealAction}
         </div>
       ) : null}
 

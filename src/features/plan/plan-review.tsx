@@ -24,6 +24,7 @@ export function PlanReview({
     tryAnotherWeek,
     removeMeal,
     replaceMeal,
+    chooseMeal,
     addDay,
   } = useGuestPlanDraft();
   const { isSaving, savePlan, prepareGuestSaveSignIn } = useSaveGuestPlan();
@@ -77,6 +78,7 @@ export function PlanReview({
       onPrepareGuestSaveSignIn={prepareGuestSaveSignIn}
       onRemoveMeal={removeMeal}
       onReplaceMeal={replaceMeal}
+      onChooseMeal={chooseMeal}
       onAddDay={() => runDraftAction("add-day", addDay)}
       onTryAnotherWeek={() => runDraftAction("shuffle", tryAnotherWeek)}
     />

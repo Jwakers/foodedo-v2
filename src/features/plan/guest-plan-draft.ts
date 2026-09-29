@@ -4,6 +4,7 @@ import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
   cancelGuestPlanClaim,
+  chooseGuestPlanMeal,
   clearGuestPlanMeal,
   countPlannedGuestMeals,
   createGuestDraft,
@@ -37,6 +38,61 @@ export type GuestCatalogueContract = {
     catalogueVersion: number;
   }[];
 };
+
+function withSelectedCatalogueReference(
+  catalogue: GuestCatalogueContract,
+  catalogueMealId: string,
+  catalogueVersion: number,
+): GuestCatalogueContract {
+  if (
+    !catalogue.currentMeals.some(
+      (meal) => meal.catalogueMealId === catalogueMealId,
+    )
+  ) {
+    throw new Error("That meal is not in this catalogue.");
+  }
+  const selected = { catalogueMealId, catalogueVersion };
+  return {
+    currentMeals: [
+      selected,
+      ...catalogue.currentMeals.filter(
+        (meal) => meal.catalogueMealId !== catalogueMealId,
+      ),
+    ],
+    readableMeals: [
+      selected,
+      ...catalogue.readableMeals.filter(
+        (meal) =>
+          meal.catalogueMealId !== catalogueMealId ||
+          meal.catalogueVersion !== catalogueVersion,
+      ),
+    ],
+  };
+}
+
+function catalogueForMealReference(
+  catalogue: GuestCatalogueContract,
+  catalogueMealId: string,
+  catalogueVersion?: number,
+): GuestCatalogueContract {
+  const currentReference = catalogue.currentMeals.find(
+    (meal) => meal.catalogueMealId === catalogueMealId,
+  );
+  if (currentReference === undefined) {
+    throw new Error("That meal is not in this catalogue.");
+  }
+  if (
+    catalogueVersion === undefined ||
+    catalogueVersion === currentReference.catalogueVersion
+  ) {
+    return catalogue;
+  }
+  return withSelectedCatalogueReference(
+    catalogue,
+    catalogueMealId,
+    catalogueVersion,
+  );
+}
 
 /**
  * Temporary generation policy: leave one free day so plan review can exercise
@@ -199,6 +255,28 @@ export async function beginConfiguredGuestPlanDraft({
       }),
       write: true,
     };
+  });
+}
+
+/** Starts a fresh configured week with the chosen meal on its first day. */
+export async function beginGuestPlanDraftWithMeal({
+  catalogueMealId,
+  catalogueVersion,
+  preferredCatalogueMealIds = [],
+  ...options
+}: Parameters<typeof beginConfiguredGuestPlanDraft>[0] & {
+  catalogueMealId: string;
+  catalogueVersion?: number;
+}): Promise<GuestDraftV1> {
+  const selectedCatalogue = catalogueForMealReference(
+    options.catalogue,
+    catalogueMealId,
+    catalogueVersion,
+  );
+  return beginConfiguredGuestPlanDraft({
+    ...options,
+    catalogue: selectedCatalogue,
+    preferredCatalogueMealIds: [catalogueMealId, ...preferredCatalogueMealIds],
   });
 }
 
@@ -379,18 +457,25 @@ export async function replaceGuestPlanMeal({
   catalogue,
   date,
   catalogueMealId,
+  catalogueVersion,
   now = Date.now(),
   store = guestDraftStore(),
 }: {
   catalogue: GuestCatalogueContract;
   date: string;
   catalogueMealId: string;
+  catalogueVersion?: number;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const catalogueMeals = catalogue.currentMeals;
+  const selectedCatalogue = catalogueForMealReference(
+    catalogue,
+    catalogueMealId,
+    catalogueVersion,
+  );
+  const catalogueMeals = selectedCatalogue.currentMeals;
   return store.runMutation((raw) => {
-    const existing = parseGuestDraft(raw, catalogue);
+    const existing = parseGuestDraft(raw, selectedCatalogue);
     if (!existing) {
       throw new Error(missingDraftMessage);
     }
@@ -410,12 +495,14 @@ export async function replaceGuestPlanMeal({
   });
 }
 
-export async function extendCurrentGuestPlanDraft({
+export async function chooseGuestPlanMealForDate({
   catalogue,
+  date,
   now = Date.now(),
   store = guestDraftStore(),
 }: {
   catalogue: GuestCatalogueContract;
+  date: string;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
@@ -427,7 +514,43 @@ export async function extendCurrentGuestPlanDraft({
     }
 
     return {
-      draft: extendGuestPlanByOneDay(existing, catalogueMeals, now),
+      draft: chooseGuestPlanMeal(existing, date, catalogueMeals, now),
+      write: true,
+    };
+  });
+}
+
+export async function extendCurrentGuestPlanDraft({
+  catalogue,
+  catalogueMealId,
+  catalogueVersion,
+  now = Date.now(),
+  store = guestDraftStore(),
+}: {
+  catalogue: GuestCatalogueContract;
+  catalogueMealId?: string;
+  catalogueVersion?: number;
+  now?: number;
+  store?: GuestDraftStore;
+}): Promise<GuestDraftV1> {
+  const selectedCatalogue =
+    catalogueMealId === undefined
+      ? catalogue
+      : catalogueForMealReference(catalogue, catalogueMealId, catalogueVersion);
+  const catalogueMeals = selectedCatalogue.currentMeals;
+  return store.runMutation((raw) => {
+    const existing = parseGuestDraft(raw, selectedCatalogue);
+    if (!existing) {
+      throw new Error(missingDraftMessage);
+    }
+
+    return {
+      draft: extendGuestPlanByOneDay(
+        existing,
+        catalogueMeals,
+        now,
+        catalogueMealId,
+      ),
       write: true,
     };
   });

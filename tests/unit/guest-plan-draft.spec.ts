@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import {
+  beginGuestPlanDraftWithMeal,
   beginNextGuestPlanDraft,
   beginReplannedGuestPlanDraft,
   ensureGuestPlanDraft,
   extendCurrentGuestPlanDraft,
   acceptAndPrepareGuestPlanClaim,
   cancelPendingGuestPlanClaim,
+  chooseGuestPlanMealForDate,
   clearClaimedGuestPlanDraft,
   guestPlanClaimMutationArgs,
   removeGuestPlanMeal,
@@ -200,6 +202,40 @@ test("adds one trailing draft day at a time and stops at seven", async () => {
     extendCurrentGuestPlanDraft({ catalogue, now: 400, store }),
   ).rejects.toThrow("This plan already has seven days.");
   expect(store.writes).toBe(2);
+});
+
+test("adds a chosen meal on a new trailing draft day", async () => {
+  const seed = createGuestDraft({
+    planStartDate: "2026-08-29",
+    planDays: 3,
+    catalogueMeals,
+    now: 100,
+  });
+  const store = createMemoryStore(seed);
+
+  const extended = await extendCurrentGuestPlanDraft({
+    catalogue,
+    catalogueMealId: "meal-12",
+    catalogueVersion: 1,
+    now: 200,
+    store,
+  });
+
+  expect(extended.mealChoices.slice(0, 3)).toEqual(seed.mealChoices);
+  expect(extended.mealChoices[3]).toEqual({
+    date: "2026-09-01",
+    catalogueMealId: "meal-12",
+    catalogueVersion: 1,
+  });
+  await expect(
+    extendCurrentGuestPlanDraft({
+      catalogue,
+      catalogueMealId: "retired-meal",
+      now: 300,
+      store,
+    }),
+  ).rejects.toThrow("That meal is not in this catalogue.");
+  expect(store.writes).toBe(1);
 });
 
 test("starts a replacement plan tomorrow when no editable draft exists", async () => {
@@ -404,11 +440,13 @@ test("replaces a planned meal with a chosen catalogue recipe", async () => {
     catalogue,
     date: "2026-08-29",
     catalogueMealId: nextMealId!,
+    catalogueVersion: 1,
     now: 200,
     store,
   });
 
   expect(replaced.mealChoices[0]?.catalogueMealId).toBe(nextMealId);
+  expect(replaced.mealChoices[0]?.catalogueVersion).toBe(1);
   expect(replaced.updatedAt).toBe(200);
   expect(store.writes).toBe(1);
 });
@@ -421,6 +459,91 @@ test("replace rejects empty storage without persisting a draft", async () => {
       catalogue,
       date: "2026-08-29",
       catalogueMealId: catalogueMealIds[0]!,
+      now: 200,
+      store,
+    }),
+  ).rejects.toThrow("There is no guest plan on this device to update.");
+  expect(store.writes).toBe(0);
+});
+
+test("starts a configured week with the chosen meal on its first day", async () => {
+  const existing = createGuestDraft({
+    planStartDate: "2026-08-20",
+    catalogueMeals,
+    now: 100,
+  });
+  const store = createMemoryStore(existing);
+
+  const draft = await beginGuestPlanDraftWithMeal({
+    catalogue,
+    catalogueMealId: "meal-12",
+    catalogueVersion: 1,
+    planStartDate: "2026-08-29",
+    planDays: 5,
+    servings: 2,
+    preferredCatalogueMealIds: ["meal-3", "meal-12"],
+    now: 200,
+    store,
+  });
+
+  expect(draft).toMatchObject({
+    planStartDate: "2026-08-29",
+    planDays: 5,
+    servings: 2,
+  });
+  expect(draft.mealChoices[0]?.catalogueMealId).toBe("meal-12");
+  expect(draft.mealChoices[0]?.catalogueVersion).toBe(1);
+  expect(draft.mealChoices[1]?.catalogueMealId).toBe("meal-3");
+  expect(
+    draft.mealChoices.filter((choice) => choice.catalogueMealId === "meal-12"),
+  ).toHaveLength(1);
+  expect(await store.read()).toEqual(draft);
+
+  await expect(
+    beginGuestPlanDraftWithMeal({
+      catalogue,
+      catalogueMealId: "retired-meal",
+      planStartDate: "2026-08-29",
+      planDays: 5,
+      servings: 2,
+      now: 300,
+      store,
+    }),
+  ).rejects.toThrow("That meal is not in this catalogue.");
+  expect(await store.read()).toEqual(draft);
+});
+
+test("chooses a meal for a free day and persists it", async () => {
+  const seed = createGuestDraft({
+    planStartDate: "2026-08-29",
+    catalogueMeals,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+  const store = createMemoryStore(seed);
+
+  const chosen = await chooseGuestPlanMealForDate({
+    catalogue,
+    date: "2026-08-31",
+    now: 200,
+    store,
+  });
+
+  expect(chosen.mealChoices[2]?.catalogueMealId).not.toBeNull();
+  expect(
+    seed.mealChoices.map((choice) => choice.catalogueMealId),
+  ).not.toContain(chosen.mealChoices[2]?.catalogueMealId);
+  expect(await store.read()).toEqual(chosen);
+  expect(store.writes).toBe(1);
+});
+
+test("choose for me rejects empty storage without persisting a draft", async () => {
+  const store = createMemoryStore(null);
+
+  await expect(
+    chooseGuestPlanMealForDate({
+      catalogue,
+      date: "2026-08-29",
       now: 200,
       store,
     }),

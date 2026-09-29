@@ -29,12 +29,11 @@ import {
   type RecipeFilters,
   type RecipeSort,
 } from "@/lib/domain/recipe-filtering";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
-
 export function PlanMealRow({
   row,
   onRemoveMeal,
   onReplaceMeal,
+  onChooseMeal,
   readOnly = false,
   recipeHref,
 }: {
@@ -44,6 +43,7 @@ export function PlanMealRow({
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  onChooseMeal?: (date: string) => Promise<unknown> | void;
   readOnly?: boolean;
   recipeHref?: string;
 }) {
@@ -74,6 +74,7 @@ export function PlanMealRow({
             date={row.date}
             mealTitle="Add a meal"
             onReplaceMeal={onReplaceMeal}
+            onChooseMeal={onChooseMeal}
             trigger={
               <Button type="button" variant="leaf" size="chip">
                 Add meal
@@ -90,6 +91,7 @@ export function PlanMealRow({
       row={row}
       onRemoveMeal={onRemoveMeal}
       onReplaceMeal={onReplaceMeal}
+      onChooseMeal={onChooseMeal}
       readOnly={readOnly}
       recipeHref={recipeHref}
     />
@@ -100,6 +102,7 @@ function PlannedMealRow({
   row,
   onRemoveMeal,
   onReplaceMeal,
+  onChooseMeal,
   readOnly,
   recipeHref,
 }: {
@@ -109,6 +112,7 @@ function PlannedMealRow({
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  onChooseMeal?: (date: string) => Promise<unknown> | void;
   readOnly: boolean;
   recipeHref?: string;
 }) {
@@ -180,6 +184,7 @@ function PlannedMealRow({
           currentMeal={row.meal}
           onRemoveMeal={onRemoveMeal}
           onReplaceMeal={onReplaceMeal}
+          onChooseMeal={onChooseMeal}
           trigger={
             <Button
               type="button"
@@ -202,6 +207,7 @@ function PlanMealActionsDrawer({
   currentMeal,
   onRemoveMeal,
   onReplaceMeal,
+  onChooseMeal,
   trigger,
 }: {
   date: string;
@@ -212,6 +218,7 @@ function PlanMealActionsDrawer({
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  onChooseMeal?: (date: string) => Promise<unknown> | void;
   trigger: ReactNode;
 }) {
   const catalogue = useCurrentCatalogue();
@@ -219,6 +226,7 @@ function PlanMealActionsDrawer({
   const [stackKey, setStackKey] = useState(0);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [isChoosing, setIsChoosing] = useState(false);
   const [previewMealId, setPreviewMealId] = useState<string | null>(null);
   const {
     filters: recipeFilters,
@@ -273,10 +281,31 @@ function PlanMealActionsDrawer({
             <MealActionsPane
               mealTitle={mealTitle}
               isRemoving={isRemoving}
-              onChooseForMe={() => {
-                setOpen(false);
-                markUnfinishedInteraction("Choosing for you comes next.");
-              }}
+              isChoosing={isChoosing}
+              onChooseForMe={
+                onChooseMeal
+                  ? () => {
+                      if (isChoosing) return;
+                      void (async () => {
+                        setIsChoosing(true);
+                        try {
+                          await onChooseMeal(date);
+                          setOpen(false);
+                        } catch (error) {
+                          console.error(
+                            "Failed to choose a guest plan meal.",
+                            error,
+                          );
+                          toast.error(
+                            "Foodedo couldn’t choose a meal. Check storage access and try again.",
+                          );
+                        } finally {
+                          setIsChoosing(false);
+                        }
+                      })();
+                    }
+                  : undefined
+              }
               onRemove={
                 onRemoveMeal
                   ? () => {
@@ -351,12 +380,14 @@ function PlanMealActionsDrawer({
 function MealActionsPane({
   mealTitle,
   isRemoving,
+  isChoosing,
   onChooseForMe,
   onRemove,
 }: {
   mealTitle: string;
   isRemoving: boolean;
-  onChooseForMe: () => void;
+  isChoosing: boolean;
+  onChooseForMe?: () => void;
   onRemove?: () => void;
 }) {
   const { push } = useDrawerStack();
@@ -365,6 +396,7 @@ function MealActionsPane({
     <PlanMealActions
       mealTitle={mealTitle}
       isRemoving={isRemoving}
+      isChoosing={isChoosing}
       onChooseRecipe={() => push(planMealDrawerViews.swap)}
       onChooseForMe={onChooseForMe}
       onRemove={onRemove}

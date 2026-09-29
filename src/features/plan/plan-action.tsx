@@ -37,7 +37,10 @@ import {
   PlanScopeOption,
 } from "@/features/plan/plan-adjustment-controls";
 import type { PrePlanSetup } from "@/features/plan/pre-plan-setup-store";
-import { usePrePlanSetup } from "@/features/plan/use-pre-plan-setup";
+import {
+  fallbackPrePlanSetup,
+  usePrePlanSetup,
+} from "@/features/plan/use-pre-plan-setup";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import {
   isPlanDayOption,
@@ -86,20 +89,9 @@ export function PlanAction({
   // Vaul treats nested Clerk modal clicks as outside-dismiss. Close the drawer
   // before opening Clerk, and keep the intent for post-auth Adjust resume.
   const preserveIntentOnCloseRef = useRef(false);
-  const fallbackSetup: PrePlanSetup = preferences
-    ? {
-        planDays: preferences.usualPlanDays,
-        startDate: tomorrowPlanDate(),
-        servings: preferences.usualServings,
-        prioritiseSavedRecipes: preferences.prioritiseSavedRecipes,
-      }
-    : {
-        planDays: 7,
-        startDate: tomorrowPlanDate(),
-        servings: 4,
-        prioritiseSavedRecipes: true,
-      };
-  const { setup, applySetup } = usePrePlanSetup(fallbackSetup);
+  const { setup, applySetup } = usePrePlanSetup(
+    fallbackPrePlanSetup(preferences),
+  );
 
   useEffect(() => {
     if (status !== "authenticated") return;

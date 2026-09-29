@@ -15,16 +15,20 @@ import { cn } from "@/lib/utils/cn";
 export function PlanMealActions({
   mealTitle,
   isRemoving = false,
+  isChoosing = false,
   onChooseRecipe,
   onChooseForMe,
   onRemove,
 }: {
   mealTitle: string;
   isRemoving?: boolean;
+  isChoosing?: boolean;
   onChooseRecipe: () => void;
-  onChooseForMe: () => void;
+  onChooseForMe?: () => void;
   onRemove?: () => void;
 }) {
+  const isBusy = isRemoving || isChoosing;
+
   return (
     <>
       <DrawerHeader className="flex-col items-stretch gap-0.5 px-page-inline pt-0.5 pb-2">
@@ -48,25 +52,28 @@ export function PlanMealActions({
           iconClassName="bg-mist text-ink"
           title="Choose a recipe"
           description="Browse and pick it yourself"
-          disabled={isRemoving}
+          disabled={isBusy}
           onClick={onChooseRecipe}
         />
-        <MealActionRow
-          icon={
-            <Sparkles
-              aria-hidden="true"
-              className="size-3.5"
-              strokeWidth={1.8}
-            />
-          }
-          iconClassName="bg-leaf text-leaf-soft"
-          className="bg-leaf-soft hover:bg-leaf-soft"
-          title="Choose for me"
-          titleClassName="font-bold text-leaf"
-          description="Foodedo finds a good match"
-          disabled={isRemoving}
-          onClick={onChooseForMe}
-        />
+        {onChooseForMe ? (
+          <MealActionRow
+            icon={
+              <Sparkles
+                aria-hidden="true"
+                className="size-3.5"
+                strokeWidth={1.8}
+              />
+            }
+            iconClassName="bg-leaf text-leaf-soft"
+            className="bg-leaf-soft hover:bg-leaf-soft"
+            title="Choose for me"
+            titleClassName="font-bold text-leaf"
+            description="Foodedo finds a good match"
+            disabled={isBusy}
+            busy={isChoosing}
+            onClick={onChooseForMe}
+          />
+        ) : null}
 
         {onRemove ? (
           <>
@@ -82,7 +89,7 @@ export function PlanMealActions({
               iconClassName="bg-cadmium-soft text-cadmium"
               title="Remove from plan"
               titleClassName="text-cadmium"
-              disabled={isRemoving}
+              disabled={isBusy}
               busy={isRemoving}
               onClick={onRemove}
             />

@@ -3,9 +3,11 @@ import {
   acceptGuestPlan,
   applyGuestPlanEmptySlots,
   cancelGuestPlanClaim,
+  chooseGuestPlanMeal,
   clearGuestPlanMeal,
   completeGuestPlanClaim,
   createGuestDraft,
+  extendGuestPlanByOneDay,
   planDatesRemovedByShortening,
   GUEST_DRAFT_SCHEMA_VERSION,
   guestDraftMatchesSavedPlan,
@@ -46,6 +48,33 @@ test("creates seven consecutive dated meal choices", () => {
     createdAt: 100,
     updatedAt: 100,
   });
+});
+
+test("extends a plan with a chosen catalogue meal", () => {
+  const draft = createGuestDraft({
+    planStartDate: "2026-08-29",
+    planDays: 3,
+    catalogueMeals,
+    now: 100,
+  });
+
+  const extended = extendGuestPlanByOneDay(
+    draft,
+    catalogueMeals,
+    200,
+    "meal-c",
+  );
+
+  expect(extended.planDays).toBe(4);
+  expect(extended.mealChoices.slice(0, 3)).toEqual(draft.mealChoices);
+  expect(extended.mealChoices[3]).toEqual({
+    date: "2026-09-01",
+    catalogueMealId: "meal-c",
+    catalogueVersion: 1,
+  });
+  expect(() =>
+    extendGuestPlanByOneDay(draft, catalogueMeals, 200, "missing"),
+  ).toThrow("That meal is not in this catalogue.");
 });
 
 test("reports removed dates only when shortening, not when rebasing", () => {
@@ -185,6 +214,63 @@ test("swaps one slot or shuffles the plan without changing its dates", () => {
   );
 });
 
+test("choose for me swaps a planned day like a swap", () => {
+  const draft = acceptGuestPlan(
+    createGuestDraft({
+      planStartDate: "2026-08-26",
+      catalogueMeals,
+      now: 100,
+    }),
+    150,
+  );
+
+  const chosen = chooseGuestPlanMeal(draft, "2026-08-27", catalogueMeals, 200);
+
+  expect(chosen).toEqual(
+    swapGuestPlanMeal(draft, "2026-08-27", catalogueMeals, 200),
+  );
+  expect(chosen.acceptedAt).toBeUndefined();
+});
+
+test("choose for me fills a free day with a meal not already planned", () => {
+  const widerCatalogue = ["meal-a", "meal-b", "meal-c", "meal-d", "meal-e"].map(
+    (catalogueMealId) => ({ catalogueMealId, catalogueVersion: 2 }),
+  );
+  const draft = createGuestDraft({
+    planStartDate: "2026-08-26",
+    planDays: 3,
+    catalogueMeals: widerCatalogue,
+    now: 100,
+    emptySlotIndexes: [1],
+  });
+
+  const chosen = chooseGuestPlanMeal(draft, "2026-08-27", widerCatalogue, 200);
+  const plannedIds = draft.mealChoices.map((choice) => choice.catalogueMealId);
+
+  expect(chosen.mealChoices[1]?.catalogueMealId).not.toBeNull();
+  expect(plannedIds).not.toContain(chosen.mealChoices[1]?.catalogueMealId);
+  expect(chosen.mealChoices[1]?.catalogueVersion).toBe(2);
+  expect(chosen.mealChoices[0]).toEqual(draft.mealChoices[0]);
+  expect(chosen.mealChoices[2]).toEqual(draft.mealChoices[2]);
+  expect(chosen.updatedAt).toBe(200);
+});
+
+test("choose for me still fills a free day when every meal is planned", () => {
+  const draft = createGuestDraft({
+    planStartDate: "2026-08-26",
+    catalogueMeals,
+    now: 100,
+    emptySlotIndexes: [4],
+  });
+
+  const chosen = chooseGuestPlanMeal(draft, "2026-08-30", catalogueMeals, 200);
+
+  expect(catalogueMealIds).toContain(chosen.mealChoices[4]?.catalogueMealId);
+  expect(() =>
+    chooseGuestPlanMeal(draft, "2026-09-30", catalogueMeals, 200),
+  ).toThrow("That date is not in this plan.");
+});
+
 test("sets a chosen catalogue meal on a planned day", () => {
   const draft = createGuestDraft({
     planStartDate: "2026-08-26",
@@ -279,17 +365,21 @@ test("restores only readable meal revisions and consecutive known choices", () =
   });
 
   expect(readGuestDraftV1(draft, { catalogueMeals })).toEqual(draft);
-  expect(
-    readGuestDraftV1(
-      {
-        ...draft,
-        mealChoices: draft.mealChoices.map((choice, index) =>
-          index === 0 ? { ...choice, catalogueVersion: 2 } : choice,
-        ),
-      },
-      { catalogueMeals },
+  const mixedRevisionDraft = {
+    ...draft,
+    mealChoices: draft.mealChoices.map((choice, index) =>
+      index === 0 ? { ...choice, catalogueVersion: 2 } : choice,
     ),
-  ).toBeNull();
+  };
+  expect(
+    readGuestDraftV1(mixedRevisionDraft, {
+      catalogueMeals: [
+        ...catalogueMeals,
+        { catalogueMealId: "meal-a", catalogueVersion: 2 },
+      ],
+    }),
+  ).toEqual(mixedRevisionDraft);
+  expect(readGuestDraftV1(mixedRevisionDraft, { catalogueMeals })).toBeNull();
   expect(
     readGuestDraftV1(
       {

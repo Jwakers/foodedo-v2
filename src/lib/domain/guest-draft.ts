@@ -1,4 +1,8 @@
-import { RECIPE_LIMITS, type CatalogueMealReference } from "./recipes";
+import {
+  catalogueMealReferenceKey,
+  RECIPE_LIMITS,
+  type CatalogueMealReference,
+} from "./recipes";
 import {
   rotatingMealPlanSelectionStrategy,
   selectReplacementMeal,
@@ -130,11 +134,12 @@ export function countPlannedGuestMeals(draft: GuestDraftV1) {
     .length;
 }
 
-/** Adds one chosen meal to the end of an editable plan, up to seven days. */
+/** Adds one meal to the end of an editable plan, up to seven days. */
 export function extendGuestPlanByOneDay(
   draft: GuestDraftV1,
   catalogueMeals: readonly CatalogueMealReference[],
   now: number,
+  selectedCatalogueMealId?: string,
 ): GuestDraftV1 {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
@@ -144,21 +149,32 @@ export function extendGuestPlanByOneDay(
     throw new Error("This plan already has seven days.");
   }
 
-  const plannedMealIds = new Set(
-    draft.mealChoices.flatMap((choice) =>
-      choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
-    ),
-  );
-  const unusedMealIds = catalogueMealIds.filter(
-    (mealId) => !plannedMealIds.has(mealId),
-  );
-  const candidates =
-    unusedMealIds.length > 0 ? unusedMealIds : catalogueMealIds;
-  const catalogueMealId = rotatingMealPlanSelectionStrategy({
-    candidateMealIds: candidates,
-    numberOfMeals: 1,
-    offset: draft.planDays,
-  })[0]!;
+  if (
+    selectedCatalogueMealId !== undefined &&
+    !catalogueVersions.has(selectedCatalogueMealId)
+  ) {
+    throw new Error("That meal is not in this catalogue.");
+  }
+
+  const catalogueMealId =
+    selectedCatalogueMealId ??
+    (() => {
+      const plannedMealIds = new Set(
+        draft.mealChoices.flatMap((choice) =>
+          choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+        ),
+      );
+      const unusedMealIds = catalogueMealIds.filter(
+        (mealId) => !plannedMealIds.has(mealId),
+      );
+      const candidates =
+        unusedMealIds.length > 0 ? unusedMealIds : catalogueMealIds;
+      return rotatingMealPlanSelectionStrategy({
+        candidateMealIds: candidates,
+        numberOfMeals: 1,
+        offset: draft.planDays,
+      })[0]!;
+    })();
   const planDays = (draft.planDays + 1) as PlanDays;
 
   return {
@@ -218,7 +234,7 @@ export function readGuestDraft(
   if (!isPlanDate(input.planStartDate)) return null;
   if (!isPlanDays(input.planDays) || !isServings(input.servings)) return null;
 
-  const validMeals = requireCatalogueMeals(catalogueMeals);
+  const validMeals = requireCatalogueMealReferences(catalogueMeals);
   const mealChoices = readMealChoices(
     input.mealChoices,
     input.planStartDate,
@@ -294,6 +310,50 @@ export function swapGuestPlanMeal(
           ...choice,
           catalogueMealId: nextMealId,
           catalogueVersion: catalogueVersions.get(nextMealId)!,
+        }
+      : choice,
+  );
+
+  return editableDraft(draft, mealChoices, now);
+}
+
+/**
+ * "Choose for me": swaps a planned day, or fills a free day with a meal not
+ * already in the plan. Clears acceptance/claim like other plan edits.
+ */
+export function chooseGuestPlanMeal(
+  draft: GuestDraftV1,
+  date: string,
+  catalogueMeals: readonly CatalogueMealReference[],
+  now: number,
+): GuestDraftV1 {
+  const choiceIndex = draft.mealChoices.findIndex(
+    (choice) => choice.date === date,
+  );
+  if (choiceIndex === -1) throw new Error("That date is not in this plan.");
+  if (draft.mealChoices[choiceIndex]!.catalogueMealId !== null) {
+    return swapGuestPlanMeal(draft, date, catalogueMeals, now);
+  }
+
+  const catalogueVersions = requireCatalogueMeals(catalogueMeals);
+  const catalogueMealIds = [...catalogueVersions.keys()];
+  requireCatalogueMealIds(catalogueMealIds);
+  requireTimestamp(now, "Update time");
+
+  const catalogueMealId = rotatingMealPlanSelectionStrategy({
+    candidateMealIds: catalogueMealIds,
+    numberOfMeals: 1,
+    offset: choiceIndex,
+    excludedMealIds: draft.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+    ),
+  })[0]!;
+  const mealChoices = draft.mealChoices.map((choice, index) =>
+    index === choiceIndex
+      ? {
+          ...choice,
+          catalogueMealId,
+          catalogueVersion: catalogueVersions.get(catalogueMealId)!,
         }
       : choice,
   );
@@ -601,7 +661,7 @@ function readMealChoices(
   input: unknown,
   planStartDate: string,
   planDays: PlanDays,
-  validMeals: ReadonlyMap<string, number>,
+  validMeals: ReadonlySet<string>,
   legacyCatalogueVersion?: number,
 ): GuestMealChoiceV1[] | null {
   if (!Array.isArray(input) || input.length !== planDays) return null;
@@ -638,7 +698,12 @@ function readMealChoices(
     if (
       typeof choice.catalogueMealId !== "string" ||
       typeof catalogueVersion !== "number" ||
-      validMeals.get(choice.catalogueMealId) !== catalogueVersion
+      !validMeals.has(
+        catalogueMealReferenceKey({
+          catalogueMealId: choice.catalogueMealId,
+          catalogueVersion,
+        }),
+      )
     ) {
       return null;
     }
@@ -650,6 +715,24 @@ function readMealChoices(
     });
   }
   return choices;
+}
+
+function requireCatalogueMealReferences(
+  meals: readonly CatalogueMealReference[],
+): ReadonlySet<string> {
+  const references = new Set<string>();
+  for (const meal of meals) {
+    requireMealId(meal.catalogueMealId);
+    requirePositiveWholeNumber(meal.catalogueVersion, "Catalogue meal version");
+    const key = catalogueMealReferenceKey(meal);
+    if (references.has(key)) {
+      throw new Error("Catalogue meal references must be unique.");
+    }
+    references.add(key);
+  }
+  if (references.size === 0)
+    throw new Error("The catalogue must not be empty.");
+  return references;
 }
 
 function requireCatalogueMeals(

@@ -389,3 +389,300 @@ test("extending an adjusted plan fills only new trailing days", async () => {
     "2026-09-27",
   ]);
 });
+
+test("plans a chosen recipe on a free day or replaces a planned one", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+  const plan = await asUser.query(api.mealPlans.getCurrent, {});
+  const freeDate = addDaysToPlanDate(planStartDate, 2);
+  const chosenMealId = catalogueMealIds[8]!;
+
+  const filled = await asUser.mutation(api.mealPlans.planMeal, {
+    mealPlanId: plan!._id,
+    expectedUpdatedAt: plan!.updatedAt,
+    date: freeDate,
+    catalogueMealId: chosenMealId,
+    catalogueVersion,
+  });
+  expect(filled).toEqual({ status: "planned" });
+
+  const afterFill = await asUser.query(api.mealPlans.getCurrent, {});
+  expect(afterFill!.mealSlots).toHaveLength(6);
+  expect(
+    afterFill!.mealSlots.find((slot) => slot.date === freeDate),
+  ).toMatchObject({ catalogueMealId: chosenMealId, status: "planned" });
+
+  const stale = await asUser.mutation(api.mealPlans.planMeal, {
+    mealPlanId: plan!._id,
+    expectedUpdatedAt: plan!.updatedAt,
+    date: planStartDate,
+    catalogueMealId: chosenMealId,
+    catalogueVersion,
+  });
+  expect(stale).toEqual({ status: "plan_changed" });
+
+  const replaced = await asUser.mutation(api.mealPlans.planMeal, {
+    mealPlanId: afterFill!._id,
+    expectedUpdatedAt: afterFill!.updatedAt,
+    date: planStartDate,
+    catalogueMealId: catalogueMealIds[9]!,
+    catalogueVersion,
+  });
+  expect(replaced).toEqual({ status: "planned" });
+
+  const afterReplace = await asUser.query(api.mealPlans.getCurrent, {});
+  expect(afterReplace!.mealSlots).toHaveLength(6);
+  expect(afterReplace!.mealSlots[0]).toMatchObject({
+    date: planStartDate,
+    catalogueMealId: catalogueMealIds[9],
+  });
+  const shoppingList = await t.run(async (ctx) =>
+    ctx.db
+      .query("shoppingLists")
+      .withIndex("by_meal_plan", (q) => q.eq("mealPlanId", plan!._id))
+      .unique(),
+  );
+  expect(shoppingList?.mealPlanUpdatedAt).toBe(afterReplace!.updatedAt);
+});
+
+test("planning a recipe rejects dates outside the plan and unknown versions", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+
+  const archivedPlanId = await t.run(async (ctx) =>
+    ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: planStartDate,
+      endDate: planStartDate,
+      status: "archived",
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  expect(
+    await asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: archivedPlanId,
+      expectedUpdatedAt: 1,
+      date: planStartDate,
+      catalogueMealId: catalogueMealIds[0]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "no_active_plan" });
+
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+  const plan = await asUser.query(api.mealPlans.getCurrent, {});
+
+  await expect(
+    asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: plan!._id,
+      expectedUpdatedAt: plan!.updatedAt,
+      date: addDaysToPlanDate(planStartDate, 7),
+      catalogueMealId: catalogueMealIds[0]!,
+      catalogueVersion,
+    }),
+  ).rejects.toThrow();
+  expect(
+    await asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: plan!._id,
+      expectedUpdatedAt: plan!.updatedAt,
+      date: planStartDate,
+      catalogueMealId: catalogueMealIds[0]!,
+      catalogueVersion: catalogueVersion + 1,
+    }),
+  ).toEqual({ status: "catalogue_unsupported" });
+});
+
+test("adds a chosen recipe on a new plan day up to seven days", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(3),
+  });
+  const threeDayPlan = await asUser.query(api.mealPlans.getCurrent, {});
+
+  const added = await asUser.mutation(api.mealPlans.addPlanDay, {
+    mealPlanId: threeDayPlan!._id,
+    expectedUpdatedAt: threeDayPlan!.updatedAt,
+    catalogueMealId: catalogueMealIds[8]!,
+    catalogueVersion,
+  });
+  expect(added).toEqual({
+    status: "planned",
+    date: addDaysToPlanDate(planStartDate, 3),
+  });
+
+  const fourDayPlan = await asUser.query(api.mealPlans.getCurrent, {});
+  expect(fourDayPlan).toMatchObject({
+    endDate: addDaysToPlanDate(planStartDate, 3),
+  });
+  expect(fourDayPlan!.mealSlots.at(-1)).toMatchObject({
+    date: addDaysToPlanDate(planStartDate, 3),
+    catalogueMealId: catalogueMealIds[8],
+    status: "planned",
+  });
+  const shoppingList = await t.run(async (ctx) =>
+    ctx.db
+      .query("shoppingLists")
+      .withIndex("by_meal_plan", (q) => q.eq("mealPlanId", threeDayPlan!._id))
+      .unique(),
+  );
+  expect(shoppingList?.mealPlanUpdatedAt).toBe(fourDayPlan!.updatedAt);
+
+  expect(
+    await asUser.mutation(api.mealPlans.addPlanDay, {
+      mealPlanId: threeDayPlan!._id,
+      expectedUpdatedAt: threeDayPlan!.updatedAt,
+      catalogueMealId: catalogueMealIds[9]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "plan_changed" });
+  expect(
+    await asUser.mutation(api.mealPlans.addPlanDay, {
+      mealPlanId: fourDayPlan!._id,
+      expectedUpdatedAt: fourDayPlan!.updatedAt,
+      catalogueMealId: catalogueMealIds[9]!,
+      catalogueVersion: catalogueVersion + 1,
+    }),
+  ).toEqual({ status: "catalogue_unsupported" });
+
+  let currentPlan = fourDayPlan!;
+  for (let index = 4; index < 7; index += 1) {
+    expect(
+      await asUser.mutation(api.mealPlans.addPlanDay, {
+        mealPlanId: currentPlan._id,
+        expectedUpdatedAt: currentPlan.updatedAt,
+        catalogueMealId: catalogueMealIds[index + 5]!,
+        catalogueVersion,
+      }),
+    ).toMatchObject({ status: "planned" });
+    currentPlan = (await asUser.query(api.mealPlans.getCurrent, {}))!;
+  }
+  expect(currentPlan.endDate).toBe(addDaysToPlanDate(planStartDate, 6));
+  expect(
+    await asUser.mutation(api.mealPlans.addPlanDay, {
+      mealPlanId: currentPlan._id,
+      expectedUpdatedAt: currentPlan.updatedAt,
+      catalogueMealId: catalogueMealIds[0]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "plan_full" });
+});
+
+test("keeps the active plan concurrency token monotonic across swaps", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(3),
+  });
+  const plan = await asUser.query(api.mealPlans.getCurrent, {});
+  const futureUpdatedAt = Date.now() + 60_000;
+  await t.run(async (ctx) => {
+    await ctx.db.patch(plan!._id, { updatedAt: futureUpdatedAt });
+  });
+
+  expect(
+    await asUser.mutation(api.mealPlans.swapMeal, {
+      mealSlotId: plan!.mealSlots[0]!._id,
+    }),
+  ).toEqual({ status: "swapped" });
+  expect((await asUser.query(api.mealPlans.getCurrent, {}))!.updatedAt).toBe(
+    futureUpdatedAt + 1,
+  );
+});
+
+test("returns typed unavailability for conflicts and duplicate dates", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(3),
+  });
+  const plan = await asUser.query(api.mealPlans.getCurrent, {});
+  const conflictingPlanId = await t.run(async (ctx) =>
+    ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: planStartDate,
+      endDate: addDaysToPlanDate(planStartDate, 2),
+      servings: 4,
+      status: "active",
+      createdAt: plan!.updatedAt + 1,
+      updatedAt: plan!.updatedAt + 1,
+    }),
+  );
+
+  expect(
+    await asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: plan!._id,
+      expectedUpdatedAt: plan!.updatedAt,
+      date: planStartDate,
+      catalogueMealId: catalogueMealIds[8]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "plan_unavailable" });
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch(conflictingPlanId, {
+      status: "archived",
+      updatedAt: plan!.updatedAt + 2,
+    });
+    const slot = plan!.mealSlots[0]!;
+    await ctx.db.patch(slot._id, { status: "cooked" });
+  });
+  expect(
+    await asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: plan!._id,
+      expectedUpdatedAt: plan!.updatedAt,
+      date: planStartDate,
+      catalogueMealId: catalogueMealIds[8]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "plan_unavailable" });
+
+  await t.run(async (ctx) => {
+    const slot = plan!.mealSlots[0]!;
+    await ctx.db.patch(slot._id, { status: "planned" });
+    await ctx.db.insert("mealSlots", {
+      mealPlanId: plan!._id,
+      ownerId,
+      date: slot.date,
+      recipeId: slot.recipeId,
+      status: "planned",
+      createdAt: plan!.updatedAt + 2,
+      updatedAt: plan!.updatedAt + 2,
+    });
+  });
+
+  expect(
+    await asUser.mutation(api.mealPlans.planMeal, {
+      mealPlanId: plan!._id,
+      expectedUpdatedAt: plan!.updatedAt,
+      date: planStartDate,
+      catalogueMealId: catalogueMealIds[8]!,
+      catalogueVersion,
+    }),
+  ).toEqual({ status: "plan_unavailable" });
+});

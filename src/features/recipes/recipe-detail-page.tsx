@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { PlanThisMeal } from "@/features/plan/plan-this-meal";
 import { RecipeDetailContent } from "@/features/recipes/recipe-detail-content";
 import {
   useCatalogueMeal,
@@ -55,7 +56,11 @@ export function RecipeDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-175">
-      <RecipeDetailContent meal={meal} presentation="page" />
+      <RecipeDetailContent
+        meal={meal}
+        presentation="page"
+        planMealAction={<PlanThisMeal meal={meal} />}
+      />
     </div>
   );
 }

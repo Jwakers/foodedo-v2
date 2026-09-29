@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  chooseGuestPlanMealForDate,
   ensureGuestPlanDraft,
   extendCurrentGuestPlanDraft,
   loadGuestPlanDraftForReview,
@@ -10,6 +11,7 @@ import {
   removeGuestPlanMeal,
   replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
+  type GuestCatalogueContract,
 } from "@/features/plan/guest-plan-draft";
 import {
   useCatalogueMeals,
@@ -45,6 +47,38 @@ type GuestDraftCatalogueSelection = {
   readableMeals: CatalogueMealSummary[];
 };
 
+export function toGuestCatalogueContract(
+  selection: GuestDraftCatalogueSelection,
+): GuestCatalogueContract {
+  return {
+    currentMeals: selection.meals.map((meal) => ({
+      catalogueMealId: meal.id,
+      catalogueVersion: meal.version,
+    })),
+    readableMeals: selection.readableMeals.map((meal) => ({
+      catalogueMealId: meal.id,
+      catalogueVersion: meal.version,
+    })),
+  };
+}
+
+export function guestCatalogueMealsByReference(
+  selection: GuestDraftCatalogueSelection | null | undefined,
+): ReadonlyMap<string, CatalogueMealSummary> {
+  return new Map(
+    selection?.readableMeals.map(
+      (meal) =>
+        [
+          catalogueMealReferenceKey({
+            catalogueMealId: meal.id,
+            catalogueVersion: meal.version,
+          }),
+          meal,
+        ] as const,
+    ) ?? [],
+  );
+}
+
 function toReadyState(
   draft: GuestDraft,
   mealsByReference: ReadonlyMap<string, CatalogueMealSummary>,
@@ -76,34 +110,11 @@ export function useGuestPlanDraft() {
     useGuestDraftCatalogue();
   const catalogue = useMemo(
     () =>
-      selectedCatalogue
-        ? {
-            currentMeals: selectedCatalogue.meals.map((meal) => ({
-              catalogueMealId: meal.id,
-              catalogueVersion: meal.version,
-            })),
-            readableMeals: selectedCatalogue.readableMeals.map((meal) => ({
-              catalogueMealId: meal.id,
-              catalogueVersion: meal.version,
-            })),
-          }
-        : null,
+      selectedCatalogue ? toGuestCatalogueContract(selectedCatalogue) : null,
     [selectedCatalogue],
   );
   const mealsByReference = useMemo(
-    () =>
-      new Map(
-        selectedCatalogue?.readableMeals.map(
-          (meal) =>
-            [
-              catalogueMealReferenceKey({
-                catalogueMealId: meal.id,
-                catalogueVersion: meal.version,
-              }),
-              meal,
-            ] as const,
-        ) ?? [],
-      ),
+    () => guestCatalogueMealsByReference(selectedCatalogue),
     [selectedCatalogue],
   );
   const [state, setState] = useState<GuestPlanDraftState>({
@@ -172,6 +183,17 @@ export function useGuestPlanDraft() {
     [catalogue, mealsByReference, refreshStoredReferences],
   );
 
+  const chooseMeal = useCallback(
+    async (date: string) => {
+      if (catalogue === null) throw new Error("The catalogue is unavailable.");
+      const draft = await chooseGuestPlanMealForDate({ catalogue, date });
+      await refreshStoredReferences();
+      setState(toReadyState(draft, mealsByReference));
+      return draft;
+    },
+    [catalogue, mealsByReference, refreshStoredReferences],
+  );
+
   const addDay = useCallback(async () => {
     if (catalogue === null) throw new Error("The catalogue is unavailable.");
     const draft = await extendCurrentGuestPlanDraft({ catalogue });
@@ -187,6 +209,7 @@ export function useGuestPlanDraft() {
     tryAnotherWeek,
     removeMeal,
     replaceMeal,
+    chooseMeal,
     addDay,
   };
 }

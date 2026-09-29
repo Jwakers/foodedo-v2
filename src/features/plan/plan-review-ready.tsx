@@ -27,6 +27,7 @@ export function PlanReviewReady({
   onTryAnotherWeek,
   onRemoveMeal,
   onReplaceMeal,
+  onChooseMeal,
   onAddDay,
 }: {
   mode: "standard" | "replan";
@@ -43,6 +44,7 @@ export function PlanReviewReady({
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  onChooseMeal: (date: string) => Promise<unknown> | void;
   onAddDay: () => Promise<void>;
 }) {
   const { isLoaded, isSignedIn } = useAuth();
@@ -143,6 +145,7 @@ export function PlanReviewReady({
               row={row}
               onRemoveMeal={onRemoveMeal}
               onReplaceMeal={onReplaceMeal}
+              onChooseMeal={onChooseMeal}
             />
           </li>
         ))}

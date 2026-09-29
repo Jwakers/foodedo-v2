@@ -195,6 +195,19 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     7,
   );
 
+  const chooseForMeActions = page
+    .getByRole("button", { name: /^Actions for / })
+    .first();
+  const mealBeforeChoosing =
+    await chooseForMeActions.getAttribute("aria-label");
+  await chooseForMeActions.click();
+  await page.getByRole("button", { name: /Choose for me/ }).click();
+  await expect(page.getByText("What would you like to do?")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /^Actions for / }).first(),
+  ).not.toHaveAttribute("aria-label", mealBeforeChoosing ?? "");
+  await expect(page.getByText(/7 planned dinners/)).toBeVisible();
+
   await expect(page.locator("header")).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
     0,
@@ -377,6 +390,50 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
   await expect(
     page.getByText("Ingredient quantities update automatically"),
   ).toBeVisible();
+});
+
+test("plans a recipe from its detail page as a guest", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.getByRole("link", { name: /Lemon Herb Grilled Chicken/i }).click();
+  await expect(
+    page.getByRole("heading", { name: "Lemon Herb Grilled Chicken" }),
+  ).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("button", { name: "Plan this meal" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Actions for / }).first(),
+  ).toHaveAttribute("aria-label", "Actions for Lemon Herb Grilled Chicken");
+
+  await page.goBack();
+  await page.getByRole("button", { name: "Plan this meal" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Plan this meal" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Add another day" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /^Already planned for / }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: /^Replace .+ on / })
+    .first()
+    .click();
+  await expect(page.getByText(/^Planned for /)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Plan this meal" }),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "View week" }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Actions for Lemon Herb Grilled Chicken",
+    }),
+  ).toHaveCount(2);
 });
 
 test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
