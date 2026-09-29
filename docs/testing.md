@@ -52,8 +52,6 @@ CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `N
 
 ## Upcoming
 
-- Manually verify Keep/save prompts resume automatically after email and Google sign-in on web and iOS without discarding local intent.
-- Extend the authenticated integration harness to cover current-plan hydration, IndexedDB cleanup after acknowledgement, and cross-user isolation without storing real Clerk credentials in tests.
 - Cover plan hydration with a deliberately unavailable recipe reference so corrupted historical data cannot crash the app shell.
 - Unauthenticated clients cannot read or mutate personal Convex data.
 - Clerk sign-in yields a Convex-authenticated session and the user webhook creates exactly one indexed user document.
@@ -62,6 +60,21 @@ CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `N
 - The iOS scene uses `BridgeViewController`; the `ClerkOAuth` plugin is available and every social provider opens an `ASWebAuthenticationSession` rather than stopping at a spinner.
 - Grow tests with each job slice, not with implementation details.
 - Add WebKit coverage when native/WebKit-specific behavior exists.
+
+## Manual Clerk–Convex browser smoke
+
+This check proves the real service boundary without keeping a Clerk account or
+credential in CI. Use a fresh browser profile and the dedicated V2 development
+Clerk and Convex configuration described in
+[`auth-and-backend-setup.md`](auth-and-backend-setup.md).
+
+1. Run `pnpm dev`, open the app, select **Try Foodedo**, plan a week, then choose **Save my plan**.
+2. Complete the enabled Clerk email sign-in flow. Do not use a V1 account or deployment.
+3. Confirm Foodedo reaches the saved-week confirmation and the signed-in **Week** route shows the same dated meals. In Convex, confirm one active plan and its linked Shopping List belong to the signed-in user.
+4. Refresh the browser. Confirm the local guest draft has not produced a second plan or claim, and the same active week remains visible.
+5. Open **Shopping** and confirm the linked list is available. Sign out and confirm personal plan and shopping data are no longer rendered to the guest.
+
+Record the date, tested Clerk/Convex development deployments, provider, and any failure in the release evidence. Never add a Clerk secret, test password, session token, or user identifier to this repository or CI.
 
 ## Out of scope for the foundation
 

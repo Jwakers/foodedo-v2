@@ -427,9 +427,7 @@ function YoursGrid({
       />
 
       {placeholders.length === 0 ? (
-        <SearchEmptyState
-          hasActiveFilters={hasActiveRecipeFilters(filters)}
-        />
+        <SearchEmptyState hasActiveFilters={hasActiveRecipeFilters(filters)} />
       ) : (
         <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
           {placeholders.map((recipe) => (
@@ -458,11 +456,7 @@ function YoursGrid({
   );
 }
 
-function SearchEmptyState({
-  hasActiveFilters,
-}: {
-  hasActiveFilters: boolean;
-}) {
+function SearchEmptyState({ hasActiveFilters }: { hasActiveFilters: boolean }) {
   return (
     <p className="py-12 text-center text-14 text-graphite" role="status">
       {hasActiveFilters

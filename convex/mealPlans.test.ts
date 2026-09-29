@@ -252,6 +252,53 @@ test("a signed-in user cannot read another user's active plan", async () => {
   expect(await otherUser.query(api.mealPlans.getCurrent, {})).toBeNull();
 });
 
+test("a claimed plan hydrates one private shopping list", async () => {
+  const t = createTestContext();
+  const { asUser: owner } = await authenticateTestUser(t, "plan-owner");
+  const { asUser: otherUser } = await authenticateTestUser(t, "other-user");
+
+  await owner.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+
+  const plan = await owner.query(api.mealPlans.getCurrent, {});
+  expect(plan).not.toBeNull();
+
+  const ensured = await owner.mutation(
+    api.shoppingLists.ensureForCurrentPlan,
+    {},
+  );
+  expect(ensured.status).toBe("ready");
+  if (ensured.status !== "ready") return;
+
+  const shopping = await owner.query(api.shoppingLists.getCurrent, {});
+  expect(shopping.status).toBe("ready");
+  if (shopping.status !== "ready" || shopping.list === null) return;
+  expect(shopping.list.mealPlanId).toBe(plan!._id);
+  expect(shopping.list.items).not.toHaveLength(0);
+
+  const item = shopping.list.items[0];
+  expect(item).toBeDefined();
+  if (item === undefined) return;
+
+  expect(
+    await otherUser.query(api.shoppingLists.getById, {
+      shoppingListId: shopping.list._id,
+    }),
+  ).toBeNull();
+  await expect(
+    otherUser.mutation(api.shoppingLists.setItemChecked, {
+      itemId: item._id,
+      checked: true,
+    }),
+  ).resolves.toEqual({ status: "not_found" });
+  expect(await otherUser.query(api.mealPlans.getCurrent, {})).toBeNull();
+});
+
 test("active adjustment rebases and trims without replacing preserved meals", async () => {
   const t = createTestContext();
   const { asUser } = await authenticateTestUser(t);

@@ -2,7 +2,6 @@
 
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
-import type { FunctionReturnType } from "convex/server";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,18 +14,16 @@ import {
   readCurrentGuestPlanDraft,
 } from "@/features/plan/guest-plan-draft";
 import type { GuestCatalogueContract } from "@/features/plan/guest-plan-draft";
-import { savedPlanMealChoices } from "@/features/plan/saved-plan-meal-choices";
-import { useGuestDraftCatalogue } from "@/features/plan/use-guest-plan-draft";
 import {
-  guestDraftMatchesSavedPlan,
-  type GuestDraftV1,
-} from "@/lib/domain/guest-draft";
+  canResumeGuestPlanClaim,
+  clearHydratedGuestPlanDraft,
+  type GuestPlanClaimResult,
+  resumePendingGuestPlanClaim,
+} from "@/features/plan/guest-plan-claim-resume";
+import { useGuestDraftCatalogue } from "@/features/plan/use-guest-plan-draft";
+import type { GuestDraft } from "@/lib/domain/guest-draft";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
-
-type ClaimGuestDraftResult = FunctionReturnType<
-  typeof api.mealPlans.claimGuestDraft
->;
 
 /**
  * Save / claim entry for plan review. Guests persist accept + claim key, then
@@ -125,7 +122,7 @@ export function useSaveGuestPlan() {
  * Mount once at app-shell so any route can finish the save.
  */
 export function GuestPlanClaimResume() {
-  const { status, userId, isAuthenticated } = useFoodedoAuth();
+  const { userId, isAuthenticated } = useFoodedoAuth();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
@@ -153,13 +150,13 @@ export function GuestPlanClaimResume() {
   );
 
   useEffect(() => {
-    if (
-      status === "loading" ||
-      !isAuthenticated ||
-      currentPlan === undefined ||
-      catalogueContract === null ||
-      isResumingRef.current
-    ) {
+    const canResume = canResumeGuestPlanClaim({
+      isAuthenticated,
+      currentPlanResolved: currentPlan !== undefined,
+      hasCatalogue: catalogueContract !== null,
+      isResuming: isResumingRef.current,
+    });
+    if (!canResume || currentPlan === undefined || catalogueContract === null) {
       return;
     }
 
@@ -167,40 +164,33 @@ export function GuestPlanClaimResume() {
 
     void (async () => {
       try {
-        const draft = await readCurrentGuestPlanDraft(catalogueContract);
-        if (!draft?.acceptedAt || draft.claim === undefined) return;
-        if (draft.claim.completedAt !== undefined) {
-          await clearClaimedGuestPlanDraft({
-            catalogue: catalogueContract,
-            expectedDraft: draft,
-          });
-          return;
-        }
-
-        if (currentPlan !== null) {
-          const savedChoices = savedPlanMealChoices({
-            planStartDate: currentPlan.startDate,
-            planEndDate: currentPlan.endDate,
-            mealSlots: currentPlan.mealSlots,
-          });
-
-          if (guestDraftMatchesSavedPlan(draft, savedChoices)) {
-            await clearClaimedGuestPlanDraft({
+        await resumePendingGuestPlanClaim({
+          currentPlan,
+          readDraft: () => readCurrentGuestPlanDraft(catalogueContract),
+          claimDraft: (draft) =>
+            claimGuestDraft(guestPlanClaimMutationArgs(draft)),
+          clearDraft: (draft) =>
+            clearClaimedGuestPlanDraft({
               catalogue: catalogueContract,
               expectedDraft: draft,
+            }),
+          cancelClaim: (draft) =>
+            cancelPendingGuestPlanClaim({
+              catalogue: catalogueContract,
+              expectedDraft: draft,
+            }),
+          onSuccessfulClaim: () => navigateAfterSuccessfulClaim(router),
+          onCleanupFailure: () => {
+            toast.warning("Your plan was saved.", {
+              description:
+                "Foodedo couldn’t clear the local copy yet, but your account plan is safe.",
             });
-            navigateAfterSuccessfulClaim(router);
-            return;
-          }
-        }
-
-        // The user explicitly chose to save this exact reviewed week before
-        // authentication. Convex atomically archives a different active plan.
-        const result = await claimGuestDraft(guestPlanClaimMutationArgs(draft));
-        await handleClaimResult(result, {
-          catalogue: catalogueContract,
-          router,
-          submittedDraft: draft,
+          },
+          onUnsupportedCatalogue: () => {
+            toast.error(
+              "This plan uses an older recipe catalogue. Plan a new week to continue.",
+            );
+          },
         });
       } catch (error) {
         console.error("Failed to resume guest plan claim.", error);
@@ -216,7 +206,6 @@ export function GuestPlanClaimResume() {
     claimGuestDraft,
     currentPlan,
     isAuthenticated,
-    status,
     router,
   ]);
 
@@ -237,21 +226,15 @@ export function GuestPlanClaimResume() {
     }
 
     void (async () => {
-      const draft = await readCurrentGuestPlanDraft(catalogueContract);
-      if (!draft) return;
-
-      const savedChoices = savedPlanMealChoices({
-        planStartDate: currentPlan.startDate,
-        planEndDate: currentPlan.endDate,
-        mealSlots: currentPlan.mealSlots,
-      });
-
-      if (!guestDraftMatchesSavedPlan(draft, savedChoices)) return;
-
       try {
-        didHydrateClearRef.current = await clearClaimedGuestPlanDraft({
-          catalogue: catalogueContract,
-          expectedDraft: draft,
+        didHydrateClearRef.current = await clearHydratedGuestPlanDraft({
+          currentPlan,
+          readDraft: () => readCurrentGuestPlanDraft(catalogueContract),
+          clearDraft: (draft) =>
+            clearClaimedGuestPlanDraft({
+              catalogue: catalogueContract,
+              expectedDraft: draft,
+            }),
         });
       } catch (error) {
         console.error("Failed to clear matching guest plan draft.", error);
@@ -263,7 +246,7 @@ export function GuestPlanClaimResume() {
 }
 
 async function handleClaimResult(
-  result: ClaimGuestDraftResult,
+  result: GuestPlanClaimResult,
   {
     catalogue,
     router,
@@ -271,7 +254,7 @@ async function handleClaimResult(
   }: {
     catalogue: GuestCatalogueContract;
     router: ReturnType<typeof useRouter>;
-    submittedDraft: GuestDraftV1;
+    submittedDraft: GuestDraft;
   },
 ) {
   switch (result.status) {
