@@ -137,17 +137,13 @@ test("serializes shuffle after remove against the latest snapshot", async () => 
     shuffleCurrentGuestPlanDraft({ catalogue, now: 300, store }),
   ]);
 
-  // Remove clears day 0; shuffle then re-applies the generation free-day (index 2).
+  // Shuffle preserves the deliberately cleared day without introducing another.
   expect(
     shuffled.mealChoices.find((choice) => choice.date === "2026-08-29")
       ?.catalogueMealId,
   ).toBeNull();
-  expect(
-    shuffled.mealChoices.find((choice) => choice.date === "2026-08-31")
-      ?.catalogueMealId,
-  ).toBeNull();
   expect(countPlannedGuestMeals(shuffled)).toBe(
-    countPlannedGuestMeals(seed) - 2,
+    countPlannedGuestMeals(seed) - 1,
   );
 });
 
@@ -245,14 +241,43 @@ test("starts a replacement plan tomorrow when no editable draft exists", async (
     catalogue,
     now: 200,
     planStartDate: "2026-08-29",
+    planDays: 4,
     store,
   });
 
   expect(next.planStartDate).toBe("2026-08-29");
-  expect(next.mealChoices).toHaveLength(7);
-  expect(next.mealChoices[2]?.catalogueMealId).toBeNull();
+  expect(next.mealChoices).toHaveLength(4);
+  expect(
+    next.mealChoices.every((choice) => choice.catalogueMealId !== null),
+  ).toBe(true);
   expect(next.createdAt).toBe(200);
   expect(store.writes).toBe(1);
+});
+
+test("repairs an unedited next-plan draft from the retired automatic free-day policy", async () => {
+  const legacyDraft = createGuestDraft({
+    planStartDate: "2026-08-29",
+    planDays: 4,
+    catalogueMeals,
+    now: 100,
+    emptySlotIndexes: [2],
+  });
+  const store = createMemoryStore(legacyDraft);
+
+  const repaired = await beginNextGuestPlanDraft({
+    catalogue,
+    now: 200,
+    planStartDate: "2026-08-29",
+    planDays: 4,
+    store,
+  });
+
+  expect(repaired.mealChoices).toHaveLength(4);
+  expect(
+    repaired.mealChoices.every((choice) => choice.catalogueMealId !== null),
+  ).toBe(true);
+  expect(repaired.createdAt).toBe(100);
+  expect(repaired.updatedAt).toBe(200);
 });
 
 test("moves an editable replacement plan to tomorrow without losing choices", async () => {

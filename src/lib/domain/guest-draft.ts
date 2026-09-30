@@ -2,11 +2,9 @@ import {
   catalogueMealReferenceKey,
   RECIPE_LIMITS,
   type CatalogueMealReference,
+  type ProteinCategory,
 } from "./recipes";
-import {
-  rotatingMealPlanSelectionStrategy,
-  selectReplacementMeal,
-} from "./meal-plan-selection";
+import { selectMealPlanCandidates } from "./meal-plan-selection";
 
 export const GUEST_DRAFT_SCHEMA_VERSION = 3 as const;
 export const GUEST_PLAN_DAYS = 7 as const;
@@ -25,6 +23,11 @@ export type GuestMealChoice = {
   date: string;
   catalogueMealId: string | null;
   catalogueVersion: number | null;
+};
+
+export type GuestSelectionMeal = CatalogueMealReference & {
+  proteinCategory?: ProteinCategory;
+  isSaved?: boolean;
 };
 
 export type GuestPlanClaim = {
@@ -60,13 +63,17 @@ export function createGuestDraft({
   planDays = GUEST_PLAN_DAYS,
   servings = 4,
   emptySlotIndexes = [],
+  recentPlanMealIds = [],
+  firstCatalogueMealId,
 }: {
   planStartDate: string;
-  catalogueMeals: readonly CatalogueMealReference[];
+  catalogueMeals: readonly GuestSelectionMeal[];
   now: number;
   planDays?: PlanDays;
   servings?: number;
   emptySlotIndexes?: readonly number[];
+  recentPlanMealIds?: readonly (readonly string[])[];
+  firstCatalogueMealId?: string;
 }): GuestDraftV1 {
   requirePlanDate(planStartDate);
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
@@ -77,6 +84,28 @@ export function createGuestDraft({
   requireServings(servings);
   const emptySlots = requireEmptySlotIndexes(emptySlotIndexes, planDays);
 
+  if (
+    firstCatalogueMealId !== undefined &&
+    !catalogueVersions.has(firstCatalogueMealId)
+  ) {
+    throw new Error("That meal is not in this catalogue.");
+  }
+  const generatedMealIds =
+    planDays === emptySlots.size
+      ? []
+      : selectGuestMeals({
+          catalogueMeals,
+          numberOfMeals: planDays - emptySlots.size,
+          variationKey: `initial:${planStartDate}:${planDays}:${servings}:${now}`,
+          recentPlanMealIds,
+        });
+  const selectedMealIds =
+    firstCatalogueMealId === undefined
+      ? generatedMealIds
+      : [
+          firstCatalogueMealId,
+          ...generatedMealIds.filter((id) => id !== firstCatalogueMealId),
+        ].slice(0, planDays - emptySlots.size);
   let mealCursor = 0;
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
@@ -89,9 +118,7 @@ export function createGuestDraft({
         return { date, catalogueMealId: null, catalogueVersion: null };
       }
 
-      const catalogueMealId =
-        catalogueMealIds[mealCursor % catalogueMealIds.length]!;
-      mealCursor += 1;
+      const catalogueMealId = selectedMealIds[mealCursor++]!;
       return {
         date,
         catalogueMealId,
@@ -137,7 +164,7 @@ export function countPlannedGuestMeals(draft: GuestDraftV1) {
 /** Adds one meal to the end of an editable plan, up to seven days. */
 export function extendGuestPlanByOneDay(
   draft: GuestDraftV1,
-  catalogueMeals: readonly CatalogueMealReference[],
+  catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
   selectedCatalogueMealId?: string,
 ): GuestDraftV1 {
@@ -164,15 +191,11 @@ export function extendGuestPlanByOneDay(
           choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
         ),
       );
-      const unusedMealIds = catalogueMealIds.filter(
-        (mealId) => !plannedMealIds.has(mealId),
-      );
-      const candidates =
-        unusedMealIds.length > 0 ? unusedMealIds : catalogueMealIds;
-      return rotatingMealPlanSelectionStrategy({
-        candidateMealIds: candidates,
+      return selectGuestMeals({
+        catalogueMeals,
         numberOfMeals: 1,
-        offset: draft.planDays,
+        excludedMealIds: [...plannedMealIds],
+        variationKey: `extend:${draft.updatedAt}:${draft.planDays}`,
       })[0]!;
     })();
   const planDays = (draft.planDays + 1) as PlanDays;
@@ -279,7 +302,7 @@ export const readGuestDraftV1 = readGuestDraft;
 export function swapGuestPlanMeal(
   draft: GuestDraftV1,
   date: string,
-  catalogueMeals: readonly CatalogueMealReference[],
+  catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
 ): GuestDraftV1 {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
@@ -297,13 +320,14 @@ export function swapGuestPlanMeal(
     throw new Error("That day has no meal to swap.");
   }
 
-  const nextMealId = selectReplacementMeal({
-    candidateMealIds: catalogueMealIds,
-    currentMealId,
-    plannedMealIds: draft.mealChoices
-      .map((choice) => choice.catalogueMealId)
-      .filter((mealId): mealId is string => mealId !== null),
-  });
+  const nextMealId = selectGuestMeals({
+    catalogueMeals,
+    numberOfMeals: 1,
+    excludedMealIds: draft.mealChoices.flatMap((choice) =>
+      choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+    ),
+    variationKey: `swap:${draft.updatedAt}:${date}:${currentMealId}`,
+  })[0]!;
   const mealChoices = draft.mealChoices.map((choice, index) =>
     index === choiceIndex
       ? {
@@ -324,7 +348,7 @@ export function swapGuestPlanMeal(
 export function chooseGuestPlanMeal(
   draft: GuestDraftV1,
   date: string,
-  catalogueMeals: readonly CatalogueMealReference[],
+  catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
 ): GuestDraftV1 {
   const choiceIndex = draft.mealChoices.findIndex(
@@ -340,13 +364,13 @@ export function chooseGuestPlanMeal(
   requireCatalogueMealIds(catalogueMealIds);
   requireTimestamp(now, "Update time");
 
-  const catalogueMealId = rotatingMealPlanSelectionStrategy({
-    candidateMealIds: catalogueMealIds,
+  const catalogueMealId = selectGuestMeals({
+    catalogueMeals,
     numberOfMeals: 1,
-    offset: choiceIndex,
     excludedMealIds: draft.mealChoices.flatMap((choice) =>
       choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
     ),
+    variationKey: `choose:${draft.updatedAt}:${date}`,
   })[0]!;
   const mealChoices = draft.mealChoices.map((choice, index) =>
     index === choiceIndex
@@ -366,7 +390,7 @@ export function setGuestPlanMeal(
   draft: GuestDraftV1,
   date: string,
   catalogueMealId: string,
-  catalogueMeals: readonly CatalogueMealReference[],
+  catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
 ): GuestDraftV1 {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
@@ -422,8 +446,9 @@ export function clearGuestPlanMeal(
 
 export function shuffleGuestPlan(
   draft: GuestDraftV1,
-  catalogueMeals: readonly CatalogueMealReference[],
+  catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
+  recentPlanMealIds: readonly (readonly string[])[] = [],
 ): GuestDraftV1 {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
@@ -437,15 +462,11 @@ export function shuffleGuestPlan(
     return editableDraft(draft, draft.mealChoices, now);
   }
 
-  const firstMealId = filledMealIds[0]!;
-  const firstMealIndex = catalogueMealIds.indexOf(firstMealId);
-  if (firstMealIndex === -1) {
-    throw new Error("A current meal is not in this catalogue.");
-  }
-  const selectedMealIds = rotatingMealPlanSelectionStrategy({
-    candidateMealIds: catalogueMealIds,
+  const selectedMealIds = selectGuestMeals({
+    catalogueMeals,
     numberOfMeals: filledMealIds.length,
-    offset: firstMealIndex + 1,
+    variationKey: `shuffle:${draft.updatedAt}:${filledMealIds.join(",")}`,
+    recentPlanMealIds,
   });
 
   let filledCursor = 0;
@@ -733,6 +754,42 @@ function requireCatalogueMealReferences(
   if (references.size === 0)
     throw new Error("The catalogue must not be empty.");
   return references;
+}
+
+function selectGuestMeals({
+  catalogueMeals,
+  numberOfMeals,
+  excludedMealIds = [],
+  variationKey,
+  recentPlanMealIds = [],
+}: {
+  catalogueMeals: readonly GuestSelectionMeal[];
+  numberOfMeals: number;
+  excludedMealIds?: readonly string[];
+  variationKey: string;
+  recentPlanMealIds?: readonly (readonly string[])[];
+}): string[] {
+  const candidates = catalogueMeals.map((meal) => ({
+    key: meal.catalogueMealId,
+    proteinCategory: meal.proteinCategory ?? "meat-free",
+    isSaved: meal.isSaved ?? false,
+  }));
+  const proteinCategoriesByKey = new Map(
+    candidates.map((candidate) => [candidate.key, candidate.proteinCategory]),
+  );
+  return selectMealPlanCandidates(candidates, {
+    numberOfMeals,
+    excludedCandidateKeys: excludedMealIds,
+    recentPlans: recentPlanMealIds.map((candidateKeys) => ({
+      candidateKeys,
+      proteinCategories: candidateKeys.flatMap((candidateKey) => {
+        const proteinCategory = proteinCategoriesByKey.get(candidateKey);
+        return proteinCategory === undefined ? [] : [proteinCategory];
+      }),
+    })),
+    prioritiseSavedRecipes: catalogueMeals.some((meal) => meal.isSaved),
+    variationKey,
+  }).map((decision) => decision.candidateKey);
 }
 
 function requireCatalogueMeals(

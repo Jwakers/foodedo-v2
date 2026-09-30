@@ -54,10 +54,12 @@ export function toGuestCatalogueContract(
     currentMeals: selection.meals.map((meal) => ({
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
+      proteinCategory: meal.proteinCategory,
     })),
     readableMeals: selection.readableMeals.map((meal) => ({
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
+      proteinCategory: meal.proteinCategory,
     })),
   };
 }

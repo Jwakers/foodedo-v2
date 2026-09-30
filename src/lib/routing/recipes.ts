@@ -11,10 +11,21 @@ export type RecipeCatalogueReference = {
 export function recipeDetailPath(
   slug: string,
   reference?: Partial<RecipeCatalogueReference>,
+  servings?: number,
 ): string {
   const search = new URLSearchParams({ slug });
+  if (servings !== undefined) search.set("servings", String(servings));
   appendCatalogueReference(search, reference);
   return `/recipes/view?${search.toString()}`;
+}
+
+/** Accept only serving values that the recipe controls can safely render. */
+export function parseRecipeServings(value: string | null): number | null {
+  if (value === null) return null;
+  const servings = Number(value);
+  return Number.isInteger(servings) && servings >= 1 && servings <= 1_000
+    ? servings
+    : null;
 }
 
 export function recipeCookPath(

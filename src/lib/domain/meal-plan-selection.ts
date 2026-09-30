@@ -1,171 +1,233 @@
-export type MealPlanSelectionInput = {
-  candidateMealIds: readonly string[];
-  numberOfMeals: number;
-  offset: number;
-  excludedMealIds?: readonly string[];
+import type { ProteinCategory } from "./recipes";
+
+export type MealSelectionCandidate = {
+  key: string;
+  proteinCategory: ProteinCategory;
+  isSaved: boolean;
 };
 
-export type MealPlanSelectionStrategy = (
-  input: MealPlanSelectionInput,
-) => string[];
+export type RecentMealSelectionPlan = {
+  candidateKeys: readonly string[];
+  proteinCategories: readonly ProteinCategory[];
+};
+
+/** The bounded behavioural memory used by the first-pass policy. */
+export const MAXIMUM_MEAL_SELECTION_HISTORY_PLANS = 4;
+
+export type MealSelectionRequest = {
+  numberOfMeals: number;
+  excludedCandidateKeys?: readonly string[];
+  recentPlans?: readonly RecentMealSelectionPlan[];
+  prioritiseSavedRecipes: boolean;
+  variationKey: string;
+};
+
+export type MealSelectionContribution = {
+  ruleId: string;
+  score: number;
+  reasonCode: string;
+};
+
+export type MealSelectionRuleResult = Omit<MealSelectionContribution, "ruleId">;
+
+export type MealSelectionDecision = {
+  candidateKey: string;
+  score: number;
+  contributions: MealSelectionContribution[];
+};
+
+/** Facts available to every rule; rules must remain pure and deterministic. */
+export type MealSelectionRuleContext = {
+  candidate: MealSelectionCandidate;
+  selected: readonly MealSelectionCandidate[];
+  request: MealSelectionRequest;
+  repeatRequired: boolean;
+};
+
+export type MealSelectionRule = {
+  id: string;
+  evaluate(context: MealSelectionRuleContext): MealSelectionRuleResult | null;
+};
+
+const recentPlanPenalties = [-60, -35, -20, -10] as const;
 
 /**
- * Transparent MVP strategy. Future preference-aware scoring can replace this
- * function without changing plan storage or the UI mutation contracts.
+ * Ordered, pure first-pass policy. Add future signals as small rules rather
+ * than coupling storage, UI, or Convex code to ranking details.
  */
-export const rotatingMealPlanSelectionStrategy: MealPlanSelectionStrategy = ({
-  candidateMealIds,
-  numberOfMeals,
-  offset,
-  excludedMealIds = [],
-}) => {
-  requireCandidates(candidateMealIds);
-  if (!Number.isInteger(numberOfMeals) || numberOfMeals < 1) {
+export const firstPassMealSelectionRules: readonly MealSelectionRule[] = [
+  {
+    id: "saved-preference",
+    evaluate: ({ candidate, request }) =>
+      request.prioritiseSavedRecipes && candidate.isSaved
+        ? {
+            score: 20,
+            reasonCode: "saved_recipe_preferred",
+          }
+        : null,
+  },
+  {
+    id: "new-protein-category",
+    evaluate: ({ candidate, selected }) =>
+      selected.some(
+        (selectedCandidate) =>
+          selectedCandidate.proteinCategory === candidate.proteinCategory,
+      )
+        ? null
+        : {
+            score: 30,
+            reasonCode: "adds_protein_variety",
+          },
+  },
+  {
+    id: "recent-plan",
+    evaluate: ({ candidate, request }) => {
+      const penalty =
+        request.recentPlans?.reduce((total, plan, index) => {
+          if (!plan.candidateKeys.includes(candidate.key)) return total;
+          return total + (recentPlanPenalties[index] ?? 0);
+        }, 0) ?? 0;
+      return penalty === 0
+        ? null
+        : {
+            score: penalty,
+            reasonCode: "recently_planned",
+          };
+    },
+  },
+  {
+    id: "recent-protein-category",
+    evaluate: ({ candidate, request }) => {
+      const occurrences =
+        request.recentPlans?.reduce(
+          (total, plan) =>
+            total +
+            plan.proteinCategories.filter(
+              (proteinCategory) =>
+                proteinCategory === candidate.proteinCategory,
+            ).length,
+          0,
+        ) ?? 0;
+      const penalty = -Math.min(occurrences * 4, 16);
+      return penalty === 0
+        ? null
+        : {
+            score: penalty,
+            reasonCode: "protein_recently_overrepresented",
+          };
+    },
+  },
+  {
+    id: "repeat-fallback",
+    evaluate: ({ repeatRequired }) =>
+      repeatRequired
+        ? {
+            score: -100,
+            reasonCode: "repeat_required_by_small_pool",
+          }
+        : null,
+  },
+];
+
+/** Select a credible plan without reading clocks, storage, or random state. */
+export function selectMealPlanCandidates(
+  candidates: readonly MealSelectionCandidate[],
+  request: MealSelectionRequest,
+  rules: readonly MealSelectionRule[] = firstPassMealSelectionRules,
+): MealSelectionDecision[] {
+  requireCandidates(candidates);
+  if (!Number.isInteger(request.numberOfMeals) || request.numberOfMeals < 1) {
     throw new Error("The number of meals must be a positive whole number.");
   }
-  if (!Number.isInteger(offset)) {
-    throw new Error("The selection offset must be a whole number.");
+  if (request.variationKey.trim().length === 0) {
+    throw new Error("A selection variation key is required.");
   }
 
-  const excluded = new Set(excludedMealIds);
-  const eligibleMealIds = candidateMealIds.filter((id) => !excluded.has(id));
-  const pool =
-    eligibleMealIds.length >= numberOfMeals
-      ? eligibleMealIds
-      : candidateMealIds;
-  const startIndex = ((offset % pool.length) + pool.length) % pool.length;
+  const normalizedRequest: MealSelectionRequest = {
+    ...request,
+    recentPlans: request.recentPlans?.slice(
+      0,
+      MAXIMUM_MEAL_SELECTION_HISTORY_PLANS,
+    ),
+  };
+  const excluded = new Set(request.excludedCandidateKeys ?? []);
+  const selected: MealSelectionCandidate[] = [];
+  const decisions: MealSelectionDecision[] = [];
 
-  return Array.from(
-    { length: numberOfMeals },
-    (_, index) => pool[(startIndex + index) % pool.length]!,
-  );
-};
-
-export function selectReplacementMeal({
-  candidateMealIds,
-  currentMealId,
-  plannedMealIds,
-}: {
-  candidateMealIds: readonly string[];
-  currentMealId: string;
-  plannedMealIds: readonly string[];
-}) {
-  const currentIndex = candidateMealIds.indexOf(currentMealId);
-  if (currentIndex === -1) {
-    throw new Error("The current meal is not in the catalogue.");
+  for (let index = 0; index < request.numberOfMeals; index += 1) {
+    const selectedKeys = new Set(selected.map((candidate) => candidate.key));
+    const unselected = candidates.filter(
+      (candidate) => !selectedKeys.has(candidate.key),
+    );
+    const available = unselected.filter(
+      (candidate) => !excluded.has(candidate.key),
+    );
+    const pool = available.length > 0 ? available : unselected;
+    const repeatRequired = pool.length === 0;
+    const rankedPool = repeatRequired ? candidates : pool;
+    const ranked = rankedPool.map((candidate) => {
+      const contributions = rules.flatMap((rule) => {
+        const contribution = rule.evaluate({
+          candidate,
+          selected,
+          request: normalizedRequest,
+          repeatRequired,
+        });
+        return contribution === null
+          ? []
+          : [{ ruleId: rule.id, ...contribution }];
+      });
+      return {
+        candidate,
+        contributions,
+        score: contributions.reduce(
+          (total, contribution) => total + contribution.score,
+          0,
+        ),
+        tieBreaker: stableHash(
+          `${request.variationKey}:${index}:${candidate.key}`,
+        ),
+      };
+    });
+    ranked.sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.tieBreaker - right.tieBreaker ||
+        left.candidate.key.localeCompare(right.candidate.key),
+    );
+    const winner = ranked[0]!;
+    selected.push(winner.candidate);
+    decisions.push({
+      candidateKey: winner.candidate.key,
+      score: winner.score,
+      contributions: winner.contributions,
+    });
   }
 
-  return rotatingMealPlanSelectionStrategy({
-    candidateMealIds,
-    numberOfMeals: 1,
-    offset: currentIndex + 1,
-    excludedMealIds: plannedMealIds,
-  })[0]!;
+  return decisions;
 }
 
-export function createRegenerationSelection({
-  candidateMealIds,
-  currentMealIds,
-  replaceFromIndex,
-  variant,
-}: {
-  candidateMealIds: readonly string[];
-  currentMealIds: readonly string[];
-  replaceFromIndex: number;
-  variant: number;
-}) {
-  requireCandidates(candidateMealIds);
-  if (
-    currentMealIds.length === 0 ||
-    currentMealIds.some((mealId) => !candidateMealIds.includes(mealId))
-  ) {
-    throw new Error("Current meals must belong to the candidate catalogue.");
+function stableHash(value: string): number {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
   }
-  if (
-    !Number.isInteger(replaceFromIndex) ||
-    replaceFromIndex < 0 ||
-    replaceFromIndex >= currentMealIds.length
-  ) {
-    throw new Error("The replacement start must be inside the current plan.");
-  }
-  if (!Number.isInteger(variant) || variant < 1) {
-    throw new Error("The proposal variant must be a positive whole number.");
-  }
-
-  const preservedMealIds = currentMealIds.slice(0, replaceFromIndex);
-  const numberOfReplacements = currentMealIds.length - replaceFromIndex;
-  const firstReplaceableMealIndex = candidateMealIds.indexOf(
-    currentMealIds[replaceFromIndex]!,
-  );
-  const replacementMealIds = rotatingMealPlanSelectionStrategy({
-    candidateMealIds,
-    numberOfMeals: numberOfReplacements,
-    offset: firstReplaceableMealIndex + numberOfReplacements * variant,
-    excludedMealIds: currentMealIds,
-  });
-
-  return [...preservedMealIds, ...replacementMealIds];
+  return hash >>> 0;
 }
 
-export function selectRankedPlanCandidates({
-  preferredCandidateIds,
-  fallbackCandidateIds,
-  excludedCandidateIds,
-  numberOfMeals,
-  variant,
-}: {
-  preferredCandidateIds: readonly string[];
-  fallbackCandidateIds: readonly string[];
-  excludedCandidateIds: readonly string[];
-  numberOfMeals: number;
-  variant: number;
-}) {
-  const allCandidateIds = [...preferredCandidateIds, ...fallbackCandidateIds];
-  requireCandidates(allCandidateIds);
-  if (!Number.isInteger(numberOfMeals) || numberOfMeals < 1) {
-    throw new Error("The number of meals must be a positive whole number.");
-  }
-  if (!Number.isInteger(variant) || variant < 1) {
-    throw new Error("The proposal variant must be a positive whole number.");
-  }
-
-  const excluded = new Set(excludedCandidateIds);
-  const preferred = preferredCandidateIds.filter((id) => !excluded.has(id));
-  const fallback = fallbackCandidateIds.filter((id) => !excluded.has(id));
-  if (preferred.length + fallback.length < numberOfMeals) {
-    throw new Error("There are not enough distinct meals for this plan.");
-  }
-
-  const preferredSelection = takeRotated(
-    preferred,
-    Math.min(numberOfMeals, preferred.length),
-    (variant - 1) * numberOfMeals,
-  );
-  const remaining = numberOfMeals - preferredSelection.length;
-
-  return [
-    ...preferredSelection,
-    ...takeRotated(fallback, remaining, (variant - 1) * numberOfMeals),
-  ];
-}
-
-function takeRotated(ids: readonly string[], count: number, offset: number) {
-  if (count === 0) return [];
-  const startIndex = offset % ids.length;
-  return Array.from(
-    { length: count },
-    (_, index) => ids[(startIndex + index) % ids.length]!,
-  );
-}
-
-function requireCandidates(candidateMealIds: readonly string[]) {
-  if (candidateMealIds.length === 0) {
+function requireCandidates(candidates: readonly MealSelectionCandidate[]) {
+  if (candidates.length === 0) {
     throw new Error("At least one candidate meal is required.");
   }
-  if (candidateMealIds.some((id) => id.trim().length === 0)) {
-    throw new Error("Candidate meal IDs cannot be empty.");
-  }
-  if (new Set(candidateMealIds).size !== candidateMealIds.length) {
-    throw new Error("Candidate meal IDs must be unique.");
+  const keys = new Set<string>();
+  for (const candidate of candidates) {
+    if (candidate.key.trim().length === 0) {
+      throw new Error("Candidate meal keys cannot be empty.");
+    }
+    if (keys.has(candidate.key)) {
+      throw new Error("Candidate meal keys must be unique.");
+    }
+    keys.add(candidate.key);
   }
 }

@@ -4,6 +4,7 @@ import {
   isRecipeDetailPath,
   isRecipesSectionPath,
   parseRecipeDetailSlug,
+  parseRecipeServings,
   recipeCookPath,
   recipeDetailPath,
 } from "@/lib/routing/recipes";
@@ -20,6 +21,23 @@ test("builds catalogue detail hrefs", () => {
   ).toBe(
     "/recipes/view?slug=lemon-herb-grilled-chicken&catalogueMealId=meal-1&catalogueVersion=2",
   );
+  expect(
+    recipeDetailPath(
+      "lemon-herb-grilled-chicken",
+      { catalogueMealId: "meal-1", catalogueVersion: 2 },
+      2,
+    ),
+  ).toBe(
+    "/recipes/view?slug=lemon-herb-grilled-chicken&servings=2&catalogueMealId=meal-1&catalogueVersion=2",
+  );
+});
+
+test("parses only safe explicit serving selections", () => {
+  expect(parseRecipeServings("2")).toBe(2);
+  expect(parseRecipeServings(null)).toBeNull();
+  expect(parseRecipeServings("2.5")).toBeNull();
+  expect(parseRecipeServings("0")).toBeNull();
+  expect(parseRecipeServings("1001")).toBeNull();
 });
 
 test("builds Cook paths with an optional serving selection", () => {

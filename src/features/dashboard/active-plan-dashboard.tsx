@@ -44,9 +44,15 @@ export function ActivePlanDashboard({
         Your week
       </h1>
 
-      {focus ? <TonightFocus focus={focus} /> : <EmptyTonightNotice />}
+      {focus ? (
+        <TonightFocus focus={focus} servings={plan.servings} />
+      ) : (
+        <EmptyTonightNotice />
+      )}
 
-      {restOfWeek.length > 0 ? <RestOfWeekCarousel meals={restOfWeek} /> : null}
+      {restOfWeek.length > 0 ? (
+        <RestOfWeekCarousel meals={restOfWeek} servings={plan.servings} />
+      ) : null}
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
       <SaveRecipesNudge imageSrc={nudgeImage} />
@@ -56,18 +62,24 @@ export function ActivePlanDashboard({
 
 function TonightFocus({
   focus,
+  servings,
 }: {
   focus: NonNullable<ReturnType<typeof resolveActivePlanFocus>>;
+  servings: number;
 }) {
   const { meal, timingLabel, durationLabel } = focus;
   const overline = durationLabel
     ? `${timingLabel} · ${durationLabel.toUpperCase()}`
     : timingLabel;
   const href = meal.catalogueMealSlug
-    ? recipeDetailPath(meal.catalogueMealSlug, {
-        catalogueMealId: meal.catalogueMealId ?? undefined,
-        catalogueVersion: meal.catalogueVersion ?? undefined,
-      })
+    ? recipeDetailPath(
+        meal.catalogueMealSlug,
+        {
+          catalogueMealId: meal.catalogueMealId ?? undefined,
+          catalogueVersion: meal.catalogueVersion ?? undefined,
+        },
+        servings,
+      )
     : null;
 
   return (
@@ -119,7 +131,7 @@ function TonightFocus({
         {meal.catalogueMealSlug ? (
           <ButtonLink
             className="min-w-0 flex-1"
-            href={recipeCookPath(meal.catalogueMealSlug, undefined, {
+            href={recipeCookPath(meal.catalogueMealSlug, servings, {
               catalogueMealId: meal.catalogueMealId ?? undefined,
               catalogueVersion: meal.catalogueVersion ?? undefined,
             })}
@@ -154,7 +166,13 @@ function EmptyTonightNotice() {
   );
 }
 
-function RestOfWeekCarousel({ meals }: { meals: ActivePlanMealSlot[] }) {
+function RestOfWeekCarousel({
+  meals,
+  servings,
+}: {
+  meals: ActivePlanMealSlot[];
+  servings: number;
+}) {
   return (
     <section
       aria-labelledby="rest-of-week-heading"
@@ -177,7 +195,7 @@ function RestOfWeekCarousel({ meals }: { meals: ActivePlanMealSlot[] }) {
         <ul className="flex w-max snap-x snap-mandatory gap-2 px-page-inline sm:px-8">
           {meals.map((meal) => (
             <li key={meal.date} className="w-[111px] shrink-0 snap-start">
-              <RestOfWeekCard meal={meal} />
+              <RestOfWeekCard meal={meal} servings={servings} />
             </li>
           ))}
         </ul>
@@ -186,12 +204,22 @@ function RestOfWeekCarousel({ meals }: { meals: ActivePlanMealSlot[] }) {
   );
 }
 
-function RestOfWeekCard({ meal }: { meal: ActivePlanMealSlot }) {
+function RestOfWeekCard({
+  meal,
+  servings,
+}: {
+  meal: ActivePlanMealSlot;
+  servings: number;
+}) {
   const href = meal.catalogueMealSlug
-    ? recipeDetailPath(meal.catalogueMealSlug, {
-        catalogueMealId: meal.catalogueMealId ?? undefined,
-        catalogueVersion: meal.catalogueVersion ?? undefined,
-      })
+    ? recipeDetailPath(
+        meal.catalogueMealSlug,
+        {
+          catalogueMealId: meal.catalogueMealId ?? undefined,
+          catalogueVersion: meal.catalogueVersion ?? undefined,
+        },
+        servings,
+      )
     : null;
   const content = (
     <>

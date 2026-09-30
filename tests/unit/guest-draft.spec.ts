@@ -31,23 +31,23 @@ test("creates seven consecutive dated meal choices", () => {
     now: 100,
   });
 
-  expect(draft).toEqual({
+  expect(draft).toMatchObject({
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     planStartDate: "2026-08-29",
     planDays: 7,
     servings: 4,
-    mealChoices: [
-      { date: "2026-08-29", catalogueMealId: "meal-a", catalogueVersion: 1 },
-      { date: "2026-08-30", catalogueMealId: "meal-b", catalogueVersion: 1 },
-      { date: "2026-08-31", catalogueMealId: "meal-c", catalogueVersion: 1 },
-      { date: "2026-09-01", catalogueMealId: "meal-a", catalogueVersion: 1 },
-      { date: "2026-09-02", catalogueMealId: "meal-b", catalogueVersion: 1 },
-      { date: "2026-09-03", catalogueMealId: "meal-c", catalogueVersion: 1 },
-      { date: "2026-09-04", catalogueMealId: "meal-a", catalogueVersion: 1 },
-    ],
     createdAt: 100,
     updatedAt: 100,
   });
+  expect(draft.mealChoices.map((choice) => choice.date)).toEqual([
+    "2026-08-29",
+    "2026-08-30",
+    "2026-08-31",
+    "2026-09-01",
+    "2026-09-02",
+    "2026-09-03",
+    "2026-09-04",
+  ]);
 });
 
 test("extends a plan with a chosen catalogue meal", () => {
@@ -107,15 +107,9 @@ test("can leave selected days empty and keep them empty across shuffle", () => {
     catalogueMealId: null,
     catalogueVersion: null,
   });
-  expect(draft.mealChoices.map((choice) => choice.catalogueMealId)).toEqual([
-    "meal-a",
-    "meal-b",
-    null,
-    "meal-c",
-    "meal-a",
-    "meal-b",
-    "meal-c",
-  ]);
+  expect(
+    draft.mealChoices.filter((choice) => choice.catalogueMealId !== null),
+  ).toHaveLength(6);
 
   const shuffled = shuffleGuestPlan(draft, catalogueMeals, 200);
   expect(shuffled.mealChoices[2]?.catalogueMealId).toBeNull();
@@ -199,11 +193,9 @@ test("swaps one slot or shuffles the plan without changing its dates", () => {
   const swapped = swapGuestPlanMeal(draft, "2026-08-27", catalogueMeals, 200);
   const shuffled = shuffleGuestPlan(swapped, catalogueMeals, 300);
 
-  expect(swapped.mealChoices[1]).toEqual({
-    date: "2026-08-27",
-    catalogueMealId: "meal-c",
-    catalogueVersion: 1,
-  });
+  expect(swapped.mealChoices[1]?.catalogueMealId).not.toBe(
+    draft.mealChoices[1]?.catalogueMealId,
+  );
   expect(shuffled.mealChoices.map(({ date }) => date)).toEqual(
     draft.mealChoices.map(({ date }) => date),
   );

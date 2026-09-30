@@ -9,11 +9,16 @@ import {
   useCurrentCatalogueMeal,
 } from "@/features/recipes/use-catalogue";
 import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
+import { parseRecipeServings } from "@/lib/routing/recipes";
+import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 
 export function CookModeRoute() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
   const reference = parseRecipeCatalogueReference(searchParams);
+  const explicitServings = parseRecipeServings(searchParams.get("servings"));
+  const { defaultServings, isLoading: isLoadingDefaultServings } =
+    useDefaultRecipeServings(explicitServings !== null);
   const pinnedMeal = useCatalogueMeal(
     reference?.catalogueMealId ?? null,
     reference?.catalogueVersion ?? null,
@@ -36,10 +41,16 @@ export function CookModeRoute() {
       </main>
     );
   }
-  if (meal === undefined) {
+  if (meal === undefined || isLoadingDefaultServings) {
     return (
       <main className="min-h-dvh bg-paper" aria-label="Loading cook mode" />
     );
   }
-  return <CookModePage meal={meal} catalogueVersion={meal.version} />;
+  return (
+    <CookModePage
+      meal={meal}
+      catalogueVersion={meal.version}
+      servings={explicitServings ?? defaultServings ?? meal.servings ?? 1}
+    />
+  );
 }

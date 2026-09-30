@@ -140,10 +140,14 @@ export function ActiveWeek({
         ? [
             [
               slot.date,
-              recipeDetailPath(slot.catalogueMealSlug, {
-                catalogueMealId: slot.catalogueMealId ?? undefined,
-                catalogueVersion: slot.catalogueVersion ?? undefined,
-              }),
+              recipeDetailPath(
+                slot.catalogueMealSlug,
+                {
+                  catalogueMealId: slot.catalogueMealId ?? undefined,
+                  catalogueVersion: slot.catalogueVersion ?? undefined,
+                },
+                plan.servings,
+              ),
             ] as const,
           ]
         : [],

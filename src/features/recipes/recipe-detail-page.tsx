@@ -11,11 +11,16 @@ import {
 } from "@/features/recipes/use-catalogue";
 import { Button } from "@/components/ui/button";
 import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
+import { parseRecipeServings } from "@/lib/routing/recipes";
+import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 
 export function RecipeDetailPage() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
   const reference = parseRecipeCatalogueReference(searchParams);
+  const explicitServings = parseRecipeServings(searchParams.get("servings"));
+  const { defaultServings, isLoading: isLoadingDefaultServings } =
+    useDefaultRecipeServings(explicitServings !== null);
   const pinnedMeal = useCatalogueMeal(
     reference?.catalogueMealId ?? null,
     reference?.catalogueVersion ?? null,
@@ -46,7 +51,7 @@ export function RecipeDetailPage() {
     );
   }
 
-  if (meal === undefined) {
+  if (meal === undefined || isLoadingDefaultServings) {
     return (
       <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
         Loading recipe…
@@ -59,6 +64,7 @@ export function RecipeDetailPage() {
       <RecipeDetailContent
         meal={meal}
         presentation="page"
+        initialServings={explicitServings ?? defaultServings}
         planMealAction={<PlanThisMeal meal={meal} />}
       />
     </div>

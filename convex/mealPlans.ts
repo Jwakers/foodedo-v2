@@ -9,7 +9,11 @@ import {
   MINIMUM_PLAN_SERVINGS,
   planDatesRemovedByShortening,
 } from "../src/lib/domain/guest-draft";
-import { selectRankedPlanCandidates } from "../src/lib/domain/meal-plan-selection";
+import {
+  MAXIMUM_MEAL_SELECTION_HISTORY_PLANS,
+  selectMealPlanCandidates,
+  type RecentMealSelectionPlan,
+} from "../src/lib/domain/meal-plan-selection";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -51,6 +55,8 @@ type PlanCandidate = {
   title: string;
   prepMinutes: number | null;
   cookMinutes: number | null;
+  proteinCategory: Doc<"recipes">["proteinCategory"];
+  isSaved: boolean;
 };
 
 const mealSlotViewValidator = v.object({
@@ -232,6 +238,28 @@ export const getRecentArchivedSummaries = query({
   },
 });
 
+/** Bounded catalogue-only memory for the local signed-in plan generator. */
+export const getRecentCatalogueSelectionHistory = query({
+  args: {},
+  returns: v.array(v.array(v.string())),
+  handler: async (ctx) => {
+    const ownerId = await requireUserId(ctx);
+    const plans = await getRecentPlansForSelection(ctx, ownerId);
+    const history: string[][] = [];
+    for (const plan of plans) {
+      const recipes = await getPlanRecipesForSelection(ctx, plan, ownerId);
+      history.push(
+        recipes.flatMap((recipe) =>
+          recipe.source.type === "catalogue"
+            ? [recipe.source.catalogueMealId]
+            : [],
+        ),
+      );
+    }
+    return history;
+  },
+});
+
 /** Hydrate one archived week only after the user selects it. */
 export const getArchived = query({
   args: { mealPlanId: v.id("mealPlans") },
@@ -318,18 +346,15 @@ export const swapMeal = mutation({
 
     const candidatePool = await getPlanningCandidates(ctx, ownerId);
     const currentCandidateKey = candidateKeyForRecipe(currentRecipe);
-    const currentPreferredIndex =
-      candidatePool.preferredKeys.indexOf(currentCandidateKey);
-    const currentFallbackIndex =
-      candidatePool.fallbackKeys.indexOf(currentCandidateKey);
-    const [replacementKey] = selectRankedPlanCandidates({
-      preferredCandidateIds: candidatePool.preferredKeys,
-      fallbackCandidateIds: candidatePool.fallbackKeys,
-      excludedCandidateIds: [...recipesBySlot.values()].map(
+    const [replacementKey] = await selectPlanCandidateKeys({
+      ctx,
+      ownerId,
+      candidatePool,
+      excludedCandidateKeys: [...recipesBySlot.values()].map(
         candidateKeyForRecipe,
       ),
       numberOfMeals: 1,
-      variant: Math.max(currentPreferredIndex, currentFallbackIndex, 0) + 2,
+      variationKey: `swap:${mealPlan._id}:${mealPlan.updatedAt}:${mealSlot._id}:${currentCandidateKey}`,
     });
     const replacement = candidatePool.byKey.get(replacementKey!);
     if (replacement === undefined) {
@@ -664,8 +689,10 @@ export const adjustActivePlan = mutation({
       const candidates = await selectAdditionalPlanCandidates(
         ctx,
         ownerId,
+        mealPlan,
         mealSlots,
         addedDays,
+        args.planDays,
       );
       if (candidates === null) {
         return { status: "plan_unavailable" } as const;
@@ -1007,12 +1034,13 @@ async function buildRegenerationProposal(
   const currentCandidateKeys = mealSlots.map((slot) =>
     candidateKeyForRecipe(recipesBySlot.get(slot._id)!),
   );
-  const selectedCandidateKeys = selectRankedPlanCandidates({
-    preferredCandidateIds: candidatePool.preferredKeys,
-    fallbackCandidateIds: candidatePool.fallbackKeys,
-    excludedCandidateIds: currentCandidateKeys,
+  const selectedCandidateKeys = await selectPlanCandidateKeys({
+    ctx,
+    ownerId,
+    candidatePool,
+    excludedCandidateKeys: currentCandidateKeys,
     numberOfMeals: replaceableSlots.length,
-    variant,
+    variationKey: `replan:${mealPlan._id}:${mealPlan.updatedAt}:${fromDate}:${variant}`,
   });
   const selectedCandidates = selectedCandidateKeys.map((key) =>
     candidatePool.byKey.get(key)!,
@@ -1096,47 +1124,46 @@ async function getPlanningCandidates(
     .order("desc")
     .take(maximumPersonalPlanCandidates);
   const byKey = new Map<string, PlanCandidate>();
-  const preferredKeys: string[] = [];
 
   for (const recipe of savedRecipes) {
     const candidate = await planCandidateFromRecipe(ctx, recipe);
     if (!byKey.has(candidate.key)) {
       byKey.set(candidate.key, candidate);
-      preferredKeys.push(candidate.key);
     }
   }
 
   const currentCatalogue = await getCurrentCatalogueMeals(ctx);
-  const fallbackKeys: string[] = [];
   for (const catalogueMeal of currentCatalogue) {
     const candidate = planCandidateFromCatalogue(catalogueMeal);
     if (!byKey.has(candidate.key)) {
       byKey.set(candidate.key, candidate);
-      fallbackKeys.push(candidate.key);
     }
   }
 
-  return { byKey, preferredKeys, fallbackKeys };
+  return { byKey };
 }
 
 async function selectAdditionalPlanCandidates(
   ctx: QueryCtx | MutationCtx,
   ownerId: Id<"users">,
+  mealPlan: Doc<"mealPlans">,
   mealSlots: Array<Doc<"mealSlots">>,
   numberOfMeals: number,
+  targetPlanDays: number,
 ): Promise<PlanCandidate[] | null> {
   const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
   if (recipesBySlot.size !== mealSlots.length) return null;
 
   const candidatePool = await getPlanningCandidates(ctx, ownerId);
-  const selectedKeys = selectRankedPlanCandidates({
-    preferredCandidateIds: candidatePool.preferredKeys,
-    fallbackCandidateIds: candidatePool.fallbackKeys,
-    excludedCandidateIds: [...recipesBySlot.values()].map(
+  const selectedKeys = await selectPlanCandidateKeys({
+    ctx,
+    ownerId,
+    candidatePool,
+    excludedCandidateKeys: [...recipesBySlot.values()].map(
       candidateKeyForRecipe,
     ),
     numberOfMeals,
-    variant: 1,
+    variationKey: `extend:${mealPlan._id}:${mealPlan.updatedAt}:${targetPlanDays}`,
   });
   const candidates = selectedKeys.flatMap((key) => {
     const candidate = candidatePool.byKey.get(key);
@@ -1144,6 +1171,99 @@ async function selectAdditionalPlanCandidates(
   });
 
   return candidates.length === numberOfMeals ? candidates : null;
+}
+
+async function selectPlanCandidateKeys({
+  ctx,
+  ownerId,
+  candidatePool,
+  excludedCandidateKeys,
+  numberOfMeals,
+  variationKey,
+}: {
+  ctx: QueryCtx | MutationCtx;
+  ownerId: Id<"users">;
+  candidatePool: Awaited<ReturnType<typeof getPlanningCandidates>>;
+  excludedCandidateKeys: readonly string[];
+  numberOfMeals: number;
+  variationKey: string;
+}): Promise<string[]> {
+  const [recentPlans, preferences] = await Promise.all([
+    getRecentSelectionHistory(ctx, ownerId),
+    ctx.db
+      .query("planningPreferences")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .unique(),
+  ]);
+  return selectMealPlanCandidates(
+    [...candidatePool.byKey.values()].map((candidate) => ({
+      key: candidate.key,
+      proteinCategory: candidate.proteinCategory,
+      isSaved: candidate.isSaved,
+    })),
+    {
+      numberOfMeals,
+      excludedCandidateKeys,
+      recentPlans,
+      prioritiseSavedRecipes: preferences?.prioritiseSavedRecipes ?? true,
+      variationKey,
+    },
+  ).map((decision) => decision.candidateKey);
+}
+
+async function getRecentSelectionHistory(
+  ctx: QueryCtx | MutationCtx,
+  ownerId: Id<"users">,
+): Promise<RecentMealSelectionPlan[]> {
+  const plans = await getRecentPlansForSelection(ctx, ownerId);
+  const history: RecentMealSelectionPlan[] = [];
+  for (const plan of plans) {
+    const recipes = await getPlanRecipesForSelection(ctx, plan, ownerId);
+    history.push({
+      candidateKeys: recipes.map(candidateKeyForRecipe),
+      proteinCategories: recipes.map((recipe) => recipe.proteinCategory),
+    });
+  }
+  return history;
+}
+
+async function getPlanRecipesForSelection(
+  ctx: QueryCtx | MutationCtx,
+  plan: Doc<"mealPlans">,
+  ownerId: Id<"users">,
+) {
+  const slots = await getPlanSlots(ctx, plan._id);
+  const recipes = await resolvePlanRecipes(ctx, slots, ownerId);
+  return [...recipes.values()];
+}
+
+async function getRecentPlansForSelection(
+  ctx: QueryCtx | MutationCtx,
+  ownerId: Id<"users">,
+): Promise<Array<Doc<"mealPlans">>> {
+  const [activePlans, archivedPlans] = await Promise.all([
+    ctx.db
+      .query("mealPlans")
+      .withIndex("by_owner_and_status_and_updated_at", (q) =>
+        q.eq("ownerId", ownerId).eq("status", "active"),
+      )
+      .order("desc")
+      .take(1),
+    ctx.db
+      .query("mealPlans")
+      .withIndex("by_owner_and_status_and_updated_at", (q) =>
+        q.eq("ownerId", ownerId).eq("status", "archived"),
+      )
+      .order("desc")
+      .take(MAXIMUM_MEAL_SELECTION_HISTORY_PLANS),
+  ]);
+  return [
+    ...activePlans,
+    ...archivedPlans.slice(
+      0,
+      MAXIMUM_MEAL_SELECTION_HISTORY_PLANS - activePlans.length,
+    ),
+  ];
 }
 
 async function planCandidateFromRecipe(
@@ -1167,6 +1287,8 @@ async function planCandidateFromRecipe(
     title: recipe.title,
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
+    proteinCategory: recipe.proteinCategory,
+    isSaved: recipe.savedAt !== undefined,
   };
 }
 
@@ -1185,6 +1307,8 @@ function planCandidateFromCatalogue(
     title: catalogueMeal.title,
     prepMinutes: catalogueMeal.prepMinutes ?? null,
     cookMinutes: catalogueMeal.cookMinutes ?? null,
+    proteinCategory: catalogueMeal.proteinCategory,
+    isSaved: false,
   };
 }
 

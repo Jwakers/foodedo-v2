@@ -42,6 +42,14 @@ export function WeekPage() {
     api.planningPreferences.getCurrent,
     isAuthenticated ? {} : "skip",
   );
+  const savedCatalogueMeals = useQuery(
+    api.recipes.listSavedCatalogueMeals,
+    isAuthenticated ? {} : "skip",
+  );
+  const recentSelectionHistory = useQuery(
+    api.mealPlans.getRecentCatalogueSelectionHistory,
+    isAuthenticated ? {} : "skip",
+  );
   const catalogue = useCurrentCatalogue();
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
@@ -60,7 +68,10 @@ export function WeekPage() {
     status === "loading" ||
     catalogue === undefined ||
     (isAuthenticated &&
-      (currentPlan === undefined || planningPreferences === undefined));
+      (currentPlan === undefined ||
+        planningPreferences === undefined ||
+        savedCatalogueMeals === undefined ||
+        recentSelectionHistory === undefined));
 
   if (isCheckingPlan) {
     return <PlanReviewLoading />;
@@ -90,10 +101,12 @@ export function WeekPage() {
     currentMeals: catalogue.meals.map((meal) => ({
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
+      proteinCategory: meal.proteinCategory,
     })),
     readableMeals: catalogue.meals.map((meal) => ({
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
+      proteinCategory: meal.proteinCategory,
     })),
   };
 
@@ -145,6 +158,10 @@ export function WeekPage() {
             planEndDate: activePlan.endDate,
             mealSlots: activePlan.mealSlots,
           }),
+          preferredCatalogueMealIds: planningPreferences?.prioritiseSavedRecipes
+            ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
+            : [],
+          recentPlanMealIds: recentSelectionHistory ?? [],
         });
         router.push("/week/replan");
       } catch (error) {
@@ -165,6 +182,10 @@ export function WeekPage() {
           catalogue: catalogueContract,
           planDays: planningPreferences?.usualPlanDays ?? 7,
           servings: planningPreferences?.usualServings ?? 4,
+          preferredCatalogueMealIds: planningPreferences?.prioritiseSavedRecipes
+            ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
+            : [],
+          recentPlanMealIds: recentSelectionHistory ?? [],
         });
         router.push("/week/new");
       } catch (error) {

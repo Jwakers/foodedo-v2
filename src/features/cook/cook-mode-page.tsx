@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -27,13 +27,13 @@ import { recipeDetailPath } from "@/lib/routing/recipes";
 export function CookModePage({
   meal,
   catalogueVersion,
+  servings,
 }: {
   meal: CatalogueMeal;
   catalogueVersion: number;
+  servings: number;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const servings = parseServings(searchParams.get("servings"), meal.servings);
   const context = useMemo<CookRecipeContext>(
     () => ({ catalogueVersion, meal, servings }),
     [catalogueVersion, meal, servings],
@@ -84,10 +84,14 @@ export function CookModePage({
   const exit = () => {
     void setCookScreenAwake(false);
     router.push(
-      recipeDetailPath(meal.slug, {
-        catalogueMealId: meal.id,
-        catalogueVersion: meal.version,
-      }),
+      recipeDetailPath(
+        meal.slug,
+        {
+          catalogueMealId: meal.id,
+          catalogueVersion: meal.version,
+        },
+        session.servings,
+      ),
     );
   };
   const dispatchAtCurrentTime = (
@@ -146,10 +150,14 @@ export function CookModePage({
         meal={meal}
         onRecipe={() =>
           router.push(
-            recipeDetailPath(meal.slug, {
-              catalogueMealId: meal.id,
-              catalogueVersion: meal.version,
-            }),
+            recipeDetailPath(
+              meal.slug,
+              {
+                catalogueMealId: meal.id,
+                catalogueVersion: meal.version,
+              },
+              session.servings,
+            ),
           )
         }
         onWeek={() => router.push("/week")}
@@ -188,12 +196,4 @@ export function CookModePage({
       {...timerActions}
     />
   );
-}
-
-function parseServings(value: string | null, fallback = 1) {
-  if (value === null) return fallback;
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 1_000
-    ? parsed
-    : fallback;
 }

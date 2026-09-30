@@ -86,6 +86,10 @@ export function PlanAction({
     api.recipes.listSavedCatalogueMeals,
     isAuthenticated ? {} : "skip",
   );
+  const recentSelectionHistory = useQuery(
+    api.mealPlans.getRecentCatalogueSelectionHistory,
+    isAuthenticated ? {} : "skip",
+  );
   // Vaul treats nested Clerk modal clicks as outside-dismiss. Close the drawer
   // before opening Clerk, and keep the intent for post-auth Adjust resume.
   const preserveIntentOnCloseRef = useRef(false);
@@ -161,10 +165,12 @@ export function PlanAction({
           currentMeals: catalogue.meals.map((meal) => ({
             catalogueMealId: meal.id,
             catalogueVersion: meal.version,
+            proteinCategory: meal.proteinCategory,
           })),
           readableMeals: catalogue.meals.map((meal) => ({
             catalogueMealId: meal.id,
             catalogueVersion: meal.version,
+            proteinCategory: meal.proteinCategory,
           })),
         },
         planStartDate: setup.startDate,
@@ -173,6 +179,7 @@ export function PlanAction({
         preferredCatalogueMealIds: setup.prioritiseSavedRecipes
           ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
           : [],
+        recentPlanMealIds: recentSelectionHistory ?? [],
       });
       if (onPlanCreated) {
         await onPlanCreated();
@@ -198,7 +205,9 @@ export function PlanAction({
           catalogue === null ||
           catalogue.meals.length === 0 ||
           (isAuthenticated &&
-            (preferences === undefined || savedCatalogueMeals === undefined))
+            (preferences === undefined ||
+              savedCatalogueMeals === undefined ||
+              recentSelectionHistory === undefined))
         }
         aria-busy={isPlanning}
         onClick={() => void planWeek()}

@@ -158,6 +158,57 @@ test("claim is idempotent, archives the prior plan, and preserves free days", as
   expect(countsAfterRetry).toEqual({ plans: 2, slots: 5, claims: 1 });
 });
 
+test("returns only the latest four catalogue histories for the authenticated owner", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  const { asUser: asOtherUser } = await authenticateTestUser(t, "other-user");
+
+  for (let index = 0; index < 5; index += 1) {
+    await asUser.mutation(api.mealPlans.claimGuestDraft, {
+      claimKey: `history_claim_key_${index}`,
+      schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+      planStartDate,
+      servings: 4,
+      mealChoices: guestMealChoices(),
+    });
+  }
+  await asOtherUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey: "other_history_claim_key",
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(3).map((choice) => ({
+      ...choice,
+      catalogueMealId: catalogueMealIds[11]!,
+      catalogueVersion,
+    })),
+  });
+
+  const history = await asUser.query(
+    api.mealPlans.getRecentCatalogueSelectionHistory,
+    {},
+  );
+  expect(history).toHaveLength(4);
+  expect(history.every((plan) => plan.includes(catalogueMealIds[0]!))).toBe(
+    true,
+  );
+  expect(history.flat()).not.toContain(catalogueMealIds[11]!);
+
+  const activePlan = await asUser.query(api.mealPlans.getCurrent, {});
+  await t.run(async (ctx) => {
+    await ctx.db.patch(activePlan!._id, { status: "archived" });
+  });
+  await expect(
+    asUser.query(api.mealPlans.getRecentCatalogueSelectionHistory, {}),
+  ).resolves.toHaveLength(4);
+
+  await expect(
+    asOtherUser.query(api.mealPlans.getRecentCatalogueSelectionHistory, {}),
+  ).resolves.toEqual([
+    [catalogueMealIds[11]!, catalogueMealIds[11]!, catalogueMealIds[11]!],
+  ]);
+});
+
 test("an unsupported catalogue leaves the existing active plan untouched", async () => {
   const t = createTestContext();
   const { asUser, ownerId } = await authenticateTestUser(t);

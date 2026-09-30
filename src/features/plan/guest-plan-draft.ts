@@ -2,7 +2,6 @@ import type { SavedPlanMealChoice } from "@/features/plan/saved-plan-meal-choice
 import { clearPendingPrePlanSetup } from "@/features/plan/pre-plan-setup-store";
 import {
   acceptGuestPlan,
-  applyGuestPlanEmptySlots,
   cancelGuestPlanClaim,
   chooseGuestPlanMeal,
   clearGuestPlanMeal,
@@ -22,6 +21,7 @@ import {
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
 import { catalogueMealReferenceKey } from "@/lib/domain/recipes";
+import type { ProteinCategory } from "@/lib/domain/recipes";
 import { tomorrowPlanDate } from "@/lib/domain/plan-display";
 import {
   createIndexedDbGuestDraftStore,
@@ -32,6 +32,8 @@ export type GuestCatalogueContract = {
   currentMeals: readonly {
     catalogueMealId: string;
     catalogueVersion: number;
+    proteinCategory?: ProteinCategory;
+    isSaved?: boolean;
   }[];
   readableMeals: readonly {
     catalogueMealId: string;
@@ -51,20 +53,20 @@ function withSelectedCatalogueReference(
   ) {
     throw new Error("That meal is not in this catalogue.");
   }
-  const selected = { catalogueMealId, catalogueVersion };
+  const selected = catalogue.currentMeals.find(
+    (meal) => meal.catalogueMealId === catalogueMealId,
+  )!;
   return {
     currentMeals: [
-      selected,
+      { ...selected, catalogueVersion },
       ...catalogue.currentMeals.filter(
         (meal) => meal.catalogueMealId !== catalogueMealId,
       ),
     ],
     readableMeals: [
-      selected,
+      { ...selected, catalogueVersion },
       ...catalogue.readableMeals.filter(
-        (meal) =>
-          meal.catalogueMealId !== catalogueMealId ||
-          meal.catalogueVersion !== catalogueVersion,
+        (meal) => meal.catalogueMealId !== catalogueMealId,
       ),
     ],
   };
@@ -93,16 +95,6 @@ function catalogueForMealReference(
     catalogueVersion,
   );
 }
-
-/**
- * Temporary generation policy: leave one free day so plan review can exercise
- * empty-slot UI. Owned by the plan feature, not domain persistence.
- */
-export const GUEST_PLAN_GENERATION_FREE_DAY_INDEX = 2 as const;
-
-const generationFreeDayIndexes = [
-  GUEST_PLAN_GENERATION_FREE_DAY_INDEX,
-] as const;
 
 const missingDraftMessage = "There is no guest plan on this device to update.";
 
@@ -175,7 +167,7 @@ export async function loadGuestPlanDraftForReview(
 
 /**
  * Returns the current local guest draft, creating one when missing or invalid.
- * New plans use the temporary free-day generation policy.
+ * New plans contain one automatic meal for each requested day.
  */
 export async function ensureGuestPlanDraft({
   catalogue,
@@ -204,7 +196,6 @@ export async function ensureGuestPlanDraft({
         servings,
         catalogueMeals,
         now,
-        emptySlotIndexes: generationFreeDayIndexes,
       }),
       write: true,
     };
@@ -218,6 +209,8 @@ export async function beginConfiguredGuestPlanDraft({
   planDays,
   servings,
   preferredCatalogueMealIds = [],
+  recentPlanMealIds = [],
+  firstCatalogueMealId,
   now = Date.now(),
   store = guestDraftStore(),
 }: {
@@ -226,6 +219,8 @@ export async function beginConfiguredGuestPlanDraft({
   planDays: PlanDays;
   servings: number;
   preferredCatalogueMealIds?: readonly string[];
+  recentPlanMealIds?: readonly (readonly string[])[];
+  firstCatalogueMealId?: string;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
@@ -235,22 +230,18 @@ export async function beginConfiguredGuestPlanDraft({
   const preferredIds = preferredCatalogueMealIds.filter((mealId) =>
     validMealIds.has(mealId),
   );
-  const generationMealIds = [
-    ...new Set(preferredIds),
-    ...catalogueMealIds.filter((mealId) => !preferredIds.includes(mealId)),
-  ];
   return store.runMutation(() => {
     return {
       draft: createGuestDraft({
         planStartDate,
         planDays,
         servings,
-        catalogueMeals: generationMealIds.map((catalogueMealId) => ({
-          catalogueMealId,
-          catalogueVersion: catalogueMeals.find(
-            (meal) => meal.catalogueMealId === catalogueMealId,
-          )!.catalogueVersion,
+        catalogueMeals: catalogueMeals.map((meal) => ({
+          ...meal,
+          isSaved: preferredIds.includes(meal.catalogueMealId),
         })),
+        recentPlanMealIds,
+        firstCatalogueMealId,
         now,
       }),
       write: true,
@@ -277,6 +268,7 @@ export async function beginGuestPlanDraftWithMeal({
     ...options,
     catalogue: selectedCatalogue,
     preferredCatalogueMealIds: [catalogueMealId, ...preferredCatalogueMealIds],
+    firstCatalogueMealId: catalogueMealId,
   });
 }
 
@@ -288,6 +280,8 @@ export async function beginGuestPlanDraftWithMeal({
  */
 export async function beginNextGuestPlanDraft({
   catalogue,
+  preferredCatalogueMealIds = [],
+  recentPlanMealIds = [],
   now = Date.now(),
   planStartDate = tomorrowPlanDate(),
   planDays = GUEST_PLAN_DAYS,
@@ -295,13 +289,19 @@ export async function beginNextGuestPlanDraft({
   store = guestDraftStore(),
 }: {
   catalogue: GuestCatalogueContract;
+  preferredCatalogueMealIds?: readonly string[];
+  recentPlanMealIds?: readonly (readonly string[])[];
   now?: number;
   planStartDate?: string;
   planDays?: PlanDays;
   servings?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const catalogueMeals = catalogue.currentMeals;
+  const preferredMealIds = new Set(preferredCatalogueMealIds);
+  const catalogueMeals = catalogue.currentMeals.map((meal) => ({
+    ...meal,
+    isSaved: preferredMealIds.has(meal.catalogueMealId),
+  }));
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
     if (
@@ -311,7 +311,8 @@ export async function beginNextGuestPlanDraft({
       existing.servings === servings
     ) {
       const rebased = rebaseGuestPlanStartDate(existing, planStartDate, now);
-      return { draft: rebased, write: rebased !== existing };
+      const repaired = fillLegacyGeneratedFreeDay(rebased, catalogueMeals, now);
+      return { draft: repaired, write: repaired !== existing };
     }
 
     return {
@@ -321,11 +322,34 @@ export async function beginNextGuestPlanDraft({
         servings,
         catalogueMeals,
         now,
-        emptySlotIndexes: generationFreeDayIndexes,
+        recentPlanMealIds,
       }),
       write: true,
     };
   });
+}
+
+/**
+ * Repair the one unedited draft shape produced by the retired automatic
+ * free-day policy. User-cleared or otherwise edited free days remain intact.
+ */
+function fillLegacyGeneratedFreeDay(
+  draft: GuestDraftV1,
+  catalogueMeals: GuestCatalogueContract["currentMeals"],
+  now: number,
+): GuestDraftV1 {
+  const legacyFreeChoice = draft.mealChoices[2];
+  if (
+    draft.updatedAt !== draft.createdAt ||
+    legacyFreeChoice === undefined ||
+    legacyFreeChoice.catalogueMealId !== null ||
+    draft.mealChoices.filter((choice) => choice.catalogueMealId === null)
+      .length !== 1
+  ) {
+    return draft;
+  }
+
+  return chooseGuestPlanMeal(draft, legacyFreeChoice.date, catalogueMeals, now);
 }
 
 /**
@@ -340,6 +364,8 @@ export async function beginReplannedGuestPlanDraft({
   currentMealChoices,
   occupiedDates,
   servings,
+  preferredCatalogueMealIds = [],
+  recentPlanMealIds = [],
   now = Date.now(),
   store = guestDraftStore(),
 }: {
@@ -348,10 +374,16 @@ export async function beginReplannedGuestPlanDraft({
   currentMealChoices: ReadonlyArray<SavedPlanMealChoice>;
   occupiedDates: readonly string[];
   servings: number;
+  preferredCatalogueMealIds?: readonly string[];
+  recentPlanMealIds?: readonly (readonly string[])[];
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const catalogueMeals = catalogue.currentMeals;
+  const preferredMealIds = new Set(preferredCatalogueMealIds);
+  const catalogueMeals = catalogue.currentMeals.map((meal) => ({
+    ...meal,
+    isSaved: preferredMealIds.has(meal.catalogueMealId),
+  }));
   const catalogueMealIds = catalogueMeals.map((meal) => meal.catalogueMealId);
   const planDays = isPlanDays(currentMealChoices.length)
     ? currentMealChoices.length
@@ -385,10 +417,16 @@ export async function beginReplannedGuestPlanDraft({
           catalogueMeals,
           now,
           emptySlotIndexes: intentionalFreeDayIndexes,
+          recentPlanMealIds,
         });
     let replanned = baseDraft;
     for (let variant = 0; variant < catalogueMealIds.length; variant += 1) {
-      replanned = shuffleGuestPlan(replanned, catalogueMeals, now);
+      replanned = shuffleGuestPlan(
+        replanned,
+        catalogueMeals,
+        now,
+        recentPlanMealIds,
+      );
       if (!guestDraftMatchesSavedPlan(replanned, currentMealChoices)) break;
     }
     if (guestDraftMatchesSavedPlan(replanned, currentMealChoices)) {
@@ -416,16 +454,9 @@ export async function shuffleCurrentGuestPlanDraft({
         planStartDate: tomorrowPlanDate(),
         catalogueMeals,
         now,
-        emptySlotIndexes: generationFreeDayIndexes,
       });
     const shuffled = shuffleGuestPlan(existing, catalogueMeals, now);
-    // Re-apply generation free-day so older full drafts pick up the policy.
-    const withFreeDay = applyGuestPlanEmptySlots(
-      shuffled,
-      generationFreeDayIndexes,
-      now,
-    );
-    return { draft: withFreeDay, write: true };
+    return { draft: shuffled, write: true };
   });
 }
 

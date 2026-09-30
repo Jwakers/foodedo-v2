@@ -27,30 +27,38 @@ export function RecipeDetailContent({
   meal,
   presentation,
   className,
+  initialServings,
   onStartCooking,
   planMealAction,
 }: {
   meal: CatalogueMeal;
   presentation: RecipeDetailPresentation;
   className?: string;
+  initialServings?: number;
   onStartCooking?: () => void;
   planMealAction?: ReactNode;
 }) {
   const router = useRouter();
+  const defaultServings = initialServings ?? meal.servings ?? 1;
   const [servingSelection, setServingSelection] = useState(() => ({
     recipeSlug: meal.slug,
-    servings: meal.servings ?? 1,
+    defaultServings,
+    servings: defaultServings,
   }));
-  if (servingSelection.recipeSlug !== meal.slug) {
+  if (
+    servingSelection.recipeSlug !== meal.slug ||
+    servingSelection.defaultServings !== defaultServings
+  ) {
     setServingSelection({
       recipeSlug: meal.slug,
-      servings: meal.servings ?? 1,
+      defaultServings,
+      servings: defaultServings,
     });
   }
   const selectedServings =
     servingSelection.recipeSlug === meal.slug
       ? servingSelection.servings
-      : (meal.servings ?? 1);
+      : defaultServings;
   const ingredients = useMemo(
     () => scaleIngredients(meal.ingredients, meal.servings, selectedServings),
     [meal.ingredients, meal.servings, selectedServings],
@@ -99,7 +107,11 @@ export function RecipeDetailContent({
           <RecipeServingsControl
             servings={selectedServings}
             onServingsChange={(servings) =>
-              setServingSelection({ recipeSlug: meal.slug, servings })
+              setServingSelection({
+                recipeSlug: meal.slug,
+                defaultServings,
+                servings,
+              })
             }
             durationLabel={durationLabel}
           />
