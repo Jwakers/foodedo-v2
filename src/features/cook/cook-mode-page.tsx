@@ -22,20 +22,29 @@ import {
 import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
 import type { CatalogueMeal, RecipeTimerCue } from "@/lib/domain/recipes";
 import { setCookScreenAwake } from "@/lib/platform/capacitor/cook-screen";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import {
+  personalRecipeDetailPath,
+  recipeDetailPath,
+} from "@/lib/routing/recipes";
 
 export function CookModePage({
   meal,
   catalogueVersion,
   servings,
+  personalRecipeId,
 }: {
   meal: CatalogueMeal;
   catalogueVersion: number;
   servings: number;
+  personalRecipeId?: string;
 }) {
   const router = useRouter();
   const context = useMemo<CookRecipeContext>(
-    () => ({ catalogueVersion, meal, servings }),
+    () => ({
+      catalogueVersion,
+      meal,
+      servings,
+    }),
     [catalogueVersion, meal, servings],
   );
   const { session, dispatch, loaded, persistenceAvailable, complete } =
@@ -43,8 +52,11 @@ export function CookModePage({
   const [timerMenuId, setTimerMenuId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const ingredients = useMemo(
-    () => scaleIngredients(meal.ingredients, meal.servings, session.servings),
-    [meal.ingredients, meal.servings, session.servings],
+    () =>
+      meal.servingScaling === "source_only"
+        ? meal.ingredients
+        : scaleIngredients(meal.ingredients, meal.servings, session.servings),
+    [meal.ingredients, meal.servingScaling, meal.servings, session.servings],
   );
   const hasRunningTimer = session.timers.some(
     (timer) =>
@@ -84,14 +96,16 @@ export function CookModePage({
   const exit = () => {
     void setCookScreenAwake(false);
     router.push(
-      recipeDetailPath(
-        meal.slug,
-        {
-          catalogueMealId: meal.id,
-          catalogueVersion: meal.version,
-        },
-        session.servings,
-      ),
+      personalRecipeId
+        ? personalRecipeDetailPath(personalRecipeId, session.servings)
+        : recipeDetailPath(
+            meal.slug,
+            {
+              catalogueMealId: meal.id,
+              catalogueVersion: meal.version,
+            },
+            session.servings,
+          ),
     );
   };
   const dispatchAtCurrentTime = (
@@ -150,14 +164,16 @@ export function CookModePage({
         meal={meal}
         onRecipe={() =>
           router.push(
-            recipeDetailPath(
-              meal.slug,
-              {
-                catalogueMealId: meal.id,
-                catalogueVersion: meal.version,
-              },
-              session.servings,
-            ),
+            personalRecipeId
+              ? personalRecipeDetailPath(personalRecipeId, session.servings)
+              : recipeDetailPath(
+                  meal.slug,
+                  {
+                    catalogueMealId: meal.id,
+                    catalogueVersion: meal.version,
+                  },
+                  session.servings,
+                ),
           )
         }
         onWeek={() => router.push("/week")}

@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import { Fragment } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import type { ScaledIngredientLine } from "@/lib/domain/ingredient-scaling";
 import {
   formatIngredientAmount,
   formatIngredientName,
+  formatIngredientNote,
 } from "@/lib/domain/recipe-display";
 import type { CatalogueMeal, RecipeTimerCue } from "@/lib/domain/recipes";
 
@@ -132,39 +134,46 @@ export function PreparationScreen({
           </div>
         ) : null}
         <ul className="mt-4 border-t border-border">
-          {ingredients.map((line) => {
+          {ingredients.map((line, index) => {
             const checked = session.preparedIngredientIds.includes(line.id);
             return (
-              <li
-                key={line.id}
-                className="flex min-h-17 items-center gap-3 border-b border-border"
-              >
-                <button
-                  type="button"
-                  aria-pressed={checked}
-                  aria-label={`Mark ${line.name} prepared`}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full"
-                  onClick={() => onToggle(line.id)}
-                >
-                  <span
-                    className={
-                      checked
-                        ? "flex size-9 items-center justify-center rounded-full bg-leaf text-paper"
-                        : "size-9 rounded-full border-2 border-control-muted"
-                    }
+              <Fragment key={line.id}>
+                {line.group && line.group !== ingredients[index - 1]?.group ? (
+                  <li className="pt-4 pb-1 text-11 font-bold tracking-label text-graphite uppercase">
+                    {line.group}
+                  </li>
+                ) : null}
+                <li className="flex min-h-17 items-center gap-3 border-b border-border">
+                  <button
+                    type="button"
+                    aria-pressed={checked}
+                    aria-label={`Mark ${line.name} prepared`}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full"
+                    onClick={() => onToggle(line.id)}
                   >
-                    {checked ? <Check className="size-4" /> : null}
-                  </span>
-                </button>
-                <div>
-                  <p className="text-15 font-semibold text-ink">
-                    {formatIngredientAmount(line)} {line.name}
-                  </p>
-                  {line.note ? (
-                    <p className="text-14 text-graphite">{line.note}</p>
-                  ) : null}
-                </div>
-              </li>
+                    <span
+                      className={
+                        checked
+                          ? "flex size-9 items-center justify-center rounded-full bg-leaf text-paper"
+                          : "size-9 rounded-full border-2 border-control-muted"
+                      }
+                    >
+                      {checked ? <Check className="size-4" /> : null}
+                    </span>
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-15 font-semibold text-ink">
+                      {formatIngredientAmount(line)}{" "}
+                      {formatIngredientName(line)}
+                    </p>
+                    {formatIngredientNote(line) ? (
+                      <p className="mt-0.5 text-13 leading-5 text-graphite">
+                        {formatIngredientNote(line)}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              </Fragment>
             );
           })}
         </ul>
@@ -216,6 +225,11 @@ export function StepScreen({
         <p className="text-13 font-semibold text-graphite">
           Step {session.phase.stepIndex + 1} of {meal.steps.length}
         </p>
+        {step.group ? (
+          <p className="mt-2 text-11 font-bold tracking-label text-cadmium uppercase">
+            {step.group}
+          </p>
+        ) : null}
         <div className="mt-3 h-0.75 rounded-full bg-mist">
           <div
             className="h-full rounded-full bg-ink"
@@ -228,6 +242,22 @@ export function StepScreen({
         <p className="mt-7 font-display text-34 font-semibold leading-10 tracking-heading text-ink">
           {step.text}
         </p>
+        {step.noteRefs?.map((reference) => {
+          const note = meal.notes?.find(
+            (candidate) => candidate.id === reference,
+          );
+          return note ? (
+            <details
+              key={reference}
+              className="mt-4 rounded-compact bg-mist px-4 py-2 text-14 text-graphite"
+            >
+              <summary className="min-h-11 cursor-pointer py-3 font-semibold text-cadmium">
+                {note.label ?? "Recipe note"}
+              </summary>
+              <p className="pb-3 leading-5.5">{note.text}</p>
+            </details>
+          ) : null;
+        })}
         {step.timerCues?.map((cue) => {
           if (timersById.has(cookTimerId(step.id, cue.id))) return null;
           return (
@@ -302,22 +332,37 @@ export function IngredientsScreen({
           <p className="text-12 font-bold tracking-overline text-cadmium uppercase">
             {meal.title}
           </p>
-          <p className="text-13 text-graphite">Scaled for {session.servings}</p>
+          <p className="text-13 text-graphite">
+            {meal.servingScaling === "source_only"
+              ? `As written · serves ${session.servings}`
+              : `Scaled for ${session.servings}`}
+          </p>
         </div>
         <TimerList timers={session.timers} {...timerActions} />
         <ul className="mt-5 border-t border-border">
-          {ingredients.map((line) => (
-            <li
-              key={line.id}
-              className="flex min-h-13 gap-3 border-b border-border py-2"
-            >
-              <span className="w-20 shrink-0 text-14 font-semibold text-ink">
-                {formatIngredientAmount(line)}
-              </span>
-              <span className="text-14 text-ink">
-                {formatIngredientName(line)}
-              </span>
-            </li>
+          {ingredients.map((line, index) => (
+            <Fragment key={line.id}>
+              {line.group && line.group !== ingredients[index - 1]?.group ? (
+                <li className="pt-4 pb-1 text-11 font-bold tracking-label text-graphite uppercase">
+                  {line.group}
+                </li>
+              ) : null}
+              <li className="flex min-h-13 gap-3 border-b border-border py-2">
+                <span className="w-28 shrink-0 text-14 font-semibold text-ink">
+                  {formatIngredientAmount(line)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-14 font-medium text-ink">
+                    {formatIngredientName(line)}
+                  </span>
+                  {formatIngredientNote(line) ? (
+                    <span className="mt-0.5 block text-13 leading-5 text-graphite">
+                      {formatIngredientNote(line)}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
+            </Fragment>
           ))}
         </ul>
       </section>

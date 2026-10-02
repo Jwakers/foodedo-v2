@@ -54,9 +54,7 @@ export function Dashboard() {
   }
 
   if (currentPlan) {
-    return (
-      <ActivePlanDashboard plan={currentPlan} meals={catalogue?.meals ?? []} />
-    );
+    return <ActivePlanDashboard plan={currentPlan} />;
   }
 
   return (

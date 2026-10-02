@@ -46,7 +46,7 @@ const timerId = cookTimerId(meal.steps[2]!.id, cue.id);
 
 test("creates a versioned recoverable Cook session per recipe", () => {
   expect(emptyCookSession(context)).toEqual({
-    schemaVersion: 1,
+    schemaVersion: 3,
     catalogueVersion: catalogueFixture.version,
     recipeSlug: meal.slug,
     servings: 4,
@@ -55,6 +55,17 @@ test("creates a versioned recoverable Cook session per recipe", () => {
     scrollPositions: { preparation: 0, step: 0, ingredients: 0 },
     timers: [],
   });
+});
+
+test("restarts obsolete method-variant Cook sessions", () => {
+  const legacySession = {
+    ...emptyCookSession(context),
+    schemaVersion: 2,
+    methodVariantId: "crockpot",
+  };
+  expect(restoreCookSession(legacySession, context)).toEqual(
+    emptyCookSession(context),
+  );
 });
 
 test("moves through preparation and steps, including Previous from step one", () => {

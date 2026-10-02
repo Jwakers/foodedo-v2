@@ -13,8 +13,11 @@ import {
   recipeViewValidator,
 } from "./lib/recipeValidators";
 import {
+  getRecipeReviewIssues,
   prepareRecipeContent,
   RECIPE_LIMITS,
+  type RecipeMetadataProvenance,
+  type RecipeSource,
   RecipeValidationError,
 } from "../src/lib/domain/recipes";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
@@ -132,6 +135,96 @@ export const removeMineFromLibrary = mutation({
   },
 });
 
+export const repairImport = mutation({
+  args: {
+    recipeId: v.id("recipes"),
+    servings: v.optional(v.number()),
+    prepMinutes: v.optional(v.number()),
+    cookMinutes: v.optional(v.number()),
+  },
+  returns: v.union(recipeViewValidator, v.null()),
+  handler: async (ctx, args) => {
+    const ownerId = await requireUserId(ctx);
+    const recipe = await ctx.db.get(args.recipeId);
+    if (
+      recipe === null ||
+      recipe.ownerId !== ownerId ||
+      recipe.source.type !== "import"
+    ) {
+      return null;
+    }
+
+    const content = prepareRecipeOrThrow({
+      ...recipe,
+      ...(args.servings === undefined ? {} : { servings: args.servings }),
+      ...(args.prepMinutes === undefined
+        ? {}
+        : { prepMinutes: args.prepMinutes }),
+      ...(args.cookMinutes === undefined
+        ? {}
+        : { cookMinutes: args.cookMinutes }),
+    });
+    const now = Date.now();
+    const source = removeEditedMetadataProvenance(recipe.source, [
+      ...(args.servings === undefined ? [] : ["servings" as const]),
+      ...(args.prepMinutes === undefined ? [] : ["prepMinutes" as const]),
+      ...(args.cookMinutes === undefined ? [] : ["cookMinutes" as const]),
+    ]);
+    await ctx.db.patch(recipe._id, {
+      ...content,
+      source,
+      contentEditedAt: now,
+      updatedAt: now,
+    });
+    const updated = await ctx.db.get(recipe._id);
+    return updated === null ? null : await toRecipeView(ctx, updated);
+  },
+});
+
+export const updateImported = mutation({
+  args: {
+    recipeId: v.id("recipes"),
+    recipe: v.object({
+      ...recipeContentFields,
+      ingredients: v.array(recipeIngredientInputValidator),
+      proteinCategory: proteinCategoryValidator,
+    }),
+  },
+  returns: v.union(recipeViewValidator, v.null()),
+  handler: async (ctx, { recipeId, recipe: input }) => {
+    const ownerId = await requireUserId(ctx);
+    const recipe = await ctx.db.get(recipeId);
+    if (
+      recipe === null ||
+      recipe.ownerId !== ownerId ||
+      recipe.source.type !== "import"
+    ) {
+      return null;
+    }
+    const content = prepareRecipeOrThrow(input);
+    const now = Date.now();
+    const source = clearNormalizationWarnings(
+      removeEditedMetadataProvenance(recipe.source, [
+        ...(recipe.servings === content.servings ? [] : ["servings" as const]),
+        ...(recipe.prepMinutes === content.prepMinutes
+          ? []
+          : ["prepMinutes" as const]),
+        ...(recipe.cookMinutes === content.cookMinutes
+          ? []
+          : ["cookMinutes" as const]),
+      ]),
+    );
+    await ctx.db.patch(recipeId, {
+      ...content,
+      source,
+      contentEditedAt: now,
+      updatedAt: now,
+    });
+    const updated = await ctx.db.get(recipeId);
+    return updated === null ? null : await toRecipeView(ctx, updated);
+  },
+});
+
 export const listSavedCatalogueMeals = query({
   args: {},
   returns: v.array(
@@ -217,7 +310,7 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
     recipe.imageStorageId === undefined
       ? undefined
       : ((await ctx.storage.getUrl(recipe.imageStorageId)) ?? undefined);
-  return {
+  const view = {
     _id: recipe._id,
     _creationTime: recipe._creationTime,
     title: recipe.title,
@@ -236,9 +329,49 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
     proteinCategory: recipe.proteinCategory ?? "meat-free",
     ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
     ...(recipe.preheat === undefined ? {} : { preheat: recipe.preheat }),
+    ...(recipe.notes === undefined ? {} : { notes: recipe.notes }),
+    servingScaling:
+      recipe.servingScaling ??
+      (recipe.source.type === "import" ? "source_only" : "safe"),
     ...(imageSrc === undefined ? {} : { imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),
+    ...(recipe.contentEditedAt === undefined
+      ? {}
+      : { contentEditedAt: recipe.contentEditedAt }),
     updatedAt: recipe.updatedAt,
   };
+  return {
+    ...view,
+    reviewIssues: getRecipeReviewIssues(view),
+  };
+}
+
+function removeEditedMetadataProvenance(
+  source: RecipeSource,
+  fields: Array<keyof RecipeMetadataProvenance>,
+): RecipeSource {
+  if (
+    source.type !== "import" ||
+    source.metadataProvenance === undefined ||
+    fields.length === 0
+  ) {
+    return source;
+  }
+  const metadataProvenance = { ...source.metadataProvenance };
+  for (const field of fields) delete metadataProvenance[field];
+  const base = { ...source };
+  delete base.metadataProvenance;
+  return Object.keys(metadataProvenance).length > 0
+    ? { ...base, metadataProvenance }
+    : base;
+}
+
+function clearNormalizationWarnings(source: RecipeSource): RecipeSource {
+  if (source.type !== "import" || source.normalizationWarnings === undefined) {
+    return source;
+  }
+  const next = { ...source };
+  delete next.normalizationWarnings;
+  return next;
 }

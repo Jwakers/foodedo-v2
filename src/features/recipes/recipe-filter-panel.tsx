@@ -27,6 +27,7 @@ const proteinChips: ReadonlyArray<{
   { label: "Lamb", value: "lamb" },
   { label: "Fish", value: "fish" },
   { label: "Meat-free", value: "meat-free" },
+  { label: "Other", value: "other" },
 ];
 
 /**

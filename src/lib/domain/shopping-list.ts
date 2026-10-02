@@ -1,4 +1,5 @@
 import type { RecipeIngredientLine, ShoppingCategory } from "./recipes";
+import { normaliseImportedDisplayAmount } from "./recipe-normalization";
 
 export const SHOPPING_LIST_LIMITS = {
   items: 500,
@@ -148,9 +149,7 @@ function ingredientDetailLine(
 }
 
 function ingredientAmount(ingredient: RecipeIngredientLine) {
-  return [ingredient.quantity, ingredient.unit]
-    .filter((value): value is string => value !== undefined)
-    .join(" ");
+  return normaliseImportedDisplayAmount(ingredient) ?? "";
 }
 
 function parseAmount(amount: string) {

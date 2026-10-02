@@ -35,9 +35,11 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 ## 3. In vs later
 
-**Now:** focused product shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration, user synchronization, recipe foundation, docs, CI, and folder conventions.
+**Now:** focused product shell, home-screen metadata, Capacitor config, separate V2 Convex project, Clerk integration, user synchronization, recipe foundation and URL/text import, docs, CI, and folder conventions.
 
 **Recipe foundation — complete:** bounded recipe content, lossless ingredient lines, provenance, a versioned standard catalogue, private ownership, explicit library membership, authenticated idempotent catalogue saving, and domain tests now exist. Plan-only snapshots do not appear in **My recipes** unless the user deliberately saves them.
+
+**Recipe import — MVP complete:** `/recipes/import` is a client-hydrated static route backed by private Convex jobs. An authenticated mutation atomically creates an idempotent request and schedules a Node action; a live query restores progress after navigation or reload. Public URL extraction is bounded and SSRF-aware. The importer scores every schema.org Recipe candidate, merges the best structured candidate with visible recipe-card content, and reduces the page to stable, bounded evidence blocks. One coherent and complete source remains a deterministic fast path. Missing, contradictory, collapsed, malformed, schema-less, or multi-method sources receive one holistic structured-output pass over the semantic recipe package; specialists repair only an isolated rejected area. Evidence IDs and deterministic critical-token checks keep quantities, temperatures, timings, negation, and sequence grounded in the source. Transport failure can still save a trustworthy deterministic core with private diagnostic warnings. Every recipe stores one ordered method: sequential headings remain step groups, while a source with genuine alternatives uses its first complete publisher method and omits the others. Each accepted metadata field records `published`, `derived`, or `estimated` provenance. Imported lines retain their source expression beside Foodedo's normalised amount, name, group, notes, and method. Scaling is all-or-nothing and defaults to `source_only` whenever every meaningful amount cannot be proven safe. A normalisation version and content fingerprint keep the result auditable and guard asynchronous image attachment. Owners can edit imported content, groups, and timings with per-field source recovery. Image copying remains asynchronous and never blocks core import success. Only concrete missing servings or a complete absence of timing creates the user-facing review state; internal normalisation cautions remain provenance and never produce a vague warning. Signed-out capture intent is bounded in IndexedDB and resumes only after Clerk and Convex authentication.
 
 **Guest Plan claim — foundation complete:** `GuestDraft` holds seven consecutive dated choices in IndexedDB. Guests can swap or shuffle meals, then **Keep this plan** persists an idempotent intent before sign-in. Authenticated app state first hydrates the current Convex plan, preventing a second device from submitting an already-saved date range. Otherwise it resumes one atomic claim that creates a minimal `mealPlans` parent, private recipe snapshots, and independently editable dated slots without overwriting occupied dates. Matching local state is deleted only after server confirmation; different unsaved state is retained and disclosed. Catalogue recipe saving uses the same persisted sign-in-continuation and post-save cleanup pattern.
 
@@ -47,7 +49,7 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **MVP product still to build:** bring the approved mobile design system into the existing Plan/Shop flows; add authenticated Adjust Plan preferences and plan-specific overrides; add the small recipe-selection metadata needed for time, protein, and approximate-cost steering; and implement the approved Cook Mode with explicit preheat data and authored timer cues.
 
-**Later product:** deepen Capture and Decide, add dietary/allergy profile management, plan automatic method-step ingredient mapping, then build Remember. Discover follows only after Remember has signal.
+**Later product:** deepen Capture beyond URL/text, add dietary/allergy profile management, plan automatic method-step ingredient mapping, then build Remember. Discover follows only after Remember has signal.
 
 **Later native:** camera, photos, share sheet, haptics, push, deep links.
 
@@ -68,9 +70,9 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 Convex is the backend: queries/mutations/actions, indexes, custom authenticated functions—in a **separate project** from V1. Clerk provides identity; Convex validates its JWT and remains responsible for authorization. See [convex-migration.md](../knowledge/architecture/convex-migration.md), [data-model.md](../knowledge/architecture/data-model.md), and [the setup guide](./auth-and-backend-setup.md).
 
-Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
+Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md). Import processing runs in Convex Node actions rather than Next.js Route Handlers or Server Actions, preserving the static native route contract.
 
-Catalogue detail and Cook use client-hydrated static shells: `/recipes/view?slug=…` and `/recipes/cook?slug=…&servings=…`. A catalogue slug is distinct from the stable identity used by plans and saved snapshots. Convex is the sole runtime catalogue source, so neither web nor Capacitor bundles embed meals or images. Next.js generates `/sitemap.xml` at build time from a public catalogue query; scheduled deployments may refresh it when meals change. Per-recipe SSR, rich metadata, and pretty web-only URLs remain deferred. See [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
+Detail and Cook use client-hydrated static shells: catalogue content uses `/recipes/view?slug=…` and `/recipes/cook?slug=…&servings=…`; owner-scoped personal content uses the same routes with `recipeId`. Cook session schema version 3 invalidates the retired method-variant session shape. `/recipes/edit?recipeId=…` provides the imported-recipe correction surface. A catalogue slug is distinct from the stable identity used by plans and saved snapshots. Convex is the sole runtime recipe source, so neither web nor Capacitor bundles embed meals or images. Next.js generates `/sitemap.xml` at build time from a public catalogue query; scheduled deployments may refresh it when meals change. Per-recipe SSR, rich metadata, and pretty web-only URLs remain deferred. See [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
 
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
@@ -100,6 +102,8 @@ Fast, mobile-first, accessible (semantic HTML, contrast, 44px targets, safe area
 
 See [testing.md](./testing.md). Playwright checks durable production behaviour in Chromium. Keep E2E assertions centred on navigation and real jobs rather than transient copy; keep unit tests for domain logic only. Bug-driven tests thereafter.
 
+The importer has a fixed corpus under `tests/fixtures/recipe-import-corpus.json` covering structured, fragmented, pasted, unusual, no-cook, incomplete, inaccessible, non-recipe, adversarial, collapsed-step, and multi-method inputs. Normal tests inject a deterministic model client and do not call providers; HTML and text fixtures enter through the same extraction, trigger, evidence, orchestration, and validation code used by the Convex action. Run the opt-in live evaluation with `pnpm eval:recipe-import`. It uses the production schemas, prompts, model assignments, Gateway fallbacks, candidate extraction, and validation path, and reports semantic preservation, metadata accuracy, formatting defects, primary-method coverage, note resolution, review and hard-failure rates, latency, fallback use, tokens, and optional cost via `RECIPE_IMPORT_MODEL_PRICING_USD_PER_MILLION`. Network-blocked sources are measured separately from the core corpus.
+
 ## 8. V2 scope discipline
 
 Focus the first slices on Capture and Decide, then Plan/Shop/Cook/Remember. Do not start with settings, households, discovery feeds, or dashboards.
@@ -111,7 +115,7 @@ Do not touch `/Users/jackwakeham/Documents/Projects/foodedo` (V1), `foodedo-cms`
 ## 9. Folder conventions
 
 ```
-src/app/                 App Router routes (`/`, `/recipes`, `/recipes/view`, `/recipes/cook`, `/shop`)
+src/app/                 App Router routes (`/`, `/recipes`, `/recipes/import`, `/recipes/view`, `/recipes/cook`, `/shop`)
 src/components/          Shared UI later
 src/features/            Job modules later
 src/lib/domain/          Platform-independent logic

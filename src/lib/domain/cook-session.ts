@@ -1,6 +1,6 @@
 import type { CatalogueMeal, RecipeTimerCue } from "./recipes";
 
-export const COOK_SESSION_SCHEMA_VERSION = 1;
+export const COOK_SESSION_SCHEMA_VERSION = 3;
 
 export type CookPhase =
   | { name: "preparation" }

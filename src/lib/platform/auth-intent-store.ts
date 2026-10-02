@@ -1,6 +1,7 @@
 import type {
   AdjustPlanIntentV1,
   CatalogueSaveIntentV1,
+  RecipeImportIntentV1,
 } from "@/lib/domain/auth-intents";
 import {
   localObjectStores,
@@ -12,6 +13,7 @@ import {
 
 const catalogueSaveKey = "catalogue-recipe-save";
 const adjustPlanKey = "open-adjust-plan";
+const recipeImportKey = "recipe-import";
 const objectStoreName = localObjectStores.authIntents;
 
 /** One keyed slot in the shared `auth-intents` IndexedDB store. */
@@ -74,4 +76,8 @@ export function createCatalogueSaveIntentStore(): AuthIntentStore<CatalogueSaveI
 
 export function createAdjustPlanIntentStore(): AuthIntentStore<AdjustPlanIntentV1> {
   return createAuthIntentStore(adjustPlanKey);
+}
+
+export function createRecipeImportIntentStore(): AuthIntentStore<RecipeImportIntentV1> {
+  return createAuthIntentStore(recipeImportKey);
 }

@@ -6,6 +6,7 @@ import {
   SHOPPING_LIST_LIMITS,
   ShoppingListValidationError,
 } from "../src/lib/domain/shopping-list";
+import { normaliseImportedDisplayAmount } from "../src/lib/domain/recipe-normalization";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -504,9 +505,7 @@ async function reconstructLegacySources(
         recipeId: recipe._id,
         recipeTitle: recipe.title,
         date: mealSlot.date,
-        amount: [ingredient.quantity, ingredient.unit]
-          .filter((value): value is string => value !== undefined)
-          .join(" "),
+        amount: normaliseImportedDisplayAmount(ingredient) ?? "",
       });
     }
   }

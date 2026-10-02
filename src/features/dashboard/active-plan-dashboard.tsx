@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Download } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -13,7 +13,6 @@ import {
   resolveActivePlanRestOfWeek,
   type ActivePlanMealSlot,
 } from "@/lib/domain/plan-display";
-import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { recipeCookPath, recipeDetailPath } from "@/lib/routing/recipes";
 import { api } from "../../../convex/_generated/api";
 
@@ -21,20 +20,12 @@ type ActiveMealPlan = NonNullable<
   FunctionReturnType<typeof api.mealPlans.getCurrent>
 >;
 
-export function ActivePlanDashboard({
-  plan,
-  meals,
-}: {
-  plan: ActiveMealPlan;
-  meals: CatalogueMealSummary[];
-}) {
+export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
   const focus = resolveActivePlanFocus({ mealSlots: plan.mealSlots });
   const restOfWeek = resolveActivePlanRestOfWeek({
     mealSlots: plan.mealSlots,
     focusDate: focus?.meal.date ?? null,
   });
-  const nudgeImage = meals[0]?.imageSrc ?? "/images/recipes/fish-tacos.jpg";
-
   return (
     <section
       aria-labelledby="active-plan-heading"
@@ -55,7 +46,7 @@ export function ActivePlanDashboard({
       ) : null}
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
-      <SaveRecipesNudge imageSrc={nudgeImage} />
+      <ImportRecipeNudge />
     </section>
   );
 }
@@ -279,30 +270,28 @@ function ShoppingListReady({ mealCount }: { mealCount: number }) {
   );
 }
 
-function SaveRecipesNudge({ imageSrc }: { imageSrc: string }) {
+function ImportRecipeNudge() {
   return (
-    <div className="flex items-center gap-3.5 border-t border-border pt-4.5">
-      <div className="relative size-[72px] shrink-0 overflow-hidden rounded-compact bg-mist">
-        <Image
-          src={imageSrc}
-          alt=""
-          fill
-          sizes="72px"
-          className="object-cover"
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-11 font-bold tracking-overline text-graphite uppercase">
-          Make future weeks yours
-        </p>
-        <p className="font-display text-18 font-semibold text-ink">
-          Save recipes you love
-        </p>
-        <ButtonLink href="/recipes" variant="inline" className="mt-1 text-leaf">
-          Browse recipes
+    <Link
+      href="/recipes/import"
+      aria-label="Import a recipe into Foodedo"
+      className="group flex min-h-22 items-center gap-3.5 border-t border-border pt-4.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+    >
+      <span className="flex size-[72px] shrink-0 items-center justify-center rounded-surface bg-cadmium-soft text-ink transition-colors group-hover:bg-border">
+        <Download aria-hidden="true" className="size-7" strokeWidth={1.8} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-10 font-bold tracking-overline text-cadmium uppercase">
+          Found a recipe elsewhere?
+        </span>
+        <span className="font-display text-20 font-semibold tracking-card text-ink">
+          Bring it into Foodedo
+        </span>
+        <span className="flex items-center gap-1 text-13 font-semibold text-leaf">
+          Import a recipe
           <ArrowRight aria-hidden="true" className="size-3.5" />
-        </ButtonLink>
-      </div>
-    </div>
+        </span>
+      </span>
+    </Link>
   );
 }

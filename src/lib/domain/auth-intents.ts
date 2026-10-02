@@ -1,4 +1,5 @@
 import { RECIPE_LIMITS } from "./recipes";
+import { RECIPE_IMPORT_INPUT_LIMITS } from "./recipe-import";
 
 /**
  * Auth-continuation intents: tiny durable records written *before* sign-in so
@@ -10,6 +11,7 @@ import { RECIPE_LIMITS } from "./recipes";
  */
 export const CATALOGUE_SAVE_INTENT_SCHEMA_VERSION = 1 as const;
 export const ADJUST_PLAN_INTENT_SCHEMA_VERSION = 1 as const;
+export const RECIPE_IMPORT_INTENT_SCHEMA_VERSION = 1 as const;
 
 export type CatalogueSaveIntentV1 = {
   schemaVersion: typeof CATALOGUE_SAVE_INTENT_SCHEMA_VERSION;
@@ -23,6 +25,14 @@ export type CatalogueSaveIntentV1 = {
 export type AdjustPlanIntentV1 = {
   schemaVersion: typeof ADJUST_PLAN_INTENT_SCHEMA_VERSION;
   type: "open-adjust-plan";
+  requestedAt: number;
+};
+
+export type RecipeImportIntentV1 = {
+  schemaVersion: typeof RECIPE_IMPORT_INTENT_SCHEMA_VERSION;
+  type: "import-recipe";
+  clientRequestId: string;
+  source: { type: "url"; url: string } | { type: "text"; text: string };
   requestedAt: number;
 };
 
@@ -112,6 +122,74 @@ export function readAdjustPlanIntent(
   return {
     schemaVersion: ADJUST_PLAN_INTENT_SCHEMA_VERSION,
     type: "open-adjust-plan",
+    requestedAt,
+  };
+}
+
+export function createRecipeImportIntent({
+  clientRequestId,
+  source,
+  now,
+}: {
+  clientRequestId: string;
+  source: RecipeImportIntentV1["source"];
+  now: number;
+}): RecipeImportIntentV1 {
+  const intent = {
+    schemaVersion: RECIPE_IMPORT_INTENT_SCHEMA_VERSION,
+    type: "import-recipe",
+    clientRequestId,
+    source,
+    requestedAt: now,
+  } as const;
+  const prepared = readRecipeImportIntent(intent);
+  if (prepared === null) throw new Error("Recipe import intent is invalid.");
+  return prepared;
+}
+
+export function readRecipeImportIntent(
+  input: unknown,
+): RecipeImportIntentV1 | null {
+  if (!isRecord(input)) return null;
+  if (input.schemaVersion !== RECIPE_IMPORT_INTENT_SCHEMA_VERSION) return null;
+  if (input.type !== "import-recipe") return null;
+  if (
+    typeof input.clientRequestId !== "string" ||
+    input.clientRequestId.trim().length === 0 ||
+    input.clientRequestId.length >
+      RECIPE_IMPORT_INPUT_LIMITS.requestIdCharacters
+  ) {
+    return null;
+  }
+  if (!isRecord(input.source)) return null;
+
+  let source: RecipeImportIntentV1["source"];
+  if (
+    input.source.type === "url" &&
+    typeof input.source.url === "string" &&
+    input.source.url.trim().length > 0 &&
+    input.source.url.length <= RECIPE_IMPORT_INPUT_LIMITS.urlCharacters
+  ) {
+    source = { type: "url", url: input.source.url.trim() };
+  } else if (
+    input.source.type === "text" &&
+    typeof input.source.text === "string" &&
+    input.source.text.trim().length >=
+      RECIPE_IMPORT_INPUT_LIMITS.minimumTextCharacters &&
+    input.source.text.length <= RECIPE_IMPORT_INPUT_LIMITS.textCharacters
+  ) {
+    source = { type: "text", text: input.source.text.trim() };
+  } else {
+    return null;
+  }
+
+  const requestedAt = readRequestedAt(input.requestedAt);
+  if (requestedAt === null) return null;
+  return {
+    schemaVersion: RECIPE_IMPORT_INTENT_SCHEMA_VERSION,
+    type: "import-recipe",
+    clientRequestId: input.clientRequestId,
+    source,
     requestedAt,
   };
 }

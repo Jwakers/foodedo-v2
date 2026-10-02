@@ -19,6 +19,12 @@ export function recipeDetailPath(
   return `/recipes/view?${search.toString()}`;
 }
 
+export function personalRecipeDetailPath(recipeId: string, servings?: number) {
+  const search = new URLSearchParams({ recipeId });
+  if (servings !== undefined) search.set("servings", String(servings));
+  return `/recipes/view?${search.toString()}`;
+}
+
 /** Accept only serving values that the recipe controls can safely render. */
 export function parseRecipeServings(value: string | null): number | null {
   if (value === null) return null;
@@ -37,6 +43,19 @@ export function recipeCookPath(
   if (servings !== undefined) search.set("servings", String(servings));
   appendCatalogueReference(search, reference);
   return `/recipes/cook?${search.toString()}`;
+}
+
+export function personalRecipeCookPath(recipeId: string, servings?: number) {
+  const search = new URLSearchParams({ recipeId });
+  if (servings !== undefined) search.set("servings", String(servings));
+  return `/recipes/cook?${search.toString()}`;
+}
+
+export function parsePersonalRecipeId(
+  searchParams: Pick<URLSearchParams, "get">,
+): string | null {
+  const recipeId = searchParams.get("recipeId")?.trim();
+  return recipeId ? recipeId : null;
 }
 
 export function isCookPath(pathname: string): boolean {

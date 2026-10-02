@@ -95,9 +95,9 @@ function hasMealDurationAtMost(
 function mealDuration(
   recipe: Pick<RecipeFilterable, "prepMinutes" | "cookMinutes">,
 ) {
-  if (recipe.prepMinutes === undefined || recipe.cookMinutes === undefined) {
+  if (recipe.prepMinutes === undefined && recipe.cookMinutes === undefined) {
     return null;
   }
 
-  return recipe.prepMinutes + recipe.cookMinutes;
+  return (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
 }

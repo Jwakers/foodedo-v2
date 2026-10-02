@@ -50,6 +50,7 @@ export default defineSchema({
     imageStorageId: v.optional(v.id("_storage")),
     source: recipeSourceValidator,
     savedAt: v.optional(v.number()),
+    contentEditedAt: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
@@ -59,6 +60,50 @@ export default defineSchema({
       "source.catalogueMealId",
       "source.catalogueVersion",
     ]),
+  recipeImports: defineTable({
+    ownerId: v.id("users"),
+    clientRequestId: v.string(),
+    sourceType: v.union(v.literal("url"), v.literal("text")),
+    sourceUrl: v.optional(v.string()),
+    inputText: v.optional(v.string()),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("succeeded"),
+      v.literal("needs_review"),
+      v.literal("failed"),
+    ),
+    phase: v.union(
+      v.literal("waiting"),
+      v.literal("fetching"),
+      v.literal("organising"),
+      v.literal("saving"),
+      v.literal("complete"),
+    ),
+    attempt: v.number(),
+    failureCode: v.optional(
+      v.union(
+        v.literal("invalid_url"),
+        v.literal("unsafe_url"),
+        v.literal("fetch_failed"),
+        v.literal("source_unreachable"),
+        v.literal("source_blocked"),
+        v.literal("unsupported_content"),
+        v.literal("no_recipe"),
+        v.literal("incomplete_recipe"),
+        v.literal("unsafe_result"),
+        v.literal("ai_unavailable"),
+        v.literal("invalid_result"),
+        v.literal("internal"),
+        v.literal("timed_out"),
+      ),
+    ),
+    resultRecipeId: v.optional(v.id("recipes")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner_and_request", ["ownerId", "clientRequestId"])
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"]),
   mealPlans: defineTable({
     ownerId: v.id("users"),
     startDate: v.string(),

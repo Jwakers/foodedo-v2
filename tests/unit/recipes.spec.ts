@@ -90,6 +90,25 @@ test("requires every ingredient to have a shopping category", () => {
   ).toThrow(RecipeValidationError);
 });
 
+test("requires ingredient and step note references to resolve", () => {
+  expect(() =>
+    prepareRecipeContent({
+      ...validRecipe,
+      ingredients: [
+        { ...validRecipe.ingredients[0]!, noteRefs: ["missing-note"] },
+      ],
+    }),
+  ).toThrow(RecipeValidationError);
+
+  expect(
+    prepareRecipeContent({
+      ...validRecipe,
+      notes: [{ id: "note-1", text: "Drain very well." }],
+      steps: [{ ...validRecipe.steps[0]!, noteRefs: ["note-1"] }],
+    }).steps[0]?.noteRefs,
+  ).toEqual(["note-1"]);
+});
+
 test("validates authored Cook Mode preheat and timer cues", () => {
   const prepared = prepareRecipeContent({
     ...validRecipe,

@@ -68,6 +68,9 @@ Open the **Foodedo V2 development deployment**, then **Settings → Environment 
 | ------------------------ | ---------------------------------------------------------- |
 | `CLERK_FRONTEND_API_URL` | Clerk Frontend API URL, including `https://`               |
 | `CLERK_WEBHOOK_SECRET`   | Add after creating the Clerk webhook; starts with `whsec_` |
+| `AI_GATEWAY_API_KEY`     | Vercel AI Gateway key used only by Convex import actions   |
+
+Recipe-import model assignments and Gateway fallbacks are versioned in `convex/lib/recipeImport/models.ts`. Change them through the normal evaluation, review, and deployment path rather than deployment environment overrides. Only the `AI_GATEWAY_API_KEY` belongs in the Convex environment; do not expose it through a `NEXT_PUBLIC_` variable or include it in the Capacitor bundle.
 
 The Convex CLI has already written the ignored V2 `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` values to `.env.local`.
 

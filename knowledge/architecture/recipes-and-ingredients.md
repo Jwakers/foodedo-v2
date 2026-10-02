@@ -24,7 +24,7 @@ Generation must create a candidate, not publish directly. A future workflow vali
 
 The authored line remains the source of truth. Keep a stable line ID, ingredient name, human-readable quantity, optional unit, and optional note. The note currently preserves preparation and qualifiers such as “finely chopped”, “drained”, or “at room temperature”; this information has not been discarded. Preserve expressions such as “1 × 400g tin” or “to taste”; structured interpretation must not destroy the original meaning.
 
-Do not require a separate structured `preparation` field until Capture, import, Cook, or Shop needs to distinguish preparation reliably from other qualifiers. If that need appears, add optional enrichment or split the preserved note through a migration; do not make recipe entry harder or lose the original wording in anticipation.
+Do not require a separate structured `preparation` field until Cook or Shop needs to distinguish preparation reliably from other qualifiers. Imported qualifiers remain in the preserved note. If a stronger need appears, add optional enrichment or split the preserved note through a migration; do not make recipe entry harder or lose the original wording in anticipation.
 
 A canonical ingredient catalogue may be introduced when Shop or allergy assistance proves the need. Resolution must be optional enrichment: unresolved lines remain valid, and arbitrary user input must never create global taxonomy records automatically.
 
@@ -38,7 +38,7 @@ The approved Swap Meal flow needs a small set of recipe selection facets. Time a
 
 ```ts
 type ProteinCategory =
-  "chicken" | "beef" | "pork" | "lamb" | "fish" | "meat-free";
+  "chicken" | "beef" | "pork" | "lamb" | "fish" | "meat-free" | "other";
 
 type RecipeSelectionMetadata = {
   proteinCategory: ProteinCategory;
@@ -48,8 +48,8 @@ type RecipeSelectionMetadata = {
 };
 ```
 
-- **Time:** derive one total from `prepMinutes + cookMinutes`. Filtering, display, quick refinements, and sorting must use the same calculation. An unknown total time does not satisfy an active time constraint.
-- **Protein choice:** `proteinCategory` is required on every catalogue meal and every personal recipe. Allowed values are `chicken`, `beef`, `pork`, `lamb`, `fish`, and `meat-free`. It names the primary consumer-facing protein choice used by the approved filter—not every ingredient in the dish and not a nutritional claim. Prefer one clear primary (for example a chicken and vegetable traybake is `chicken`). Use `fish` for fish and seafood mains. Use `meat-free` when the primary protein is not animal flesh (beans, lentils, tofu, eggs, cheese, vegetable-forward mains). Prefer `meat-free` over `vegetable-based`: the latter understates dairy- and egg-led dishes that still belong in this filter option.
+- **Time:** display and compare the sum of the trustworthy time components that are present. A recipe may legitimately supply only preparation or cooking time; zero is valid when explicitly stated. If neither component is known, the total is unknown and does not satisfy an active time constraint.
+- **Protein choice:** `proteinCategory` is required on every catalogue meal and every personal recipe. Allowed values are `chicken`, `beef`, `pork`, `lamb`, `fish`, `meat-free`, and `other`. It names the primary consumer-facing protein choice used by the approved filter—not every ingredient in the dish and not a nutritional claim. Prefer one clear primary (for example a chicken and vegetable traybake is `chicken`). Use `fish` for fish and seafood mains. Use `meat-free` when the primary protein is not animal flesh (beans, lentils, tofu, eggs, cheese, vegetable-forward mains). `other` keeps game and unfamiliar primaries honest instead of forcing them into an incorrect category.
 - **Approximate cost:** `costBand` is optional for MVP and remains one of `budget`, `standard`, or `premium`. Keep this simple three-band model for now rather than a finer 0–10 index; revisit only if editorial banding proves too coarse. For the MVP catalogue it is assigned and reviewed editorially. The product does not expose a currency amount or imply live supermarket pricing.
 
 The approved **Budget friendly** filter matches the `budget` band. **Lowest cost first** orders known bands from budget to premium and retains the normal recommendation rank within a band. Recipes with unknown cost remain valid but are excluded by a cost filter and ordered after known bands when the user explicitly requests cost ordering.
@@ -104,7 +104,21 @@ Until this feature is implemented, Cook Mode may show the full scaled ingredient
 
 ## Provenance and publishing
 
-Recipe provenance is a small discriminated value. The initial variants are `manual` and `catalogue`; import and publication variants arrive with those features.
+Recipe provenance is a small discriminated value. The implemented variants are `manual`, `catalogue`, and private `import`; public publication remains a separate future feature. Import provenance records the capture method, import time, canonical source URL, trustworthy site/author attribution when available, the normalisation version, and a content fingerprint.
+
+## Recipe import
+
+Authenticated users can capture recipes from a public HTTP(S) URL or pasted text. `beginImport` creates an idempotent private `recipeImports` job and schedules a Convex Node action; the client observes that job rather than holding the work open in a Next.js request. This keeps the shared route compatible with the Capacitor static export and lets imports survive navigation and reload.
+
+The pipeline treats import as translation into Foodedo's durable recipe contract, not as copying a publisher's incidental markup. It resolves schema.org `@graph` references, scores all Recipe candidates, merges the best candidate with visible recipe-card groups and notes, and reads explicit rendered-page signals that publishers omit from JSON-LD. It removes navigation, chrome, advertising, forms, and related content, then creates stable evidence blocks for metadata, ingredients, instructions, notes, and the remaining semantic page region. A single coherent, complete source uses the deterministic fast path. Missing, contradictory, collapsed, malformed, schema-less, or multi-method sources receive one holistic structured-output pass over the bounded semantic package. Every returned field cites evidence IDs; deterministic coverage and critical-token validation protect quantities, ranges, temperatures, timings, negation, and sequence. A specialist is a targeted repair tool after one isolated area is rejected, while multiple rejected core areas cause one complete repair pass. When models are unavailable, a trustworthy deterministic core is saved with typed private diagnostics rather than discarded. These diagnostics support telemetry but do not create a vague owner-facing review state; the UI asks for review only when it can name a concrete missing field. Metadata may be published, derived from explicit recipe facts, or cautiously estimated for low-risk planning fields, and stores that provenance. Recipes retain one ordered method. Sequential components remain step groups; when a publisher supplies genuine alternatives, import selects the first complete method and omits the rest. Imported method text stays traceable to the source and broad rewriting is not permitted.
+
+Imported ingredients retain bounded `sourceText` plus a normalised `amountText`, intact local ingredient `name`, optional preparation note, group, and note references. Steps retain their source expression and note references; recipe-card notes are first-class recipe content. Detail, Cook, and Shop consume the same representation. `servingScaling` is `safe` only when every scale-relevant amount is trustworthy; otherwise the recipe stays `source_only` and opens at its authored servings. Partial scaling is forbidden. Owner corrections set `contentEditedAt` and expose preserved source expressions only in the edit surface.
+
+Title, ingredients, steps, and `proteinCategory` form the usable core. Unfamiliar proteins use `other`, so optional classification work cannot veto an otherwise complete structured recipe. The recipe and successful job transition are committed atomically as soon as that core validates. Missing servings or the absence of both preparation and cooking time after whole-recipe reasoning produces derived review issues; one useful time value is sufficient, and explicit zero-minute no-cook/no-prep time is complete. Detail quietly labels derived and estimated metadata, and an owner correction removes that field's inference label. Review is therefore not a second mutable status. The narrow repair mutation lets the owner add servings and whichever time information they know.
+
+URL fetching rejects credentials, non-HTTP protocols, and private or reserved address ranges, and revalidates every redirect. A request-local Undici dispatcher validates the exact DNS address passed to the socket, closing the validate-then-connect rebinding gap without changing global fetch behaviour. Response time and size are bounded. Source HTML is never persisted or rendered. Image work ranks at most three candidates and tries them asynchronously; each download repeats network validation, sniffs JPEG/PNG/WebP bytes, reads real dimensions, and is attached only while the recipe content fingerprint still matches. Rejected or stale blobs are deleted, a successful replacement deletes the previous blob afterwards, and image failure never blocks a usable recipe.
+
+Completed jobs clear pasted source text and expire after a short retention period. Attempt numbers prevent stale actions and watchdogs from overwriting a retry. Telemetry contains timings, role/model usage, fallback state, extractor path, and typed outcomes only—never recipe content, HTML, pasted text, or full source URLs.
 
 Future public content should use publisher profiles and immutable publication revisions. Following, liking, and saving are separate relationships. Saving a published revision creates an attributed personal snapshot; personal edits never mutate the publisher's recipe. Rights, moderation, takedown, feeds, and update notifications are later product work.
 
@@ -125,6 +139,7 @@ Foundation already implemented:
 - Public database-backed, independently versioned catalogue meals and storage-backed images rendered equally for guests and accounts.
 - An authenticated, retry-safe save that resolves trusted catalogue content on the server, creates or reuses a private snapshot, and explicitly adds it to the user's library.
 - Guest Home “Ideas for your week” carousel using temporary first-six catalogue selection (smarter ranking deferred post-MVP).
+- Authenticated URL/text recipe import with resumable jobs, deterministic fast-path extraction, adaptive whole-recipe recovery, isolated model repair, derived review, and personal detail/Cook routes.
 
 MVP additions still required by the approved designs:
 
@@ -134,4 +149,4 @@ MVP additions still required by the approved designs:
 - one canonical serving-scaling path shared by Cook and Shop; and
 - the approved Cook Mode interface.
 
-Defer canonical ingredients, automated method-step ingredient mapping, dietary/allergen profiles, automatic timer extraction, a calculated regional cost estimator, import, images, editing, search, publishing, social relationships, and feeds until their product slices need them.
+Defer canonical ingredients, automated method-step ingredient mapping, dietary/allergen profiles, automatic timer extraction, a calculated regional cost estimator, photo/camera/share-sheet capture, general recipe editing, publishing, social relationships, and feeds until their product slices need them.

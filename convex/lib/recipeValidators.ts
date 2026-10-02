@@ -16,6 +16,10 @@ export const recipeIngredientValidator = v.object({
   quantity: v.optional(v.string()),
   unit: v.optional(v.string()),
   note: v.optional(v.string()),
+  sourceText: v.optional(v.string()),
+  amountText: v.optional(v.string()),
+  group: v.optional(v.string()),
+  noteRefs: v.optional(v.array(v.string())),
 });
 
 export const recipeIngredientInputValidator = v.object({
@@ -25,11 +29,16 @@ export const recipeIngredientInputValidator = v.object({
   quantity: v.optional(v.string()),
   unit: v.optional(v.string()),
   note: v.optional(v.string()),
+  sourceText: v.optional(v.string()),
+  amountText: v.optional(v.string()),
+  group: v.optional(v.string()),
+  noteRefs: v.optional(v.array(v.string())),
 });
 
 export const recipeStepValidator = v.object({
   id: v.string(),
   text: v.string(),
+  group: v.optional(v.string()),
   timerCues: v.optional(
     v.array(
       v.object({
@@ -39,6 +48,15 @@ export const recipeStepValidator = v.object({
       }),
     ),
   ),
+  sourceText: v.optional(v.string()),
+  noteRefs: v.optional(v.array(v.string())),
+});
+
+export const recipeNoteValidator = v.object({
+  id: v.string(),
+  label: v.optional(v.string()),
+  text: v.string(),
+  sourceText: v.optional(v.string()),
 });
 
 export const recipePreheatValidator = v.object({
@@ -53,6 +71,7 @@ export const proteinCategoryValidator = v.union(
   v.literal("lamb"),
   v.literal("fish"),
   v.literal("meat-free"),
+  v.literal("other"),
 );
 
 export const costBandValidator = v.union(
@@ -72,9 +91,41 @@ export const recipeContentFields = {
   proteinCategory: proteinCategoryValidator,
   costBand: v.optional(costBandValidator),
   preheat: v.optional(recipePreheatValidator),
+  notes: v.optional(v.array(recipeNoteValidator)),
+  servingScaling: v.optional(
+    v.union(v.literal("safe"), v.literal("source_only")),
+  ),
 };
 
 export const recipeContentValidator = v.object(recipeContentFields);
+
+export const recipeMetadataOriginValidator = v.union(
+  v.literal("published"),
+  v.literal("derived"),
+  v.literal("estimated"),
+);
+
+export const recipeMetadataProvenanceValidator = v.object({
+  servings: v.optional(recipeMetadataOriginValidator),
+  prepMinutes: v.optional(recipeMetadataOriginValidator),
+  cookMinutes: v.optional(recipeMetadataOriginValidator),
+});
+
+export const recipeNormalizationWarningValidator = v.object({
+  area: v.union(
+    v.literal("ingredients"),
+    v.literal("method"),
+    v.literal("notes"),
+    v.literal("metadata"),
+  ),
+  code: v.union(
+    v.literal("ambiguous"),
+    v.literal("unresolved_reference"),
+    v.literal("source_conflict"),
+    v.literal("partial_coverage"),
+  ),
+  targetId: v.optional(v.string()),
+});
 
 export const recipeSourceValidator = v.union(
   v.object({ type: v.literal("manual") }),
@@ -83,6 +134,26 @@ export const recipeSourceValidator = v.union(
     catalogueMealId: v.string(),
     catalogueVersion: v.number(),
   }),
+  v.object({
+    type: v.literal("import"),
+    method: v.union(v.literal("url"), v.literal("text")),
+    importedAt: v.number(),
+    sourceUrl: v.optional(v.string()),
+    sourceName: v.optional(v.string()),
+    sourceAuthor: v.optional(v.string()),
+    normalizationVersion: v.optional(v.number()),
+    contentFingerprint: v.optional(v.string()),
+    metadataProvenance: v.optional(recipeMetadataProvenanceValidator),
+    normalizationWarnings: v.optional(
+      v.array(recipeNormalizationWarningValidator),
+    ),
+  }),
+);
+
+export const recipeReviewIssueValidator = v.union(
+  v.literal("servings"),
+  v.literal("prep_minutes"),
+  v.literal("cook_minutes"),
 );
 
 export const recipeViewValidator = v.object({
@@ -91,7 +162,9 @@ export const recipeViewValidator = v.object({
   ...recipeContentFields,
   imageSrc: v.optional(v.string()),
   source: recipeSourceValidator,
+  reviewIssues: v.array(recipeReviewIssueValidator),
   savedAt: v.optional(v.number()),
+  contentEditedAt: v.optional(v.number()),
   updatedAt: v.number(),
 });
 

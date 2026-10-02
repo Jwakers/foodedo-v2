@@ -3,8 +3,11 @@ import { expect, test } from "@playwright/test";
 import {
   isRecipeDetailPath,
   isRecipesSectionPath,
+  parsePersonalRecipeId,
   parseRecipeDetailSlug,
   parseRecipeServings,
+  personalRecipeCookPath,
+  personalRecipeDetailPath,
   recipeCookPath,
   recipeDetailPath,
 } from "@/lib/routing/recipes";
@@ -55,6 +58,19 @@ test("builds Cook paths with an optional serving selection", () => {
   ).toBe(
     "/recipes/cook?slug=tomato-pasta&servings=6&catalogueMealId=meal-2&catalogueVersion=3",
   );
+});
+
+test("builds and parses personal recipe routes", () => {
+  expect(personalRecipeDetailPath("recipe-1", 4)).toBe(
+    "/recipes/view?recipeId=recipe-1&servings=4",
+  );
+  expect(personalRecipeCookPath("recipe-1", 2)).toBe(
+    "/recipes/cook?recipeId=recipe-1&servings=2",
+  );
+  expect(parsePersonalRecipeId(new URLSearchParams("recipeId=recipe-1"))).toBe(
+    "recipe-1",
+  );
+  expect(parsePersonalRecipeId(new URLSearchParams())).toBeNull();
 });
 
 test("detects recipes section and detail paths", () => {

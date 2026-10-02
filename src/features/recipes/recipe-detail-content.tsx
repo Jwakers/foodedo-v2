@@ -1,20 +1,26 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { CircleAlert, Play } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RecipeServingsControl } from "@/features/recipes/recipe-servings-control";
 import {
   formatIngredientAmount,
   formatIngredientName,
+  formatIngredientNote,
+  formatImportedMetadataNotice,
 } from "@/lib/domain/recipe-display";
 import { formatMealDurationLabel } from "@/lib/domain/plan-display";
 import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
-import type { CatalogueMeal } from "@/lib/domain/recipes";
+import type {
+  CatalogueMeal,
+  RecipeReviewIssue,
+  RecipeSource,
+} from "@/lib/domain/recipes";
 import { cn } from "@/lib/utils/cn";
-import { recipeCookPath } from "@/lib/routing/recipes";
+import { personalRecipeCookPath, recipeCookPath } from "@/lib/routing/recipes";
 import { useRouter } from "next/navigation";
 
 export type RecipeDetailPresentation = "page" | "swapPreview";
@@ -30,6 +36,11 @@ export function RecipeDetailContent({
   initialServings,
   onStartCooking,
   planMealAction,
+  personalRecipeId,
+  reviewIssues = [],
+  onReview,
+  source,
+  ownerActions,
 }: {
   meal: CatalogueMeal;
   presentation: RecipeDetailPresentation;
@@ -37,6 +48,11 @@ export function RecipeDetailContent({
   initialServings?: number;
   onStartCooking?: () => void;
   planMealAction?: ReactNode;
+  personalRecipeId?: string;
+  reviewIssues?: RecipeReviewIssue[];
+  onReview?: () => void;
+  source?: RecipeSource;
+  ownerActions?: ReactNode;
 }) {
   const router = useRouter();
   const defaultServings = initialServings ?? meal.servings ?? 1;
@@ -59,13 +75,35 @@ export function RecipeDetailContent({
     servingSelection.recipeSlug === meal.slug
       ? servingSelection.servings
       : defaultServings;
+  const methodSteps = meal.steps;
+  const scalingSafe = meal.servingScaling !== "source_only";
   const ingredients = useMemo(
-    () => scaleIngredients(meal.ingredients, meal.servings, selectedServings),
-    [meal.ingredients, meal.servings, selectedServings],
+    () =>
+      scalingSafe
+        ? scaleIngredients(meal.ingredients, meal.servings, selectedServings)
+        : meal.ingredients,
+    [meal.ingredients, meal.servings, scalingSafe, selectedServings],
   );
-  const durationLabel = formatMealDurationLabel(
-    meal.prepMinutes,
-    meal.cookMinutes,
+  const durationLabel =
+    source?.type === "import"
+      ? [
+          meal.prepMinutes === undefined
+            ? null
+            : `${meal.prepMinutes} min prep`,
+          meal.cookMinutes === undefined
+            ? null
+            : `${meal.cookMinutes} min cook`,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : formatMealDurationLabel(meal.prepMinutes, meal.cookMinutes);
+  const metadataNotice = formatImportedMetadataNotice(source);
+  const missingReviewLabels = reviewIssues.map((issue) =>
+    issue === "servings"
+      ? "servings"
+      : issue === "prep_minutes"
+        ? "preparation time"
+        : "cooking time",
   );
   const showPageActions = presentation === "page";
   const handleStartCooking = () => {
@@ -74,10 +112,12 @@ export function RecipeDetailContent({
       return;
     }
     router.push(
-      recipeCookPath(meal.slug, selectedServings, {
-        catalogueMealId: meal.id,
-        catalogueVersion: meal.version,
-      }),
+      personalRecipeId
+        ? personalRecipeCookPath(personalRecipeId, selectedServings)
+        : recipeCookPath(meal.slug, selectedServings, {
+            catalogueMealId: meal.id,
+            catalogueVersion: meal.version,
+          }),
     );
   };
   return (
@@ -103,7 +143,7 @@ export function RecipeDetailContent({
           {meal.title}
         </h1>
 
-        {meal.servings != null ? (
+        {meal.servings != null && scalingSafe ? (
           <RecipeServingsControl
             servings={selectedServings}
             onServingsChange={(servings) =>
@@ -115,12 +155,63 @@ export function RecipeDetailContent({
             }
             durationLabel={durationLabel}
           />
-        ) : durationLabel ? (
-          <p className="text-14 text-graphite">{durationLabel}</p>
+        ) : (
+          <div className="text-14 text-graphite">
+            {meal.servings != null ? <p>Serves {meal.servings}</p> : null}
+            {durationLabel ? <p>{durationLabel}</p> : null}
+            {meal.servings != null && !scalingSafe ? (
+              <p className="mt-1 text-12">
+                Quantities are kept as written by the author.
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {metadataNotice ? (
+          <p className="text-12 leading-4 text-graphite">{metadataNotice}</p>
         ) : null}
 
         {meal.description ? (
           <p className="text-15 leading-6 text-graphite">{meal.description}</p>
+        ) : null}
+
+        {source?.type === "import" ? (
+          <p className="text-12 text-graphite">
+            Imported from{" "}
+            {source.sourceUrl ? (
+              <a
+                className="font-semibold text-cadmium underline-offset-2 hover:underline"
+                href={source.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {source.sourceName ?? "source recipe"}
+              </a>
+            ) : (
+              (source.sourceName ?? "pasted recipe")
+            )}
+            {source.sourceAuthor ? ` · ${source.sourceAuthor}` : ""}
+          </p>
+        ) : null}
+
+        {reviewIssues.length > 0 && onReview ? (
+          <div className="mt-1 rounded-surface bg-cadmium-soft px-3.5 py-3 text-ink">
+            <p className="flex items-center gap-2 text-12 font-bold tracking-label text-cadmium uppercase">
+              <CircleAlert aria-hidden="true" className="size-4" />
+              Missing recipe details
+            </p>
+            <p className="mt-1.5 text-13 leading-5 text-graphite">
+              Add {formatReadableList(missingReviewLabels)} now or whenever it
+              suits you.
+            </p>
+            <Button
+              variant="inline"
+              className="mt-1.5 min-h-11 px-0 font-semibold text-cadmium"
+              onClick={onReview}
+            >
+              Add missing details
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -139,6 +230,7 @@ export function RecipeDetailContent({
             Start cooking
           </Button>
           {planMealAction}
+          {ownerActions}
         </div>
       ) : null}
 
@@ -158,21 +250,58 @@ export function RecipeDetailContent({
           </p>
         </div>
         <ul>
-          {ingredients.map((line) => (
-            <li
-              key={line.id}
-              className="flex min-h-11 items-start gap-3 border-b border-border py-2"
-            >
-              <span className="w-17.5 shrink-0 text-14 font-semibold text-ink">
-                {formatIngredientAmount(line)}
-              </span>
-              <span className="min-w-0 flex-1 text-14 text-ink">
-                {formatIngredientName(line)}
-              </span>
-            </li>
+          {ingredients.map((line, index) => (
+            <Fragment key={line.id}>
+              {line.group && line.group !== ingredients[index - 1]?.group ? (
+                <li className="pt-4 pb-1 text-12 font-bold tracking-label text-graphite uppercase">
+                  {line.group}
+                </li>
+              ) : null}
+              <li className="flex min-h-11 items-start gap-3 border-b border-border py-2">
+                <span className="w-32 shrink-0 text-14 font-semibold text-ink">
+                  {formatIngredientAmount(line)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-14 font-medium text-ink">
+                    {formatIngredientName(line)}
+                  </span>
+                  {formatIngredientNote(line) ? (
+                    <span className="mt-0.5 block text-13 leading-5 text-graphite">
+                      {formatIngredientNote(line)}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
+            </Fragment>
           ))}
         </ul>
       </section>
+
+      {meal.notes && meal.notes.length > 0 ? (
+        <section
+          className="px-page-inline pt-5 pb-8"
+          aria-labelledby="recipe-notes-heading"
+        >
+          <details className="rounded-surface bg-mist px-4 py-3">
+            <summary
+              id="recipe-notes-heading"
+              className="min-h-11 cursor-pointer py-2 font-display text-20 font-semibold text-ink"
+            >
+              Recipe notes ({meal.notes.length})
+            </summary>
+            <ol className="mt-2 flex flex-col gap-3 pb-2 text-14 leading-5.5 text-graphite">
+              {meal.notes.map((note) => (
+                <li key={note.id} id={note.id}>
+                  <span className="font-semibold text-ink">
+                    {note.label ?? "Note"}:{" "}
+                  </span>
+                  {note.text}
+                </li>
+              ))}
+            </ol>
+          </details>
+        </section>
+      ) : null}
 
       <section
         className="flex flex-col gap-3 px-page-inline pt-5.5 pb-8"
@@ -187,7 +316,7 @@ export function RecipeDetailContent({
               Method
             </h2>
             <p className="pb-0.5 text-12 text-graphite">
-              {meal.steps.length} {meal.steps.length === 1 ? "step" : "steps"}
+              {methodSteps.length} {methodSteps.length === 1 ? "step" : "steps"}
             </p>
           </div>
           {showPageActions ? (
@@ -203,22 +332,35 @@ export function RecipeDetailContent({
         </div>
 
         <ol className="flex flex-col gap-3.5">
-          {meal.steps.map((step, index) => (
-            <li key={step.id} className="flex gap-3.5">
-              <span
-                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-leaf-soft text-14 font-bold text-leaf"
-                aria-hidden="true"
-              >
-                {index + 1}
-              </span>
-              <p className="min-w-0 flex-1 pt-0.5 text-14 leading-5.5 text-ink">
-                <span className="sr-only">Step {index + 1}. </span>
-                {step.text}
-              </p>
-            </li>
+          {methodSteps.map((step, index) => (
+            <Fragment key={step.id}>
+              {step.group && step.group !== methodSteps[index - 1]?.group ? (
+                <li className="pt-2 text-12 font-bold tracking-label text-graphite uppercase">
+                  {step.group}
+                </li>
+              ) : null}
+              <li className="flex gap-3.5">
+                <span
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-leaf-soft text-14 font-bold text-leaf"
+                  aria-hidden="true"
+                >
+                  {index + 1}
+                </span>
+                <p className="min-w-0 flex-1 pt-0.5 text-14 leading-5.5 text-ink">
+                  <span className="sr-only">Step {index + 1}. </span>
+                  {step.text}
+                </p>
+              </li>
+            </Fragment>
           ))}
         </ol>
       </section>
     </div>
   );
+}
+
+function formatReadableList(values: string[]) {
+  if (values.length <= 1) return values[0] ?? "the missing details";
+  if (values.length === 2) return values.join(" and ");
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
 }

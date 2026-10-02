@@ -9,12 +9,15 @@ import {
   useCurrentCatalogueMeal,
 } from "@/features/recipes/use-catalogue";
 import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
+import { parsePersonalRecipeId } from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
 import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
+import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
 
 export function CookModeRoute() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
+  const personalRecipeId = parsePersonalRecipeId(searchParams);
   const reference = parseRecipeCatalogueReference(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
   const { defaultServings, isLoading: isLoadingDefaultServings } =
@@ -24,9 +27,11 @@ export function CookModeRoute() {
     reference?.catalogueVersion ?? null,
   );
   const currentMeal = useCurrentCatalogueMeal(reference === null ? slug : null);
-  const meal = reference === null ? currentMeal : pinnedMeal;
+  const personalMeal = usePersonalRecipe(personalRecipeId);
+  const catalogueMeal = reference === null ? currentMeal : pinnedMeal;
+  const meal = personalRecipeId ? personalMeal : catalogueMeal;
 
-  if (slug === null || meal === null) {
+  if ((slug === null && personalRecipeId === null) || meal === null) {
     return (
       <main className="min-h-dvh bg-paper px-page-inline py-16 text-center">
         <h1 className="font-display text-28 font-semibold text-ink">
@@ -50,7 +55,13 @@ export function CookModeRoute() {
     <CookModePage
       meal={meal}
       catalogueVersion={meal.version}
-      servings={explicitServings ?? defaultServings ?? meal.servings ?? 1}
+      servings={
+        explicitServings ??
+        (personalRecipeId ? meal.servings : defaultServings) ??
+        meal.servings ??
+        1
+      }
+      personalRecipeId={personalRecipeId ?? undefined}
     />
   );
 }

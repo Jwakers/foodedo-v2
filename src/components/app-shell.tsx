@@ -13,6 +13,7 @@ import {
   useGuestPlanReviewDockHidden,
 } from "@/features/plan/guest-plan-review-chrome";
 import { CatalogueSaveIntentResume } from "@/features/recipes/catalogue-recipe-library";
+import { RecipeImportIntentResume } from "@/features/recipes/recipe-import-intent-resume";
 import { cn } from "@/lib/utils/cn";
 import { isCookPath } from "@/lib/routing/recipes";
 import { usePathname } from "next/navigation";
@@ -35,6 +36,7 @@ function AppShellChrome({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <CatalogueSaveIntentResume />
+      <RecipeImportIntentResume />
       <AppToaster dockVisible={showDock} />
       {process.env.NODE_ENV === "development" ? (
         <UnfinishedInteractionViewport dockVisible={showDock} />

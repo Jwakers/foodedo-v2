@@ -19,6 +19,7 @@ export function RecipeCard({
   onToggleSave,
   href,
   onOpen,
+  showSave = true,
 }: {
   title: string;
   meta: string;
@@ -28,6 +29,7 @@ export function RecipeCard({
   onToggleSave: () => Promise<unknown> | void;
   href?: string;
   onOpen?: () => void;
+  showSave?: boolean;
 }) {
   const media = (
     <div className="relative aspect-167/116 w-full overflow-hidden rounded-surface bg-mist">
@@ -81,28 +83,30 @@ export function RecipeCard({
         </button>
       )}
 
-      <button
-        type="button"
-        aria-label={saved ? `Unsave ${title}` : `Save ${title}`}
-        aria-pressed={saved}
-        aria-busy={isSavePending || undefined}
-        disabled={isSavePending}
-        className={cn(
-          "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-70",
-          saved
-            ? "bg-cadmium-soft text-cadmium"
-            : "border border-paper bg-mist text-ink",
-        )}
-        onClick={() => {
-          void onToggleSave();
-        }}
-      >
-        <Heart
-          aria-hidden="true"
-          className={cn("size-4.5", saved && "fill-current")}
-          strokeWidth={1.8}
-        />
-      </button>
+      {showSave ? (
+        <button
+          type="button"
+          aria-label={saved ? `Unsave ${title}` : `Save ${title}`}
+          aria-pressed={saved}
+          aria-busy={isSavePending || undefined}
+          disabled={isSavePending}
+          className={cn(
+            "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-70",
+            saved
+              ? "bg-cadmium-soft text-cadmium"
+              : "border border-paper bg-mist text-ink",
+          )}
+          onClick={() => {
+            void onToggleSave();
+          }}
+        >
+          <Heart
+            aria-hidden="true"
+            className={cn("size-4.5", saved && "fill-current")}
+            strokeWidth={1.8}
+          />
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -17,7 +17,11 @@ import { HeaderModeSlot } from "@/components/header-mode-slot";
 import { Button } from "@/components/ui/button";
 import { RecipeDetailHeaderActions } from "@/features/recipes/recipe-detail-header-actions";
 import { useCurrentCatalogueMeal } from "@/features/recipes/use-catalogue";
-import { parseRecipeDetailSlug } from "@/lib/routing/recipes";
+import {
+  isRecipeDetailPath,
+  parsePersonalRecipeId,
+  parseRecipeDetailSlug,
+} from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 
 export function AppHeader() {
@@ -34,33 +38,37 @@ export function AppHeader() {
     setPathHistory({ current: pathname, previous: pathHistory.current });
   }
   const recipeSlug = parseRecipeDetailSlug(pathname, searchParams);
+  const personalRecipeId = parsePersonalRecipeId(searchParams);
   const recipe = useCurrentCatalogueMeal(recipeSlug);
-  const isRecipeDetail = recipeSlug !== null;
+  const isRecipeDetail =
+    isRecipeDetailPath(pathname) &&
+    (recipeSlug !== null || personalRecipeId !== null);
+  const isRecipeSubpage = isRecipeDetail || pathname === "/recipes/import";
 
   return (
     <header className="sticky top-0 z-40 bg-paper pt-[env(safe-area-inset-top)]">
       <div
         className={cn(
           "mx-auto flex h-13.5 w-full max-w-175 items-center transition-[padding] duration-300 ease-out",
-          isRecipeDetail ? "px-3" : "px-page-inline",
+          isRecipeSubpage ? "px-3" : "px-page-inline",
         )}
       >
         <div
           className={cn(
             "grid shrink-0 overflow-hidden transition-[width,opacity,transform] duration-300 ease-out",
-            isRecipeDetail
+            isRecipeSubpage
               ? "w-11 translate-x-0 opacity-100"
               : "pointer-events-none w-0 -translate-x-2 opacity-0",
           )}
-          aria-hidden={!isRecipeDetail}
-          inert={!isRecipeDetail}
+          aria-hidden={!isRecipeSubpage}
+          inert={!isRecipeSubpage}
         >
           <Button
             type="button"
             variant="ghost"
             size="headerIcon"
             aria-label="Back"
-            tabIndex={isRecipeDetail ? 0 : -1}
+            tabIndex={isRecipeSubpage ? 0 : -1}
             onClick={() => {
               if (pathHistory.previous !== null) {
                 router.back();
@@ -80,19 +88,21 @@ export function AppHeader() {
         <div
           className={cn(
             "flex min-w-0 flex-1 items-center transition-[padding] duration-300 ease-out",
-            isRecipeDetail ? "pl-3" : "pl-0",
+            isRecipeSubpage ? "pl-3" : "pl-0",
           )}
         >
           <BrandLogo href="/" />
         </div>
 
         <div className="grid shrink-0 grid-cols-1 grid-rows-1 items-center justify-items-end">
-          <HeaderModeSlot active={!isRecipeDetail}>
+          <HeaderModeSlot active={!isRecipeSubpage}>
             <DefaultAccountControls />
           </HeaderModeSlot>
 
-          <HeaderModeSlot active={isRecipeDetail} className="gap-0.5">
-            {recipe ? <RecipeDetailHeaderActions recipe={recipe} /> : null}
+          <HeaderModeSlot active={isRecipeSubpage} className="gap-0.5">
+            {isRecipeDetail && recipe ? (
+              <RecipeDetailHeaderActions recipe={recipe} />
+            ) : null}
           </HeaderModeSlot>
         </div>
       </div>

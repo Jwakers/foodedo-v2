@@ -65,7 +65,7 @@ test("filters by the approved time metadata", () => {
       ...emptyRecipeFilters,
       under30Minutes: true,
     }).map((meal) => meal.id),
-  ).toEqual(["quick-budget-chicken", "meat-free"]);
+  ).toEqual(["quick-budget-chicken", "unknown-time-beef", "meat-free"]);
 });
 
 test("combines filter groups and treats selected proteins as alternatives", () => {
@@ -87,12 +87,12 @@ test("filters to editorially budget-friendly recipes", () => {
   ).toEqual(["quick-budget-chicken", "thirty-one-minute-fish"]);
 });
 
-test("sorts known durations from quickest to slowest and leaves unknown durations last", () => {
+test("sorts available duration components from quickest to slowest", () => {
   expect(sortRecipes(meals, "quickest").map((meal) => meal.id)).toEqual([
+    "unknown-time-beef",
     "meat-free",
     "quick-budget-chicken",
     "thirty-one-minute-fish",
-    "unknown-time-beef",
   ]);
   expect(sortRecipes(meals, "recommended")).toBe(meals);
 });
@@ -113,6 +113,7 @@ for (const proteinCategory of [
   "lamb",
   "fish",
   "meat-free",
+  "other",
 ] as const) {
   test(`filters the ${proteinCategory} category`, () => {
     const otherProtein: ProteinCategory =

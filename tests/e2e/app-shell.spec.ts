@@ -23,6 +23,28 @@ test("shows welcome on signed-out cold open without app chrome", async ({
   );
 });
 
+test("keeps a signed-out recipe import intact when authentication is dismissed", async ({
+  page,
+}) => {
+  await page.goto("/recipes/import");
+  await expect(
+    page.getByRole("heading", { name: "Import a recipe" }),
+  ).toBeVisible();
+
+  const input = page.getByLabel("Paste recipe link");
+  await input.fill("https://example.com/lemon-chicken");
+  await page.getByRole("button", { name: "Import recipe" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Keep recipes you find" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Not now" }).click();
+
+  await expect(input).toHaveValue("https://example.com/lemon-chicken");
+  await expect(
+    page.getByRole("heading", { name: "Keep recipes you find" }),
+  ).toHaveCount(0);
+});
+
 test("enters the guest app from welcome and keeps skip across navigation", async ({
   page,
 }) => {
@@ -283,6 +305,9 @@ test("does not intercept public recipe deep links with welcome", async ({
     0,
   );
   await expect(page.getByText("Ideas for you")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Bring your own recipe/ }),
+  ).toHaveAttribute("href", "/recipes/import");
   await expect(
     page.getByRole("button", { name: "Save Chicken Fajitas" }),
   ).toBeVisible();

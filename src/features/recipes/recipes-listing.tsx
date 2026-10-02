@@ -1,10 +1,20 @@
 "use client";
 
 import { useAuth } from "@clerk/react";
-import { Heart, ListFilter, Search, X } from "lucide-react";
+import { usePaginatedQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
+import {
+  ArrowRight,
+  Download,
+  Heart,
+  ListFilter,
+  Search,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import {
   DrawerStack,
@@ -34,8 +44,10 @@ import {
 } from "@/lib/domain/recipe-filtering";
 import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { recipeDetailPath } from "@/lib/routing/recipes";
-import { markUnfinishedInteraction } from "@/lib/ui/unfinished-interaction";
 import { cn } from "@/lib/utils/cn";
+import { api } from "../../../convex/_generated/api";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
@@ -45,6 +57,12 @@ const recipeDrawerViews = { filters: "filters", sort: "sort" } as const;
 export function RecipesListing() {
   const catalogue = useCurrentCatalogue();
   const { isLoaded, isSignedIn } = useAuth();
+  const { isAuthenticated } = useFoodedoAuth();
+  const personalRecipeQuery = usePaginatedQuery(
+    api.recipes.listMine,
+    isAuthenticated ? {} : "skip",
+    { initialNumItems: 50 },
+  );
   const {
     isLibraryLoading,
     isSaved,
@@ -86,7 +104,9 @@ export function RecipesListing() {
     );
   }
   const meals = catalogue.meals;
-  const ownRecipes = yoursPlaceholders(meals);
+  const ownRecipes = personalRecipeQuery.results.filter(
+    (recipe) => recipe.source.type !== "catalogue",
+  );
 
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
@@ -201,6 +221,8 @@ export function RecipesListing() {
         </div>
       ) : null}
 
+      {activeScope === "All" ? <RecipeImportDiscoveryLink /> : null}
+
       {activeScope === "All" ? (
         <CatalogueGrid
           heading="Ideas for you"
@@ -238,6 +260,10 @@ export function RecipesListing() {
       {activeScope === "Yours" ? (
         <YoursGrid
           recipes={ownRecipes}
+          isLoading={personalRecipeQuery.status === "LoadingFirstPage"}
+          canLoadMore={personalRecipeQuery.status === "CanLoadMore"}
+          isLoadingMore={personalRecipeQuery.status === "LoadingMore"}
+          onLoadMore={() => personalRecipeQuery.loadMore(50)}
           filters={recipeFilters}
           sort={recipeSort}
           searchQuery={searchQuery}
@@ -276,6 +302,30 @@ export function RecipesListing() {
   );
 }
 
+function RecipeImportDiscoveryLink() {
+  return (
+    <Link
+      href="/recipes/import"
+      className="group mt-2 flex min-h-20 items-center gap-3 rounded-surface bg-mist px-3.5 py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+    >
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-compact bg-cadmium-soft text-ink transition-colors group-hover:bg-border">
+        <Download aria-hidden="true" className="size-5.5" strokeWidth={1.8} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="font-display text-18 font-semibold tracking-card text-ink">
+          Bring your own recipe
+        </span>
+        <span className="text-13 text-graphite">
+          Paste a link or recipe text
+        </span>
+      </span>
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full text-ink transition-transform group-hover:translate-x-0.5">
+        <ArrowRight aria-hidden="true" className="size-4.5" strokeWidth={1.8} />
+      </span>
+    </Link>
+  );
+}
+
 function RecipesFilterPane({
   filters,
   sort,
@@ -291,7 +341,7 @@ function RecipesFilterPane({
   sort: RecipeSort;
   meals: ReadonlyArray<RecipeFilterSearchable>;
   savedMeals: ReadonlyArray<RecipeFilterSearchable>;
-  ownRecipes: ReadonlyArray<RecipePlaceholder>;
+  ownRecipes: ReadonlyArray<PersonalRecipeView>;
   activeScope: RecipeScope;
   searchQuery: string;
   onApply: (filters: RecipeFilters) => void;
@@ -395,16 +445,24 @@ function CatalogueGrid({
 
 function YoursGrid({
   recipes,
+  isLoading,
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
   filters,
   sort,
   searchQuery,
 }: {
-  recipes: ReadonlyArray<RecipePlaceholder>;
+  recipes: ReadonlyArray<PersonalRecipeView>;
+  isLoading: boolean;
+  canLoadMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
   filters: RecipeFilters;
   sort: RecipeSort;
   searchQuery: string;
 }) {
-  const placeholders = sortRecipes(
+  const matchingRecipes = sortRecipes(
     filterCatalogueMealsBySearch(filterRecipes(recipes, filters), searchQuery),
     sort,
   );
@@ -414,44 +472,70 @@ function YoursGrid({
       <CollectionHeading
         heading="Your recipes"
         trailing={
-          <Button
+          <ButtonLink
+            href="/recipes/import"
             variant="inline"
             className="h-auto text-12 font-medium text-graphite hover:text-ink"
-            onClick={() => {
-              markUnfinishedInteraction("Importing recipes comes next.");
-            }}
           >
             Import recipe →
-          </Button>
+          </ButtonLink>
         }
       />
 
-      {placeholders.length === 0 ? (
+      {isLoading ? (
+        <p className="py-16 text-center text-14 text-graphite" role="status">
+          Loading your recipes…
+        </p>
+      ) : recipes.length === 0 && !searchQuery ? (
+        <EmptyYoursState />
+      ) : matchingRecipes.length === 0 ? (
         <SearchEmptyState hasActiveFilters={hasActiveRecipeFilters(filters)} />
       ) : (
-        <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
-          {placeholders.map((recipe) => (
-            <li key={recipe.id}>
-              <RecipeCard
-                title={recipe.title}
-                meta={recipe.meta}
-                imageSrc={recipe.imageSrc}
-                saved={recipe.saved}
-                onToggleSave={() => {
-                  markUnfinishedInteraction(
-                    "Saving your own recipes comes next.",
-                  );
-                }}
-                onOpen={() => {
-                  markUnfinishedInteraction(
-                    `Opening “${recipe.title}” comes next — your recipes aren’t wired yet.`,
-                  );
-                }}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
+            {matchingRecipes.map((recipe) => (
+              <li key={recipe._id}>
+                <RecipeCard
+                  title={recipe.title}
+                  meta={personalRecipeMeta(recipe)}
+                  imageSrc={recipe.imageSrc}
+                  saved
+                  showSave={false}
+                  onToggleSave={() => undefined}
+                  href={personalRecipeDetailPath(recipe._id)}
+                />
+              </li>
+            ))}
+          </ul>
+          {canLoadMore || isLoadingMore ? (
+            <Button
+              variant="secondary"
+              className="mt-7 w-full"
+              disabled={isLoadingMore}
+              onClick={onLoadMore}
+            >
+              {isLoadingMore ? "Loading more…" : "Load more"}
+            </Button>
+          ) : null}
+        </>
       )}
+    </section>
+  );
+}
+
+function EmptyYoursState() {
+  return (
+    <section className="flex flex-col items-center px-5 pt-14 text-center">
+      <h2 className="font-display text-24 font-semibold tracking-title text-ink">
+        Bring your first recipe
+      </h2>
+      <p className="mt-2 max-w-65 text-14 leading-5 text-graphite">
+        Import a recipe link or paste the recipe text. Foodedo will organise it
+        for you.
+      </p>
+      <ButtonLink href="/recipes/import" className="mt-6">
+        Import recipe
+      </ButtonLink>
     </section>
   );
 }
@@ -524,60 +608,16 @@ function hasActiveRecipeFilters(filters: RecipeFilters) {
   );
 }
 
-/**
- * Light placeholder “Yours” cards — not real user recipes yet.
- * Images borrow catalogue assets by slug so paths don’t drift.
- */
-function yoursPlaceholders(meals: CatalogueMealSummary[]) {
-  const imageBySlug = (slug: string) =>
-    meals.find((meal) => meal.slug === slug)?.imageSrc ?? null;
+type PersonalRecipeView = FunctionReturnType<
+  typeof api.recipes.listMine
+>["page"][number];
 
-  return [
-    {
-      id: "yours-roast",
-      title: "Sunday roast chicken",
-      meta: "YOUR RECIPE · 1 hr 40 min",
-      saved: true,
-      imageSrc: imageBySlug("lemon-herb-grilled-chicken"),
-      prepMinutes: 20,
-      cookMinutes: 80,
-      proteinCategory: "chicken" as const,
-      costBand: "standard" as const,
-    },
-    {
-      id: "yours-miso",
-      title: "Miso aubergine noodles",
-      meta: "IMPORTED · 25 min",
-      saved: false,
-      imageSrc: imageBySlug("thai-noodle-soup"),
-      prepMinutes: 10,
-      cookMinutes: 15,
-      proteinCategory: "meat-free" as const,
-      costBand: "budget" as const,
-    },
-    {
-      id: "yours-pasta",
-      title: "Dad’s tomato pasta",
-      meta: "YOUR RECIPE · 45 min",
-      saved: false,
-      imageSrc: null,
-      prepMinutes: 15,
-      cookMinutes: 30,
-      proteinCategory: "meat-free" as const,
-      costBand: "budget" as const,
-    },
-    {
-      id: "yours-salad",
-      title: "Pear and walnut salad",
-      meta: "IMPORTED · 15 min",
-      saved: true,
-      imageSrc: null,
-      prepMinutes: 15,
-      cookMinutes: 0,
-      proteinCategory: "meat-free" as const,
-      costBand: "premium" as const,
-    },
-  ] as const;
+function personalRecipeMeta(recipe: PersonalRecipeView) {
+  const source = recipe.source.type === "import" ? "IMPORTED" : "YOUR RECIPE";
+  if (recipe.reviewIssues.length > 0) return `NEEDS REVIEW · ${source}`;
+  const duration = formatMealDurationLabel(
+    recipe.prepMinutes,
+    recipe.cookMinutes,
+  );
+  return [source, duration].filter(Boolean).join(" · ");
 }
-
-type RecipePlaceholder = ReturnType<typeof yoursPlaceholders>[number];
