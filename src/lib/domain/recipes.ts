@@ -599,7 +599,7 @@ function requiredSlug(value: string) {
 function requiredProteinCategory(value: ProteinCategory): ProteinCategory {
   if (!PROTEIN_CATEGORIES.includes(value)) {
     throw new RecipeValidationError(
-      "Protein category must be chicken, beef, pork, lamb, fish, or meat-free.",
+      "Protein category must be chicken, beef, pork, lamb, fish, meat-free, or other.",
     );
   }
   return value;

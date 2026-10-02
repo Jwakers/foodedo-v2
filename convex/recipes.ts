@@ -215,6 +215,14 @@ export const updateImported = mutation({
       ]),
     );
     await ctx.db.patch(recipeId, {
+      description: undefined,
+      servings: undefined,
+      prepMinutes: undefined,
+      cookMinutes: undefined,
+      costBand: undefined,
+      preheat: undefined,
+      notes: undefined,
+      servingScaling: undefined,
       ...content,
       source,
       contentEditedAt: now,

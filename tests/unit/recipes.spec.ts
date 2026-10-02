@@ -72,7 +72,9 @@ test("requires a valid protein category", () => {
       // @ts-expect-error intentional invalid fixture
       proteinCategory: "duck",
     }),
-  ).toThrow(RecipeValidationError);
+  ).toThrow(
+    "Protein category must be chicken, beef, pork, lamb, fish, meat-free, or other.",
+  );
 });
 
 test("requires every ingredient to have a shopping category", () => {

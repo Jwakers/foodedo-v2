@@ -138,3 +138,56 @@ test("saving promotes an exact plan-only snapshot into the library", async () =>
   const saved = await asUser.query(api.recipes.listSavedCatalogueMeals, {});
   expect(saved).toEqual([{ catalogueMealId, recipeId }]);
 });
+
+test("updating an imported recipe removes optional fields the owner cleared", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  const recipeId = await t.run(async (ctx) =>
+    ctx.db.insert("recipes", {
+      ownerId,
+      title: "Imported pasta",
+      description: "A weeknight dinner.",
+      ingredients: [
+        {
+          id: "ingredient-1",
+          name: "ingredient",
+          shoppingCategory: "pantry",
+        },
+      ],
+      steps: [{ id: "step-1", text: "Cook it." }],
+      servings: 4,
+      prepMinutes: 10,
+      cookMinutes: 20,
+      proteinCategory: "meat-free",
+      costBand: "standard",
+      notes: [{ id: "note-1", text: "Drain well." }],
+      source: { type: "import", method: "url", importedAt: 1 },
+      savedAt: 1,
+      updatedAt: 1,
+    }),
+  );
+
+  await asUser.mutation(api.recipes.updateImported, {
+    recipeId,
+    recipe: {
+      title: "Imported pasta",
+      ingredients: [
+        {
+          id: "ingredient-1",
+          name: "ingredient",
+          shoppingCategory: "pantry",
+        },
+      ],
+      steps: [{ id: "step-1", text: "Cook it." }],
+      proteinCategory: "meat-free",
+    },
+  });
+
+  const updated = await t.run(async (ctx) => ctx.db.get(recipeId));
+  expect(updated?.description).toBeUndefined();
+  expect(updated?.servings).toBeUndefined();
+  expect(updated?.prepMinutes).toBeUndefined();
+  expect(updated?.cookMinutes).toBeUndefined();
+  expect(updated?.costBand).toBeUndefined();
+  expect(updated?.notes).toBeUndefined();
+});
