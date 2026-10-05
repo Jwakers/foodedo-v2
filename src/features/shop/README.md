@@ -35,6 +35,21 @@ active meal plan
 - Changes to a plan reconcile its existing list automatically: retained exact-name ingredients preserve their checked and removed state, obsolete derived ingredients disappear, and new ingredients arrive unchecked.
 - Manual items are never changed by plan reconciliation. Ingredient-name canonicalisation remains deliberately deferred.
 
+## Household staples
+
+- Shopping treatment is separate from supermarket category. Derived
+  ingredients are `required`, a `staple`, or omitted from Shopping.
+- Generic preparation water is omitted. Specifically named products such as
+  sparkling, bottled, filtered, mineral, or distilled water remain required.
+- The initial staple set is deliberately narrow: salt, black/white pepper,
+  and common neutral or olive cooking oils. Distinctive oils remain required.
+- Unselected staples appear after the main aisles in **Check your cupboards**.
+  They do not contribute to item counts or progress.
+- Adding a staple applies only to that list and moves it into its authored
+  supermarket category. Removing it returns it to the cupboard section.
+- Manual additions are always required. No pantry inventory, global setting,
+  or cross-list learning is implied by this feature.
+
 ## Discovery contract
 
 - A successful save may use the dedicated `Your week is sorted` route to confirm that the plan is durable.
@@ -43,7 +58,8 @@ active meal plan
 
 ## MVP boundary
 
-Do not add custom categories, pantry inventory, sharing, aisle configuration, barcode scanning, or manual category management.
+Do not add custom categories, pantry inventory, sharing, aisle configuration,
+barcode scanning, or manual category management.
 
 A linked list follows its meal plan's lifetime; it is deleted with the owning account or a future explicit plan-deletion flow, not by an independent inactivity timer.
 

@@ -58,7 +58,7 @@ export function CookHeader({
   onIngredients?: () => void;
 }) {
   return (
-    <header className="flex h-17 items-center justify-between border-b border-border px-page-inline pt-[env(safe-area-inset-top)]">
+    <header className="flex min-h-17 items-center justify-between border-b border-border px-page-inline pt-[env(safe-area-inset-top)]">
       <Button
         variant="ghost"
         size="headerIcon"
@@ -312,7 +312,7 @@ export function IngredientsScreen({
 } & TimerActions) {
   return (
     <main className="mx-auto min-h-dvh w-full max-w-175 bg-paper">
-      <header className="flex h-17 items-center border-b border-border px-page-inline pt-[env(safe-area-inset-top)]">
+      <header className="flex min-h-17 items-center border-b border-border px-page-inline pt-[env(safe-area-inset-top)]">
         <Button
           variant="ghost"
           size="headerIcon"

@@ -98,6 +98,17 @@ export default defineSchema({
         v.literal("timed_out"),
       ),
     ),
+    failureDetails: v.optional(
+      v.array(
+        v.union(
+          v.literal("contract"),
+          v.literal("metadata"),
+          v.literal("ingredients"),
+          v.literal("method"),
+          v.literal("notes"),
+        ),
+      ),
+    ),
     resultRecipeId: v.optional(v.id("recipes")),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -171,6 +182,8 @@ export default defineSchema({
       ),
     ),
     origin: v.union(v.literal("derived"), v.literal("manual")),
+    treatment: v.union(v.literal("required"), v.literal("staple")),
+    included: v.boolean(),
     checked: v.boolean(),
     deletedAt: v.optional(v.number()),
     order: v.number(),

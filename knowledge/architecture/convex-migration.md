@@ -28,6 +28,11 @@ Convex does not auto-migrate documents. Safe: optional fields, new tables, new i
 
 When migration work begins, use the official **migration-helper** skill if available. Convex AI files are deliberately not installed; this repository's existing agent rules remain authoritative.
 
+The system-recipe catalogue uses the scoped, review-gated workflow documented
+in [catalogue-migration.md](../../docs/catalogue-migration.md). Generated source,
+review, rollback, and promotion artifacts remain outside Git under
+`.catalogue-migration/`.
+
 ## Environments
 
 The separate V2 project has been created. Local agents use `pnpm dev:convex` or `pnpm exec convex dev` on **this** repo only. Never use `npx convex deploy` from development. Cloud coding agents may use Convex agent mode; local development does not need it.

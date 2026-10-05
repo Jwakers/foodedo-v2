@@ -111,13 +111,20 @@ Recipe deletion must either be refused while slots reference the recipe or updat
 An authenticated shopping list is the editable shopping companion for exactly one meal plan. Each plan has at most one list, and the active plan's list is the default Shop view.
 
 - List: `ownerId`, `mealPlanId`, `mealPlanUpdatedAt`, `status` (`active` | `archived`), timestamps
-- Item: `shoppingListId`, `ownerId`, `name`, optional `displayName`, optional `category` constrained to `fruit_and_veg` | `meat_and_fish` | `dairy_and_eggs` | `pantry` | `bakery` (derived ingredients store the authored category; reads may default missing legacy values to `pantry`), bounded source detail lines and recipe IDs, optional per-occurrence `sources`, `origin` (`derived` | `manual`), `checked`, optional `deletedAt`, `order`, timestamps
+- Item: `shoppingListId`, `ownerId`, `name`, optional `displayName`, optional `category` constrained to `fruit_and_veg` | `meat_and_fish` | `dairy_and_eggs` | `pantry` | `bakery` (derived ingredients store the authored category), bounded source detail lines and recipe IDs, optional per-occurrence `sources`, `origin` (`derived` | `manual`), `treatment` (`required` | `staple`), `included`, `checked`, optional `deletedAt`, `order`, timestamps
 
 **Indexes:** lists by owner/status/update and meal plan; items by list/order and owner/update.
 
 Derivation groups normalised exact ingredient names within the same shopping category. It keeps each recipe's authored quantity, unit, and note as a readable source line instead of inventing totals or conversions. Manual additions and checks live on the linked list. Removing an item sets `deletedAt`; it remains in a small **Removed items** section until restored or the parent list expires.
 
 The list records its plan's `updatedAt`. Plan creation creates the linked list in the same transaction; any later meal change reconciles that same list transactionally. An exact-name derived ingredient that still exists preserves its checked and removed state, a newly required ingredient starts unchecked, and an obsolete derived ingredient is removed. Manual items are untouched. Activating a replacement plan therefore switches Shop to that plan's own list rather than rebuilding or repurposing another list.
+
+Shopping treatment is deliberately independent from aisle category. Generic
+preparation water is omitted during derivation. A small exact-name set of
+household staples is persisted as optional list-local suggestions; suggestions
+do not count toward progress until included, and inclusion is not remembered
+across lists. Manual items always resolve to `required`. This is not pantry
+inventory or a user preference system.
 
 Shopping history follows the same bounded-summary pattern as meal-plan history: load a small set of recent linked-list metadata first, then hydrate one selected list. The list date acts as the progressive-disclosure trigger, and selection is represented in the Shop URL so browser back and refresh preserve context. Previous-plan lists remain editable for delayed shopping.
 

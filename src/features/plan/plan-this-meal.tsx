@@ -33,6 +33,7 @@ export function PlanThisMeal({
   return (
     <Drawer
       open={planner.isOpen}
+      handleOnly
       onOpenChange={(open) => {
         if (!open) planner.closePlanner();
       }}

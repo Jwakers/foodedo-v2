@@ -251,7 +251,7 @@ export function RecipeImporter() {
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               placeholder="https://www.example.com/recipe"
-              className="mt-2 min-h-20 w-full resize-none rounded-surface border border-transparent bg-mist px-4 py-4 text-15 leading-5.5 text-ink outline-none placeholder:text-graphite focus:border-ink"
+              className="mt-2 min-h-20 w-full resize-none rounded-surface border border-transparent bg-mist px-4 py-4 text-16 leading-5.5 text-ink outline-none placeholder:text-graphite focus:border-ink"
             />
           </div>
         ) : (
@@ -262,7 +262,7 @@ export function RecipeImporter() {
             placeholder={
               "Lemon herb chicken\nServes 4\n\nIngredients\n4 chicken thighs\n1 lemon\n\nMethod\n1. Season the chicken…"
             }
-            className="mt-5 min-h-80 w-full resize-y rounded-surface border border-border bg-mist px-4 py-4 text-15 leading-6 text-ink outline-none placeholder:text-graphite focus:border-ink"
+            className="mt-5 min-h-80 w-full resize-y rounded-surface border border-border bg-mist px-4 py-4 text-16 leading-6 text-ink outline-none placeholder:text-graphite focus:border-ink"
           />
         )}
 

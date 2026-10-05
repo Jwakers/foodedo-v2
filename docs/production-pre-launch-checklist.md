@@ -61,6 +61,9 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 
 ## 5. Guest, account, and paid boundaries
 
+- [ ] Complete the V1 system-recipe review in the local catalogue migration report: resolve every flagged recipe, approve or override inferred metadata, supply or remove image-less recipes, and select exactly six Home meals.
+- [ ] Export the reviewed V2 development catalogue promotion bundle and record its recipe count, source snapshot hash, decisions hash, and semantic catalogue hash as release evidence.
+- [ ] Dry-run the promotion bundle against an empty V2 production catalogue, apply it only after the dry-run passes, and verify the production semantic hash matches the reviewed bundle exactly. See [catalogue-migration.md](./catalogue-migration.md).
 - [ ] A guest can use the standard meal catalogue and core decision loop without signing in.
 - [ ] Sign-in is requested only at a persistence, sync, identity, or paid-entitlement boundary, with the value explained before the prompt.
 - [ ] Temporary guest data is clearly labelled, survives ordinary refresh/relaunch as designed, and has a tested retention/cleanup rule.

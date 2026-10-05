@@ -153,6 +153,8 @@ export async function syncShoppingListForPlan(
         sourceRecipeIds: nextItem.sourceRecipeIds,
         sources: nextItem.sources,
         origin: "derived",
+        treatment: nextItem.treatment,
+        included: nextItem.treatment === "required",
         checked: false,
         order,
         createdAt: changedAt,
@@ -161,6 +163,12 @@ export async function syncShoppingListForPlan(
       continue;
     }
 
+    const included =
+      nextItem.treatment === "required"
+        ? true
+        : existingItem.treatment === "staple"
+          ? existingItem.included
+          : existingItem.checked;
     await ctx.db.patch(existingItem._id, {
       name: nextItem.name,
       displayName: nextItem.displayName,
@@ -168,6 +176,8 @@ export async function syncShoppingListForPlan(
       detailLines: nextItem.detailLines,
       sourceRecipeIds: nextItem.sourceRecipeIds,
       sources: nextItem.sources,
+      treatment: nextItem.treatment,
+      included,
       order,
       updatedAt: changedAt,
     });

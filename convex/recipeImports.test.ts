@@ -132,7 +132,15 @@ test("retries only failed attempts and ignores stale watchdogs", async () => {
   await t.mutation(internal.recipeImports.failImport, {
     importId,
     attempt: 1,
-    failureCode: "fetch_failed",
+    failureCode: "unsafe_result",
+    failureDetails: ["ingredients"],
+  });
+  expect(
+    await asOwner.query(api.recipeImports.getImport, { importId }),
+  ).toMatchObject({
+    status: "failed",
+    failureCode: "unsafe_result",
+    failureDetails: ["ingredients"],
   });
   await expect(
     asOwner.mutation(api.recipeImports.retryImport, { importId }),
@@ -141,9 +149,14 @@ test("retries only failed attempts and ignores stale watchdogs", async () => {
     importId,
     attempt: 1,
   });
-  expect(
-    await asOwner.query(api.recipeImports.getImport, { importId }),
-  ).toMatchObject({ status: "queued", attempt: 2 });
+  const retriedImport = await asOwner.query(api.recipeImports.getImport, {
+    importId,
+  });
+  expect(retriedImport).toMatchObject({
+    status: "queued",
+    attempt: 2,
+  });
+  expect(retriedImport).not.toHaveProperty("failureDetails");
 
   await t.mutation(internal.recipeImports.markTimedOut, {
     importId,

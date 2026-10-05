@@ -5,7 +5,22 @@ import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-export const Drawer = DrawerPrimitive.Root;
+/**
+ * Vaul's current runtime defaults to disabling its document scroll guard.
+ * Opt in centrally so modal drawers keep an iOS WebView's page fixed while
+ * their own body remains scrollable.
+ */
+export function Drawer({
+  disablePreventScroll = false,
+  ...props
+}: ComponentProps<typeof DrawerPrimitive.Root>) {
+  return (
+    <DrawerPrimitive.Root
+      disablePreventScroll={disablePreventScroll}
+      {...props}
+    />
+  );
+}
 export const DrawerTrigger = DrawerPrimitive.Trigger;
 export const DrawerClose = DrawerPrimitive.Close;
 

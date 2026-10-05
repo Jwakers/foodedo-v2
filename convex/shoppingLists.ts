@@ -17,6 +17,10 @@ import { syncShoppingListForPlan } from "./lib/shoppingListSync";
 const maximumPlanSlots = 31;
 const maximumRecentListCandidates = 30;
 const maximumRecentShoppingLists = 12;
+const shoppingTreatmentValidator = v.union(
+  v.literal("required"),
+  v.literal("staple"),
+);
 
 const shoppingListItemViewValidator = v.object({
   _id: v.id("shoppingListItems"),
@@ -33,6 +37,8 @@ const shoppingListItemViewValidator = v.object({
     }),
   ),
   origin: v.union(v.literal("derived"), v.literal("manual")),
+  treatment: shoppingTreatmentValidator,
+  included: v.boolean(),
   checked: v.boolean(),
   deletedAt: v.union(v.number(), v.null()),
   order: v.number(),
@@ -219,10 +225,12 @@ export const getRecentSummaries = query({
           startDate: mealPlan.startDate,
           endDate: mealPlan.endDate,
           status: mealPlan.status,
-          itemCount: items.filter((item) => item.deletedAt === undefined)
-            .length,
+          itemCount: items.filter(
+            (item) => item.deletedAt === undefined && item.included,
+          ).length,
           checkedCount: items.filter(
-            (item) => item.deletedAt === undefined && item.checked,
+            (item) =>
+              item.deletedAt === undefined && item.included && item.checked,
           ).length,
           mealCount: mealSlots.length,
           createdAt: list.createdAt,
@@ -315,11 +323,78 @@ export const setItemChecked = mutation({
     const ownerId = await requireUserId(ctx);
     const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
+    if (editableItem.item.included === false) {
+      return { status: "not_found" } as const;
+    }
 
     const updatedAt = Date.now();
     await ctx.db.patch(editableItem.item._id, { checked, updatedAt });
     await ctx.db.patch(editableItem.list._id, { updatedAt });
     return { status: "updated" } as const;
+  },
+});
+
+export const setStapleIncluded = mutation({
+  args: { itemId: v.id("shoppingListItems"), included: v.boolean() },
+  returns: itemMutationResultValidator,
+  handler: async (ctx, { itemId, included }) => {
+    const ownerId = await requireUserId(ctx);
+    const editableItem = await getEditableItem(ctx, itemId, ownerId);
+    if (editableItem === null) return { status: "not_found" } as const;
+    if (editableItem.item.treatment !== "staple") {
+      return { status: "not_found" } as const;
+    }
+
+    const updatedAt = Date.now();
+    await ctx.db.patch(editableItem.item._id, {
+      treatment: "staple",
+      included,
+      ...(included ? {} : { checked: false }),
+      updatedAt,
+    });
+    await ctx.db.patch(editableItem.list._id, { updatedAt });
+    return { status: "updated" } as const;
+  },
+});
+
+export const includeAllStaples = mutation({
+  args: { shoppingListId: v.id("shoppingLists") },
+  returns: v.union(
+    v.object({ status: v.literal("updated"), count: v.number() }),
+    v.object({ status: v.literal("not_found") }),
+  ),
+  handler: async (ctx, { shoppingListId }) => {
+    const ownerId = await requireUserId(ctx);
+    const list = await ctx.db.get(shoppingListId);
+    if (list === null || list.ownerId !== ownerId) {
+      return { status: "not_found" } as const;
+    }
+    const items = await ctx.db
+      .query("shoppingListItems")
+      .withIndex("by_list_and_order", (q) =>
+        q.eq("shoppingListId", shoppingListId),
+      )
+      .take(SHOPPING_LIST_LIMITS.items + 1);
+    if (items.length > SHOPPING_LIST_LIMITS.items) {
+      throw new Error("A shopping list exceeds the supported item limit.");
+    }
+    const staples = items.filter(
+      (item) =>
+        item.origin === "derived" &&
+        item.treatment === "staple" &&
+        item.deletedAt === undefined &&
+        !item.included,
+    );
+    const updatedAt = Date.now();
+    for (const item of staples) {
+      await ctx.db.patch(item._id, {
+        treatment: "staple",
+        included: true,
+        updatedAt,
+      });
+    }
+    if (staples.length > 0) await ctx.db.patch(list._id, { updatedAt });
+    return { status: "updated", count: staples.length } as const;
   },
 });
 
@@ -360,6 +435,8 @@ export const addItem = mutation({
       detailLines: [],
       sourceRecipeIds: [],
       origin: "manual",
+      treatment: "required",
+      included: true,
       checked: false,
       deletedAt: undefined,
       order: (existingItems[0]?.order ?? -1) + 1,
@@ -452,6 +529,8 @@ async function shoppingItemView(
     detailLines: item.detailLines,
     sources,
     origin: item.origin,
+    treatment: item.treatment,
+    included: item.included,
     checked: item.checked,
     deletedAt: item.deletedAt ?? null,
     order: item.order,

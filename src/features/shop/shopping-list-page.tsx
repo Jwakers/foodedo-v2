@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Info,
+  Plus,
   ShoppingBasket,
 } from "lucide-react";
 import Link from "next/link";
@@ -79,7 +80,9 @@ function optimisticallyUpdateShoppingItem(
     const items = list.items.map((item, index) =>
       index === itemIndex ? updateItem(item) : item,
     );
-    const activeItems = items.filter((item) => item.deletedAt === null);
+    const activeItems = items.filter(
+      (item) => item.deletedAt === null && item.included,
+    );
     progressByListId.set(list._id, {
       itemCount: activeItems.length,
       checkedCount: activeItems.filter((item) => item.checked).length,
@@ -248,6 +251,10 @@ function ReadyShoppingListPage({
   const setItemCheckedMutation = useMutation(api.shoppingLists.setItemChecked);
   const removeItemMutation = useMutation(api.shoppingLists.removeItem);
   const restoreItemMutation = useMutation(api.shoppingLists.restoreItem);
+  const setStapleIncludedMutation = useMutation(
+    api.shoppingLists.setStapleIncluded,
+  );
+  const includeAllStaples = useMutation(api.shoppingLists.includeAllStaples);
   const setItemChecked = useMemo(
     () =>
       setItemCheckedMutation.withOptimisticUpdate(
@@ -279,6 +286,19 @@ function ReadyShoppingListPage({
         }));
       }),
     [restoreItemMutation],
+  );
+  const setStapleIncluded = useMemo(
+    () =>
+      setStapleIncludedMutation.withOptimisticUpdate(
+        (localStore, { itemId, included }) => {
+          optimisticallyUpdateShoppingItem(localStore, itemId, (item) => ({
+            ...item,
+            included,
+            checked: included ? item.checked : false,
+          }));
+        },
+      ),
+    [setStapleIncludedMutation],
   );
   const attemptedSync = useRef(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -352,9 +372,16 @@ function ReadyShoppingListPage({
   const listStartDate = list.startDate;
   const listEndDate = list.endDate;
   const listMealCount = list.mealCount;
+  const shoppingListId = list._id;
   const items = list.items;
 
-  const activeItems = items.filter((item) => item.deletedAt === null);
+  const activeItems = items.filter(
+    (item) => item.deletedAt === null && item.included,
+  );
+  const stapleSuggestions = items.filter(
+    (item) =>
+      item.deletedAt === null && item.treatment === "staple" && !item.included,
+  );
   const removedItems = items
     .filter((item) => item.deletedAt !== null)
     .toSorted((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0));
@@ -380,11 +407,42 @@ function ReadyShoppingListPage({
   async function handleRemoveItem(item: ShoppingItem) {
     setSelectedItemId(null);
     try {
+      if (item.treatment === "staple") {
+        const result = await setStapleIncluded({
+          itemId: item._id,
+          included: false,
+        });
+        if (result.status !== "updated") throw new Error("Item is unavailable");
+        return;
+      }
       const result = await removeItem({ itemId: item._id });
       if (result.status !== "updated") throw new Error("Item is unavailable");
     } catch (error) {
       console.error("Failed to remove a shopping item.", error);
       toast.error("That item couldn’t be removed. Try again.");
+    }
+  }
+
+  async function handleIncludeStaple(item: ShoppingItem) {
+    try {
+      const result = await setStapleIncluded({
+        itemId: item._id,
+        included: true,
+      });
+      if (result.status !== "updated") throw new Error("Item is unavailable");
+    } catch (error) {
+      console.error("Failed to add a household staple.", error);
+      toast.error("That staple couldn’t be added. Try again.");
+    }
+  }
+
+  async function handleIncludeAllStaples() {
+    try {
+      const result = await includeAllStaples({ shoppingListId });
+      if (result.status !== "updated") throw new Error("List is unavailable");
+    } catch (error) {
+      console.error("Failed to add household staples.", error);
+      toast.error("Those staples couldn’t be added. Try again.");
     }
   }
 
@@ -440,6 +498,14 @@ function ReadyShoppingListPage({
           );
         })}
 
+        {stapleSuggestions.length > 0 ? (
+          <CupboardStaplesSection
+            items={stapleSuggestions}
+            onIncludeItem={handleIncludeStaple}
+            onIncludeAll={handleIncludeAllStaples}
+          />
+        ) : null}
+
         {removedItems.length > 0 ? (
           <RemovedItemsSection
             items={removedItems}
@@ -472,6 +538,62 @@ function ReadyShoppingListPage({
         }}
       />
     </>
+  );
+}
+
+function CupboardStaplesSection({
+  items,
+  onIncludeItem,
+  onIncludeAll,
+}: {
+  items: ShoppingItem[];
+  onIncludeItem: (item: ShoppingItem) => void | Promise<void>;
+  onIncludeAll: () => void | Promise<void>;
+}) {
+  return (
+    <section aria-labelledby="shopping-staples" className="pt-6 pb-1">
+      <div className="flex min-h-11 items-center justify-between gap-4">
+        <div>
+          <h2
+            id="shopping-staples"
+            className="text-12 font-bold tracking-label text-graphite uppercase"
+          >
+            Check your cupboards
+          </h2>
+          <p className="mt-1 text-13 text-graphite">
+            Everyday basics you may already have.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="flex min-h-11 shrink-0 items-center text-13 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+          onClick={() => void onIncludeAll()}
+        >
+          Add all
+        </button>
+      </div>
+      <ul className="mt-1 rounded-sm bg-mist/50 px-3">
+        {items.map((item) => (
+          <li
+            key={item._id}
+            className="flex min-h-14 items-center gap-3 border-b border-border last:border-b-0"
+          >
+            <span className="min-w-0 flex-1 truncate text-15 font-medium text-graphite">
+              {item.displayName}
+            </span>
+            <button
+              type="button"
+              aria-label={`Add ${item.displayName} to the shopping list`}
+              className="flex min-h-11 shrink-0 items-center gap-1 text-13 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+              onClick={() => void onIncludeItem(item)}
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Add
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

@@ -25,10 +25,27 @@ export type LegacyImportFailureCode = "fetch_failed" | "invalid_result";
 export type ImportFailureCode =
   CurrentImportFailureCode | LegacyImportFailureCode;
 
+/**
+ * Safe, source-free diagnostics for a failed AI normalization. These are kept
+ * separately from the failure code so retry UI and operational logs can
+ * distinguish a malformed model contract from a source-coverage rejection.
+ */
+export const RECIPE_IMPORT_FAILURE_DETAILS = [
+  "contract",
+  "metadata",
+  "ingredients",
+  "method",
+  "notes",
+] as const;
+
+export type RecipeImportFailureDetail =
+  (typeof RECIPE_IMPORT_FAILURE_DETAILS)[number];
+
 export class ImportFailure extends Error {
   constructor(
     readonly code: CurrentImportFailureCode,
     message: string,
+    readonly details?: RecipeImportFailureDetail[],
   ) {
     super(message);
     this.name = "ImportFailure";

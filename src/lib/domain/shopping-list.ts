@@ -14,6 +14,43 @@ export type ShoppingListRecipe<TRecipeId extends string = string> = {
 };
 
 export type ShoppingListCategory = ShoppingCategory;
+export type ShoppingTreatment = "required" | "staple" | "omit";
+
+const OMITTED_INGREDIENT_NAMES = new Set([
+  "water",
+  "tap water",
+  "boiling water",
+  "boiled water",
+  "hot water",
+  "warm water",
+  "cold water",
+  "lukewarm water",
+]);
+
+const STAPLE_INGREDIENT_NAMES = new Set([
+  "salt",
+  "table salt",
+  "sea salt",
+  "fine salt",
+  "fine sea salt",
+  "flaky sea salt",
+  "kosher salt",
+  "salt and pepper",
+  "salt and black pepper",
+  "black pepper",
+  "black peppercorns",
+  "white pepper",
+  "olive oil",
+  "extra virgin olive oil",
+  "extra-virgin olive oil",
+  "vegetable oil",
+  "sunflower oil",
+  "rapeseed oil",
+  "canola oil",
+  "neutral oil",
+  "neutral cooking oil",
+  "cooking oil",
+]);
 
 export type ShoppingListSource<TRecipeId extends string = string> = {
   recipeId: TRecipeId;
@@ -26,6 +63,7 @@ export type DerivedShoppingListItem<TRecipeId extends string = string> = {
   name: string;
   displayName: string;
   category: ShoppingListCategory;
+  treatment: Exclude<ShoppingTreatment, "omit">;
   detailLines: string[];
   sourceRecipeIds: TRecipeId[];
   sources: ShoppingListSource<TRecipeId>[];
@@ -52,6 +90,8 @@ export function deriveShoppingListItems<TRecipeId extends string>(
 
   for (const recipe of recipes) {
     for (const ingredient of recipe.ingredients) {
+      const treatment = classifyShoppingIngredient(ingredient.name);
+      if (treatment === "omit") continue;
       const key = shoppingItemIdentityKey(
         ingredient.name,
         ingredient.shoppingCategory,
@@ -70,6 +110,7 @@ export function deriveShoppingListItems<TRecipeId extends string>(
           name: ingredient.name.trim(),
           displayName: "",
           category: ingredient.shoppingCategory,
+          treatment,
           detailLines: [detailLine],
           sourceRecipeIds: [recipe.recipeId],
           sources: [source],
@@ -89,6 +130,13 @@ export function deriveShoppingListItems<TRecipeId extends string>(
     ...item,
     displayName: formatShoppingItemDisplayName(item.name, item.sources),
   }));
+}
+
+export function classifyShoppingIngredient(name: string): ShoppingTreatment {
+  const normalizedName = normaliseIngredientName(name);
+  if (OMITTED_INGREDIENT_NAMES.has(normalizedName)) return "omit";
+  if (STAPLE_INGREDIENT_NAMES.has(normalizedName)) return "staple";
+  return "required";
 }
 
 export function formatShoppingItemDisplayName<TRecipeId extends string>(

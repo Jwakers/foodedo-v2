@@ -14,8 +14,14 @@ import {
   assertPublicResolvedAddresses,
   assertPublicUrlShape,
 } from "../../convex/lib/recipeImport/network";
-import type { RecipeImportModelClient } from "../../convex/lib/recipeImport/models";
-import { buildRecipeEvidence } from "../../convex/lib/recipeImport/source";
+import type {
+  HolisticOutput,
+  RecipeImportModelClient,
+} from "../../convex/lib/recipeImport/models";
+import {
+  buildRecipeEvidence,
+  type RecipeSourceCandidate,
+} from "../../convex/lib/recipeImport/source";
 
 import {
   findRecipeSectionIndexes,
@@ -42,6 +48,73 @@ import {
 
 const importerFixtures = resolve(process.cwd(), "tests/fixtures");
 
+function singleHowToHolisticOutput(): HolisticOutput {
+  return {
+    isRecipe: true,
+    title: "Yoghurt chicken with peppers",
+    description: null,
+    titleEvidenceIds: ["M1"],
+    servings: null,
+    prepMinutes: null,
+    cookMinutes: null,
+    proteinCategory: "chicken",
+    ingredients: [
+      {
+        sourceIds: ["I1"],
+        name: "chicken thighs",
+        quantity: "500",
+        unit: "g",
+        note: null,
+        amountText: "500 g",
+        group: "For the chicken",
+        noteRefs: [],
+        shoppingCategory: "meat_and_fish",
+      },
+      {
+        sourceIds: ["I2"],
+        name: "Turkish or Greek yoghurt",
+        quantity: "2",
+        unit: "tbsp",
+        note: null,
+        amountText: "2 tbsp",
+        group: "For the chicken",
+        noteRefs: [],
+        shoppingCategory: "dairy_and_eggs",
+      },
+      {
+        sourceIds: ["I3"],
+        name: "red peppers",
+        quantity: "2",
+        unit: null,
+        note: null,
+        amountText: "2",
+        group: "For the vegetables",
+        noteRefs: [],
+        shoppingCategory: "fruit_and_veg",
+      },
+    ],
+    excludedIngredientSourceIds: [],
+    method: {
+      steps: [
+        {
+          sourceIds: ["S1"],
+          text: "Marinate the chicken for 30 minutes.",
+          group: null,
+          noteRefs: [],
+        },
+        {
+          sourceIds: ["S2"],
+          text: "Heat the oven to 220C and roast the chicken and peppers.",
+          group: null,
+          noteRefs: [],
+        },
+      ],
+    },
+    excludedInstructionSourceIds: ["S3", "S4"],
+    notes: [],
+  };
+}
+
 test("runs complete JSON-LD through the production deterministic pipeline", async () => {
   const html = readFileSync(
     resolve(importerFixtures, "complete-json-ld.html"),
@@ -65,6 +138,161 @@ test("runs complete JSON-LD through the production deterministic pipeline", asyn
   });
   expect(outcome.recipe.ingredients).toHaveLength(2);
   expect(outcome.recipe.steps).toHaveLength(2);
+});
+
+test("normalises standalone HowToStep objects and ingredient group markers", () => {
+  const html = readFileSync(
+    resolve(importerFixtures, "single-howto-step.html"),
+    "utf8",
+  );
+  const candidate = extractHtmlCandidate(
+    html,
+    "https://recipes.example/yoghurt-chicken",
+  );
+
+  expect(candidate.ingredientLines).toEqual([
+    "500g chicken thighs",
+    "2 tbsp Turkish or Greek yoghurt",
+    "2 red peppers",
+  ]);
+  expect(candidate.ingredientGroups).toEqual([
+    "For the chicken",
+    "For the chicken",
+    "For the vegetables",
+  ]);
+  expect(candidate.methodSteps).toEqual([
+    "Marinate the chicken for 30 minutes.",
+    "Heat the oven to 220C and roast the chicken and peppers.",
+    "Image: Example Photographer",
+    "Recipe from Example Cookbook",
+  ]);
+  expect(candidate.methodSteps).not.toContain("Where to buy these ingredients");
+});
+
+test("lets holistic recovery explicitly exclude safe non-recipe evidence", async () => {
+  const html = readFileSync(
+    resolve(importerFixtures, "single-howto-step.html"),
+    "utf8",
+  );
+  const candidate = extractHtmlCandidate(
+    html,
+    "https://recipes.example/yoghurt-chicken",
+  );
+  expect(holisticTriggerReasons(candidate)).toContain("ambiguous_ingredients");
+
+  const roles: string[] = [];
+  const modelClient: RecipeImportModelClient = {
+    generate: async (task) => {
+      roles.push(task.role);
+      return singleHowToHolisticOutput() as Awaited<
+        ReturnType<typeof task.schema.parseAsync>
+      >;
+    },
+  };
+
+  const outcome = await organiseCandidate(candidate, modelClient);
+  expect(roles).toEqual(["holistic"]);
+  expect(outcome.recipe.ingredients).toHaveLength(3);
+  expect(outcome.recipe.steps).toHaveLength(2);
+  expect(outcome.recipe.steps.map((step) => step.text)).not.toContain(
+    "Image: Example Photographer",
+  );
+});
+
+test("restores structured source data when AI tries to hide timed cooking instructions", async () => {
+  const html = readFileSync(
+    resolve(importerFixtures, "single-howto-step.html"),
+    "utf8",
+  );
+  const candidate = extractHtmlCandidate(
+    html,
+    "https://recipes.example/yoghurt-chicken",
+  );
+  const unsafeOutput = singleHowToHolisticOutput();
+  unsafeOutput.method.steps = unsafeOutput.method.steps.slice(1);
+  unsafeOutput.excludedInstructionSourceIds = ["S1", "S3", "S4"];
+  const roles: string[] = [];
+  const modelClient: RecipeImportModelClient = {
+    generate: async (task) => {
+      roles.push(task.role);
+      if (task.role === "holistic") {
+        return unsafeOutput as Awaited<
+          ReturnType<typeof task.schema.parseAsync>
+        >;
+      }
+      const repair = {
+        method: unsafeOutput.method,
+        excludedInstructionSourceIds: unsafeOutput.excludedInstructionSourceIds,
+      };
+      expect(task.validate?.(repair as never)).toBe(false);
+      throw new ImportFailure(
+        "unsafe_result",
+        "Unsafe exclusion was correctly rejected.",
+      );
+    },
+  };
+
+  const outcome = await organiseCandidate(candidate, modelClient);
+  expect(outcome.recipe.steps.map((step) => step.text)).toContain(
+    "Marinate the chicken for 30 minutes.",
+  );
+  expect(roles).toEqual(["holistic", "holistic_method_repair"]);
+});
+
+test("falls back losslessly when AI rejects a structured compound ingredient format", async () => {
+  const candidate = {
+    sourceText: "A complete, structured recipe source.",
+    title: "Compound ingredient chilli",
+    servings: 6,
+    prepMinutes: 20,
+    cookMinutes: 110,
+    ingredientLines: [
+      "2 tbsp EACH: Paprika, Cumin, Chilli Powder",
+      "2.2lbs / 1kg Ground/Minced Beef",
+      "2x 14oz/400g cans Chopped Tomatoes",
+    ],
+    methodSteps: ["Brown the beef, then simmer for 90 minutes."],
+    extractor: "json_ld",
+  } satisfies RecipeSourceCandidate;
+  expect(holisticTriggerReasons(candidate)).toContain("ambiguous_ingredients");
+
+  let holisticSystem = "";
+  const modelClient: RecipeImportModelClient = {
+    generate: async (task) => {
+      holisticSystem = task.system;
+      throw new ImportFailure(
+        "unsafe_result",
+        "The model returned an invalid contract.",
+        ["contract"],
+      );
+    },
+  };
+
+  const outcome = await organiseCandidate(candidate, modelClient);
+
+  expect(holisticSystem).toContain(
+    "One source ingredient line may produce multiple output ingredients",
+  );
+  expect(outcome.recipe.ingredients).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        amountText: "2 tbsp",
+        name: "EACH: Paprika, Cumin, Chilli Powder",
+        sourceText: "2 tbsp EACH: Paprika, Cumin, Chilli Powder",
+      }),
+      expect.objectContaining({
+        amountText: "2.2lbs / 1kg",
+        sourceText: "2.2lbs / 1kg Ground/Minced Beef",
+      }),
+      expect.objectContaining({
+        sourceText: "2x 14oz/400g cans Chopped Tomatoes",
+      }),
+    ]),
+  );
+  expect(outcome.normalizationWarnings).toContainEqual({
+    area: "ingredients",
+    code: "ambiguous",
+  });
 });
 
 test("production extraction sends fragmented JSON-LD to holistic recovery", () => {
@@ -131,6 +359,7 @@ test("retries an invalid holistic contract once through the explicit repair stag
             shoppingCategory: "fruit_and_veg",
           },
         ],
+        excludedIngredientSourceIds: [],
         method: {
           steps: [
             {
@@ -141,6 +370,7 @@ test("retries an invalid holistic contract once through the explicit repair stag
             },
           ],
         },
+        excludedInstructionSourceIds: [],
         notes: [],
       } as Awaited<ReturnType<typeof task.schema.parseAsync>>;
     },

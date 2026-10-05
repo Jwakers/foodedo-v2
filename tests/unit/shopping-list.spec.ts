@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  classifyShoppingIngredient,
   deriveShoppingListItems,
   prepareManualShoppingItemName,
   ShoppingListValidationError,
@@ -42,6 +43,7 @@ test("groups only matching ingredient names and preserves each source amount", (
       name: "Chopped tomatoes",
       displayName: "3 tins Chopped tomatoes",
       category: "pantry",
+      treatment: "required",
       detailLines: ["2 tins · Tomato pasta", "1 tin · Chickpea curry"],
       sourceRecipeIds: ["pasta", "curry"],
       sources: [
@@ -60,6 +62,56 @@ test("groups only matching ingredient names and preserves each source amount", (
       ],
     },
   ]);
+});
+
+test("omits generic preparation water but keeps specific water products", () => {
+  expect(classifyShoppingIngredient("water")).toBe("omit");
+  expect(classifyShoppingIngredient(" Boiling   water ")).toBe("omit");
+  expect(classifyShoppingIngredient("tap water")).toBe("omit");
+  expect(classifyShoppingIngredient("sparkling water")).toBe("required");
+  expect(classifyShoppingIngredient("bottled water")).toBe("required");
+  expect(classifyShoppingIngredient("filtered water")).toBe("required");
+});
+
+test("marks only the narrow approved household staples", () => {
+  expect(classifyShoppingIngredient("fine sea salt")).toBe("staple");
+  expect(classifyShoppingIngredient("black peppercorns")).toBe("staple");
+  expect(classifyShoppingIngredient("extra virgin olive oil")).toBe("staple");
+  expect(classifyShoppingIngredient("neutral cooking oil")).toBe("staple");
+  expect(classifyShoppingIngredient("sesame oil")).toBe("required");
+  expect(classifyShoppingIngredient("plain flour")).toBe("required");
+  expect(classifyShoppingIngredient("butter")).toBe("required");
+});
+
+test("omits water and labels staples while deriving recipe items", () => {
+  const items = deriveShoppingListItems([
+    {
+      recipeId: "recipe",
+      title: "Soup",
+      ingredients: [
+        {
+          id: "water",
+          name: "boiling water",
+          shoppingCategory: "other",
+          quantity: "500",
+          unit: "ml",
+        },
+        {
+          id: "oil",
+          name: "vegetable oil",
+          shoppingCategory: "pantry",
+          quantity: "1",
+          unit: "tbsp",
+        },
+      ],
+    },
+  ]);
+
+  expect(items).toHaveLength(1);
+  expect(items[0]).toMatchObject({
+    name: "vegetable oil",
+    treatment: "staple",
+  });
 });
 
 test("combines compatible amounts into a supermarket-friendly label", () => {

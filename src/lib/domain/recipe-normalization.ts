@@ -54,11 +54,17 @@ function finishIngredient(
   parsedUnit?: string,
 ): NormalisedIngredientText {
   const comma = remainder.indexOf(",");
+  // “2 tbsp EACH: paprika, cumin, chilli powder” is one structured source
+  // line with a shared amount, not an ingredient followed by a preparation
+  // note. Keep the complete list intact until the specialist normalizer can
+  // safely split it into individual ingredients.
+  const hasSharedAmountList = /\bEACH\s*:/i.test(remainder);
   const rawName = cleanImportedText(
-    comma >= 0 ? remainder.slice(0, comma) : remainder,
+    comma >= 0 && !hasSharedAmountList ? remainder.slice(0, comma) : remainder,
   );
   const name = rawName.replace(/\s*\(\s*Note\s+\d+\s*\)\s*$/i, "");
-  const rawNote = comma >= 0 ? remainder.slice(comma + 1) : "";
+  const rawNote =
+    comma >= 0 && !hasSharedAmountList ? remainder.slice(comma + 1) : "";
   const note = cleanImportedText(rawNote)
     .replace(/^,\s*/, "")
     .replace(/\s*\(\s*Note\s*\d+\s*\)\s*$/i, "")
@@ -191,6 +197,38 @@ export type ExtractedInstructionMethod = {
   steps: Array<{ text: string; group?: string }>;
 };
 
+export type NormalisedIngredientSections = {
+  lines: string[];
+  groups: Array<string | undefined>;
+};
+
+/**
+ * Converts explicit group markers embedded in otherwise flat ingredient arrays
+ * into per-line group metadata. Several recipe plugins serialise headings as
+ * text values because schema.org recipeIngredient has no group primitive.
+ */
+export function normaliseIngredientSections(
+  values: readonly string[],
+): NormalisedIngredientSections {
+  const lines: string[] = [];
+  const groups: Array<string | undefined> = [];
+  let currentGroup: string | undefined;
+
+  for (const value of values) {
+    const text = cleanImportedText(value);
+    const heading = ingredientSectionHeading(text);
+    if (heading) {
+      currentGroup = heading;
+      continue;
+    }
+    if (!text) continue;
+    lines.push(text);
+    groups.push(currentGroup);
+  }
+
+  return { lines, groups };
+}
+
 /**
  * Select one complete cooking method. Sequential component headings remain
  * groups within that method; when a publisher supplies genuine alternatives,
@@ -200,6 +238,22 @@ export function extractPrimaryInstructionMethod(
   value: unknown,
 ): ExtractedInstructionMethod | undefined {
   if (!Array.isArray(value)) {
+    if (value && typeof value === "object") {
+      const object = value as Record<string, unknown>;
+      if (Array.isArray(object.itemListElement)) {
+        const label =
+          typeof object.name === "string" ? cleanImportedText(object.name) : "";
+        const steps = instructionTexts(object.itemListElement);
+        return steps.length > 0
+          ? {
+              steps: steps.map((text) => ({
+                text,
+                ...(label ? { group: label } : {}),
+              })),
+            }
+          : undefined;
+      }
+    }
     const steps = instructionTexts(value).map((text) => ({ text }));
     return steps.length > 0 ? { steps } : undefined;
   }
@@ -300,6 +354,19 @@ function splitInstructions(value: string) {
 
 function instructionTexts(value: unknown): string[] {
   if (typeof value === "string") return splitInstructions(value);
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const object = value as Record<string, unknown>;
+    if (Array.isArray(object.itemListElement)) {
+      return instructionTexts(object.itemListElement);
+    }
+    const text =
+      typeof object.text === "string"
+        ? object.text
+        : typeof object.name === "string"
+          ? object.name
+          : undefined;
+    return text ? splitInstructions(text) : [];
+  }
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (typeof item === "string") return splitInstructions(item);
@@ -316,6 +383,17 @@ function instructionTexts(value: unknown): string[] {
           : undefined;
     return text ? splitInstructions(text) : [];
   });
+}
+
+function ingredientSectionHeading(value: string) {
+  const wrapped = value.match(/^(?:-{2,}|={2,})\s*(.+?)\s*(?:-{2,}|={2,})$/);
+  if (wrapped?.[1]) return cleanImportedText(wrapped[1]);
+  const bracketed = value.match(/^\[\s*(.+?)\s*\]$/);
+  if (bracketed?.[1]) return cleanImportedText(bracketed[1]);
+  if (value.endsWith(":") && !/^\d/.test(value)) {
+    return cleanImportedText(value.slice(0, -1));
+  }
+  return undefined;
 }
 
 function cleanImportedText(value: string) {

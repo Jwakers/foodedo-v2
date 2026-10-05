@@ -68,6 +68,7 @@ export const holisticOutputSchema = z.object({
     )
     .min(1)
     .max(100),
+  excludedIngredientSourceIds: z.array(z.string().min(1).max(32)).max(100),
   method: z.object({
     steps: z
       .array(
@@ -81,6 +82,7 @@ export const holisticOutputSchema = z.object({
       .min(1)
       .max(100),
   }),
+  excludedInstructionSourceIds: z.array(z.string().min(1).max(32)).max(100),
   notes: z
     .array(
       z.object({
@@ -94,9 +96,11 @@ export const holisticOutputSchema = z.object({
 
 export const holisticIngredientsRepairSchema = holisticOutputSchema.pick({
   ingredients: true,
+  excludedIngredientSourceIds: true,
 });
 export const holisticMethodRepairSchema = holisticOutputSchema.pick({
   method: true,
+  excludedInstructionSourceIds: true,
 });
 export const holisticMetadataRepairSchema = holisticOutputSchema.pick({
   title: true,
@@ -179,6 +183,7 @@ export function createGatewayRecipeImportModelClient(
           throw new ImportFailure(
             "unsafe_result",
             `${role} returned an invalid structured result.`,
+            ["contract"],
           );
         }
         throw new ImportFailure(
@@ -190,6 +195,7 @@ export function createGatewayRecipeImportModelClient(
         throw new ImportFailure(
           "unsafe_result",
           `${role} output failed deterministic validation.`,
+          ["contract"],
         );
       }
       const resolvedModel = result.response.modelId || primaryModel;

@@ -49,6 +49,14 @@ const failureCodeValidator = v.union(
   v.literal("timed_out"),
 );
 
+const failureDetailValidator = v.union(
+  v.literal("contract"),
+  v.literal("metadata"),
+  v.literal("ingredients"),
+  v.literal("method"),
+  v.literal("notes"),
+);
+
 const phaseValidator = v.union(
   v.literal("waiting"),
   v.literal("fetching"),
@@ -73,6 +81,7 @@ const importViewValidator = v.object({
   phase: phaseValidator,
   attempt: v.number(),
   failureCode: v.optional(failureCodeValidator),
+  failureDetails: v.optional(v.array(failureDetailValidator)),
   resultRecipeId: v.optional(v.id("recipes")),
   reviewIssues: v.array(recipeReviewIssueValidator),
   createdAt: v.number(),
@@ -159,6 +168,7 @@ export const retryImport = mutation({
       phase: "waiting",
       attempt,
       failureCode: undefined,
+      failureDetails: undefined,
       updatedAt: Date.now(),
     });
     await scheduleAttempt(ctx, importId, attempt);
@@ -302,6 +312,7 @@ export const completeImport = internalMutation({
       phase: "complete",
       inputText: undefined,
       failureCode: undefined,
+      failureDetails: undefined,
       resultRecipeId: recipeId,
       updatedAt: now,
     });
@@ -331,9 +342,10 @@ export const failImport = internalMutation({
     importId: v.id("recipeImports"),
     attempt: v.number(),
     failureCode: failureCodeValidator,
+    failureDetails: v.optional(v.array(failureDetailValidator)),
   },
   returns: v.null(),
-  handler: async (ctx, { importId, attempt, failureCode }) => {
+  handler: async (ctx, { importId, attempt, failureCode, failureDetails }) => {
     const job = await ctx.db.get(importId);
     if (
       job !== null &&
@@ -345,6 +357,7 @@ export const failImport = internalMutation({
         status: "failed",
         phase: "complete",
         failureCode,
+        ...(failureDetails === undefined ? {} : { failureDetails }),
         updatedAt: now,
       });
       await ctx.scheduler.runAfter(
@@ -495,6 +508,9 @@ async function toImportView(ctx: QueryCtx, job: Doc<"recipeImports">) {
     phase: job.phase,
     attempt: job.attempt,
     ...(job.failureCode === undefined ? {} : { failureCode: job.failureCode }),
+    ...(job.failureDetails === undefined
+      ? {}
+      : { failureDetails: job.failureDetails }),
     ...(job.resultRecipeId === undefined
       ? {}
       : { resultRecipeId: job.resultRecipeId }),
