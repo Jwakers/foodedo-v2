@@ -9,6 +9,7 @@ import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { readRecipeImportIntent } from "@/lib/domain/auth-intents";
 import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store";
+import { hasImportJobLink } from "./recipe-import-state";
 
 /**
  * Lightweight global continuation. Kept separate from the importer page so
@@ -23,6 +24,10 @@ export function RecipeImportIntentResume() {
 
   useEffect(() => {
     if (!isAuthenticated || status === "loading" || resumingRef.current) return;
+    // Observe an existing job instead of letting an older pending draft replace
+    // its URL or creating another import during sign-in recovery.
+    if (hasImportJobLink(window.location.pathname, window.location.search))
+      return;
     resumingRef.current = true;
     void (async () => {
       const store = createRecipeImportIntentStore();

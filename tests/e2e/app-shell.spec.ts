@@ -1,5 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+test("signed-out job links show sign-in recovery rather than indefinite progress", async ({
+  page,
+}) => {
+  await page.goto("/recipes/import?job=existing-job");
+  await expect(
+    page.getByRole("heading", { name: "Sign in to resume your import" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign in to resume" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/job=existing-job/);
+  await expect(
+    page.getByRole("heading", { name: "Bringing your recipe into Foodedo" }),
+  ).toHaveCount(0);
+});
+
 test("shows welcome on signed-out cold open without app chrome", async ({
   page,
 }) => {

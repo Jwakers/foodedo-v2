@@ -5,6 +5,8 @@ import {
   recipeContentFields,
   recipeSourceValidator,
   shoppingCategoryValidator,
+  recipeImportFailureCodeValidator,
+  recipeImportFailureDetailValidator,
 } from "./lib/recipeValidators";
 
 export default defineSchema({
@@ -81,35 +83,11 @@ export default defineSchema({
       v.literal("complete"),
     ),
     attempt: v.number(),
-    failureCode: v.optional(
-      v.union(
-        v.literal("invalid_url"),
-        v.literal("unsafe_url"),
-        v.literal("fetch_failed"),
-        v.literal("source_unreachable"),
-        v.literal("source_blocked"),
-        v.literal("unsupported_content"),
-        v.literal("no_recipe"),
-        v.literal("incomplete_recipe"),
-        v.literal("unsafe_result"),
-        v.literal("ai_unavailable"),
-        v.literal("invalid_result"),
-        v.literal("internal"),
-        v.literal("timed_out"),
-      ),
-    ),
-    failureDetails: v.optional(
-      v.array(
-        v.union(
-          v.literal("contract"),
-          v.literal("metadata"),
-          v.literal("ingredients"),
-          v.literal("method"),
-          v.literal("notes"),
-        ),
-      ),
-    ),
+    failureCode: v.optional(recipeImportFailureCodeValidator),
+    failureDetails: v.optional(v.array(recipeImportFailureDetailValidator)),
     resultRecipeId: v.optional(v.id("recipes")),
+    failureSourceIds: v.optional(v.array(v.string())),
+    failureReasons: v.optional(v.array(v.string())),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

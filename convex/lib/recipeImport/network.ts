@@ -106,7 +106,7 @@ export async function safeFetch(
         );
       }
       if (response.status >= 300 && response.status < 400) {
-        await response.body?.cancel();
+        await response.body?.cancel().catch(() => {});
         const location = response.headers.get("location");
         if (!location || redirects === RECIPE_IMPORT_LIMITS.redirects) {
           throw new ImportFailure("source_unreachable", "Too many redirects.");
@@ -121,7 +121,11 @@ export async function safeFetch(
         }
         continue;
       }
+      // From this point every rejection must release the response as well as
+      // its connection, not just the successful body-reader path.
+      responseDispatchers.set(response, dispatcher);
       if (!response.ok) {
+        await discardResponse(response);
         if ([401, 403, 429].includes(response.status)) {
           throw new ImportFailure(
             "source_blocked",
@@ -135,15 +139,28 @@ export async function safeFetch(
       }
       const length = Number(response.headers.get("content-length") ?? 0);
       if (length > maximumBytes) {
+        await discardResponse(response);
         throw new ImportFailure("unsupported_content", "Source is too large.");
       }
-      responseDispatchers.set(response, dispatcher);
       return response;
     }
     throw new ImportFailure("source_unreachable", "Too many redirects.");
   } catch (error) {
-    await dispatcher.close();
+    await dispatcher.destroy().catch(() => {});
     throw error;
+  }
+}
+
+/** Cancellation/connection cleanup must never obscure the original failure. */
+export async function discardResponse(response: ImportResponse) {
+  const dispatcher = responseDispatchers.get(response);
+  responseDispatchers.delete(response);
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Aborted or already-consumed bodies may reject cancellation.
+  } finally {
+    await dispatcher?.destroy().catch(() => {});
   }
 }
 
@@ -169,9 +186,10 @@ export async function readBoundedBytes(
   maximumBytes: number,
 ) {
   const dispatcher = responseDispatchers.get(response);
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
     if (response.body === null) return new Uint8Array();
-    const reader = response.body.getReader();
+    reader = response.body.getReader();
     const chunks: Uint8Array[] = [];
     let totalBytes = 0;
     while (true) {
@@ -179,7 +197,6 @@ export async function readBoundedBytes(
       if (done) break;
       totalBytes += value.byteLength;
       if (totalBytes > maximumBytes) {
-        await reader.cancel();
         throw new ImportFailure("unsupported_content", "Source is too large.");
       }
       chunks.push(value);
@@ -192,8 +209,10 @@ export async function readBoundedBytes(
     }
     return bytes;
   } finally {
+    await reader?.cancel().catch(() => {});
+    reader?.releaseLock();
     responseDispatchers.delete(response);
-    if (dispatcher) await dispatcher.close();
+    await dispatcher?.destroy().catch(() => {});
   }
 }
 

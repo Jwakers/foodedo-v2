@@ -6,7 +6,7 @@ import type { FunctionReturnType } from "convex/server";
 import { ArrowLeft, ArrowRight, Check, CircleAlert, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
@@ -35,6 +35,8 @@ import { formatMealDurationLabel } from "@/lib/domain/plan-display";
 import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store";
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
+import { importJobAccess, importJobResumePath } from "./recipe-import-state";
+import type { ImportFailureCode } from "../../../convex/lib/recipeImport/contracts";
 
 type ImportMode = "url" | "text";
 
@@ -62,6 +64,8 @@ export function RecipeImporter() {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const retryPending = useRef(false);
   const [authDrawerOpen, setAuthDrawerOpen] = useState(false);
   const [repairOpen, setRepairOpen] = useState(false);
   const [repairValues, setRepairValues] = useState<Record<string, string>>({});
@@ -76,7 +80,7 @@ export function RecipeImporter() {
       toast.error(
         mode === "url"
           ? "Paste a valid recipe link."
-          : "Paste the title, ingredients and method.",
+          : "Paste the ingredients and method.",
       );
       return;
     }
@@ -128,12 +132,17 @@ export function RecipeImporter() {
   }
 
   async function retry() {
-    if (!importId) return;
+    if (!importId || retryPending.current) return;
+    retryPending.current = true;
+    setRetrying(true);
     try {
       await retryImport({ importId });
     } catch (error) {
       console.error("Failed to retry recipe import.", error);
       toast.error("Foodedo couldn’t retry that import.");
+    } finally {
+      retryPending.current = false;
+      setRetrying(false);
     }
   }
 
@@ -155,6 +164,33 @@ export function RecipeImporter() {
     }
   }
 
+  if (importId && importJobAccess(status) !== "ready") {
+    if (status === "loading") return <ImportProgress accountLoading />;
+    const needsSignIn = importJobAccess(status) === "sign_in";
+    return (
+      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
+        <h1 className="font-display text-28 font-semibold text-ink">
+          {needsSignIn
+            ? "Sign in to resume your import"
+            : "Reconnect to resume your import"}
+        </h1>
+        <p className="mt-2 text-15 leading-5.5 text-graphite">
+          Your import link is preserved. Resume to check its progress or open
+          the saved recipe.
+        </p>
+        <Button
+          className="mt-6 w-full"
+          onClick={() => {
+            if (needsSignIn)
+              openSignIn({ forceRedirectUrl: importJobResumePath(importId) });
+            else window.location.reload();
+          }}
+        >
+          {needsSignIn ? "Sign in to resume" : "Reconnect"}
+        </Button>
+      </main>
+    );
+  }
   if (
     importId &&
     (job === undefined || (recipe === undefined && job?.resultRecipeId))
@@ -173,6 +209,8 @@ export function RecipeImporter() {
       <ImportFailure
         sourceUrl={job.sourceUrl}
         failureCode={job.failureCode}
+        failureDetails={job.failureDetails}
+        retrying={retrying}
         onRetry={() => void retry()}
         onPasteText={() => {
           setMode("text");
@@ -216,7 +254,7 @@ export function RecipeImporter() {
         <p className="mt-1.5 text-15 leading-6 text-graphite">
           {mode === "url"
             ? "Paste a recipe link and we’ll organise the rest."
-            : "Paste the title, ingredients and method. Don’t worry about formatting — Foodedo will organise it."}
+            : "Paste the ingredients and method. Foodedo will suggest a title and description, and work out the details it can. You can edit them afterwards."}
         </p>
 
         {mode === "url" ? (
@@ -349,15 +387,22 @@ export function RecipeImporter() {
   );
 }
 
-function ImportProgress() {
+function ImportProgress({
+  accountLoading = false,
+}: {
+  accountLoading?: boolean;
+}) {
   return (
     <main className="mx-auto flex w-full max-w-175 flex-col items-center px-page-inline pt-16 text-center">
       <h1 className="max-w-85 font-display text-28 font-semibold tracking-title text-ink">
-        Bringing your recipe into Foodedo
+        {accountLoading
+          ? "Connecting your account"
+          : "Bringing your recipe into Foodedo"}
       </h1>
       <p className="mt-3 max-w-85 text-15 leading-5.5 text-graphite">
-        We’re organising the ingredients and method. This usually takes a few
-        seconds.
+        {accountLoading
+          ? "Checking your sign-in so we can resume your import."
+          : "We’re reading and checking the ingredients and method. This can take up to two minutes. You can leave this page and return to this import link."}
       </p>
       <div className="mt-7 w-full animate-pulse rounded-surface bg-mist p-4 motion-reduce:animate-none">
         <div className="h-40 rounded-surface bg-border" />
@@ -372,28 +417,19 @@ function ImportProgress() {
 function ImportFailure({
   sourceUrl,
   failureCode,
+  failureDetails,
   onRetry,
   onPasteText,
+  retrying,
 }: {
   sourceUrl?: string;
-  failureCode?:
-    | "invalid_url"
-    | "unsafe_url"
-    | "fetch_failed"
-    | "source_unreachable"
-    | "source_blocked"
-    | "unsupported_content"
-    | "no_recipe"
-    | "incomplete_recipe"
-    | "unsafe_result"
-    | "ai_unavailable"
-    | "invalid_result"
-    | "internal"
-    | "timed_out";
+  failureCode?: ImportFailureCode;
+  failureDetails?: string[];
+  retrying: boolean;
   onRetry: () => void;
   onPasteText: () => void;
 }) {
-  const message = importFailureMessage(failureCode);
+  const message = importFailureMessage(failureCode, failureDetails);
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-4">
       <h1 className="font-display text-32 font-semibold tracking-heading text-ink">
@@ -407,8 +443,8 @@ function ImportFailure({
           {sourceUrl}
         </div>
       ) : null}
-      <Button className="mt-6 w-full" onClick={onRetry}>
-        Try again
+      <Button className="mt-6 w-full" onClick={onRetry} disabled={retrying}>
+        {retrying ? "Retrying…" : "Try again"}
       </Button>
       <Button variant="secondary" className="mt-3 w-full" onClick={onPasteText}>
         Paste recipe text
@@ -458,6 +494,12 @@ function ImportSuccess({
       <h1 className="mt-2 font-display text-32 font-semibold tracking-heading text-ink">
         Recipe imported
       </h1>
+      {recipe.source.type === "import" && recipe.source.method === "text" ? (
+        <p className="mt-1.5 text-15 leading-5.5 text-graphite">
+          We suggested any missing title and description. Check the details and
+          amend anything below; unknown servings or times can be added later.
+        </p>
+      ) : null}
       {needsReview ? (
         <p className="mt-1.5 text-15 leading-5.5 text-graphite">
           We found the ingredients and method, but a few details need your help.
@@ -527,6 +569,13 @@ function ImportSuccess({
           View recipe <ArrowRight aria-hidden="true" className="size-4" />
         </ButtonLink>
       )}
+      <ButtonLink
+        variant="secondary"
+        className="mt-3 w-full"
+        href={`/recipes/edit?recipeId=${encodeURIComponent(recipe._id)}`}
+      >
+        Edit recipe details
+      </ButtonLink>
       <Button
         variant="inline"
         size="block"
@@ -562,7 +611,10 @@ function prepareClientSource(source: RecipeImportIntentV1["source"]) {
   }
 }
 
-function importFailureMessage(failureCode: string | undefined) {
+export function importFailureMessage(
+  failureCode: string | undefined,
+  failureDetails: string[] = [],
+) {
   if (failureCode === "source_blocked") {
     return {
       title: "This website blocked the import",
@@ -599,10 +651,17 @@ function importFailureMessage(failureCode: string | undefined) {
     };
   }
   if (failureCode === "incomplete_recipe") {
+    const missing = [
+      ...(failureDetails.includes("ingredients")
+        ? ["ingredient information"]
+        : []),
+      ...(failureDetails.includes("method") ? ["cooking instructions"] : []),
+    ];
     return {
       title: "This recipe is incomplete",
-      description:
-        "We found part of the recipe, but not enough ingredients and method to save it safely. Paste the complete recipe text to continue.",
+      description: missing.length
+        ? `We couldn’t find enough ${missing.join(" and ")}. Include that part of the recipe and try again. A title, photo, servings and labelled times are not required.`
+        : "We couldn’t confirm enough ingredient information or cooking instructions. Include both and try again. A title, photo, servings and labelled times are not required.",
     };
   }
   if (failureCode === "unsafe_result") {

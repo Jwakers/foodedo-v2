@@ -11,11 +11,14 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
+import { RECIPE_IMPORT_FAILURE_REASONS } from "./lib/recipeImport/contracts";
 import {
   recipeContentValidator,
   recipeMetadataProvenanceValidator,
   recipeNormalizationWarningValidator,
   recipeReviewIssueValidator,
+  recipeImportFailureCodeValidator as failureCodeValidator,
+  recipeImportFailureDetailValidator as failureDetailValidator,
 } from "./lib/recipeValidators";
 import {
   getRecipeReviewIssues,
@@ -31,30 +34,6 @@ const IMPORT_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;
 const sourceValidator = v.union(
   v.object({ type: v.literal("url"), url: v.string() }),
   v.object({ type: v.literal("text"), text: v.string() }),
-);
-
-const failureCodeValidator = v.union(
-  v.literal("invalid_url"),
-  v.literal("unsafe_url"),
-  v.literal("fetch_failed"),
-  v.literal("source_unreachable"),
-  v.literal("source_blocked"),
-  v.literal("unsupported_content"),
-  v.literal("no_recipe"),
-  v.literal("incomplete_recipe"),
-  v.literal("unsafe_result"),
-  v.literal("ai_unavailable"),
-  v.literal("invalid_result"),
-  v.literal("internal"),
-  v.literal("timed_out"),
-);
-
-const failureDetailValidator = v.union(
-  v.literal("contract"),
-  v.literal("metadata"),
-  v.literal("ingredients"),
-  v.literal("method"),
-  v.literal("notes"),
 );
 
 const phaseValidator = v.union(
@@ -82,6 +61,8 @@ const importViewValidator = v.object({
   attempt: v.number(),
   failureCode: v.optional(failureCodeValidator),
   failureDetails: v.optional(v.array(failureDetailValidator)),
+  failureSourceIds: v.optional(v.array(v.string())),
+  failureReasons: v.optional(v.array(v.string())),
   resultRecipeId: v.optional(v.id("recipes")),
   reviewIssues: v.array(recipeReviewIssueValidator),
   createdAt: v.number(),
@@ -169,6 +150,8 @@ export const retryImport = mutation({
       attempt,
       failureCode: undefined,
       failureDetails: undefined,
+      failureSourceIds: undefined,
+      failureReasons: undefined,
       updatedAt: Date.now(),
     });
     await scheduleAttempt(ctx, importId, attempt);
@@ -313,6 +296,8 @@ export const completeImport = internalMutation({
       inputText: undefined,
       failureCode: undefined,
       failureDetails: undefined,
+      failureSourceIds: undefined,
+      failureReasons: undefined,
       resultRecipeId: recipeId,
       updatedAt: now,
     });
@@ -343,9 +328,21 @@ export const failImport = internalMutation({
     attempt: v.number(),
     failureCode: failureCodeValidator,
     failureDetails: v.optional(v.array(failureDetailValidator)),
+    failureSourceIds: v.optional(v.array(v.string())),
+    failureReasons: v.optional(v.array(v.string())),
   },
   returns: v.null(),
-  handler: async (ctx, { importId, attempt, failureCode, failureDetails }) => {
+  handler: async (
+    ctx,
+    {
+      importId,
+      attempt,
+      failureCode,
+      failureDetails,
+      failureSourceIds,
+      failureReasons,
+    },
+  ) => {
     const job = await ctx.db.get(importId);
     if (
       job !== null &&
@@ -358,6 +355,24 @@ export const failImport = internalMutation({
         phase: "complete",
         failureCode,
         ...(failureDetails === undefined ? {} : { failureDetails }),
+        ...(failureReasons === undefined
+          ? {}
+          : {
+              failureReasons: failureReasons
+                .filter((reason) =>
+                  (RECIPE_IMPORT_FAILURE_REASONS as readonly string[]).includes(
+                    reason,
+                  ),
+                )
+                .slice(0, 9),
+            }),
+        ...(failureSourceIds === undefined
+          ? {}
+          : {
+              failureSourceIds: failureSourceIds
+                .filter((id) => /^B\d{1,7}$/.test(id))
+                .slice(0, 24),
+            }),
         updatedAt: now,
       });
       await ctx.scheduler.runAfter(
@@ -511,6 +526,12 @@ async function toImportView(ctx: QueryCtx, job: Doc<"recipeImports">) {
     ...(job.failureDetails === undefined
       ? {}
       : { failureDetails: job.failureDetails }),
+    ...(job.failureSourceIds === undefined
+      ? {}
+      : { failureSourceIds: job.failureSourceIds }),
+    ...(job.failureReasons === undefined
+      ? {}
+      : { failureReasons: job.failureReasons }),
     ...(job.resultRecipeId === undefined
       ? {}
       : { resultRecipeId: job.resultRecipeId }),

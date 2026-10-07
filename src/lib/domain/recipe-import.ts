@@ -1,35 +1,9 @@
-import type { ProteinCategory } from "./recipes";
-
 export const RECIPE_IMPORT_INPUT_LIMITS = {
   urlCharacters: 2_048,
   textCharacters: 80_000,
   requestIdCharacters: 100,
   minimumTextCharacters: 20,
 } as const;
-
-const INGREDIENT_HEADING_PATTERN =
-  /^(?:ingredients?|what (?:you(?:’|'|’)ll|you will) need)(?:\s*:)?$/i;
-const METHOD_HEADING_PATTERN =
-  /^(?:method|instructions?|directions?|preparation|guidelines?|steps?|procedure|how to (?:make|cook|prepare)(?: it| this)?)(?:\s*:)?$/i;
-
-export function findRecipeSectionIndexes(lines: string[]) {
-  const normalised = lines.map(normaliseSectionHeading);
-  const ingredientIndex = normalised.findIndex((line) =>
-    INGREDIENT_HEADING_PATTERN.test(line),
-  );
-  const methodIndex = normalised.findIndex((line, index) => {
-    return index > ingredientIndex && METHOD_HEADING_PATTERN.test(line);
-  });
-  return { ingredientIndex, methodIndex };
-}
-
-export function isRecipeSectionHeading(line: string) {
-  const normalised = normaliseSectionHeading(line);
-  return (
-    INGREDIENT_HEADING_PATTERN.test(normalised) ||
-    METHOD_HEADING_PATTERN.test(normalised)
-  );
-}
 
 export type RecipeImageCandidate = {
   url: string;
@@ -74,35 +48,6 @@ export function rankRecipeImages(
       (left, right) => imageCandidateScore(right) - imageCandidateScore(left),
     )
     .slice(0, Math.max(0, limit));
-}
-
-export function inferImportedProteinCategory(text: string): ProteinCategory {
-  const value = text.toLowerCase();
-  if (/\bchicken\b|\bturkey\b/.test(value)) return "chicken";
-  if (/\bbeef\b|\bsteak\b|\bmince\b/.test(value)) return "beef";
-  if (/\bpork\b|\bbacon\b|\bham\b/.test(value)) return "pork";
-  if (/\blamb\b|\bmutton\b/.test(value)) return "lamb";
-  if (/\bfish\b|\bsalmon\b|\btuna\b|\bmackerel\b|\bcod\b|\bprawn/.test(value))
-    return "fish";
-  if (
-    /\bduck\b|\bpigeon\b|\bvenison\b|\brabbit\b|\bgoat\b|\bgame\b/.test(value)
-  ) {
-    return "other";
-  }
-  if (
-    /\btofu\b|\blentils?\b|\bchickpeas?\b|\bbeans?\b|\bvegetarian\b|\bvegan\b|\bfeta\b|\bwatermelon\b|\btomatoes?\b|\bpasta\b/.test(
-      value,
-    )
-  )
-    return "meat-free";
-  return "other";
-}
-
-function normaliseSectionHeading(value: string) {
-  return value
-    .replace(/^#{1,6}\s*/, "")
-    .replace(/[\s\u00a0]+/g, " ")
-    .trim();
 }
 
 function imageCandidateScore(candidate: RecipeImageCandidate) {

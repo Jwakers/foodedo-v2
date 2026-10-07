@@ -1,4 +1,15 @@
 import { v } from "convex/values";
+import {
+  RECIPE_IMPORT_FAILURE_CODES,
+  RECIPE_IMPORT_FAILURE_DETAILS,
+} from "./recipeImport/contracts";
+
+export const recipeImportFailureCodeValidator = v.union(
+  ...RECIPE_IMPORT_FAILURE_CODES.map((code) => v.literal(code)),
+);
+export const recipeImportFailureDetailValidator = v.union(
+  ...RECIPE_IMPORT_FAILURE_DETAILS.map((detail) => v.literal(detail)),
+);
 
 export const shoppingCategoryValidator = v.union(
   v.literal("fruit_and_veg"),

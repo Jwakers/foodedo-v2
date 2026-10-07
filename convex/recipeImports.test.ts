@@ -3,6 +3,7 @@ import { expect, test } from "vitest";
 
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
+import { formatImportAmount } from "./lib/recipeImport/measurements";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -40,6 +41,92 @@ const recipeCore = {
   steps: [{ id: "step-1", text: "Simmer the tomatoes." }],
   proteinCategory: "meat-free" as const,
 };
+
+test("persists normalized measurements through the existing recipe contract without changing older recipes", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "normalized-owner");
+  const existingId = await owner.mutation(api.recipes.create, {
+    recipe: recipeCore,
+  });
+  const before = await owner.query(api.recipes.getMine, {
+    recipeId: existingId,
+  });
+  const importId = await owner.mutation(api.recipeImports.beginImport, {
+    clientRequestId: "normalized",
+    source: {
+      type: "text",
+      text: "Pepper stew\n1 large red pepper\n2 x 400 g cans tomatoes\nSimmer for 10 minutes.",
+    },
+  });
+  await t.mutation(internal.recipeImports.claimAttempt, {
+    importId,
+    attempt: 1,
+  });
+  const recipeId = await t.mutation(internal.recipeImports.completeImport, {
+    importId,
+    attempt: 1,
+    method: "text",
+    normalizationVersion: 6,
+    recipe: {
+      ...recipeCore,
+      title: "Pepper stew",
+      servings: 4,
+      prepMinutes: 5,
+      cookMinutes: 10,
+      servingScaling: "source_only",
+      ingredients: [
+        {
+          id: "ingredient-1",
+          name: "large red pepper",
+          note: "finely diced",
+          shoppingCategory: "fruit_and_veg",
+          sourceText: "1 large red pepper, finely diced",
+          ...formatImportAmount({
+            kind: "exact",
+            value: 1,
+            unit: null,
+            qualifier: null,
+            equivalents: [],
+          }),
+        },
+        {
+          id: "ingredient-2",
+          name: "tomatoes",
+          shoppingCategory: "pantry",
+          ...formatImportAmount({
+            kind: "package",
+            count: 2,
+            unit: "can",
+            size: { value: 400, unit: "g" },
+            equivalents: [],
+          }),
+        },
+      ],
+      steps: [{ id: "step-1", text: "Simmer for 10 minutes." }],
+    },
+  });
+  expect(recipeId).not.toBeNull();
+  const persisted = await owner.query(api.recipes.getMine, {
+    recipeId: recipeId!,
+  });
+  expect(persisted).toMatchObject({
+    source: { normalizationVersion: 6 },
+    servingScaling: "source_only",
+    ingredients: [
+      {
+        name: "large red pepper",
+        quantity: "1",
+        amountText: "1",
+        note: "finely diced",
+      },
+      { name: "tomatoes", amountText: "2 × 400 g cans" },
+    ],
+    steps: [{ text: "Simmer for 10 minutes." }],
+  });
+  expect(
+    await owner.query(api.recipes.getMine, { recipeId: existingId }),
+  ).toEqual(before);
+});
 
 test("starts imports idempotently and keeps jobs owner scoped", async () => {
   const t = createTestContext();
@@ -134,6 +221,8 @@ test("retries only failed attempts and ignores stale watchdogs", async () => {
     attempt: 1,
     failureCode: "unsafe_result",
     failureDetails: ["ingredients"],
+    failureSourceIds: ["B1", "source content must not be stored"],
+    failureReasons: ["measurement", "arbitrary text must not be stored"],
   });
   expect(
     await asOwner.query(api.recipeImports.getImport, { importId }),
@@ -141,6 +230,8 @@ test("retries only failed attempts and ignores stale watchdogs", async () => {
     status: "failed",
     failureCode: "unsafe_result",
     failureDetails: ["ingredients"],
+    failureSourceIds: ["B1"],
+    failureReasons: ["measurement"],
   });
   await expect(
     asOwner.mutation(api.recipeImports.retryImport, { importId }),
@@ -157,6 +248,8 @@ test("retries only failed attempts and ignores stale watchdogs", async () => {
     attempt: 2,
   });
   expect(retriedImport).not.toHaveProperty("failureDetails");
+  expect(retriedImport).not.toHaveProperty("failureSourceIds");
+  expect(retriedImport).not.toHaveProperty("failureReasons");
 
   await t.mutation(internal.recipeImports.markTimedOut, {
     importId,
