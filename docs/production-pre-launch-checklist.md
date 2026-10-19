@@ -85,7 +85,16 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 - [ ] Review dependencies and privacy manifests, remove unused SDKs, and resolve material audit findings before submission.
 - [ ] Complete a threat-model pass for guest claiming, account takeover, webhook spoofing/replay, cross-user Convex access, custom-scheme interception, and paid entitlement bypass.
 
-## 7. Quality gates and release build
+## 7. Launch and store artwork
+
+- [ ] Run `pnpm assets:check` and attach its passing output to the release evidence. The committed iOS and web assets must match the outlined source artwork under `assets/brand/`.
+- [ ] Review the cadmium Fraunces `F` app icon at its 1024 px source size and at small Home Screen, Settings, Spotlight, and notification sizes. Confirm it is opaque, has no baked-in rounded corners, and remains legible under standard, dark, and tinted Home Screen treatments.
+- [ ] Cold-launch the Release build on a small and large iPhone and a 13-inch iPad, in portrait and landscape. Confirm the centred Foodedo wordmark does not clip, stretch, shift, or flash against the first app frame in light or dark system appearance.
+- [ ] Verify Safari Add to Home Screen on iPhone and iPad, plus a manifest-capable desktop browser. Confirm the `any` and `maskable` icons remain recognisable under square, rounded, and circular masks.
+- [ ] After release-candidate UI and copy freeze, capture four clean, unframed screenshots with sanitised demo data for both a currently accepted Dynamic Island iPhone size and the 13-inch iPad size: Home/plan value, Week/plan review, Shopping, and Recipes/import.
+- [ ] Upload at least one valid iPhone screenshot and one valid 13-inch iPad screenshot to App Store Connect. Confirm there are no alpha-channel, icon, launch-screen, or screenshot validation warnings. App-preview video and promotional artwork are intentionally deferred for the soft launch.
+
+## 8. Quality gates and release build
 
 - [ ] `pnpm install --frozen-lockfile`
 - [ ] `pnpm format:check`
@@ -101,7 +110,7 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 - [ ] Test slow/offline networking, interrupted requests, cold/warm launches, background restoration, low storage, dark mode, Dynamic Type, VoiceOver, Reduce Motion, keyboard navigation on web, safe areas, and rotation policy.
 - [ ] Verify web behavior in supported Safari, Chrome, and Firefox versions and iOS behavior independently. A passing desktop OAuth flow does not approve iOS.
 
-## 8. Store, privacy, and support readiness
+## 9. Store, privacy, and support readiness
 
 - [ ] Publish accessible Privacy Policy, Terms, support, and account-deletion URLs on the production domain.
 - [ ] Complete App Store privacy answers from actual SDK/data behavior, including Clerk, Convex, analytics, crash reporting, and any AI service. Keep an evidence sheet mapping each declaration to code/configuration.
@@ -109,7 +118,7 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 - [ ] Confirm food/allergen/nutrition wording, disclaimers, data sources, and user-reporting routes before those features ship; do not imply medical guarantees.
 - [ ] Verify all user-facing email templates, sender domains, links, support replies, and rate limits in production.
 
-## 9. Operations, monitoring, and rollback
+## 10. Operations, monitoring, and rollback
 
 - [ ] Add privacy-safe monitoring for web errors, native crashes, failed OAuth starts/completions, Convex authorization failures, and webhook failures. Never record authorization URLs, tokens, codes, or user-entered credentials.
 - [ ] Define launch health thresholds and alerts for sign-in completion, crash-free sessions, webhook backlog, server errors, and core decision-loop completion.
@@ -122,6 +131,7 @@ This is a release gate, not a backlog. Every applicable item must have an owner 
 | Gate                             | Owner | Evidence/link | Approved/date |
 | -------------------------------- | ----- | ------------- | ------------- |
 | Product and guest boundary       |       |               |               |
+| Launch and store artwork         |       |               |               |
 | Security and privacy             |       |               |               |
 | Clerk and Convex production      |       |               |               |
 | Web release candidate            |       |               |               |

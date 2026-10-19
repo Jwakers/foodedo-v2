@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { imageSize } from "image-size";
 
 test("signed-out job links show sign-in recovery rather than indefinite progress", async ({
   page,
@@ -345,7 +346,12 @@ test("exposes valid home-screen metadata and icons", async ({ request }) => {
     name?: string;
     start_url?: string;
     display?: string;
-    icons?: Array<{ src: string; sizes: string; type: string }>;
+    icons?: Array<{
+      src: string;
+      sizes: string;
+      type: string;
+      purpose?: string;
+    }>;
   };
 
   expect(manifest).toMatchObject({
@@ -356,7 +362,16 @@ test("exposes valid home-screen metadata and icons", async ({ request }) => {
   expect(manifest.icons).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ sizes: "192x192", type: "image/png" }),
-      expect.objectContaining({ sizes: "512x512", type: "image/png" }),
+      expect.objectContaining({
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      }),
+      expect.objectContaining({
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      }),
     ]),
   );
 
@@ -364,7 +379,22 @@ test("exposes valid home-screen metadata and icons", async ({ request }) => {
     const iconResponse = await request.get(icon.src);
     expect(iconResponse.ok()).toBeTruthy();
     expect(iconResponse.headers()["content-type"]).toContain("image/png");
+    const dimensions = imageSize(await iconResponse.body());
+    const [width, height] = icon.sizes.split("x").map(Number);
+    expect(dimensions).toMatchObject({ width, height, type: "png" });
   }
+
+  const appleTouchIcon = await request.get("/apple-touch-icon.png");
+  expect(appleTouchIcon.ok()).toBeTruthy();
+  expect(imageSize(await appleTouchIcon.body())).toMatchObject({
+    width: 180,
+    height: 180,
+    type: "png",
+  });
+
+  const favicon = await request.get("/icon.svg");
+  expect(favicon.ok()).toBeTruthy();
+  expect(favicon.headers()["content-type"]).toContain("image/svg+xml");
 });
 
 test("serves the published catalogue sitemap", async ({ request }) => {

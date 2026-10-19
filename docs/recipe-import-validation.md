@@ -1,5 +1,28 @@
 # Normalization v10 verification — 7 October 2026
 
+## V12 hardening — 19 October 2026
+
+The six review findings are addressed without replacing the model or changing the normal two-call pipeline. Prompts moved byte-for-byte into their own module. New regressions cover source starvation/context bounds, essential versus optional method references, retained drafts after outage/timeout, owner/revision/expiry guards, resumed provenance/note relationships, metric qualifiers, false-positive numeric matches and attempted-call telemetry. Normalization version 12 is shared by automatic completion and draft finalization; existing recipes are not migrated.
+
+Automated checks passed: 193 unit tests, 83 Convex tests, formatting, lint, typecheck, web build and iOS web build. Builds required network access for the existing Google Fonts. The local importer and guest catalogue loaded successfully; the available browser explicitly shows Sign in, so authenticated draft/save/Detail/Cook/Plan/Shop and physical-device checks remain outstanding.
+
+The expanded live corpus contains 26 cases. A 22-case local/inaccessible-source batch passed 21 cases, with semantic/measurement checks passing on the remaining meatball case but a minimum-row-count gate failing. That old gate did not distinguish omitted content from regrouped instructions. The fixture now independently checks all 15 ingredient lines/amounts and all principal cooking actions instead of requiring six method rows. Final targeted samples passed those stronger checks in 28.2, 33.6 and 20.1 seconds, two calls each. One intervening local sample failed with `timed_out` after an abnormal 960.7-second wall-clock interval; it remains a failed sample, not a success or a normal-latency observation. Its cause was not established.
+
+Early strict-amount checks also exposed evaluation-only false negatives for qualitative handfuls, counted nouns in ingredient names, and pack/packet synonyms. Typed quantity comparisons retain full numeric/count/size checks while accepting those semantic equivalents. Repeatability gates compare authored/fixture-declared component relationships, not optional AI-inferred group enrichment. Three inspected meatball outputs retained their source ingredients and actions but differed in optional grouping, which motivated that distinction. No extraction prompt was changed to force an evaluation pass.
+
+The four reported accessible URLs each passed three final checks, including stable fixture-selected measurements, categories and authored component relationships:
+
+| Recipe                              | Three-run latency range | Calls/import |
+| ----------------------------------- | ----------------------- | ------------ |
+| RecipeTin coconut chicken curry     | 24.2–35.2 s             | 2            |
+| Smitten Kitchen sheet-pan chow mein | 34.6–38.6 s             | 2            |
+| Don't Go Bacon My Heart chilli      | 32.7–41.0 s             | 2            |
+| Borough Market chicken shish        | 21.0–22.9 s             | 2            |
+
+These are small evaluator samples, not end-to-end phone timings or an SLA. Intermediate failed batches are not presented as clean release runs. Unknown provider usage is marked incomplete and failed model attempts are counted. No production deployment was performed. This pass did not run a commit command; the importer work was externally committed as `5c718c8` during verification. Concurrent font/tooling dependency changes were left untouched.
+
+The verified backend was explicitly synced with `pnpm exec convex dev --once` to V2 development `bold-walrus-818` at 10:29 BST on 19 October. V1, production and existing saved recipes were not migrated or modified by this pass.
+
 ## V11 speed pass
 
 All 19 complete local fixtures passed on the final correction contract, along with the genuine non-recipe outcome. The incomplete chicken fixture initially exposed omission of useful draft notes; after the focused note correction, three repeats retained the notes and stayed drafts in two calls (24–33 seconds), rather than rereading the source a third time. Missing estimated prep time also passed three targeted repeats. The four reported accessible URLs were exercised repeatedly three times each; a Borough note-location assertion was separately inspected and retested successfully. Earlier failed experimental samples are not counted as successful release results; see [performance review](./recipe-import-performance.md).
