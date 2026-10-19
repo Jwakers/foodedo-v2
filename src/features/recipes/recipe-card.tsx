@@ -3,6 +3,7 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
@@ -22,7 +23,7 @@ export function RecipeCard({
   showSave = true,
 }: {
   title: string;
-  meta: string;
+  meta: ReactNode;
   imageSrc?: string | null;
   saved: boolean;
   isSavePending?: boolean;

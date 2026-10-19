@@ -5,6 +5,7 @@ import {
   formatIngredientName,
   formatIngredientNote,
   formatImportedMetadataNotice,
+  formatPersonalRecipeSourceLabel,
 } from "../../src/lib/domain/recipe-display";
 
 test("formats ingredient amount and name for recipe detail rows", () => {
@@ -92,6 +93,53 @@ test("keeps imported ingredient source text out of the amount column", () => {
       shoppingCategory: "dairy_and_eggs",
     }),
   ).toBe("20g / 1½ tbsp");
+});
+
+test("credits a personal recipe from a short source name instead of IMPORTED", () => {
+  expect(
+    formatPersonalRecipeSourceLabel({
+      type: "import",
+      method: "url",
+      importedAt: 1,
+      sourceName: "Serious Eats",
+      sourceUrl: "https://www.seriouseats.com/recipe",
+    }),
+  ).toBe("Serious Eats");
+  expect(
+    formatPersonalRecipeSourceLabel({
+      type: "import",
+      method: "url",
+      importedAt: 1,
+      sourceName: "www.bbc.co.uk",
+      sourceUrl: "https://www.bbc.co.uk/food/recipes/pasta",
+    }),
+  ).toBe("bbc.co.uk");
+  expect(
+    formatPersonalRecipeSourceLabel({
+      type: "import",
+      method: "url",
+      importedAt: 1,
+      sourceUrl: "https://www.nytimes.com/2024/01/01/food/recipe.html",
+    }),
+  ).toBe("nytimes.com");
+  expect(
+    formatPersonalRecipeSourceLabel({
+      type: "import",
+      method: "url",
+      importedAt: 1,
+      sourceName: "The Extraordinarily Long Recipe Blog Of Endless Words",
+    }),
+  ).toBe("The Extraordinarily Long Re…");
+  expect(
+    formatPersonalRecipeSourceLabel({
+      type: "import",
+      method: "text",
+      importedAt: 1,
+    }),
+  ).toBe("Pasted");
+  expect(formatPersonalRecipeSourceLabel({ type: "manual" })).toBe(
+    "Your recipe",
+  );
 });
 
 test("explains inferred import metadata without labelling published values", () => {

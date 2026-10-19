@@ -34,6 +34,7 @@ import {
 import { formatPlanDateRange } from "@/lib/domain/plan-display";
 import { SHOPPING_CATEGORIES } from "@/lib/domain/recipes";
 import type { ShoppingListCategory } from "@/lib/domain/shopping-list";
+import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 
 type CurrentShoppingList = FunctionReturnType<
@@ -972,19 +973,32 @@ function IngredientSourcesDrawer({
               </DrawerDescription>
             </DrawerHeader>
             <DrawerBody className="pb-7">
-              <ul className="border-t border-border">
+              <ul className="-mx-page-inline border-t border-border">
                 {item.sources.map((source, index) => (
                   <li
                     key={`${source.recipeId}:${source.date ?? index}`}
-                    className="flex min-h-17 flex-col justify-center gap-0.5 border-b border-border py-2"
+                    className="border-b border-border"
                   >
-                    <p className="text-16 font-semibold text-ink">
-                      {source.recipeTitle}
-                    </p>
-                    <p className="text-13 text-graphite">
-                      {source.date ? `${formatWeekday(source.date)} · ` : ""}
-                      {formatSourceAmount(source.amount, item.name)}
-                    </p>
+                    <Link
+                      href={personalRecipeDetailPath(source.recipeId)}
+                      className="flex min-h-17 items-center gap-3 px-page-inline py-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cadmium"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-16 font-semibold text-ink">
+                          {source.recipeTitle}
+                        </span>
+                        <span className="mt-0.5 block text-13 text-graphite">
+                          {source.date
+                            ? `${formatWeekday(source.date)} · `
+                            : ""}
+                          {formatSourceAmount(source.amount, item.name)}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-graphite"
+                      />
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -1108,13 +1122,5 @@ function formatWeekday(date: string) {
 function formatSourceAmount(amount: string, itemName: string) {
   const match = amount.match(/^(\d+(?:\.\d+)?)\s*(whole|piece)$/i);
   if (!match) return amount === "" ? itemName : `${amount} ${itemName}`;
-  const quantity = Number(match[1]);
-  return `${match[1]} ${quantity === 1 ? itemName : pluralise(itemName)}`;
-}
-
-function pluralise(name: string) {
-  if (name.endsWith("s") || name === "broccoli") return name;
-  if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
-  if (/(ch|sh|x|z)$/i.test(name)) return `${name}es`;
-  return `${name}s`;
+  return `${match[1]} ${itemName}`;
 }

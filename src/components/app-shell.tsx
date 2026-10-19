@@ -14,6 +14,7 @@ import {
 } from "@/features/plan/guest-plan-review-chrome";
 import { CatalogueSaveIntentResume } from "@/features/recipes/catalogue-recipe-library";
 import { RecipeImportIntentResume } from "@/features/recipes/recipe-import-intent-resume";
+import { RecipeImportNotifications } from "@/features/recipes/recipe-import-notifications";
 import { cn } from "@/lib/utils/cn";
 import { isCookPath } from "@/lib/routing/recipes";
 import { usePathname } from "next/navigation";
@@ -38,6 +39,7 @@ function AppShellChrome({ children }: { children: ReactNode }) {
       <CatalogueSaveIntentResume />
       <RecipeImportIntentResume />
       <AppToaster dockVisible={showDock} />
+      <RecipeImportNotifications />
       {process.env.NODE_ENV === "development" ? (
         <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}

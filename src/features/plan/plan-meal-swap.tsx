@@ -146,7 +146,7 @@ export function PlanMealSwap({
             onChange={(event) => updateSearchQuery(event.target.value)}
             placeholder="Search recipes"
             aria-label="Search recipes"
-            className="min-w-0 flex-1 bg-transparent text-15 text-ink outline-none placeholder:text-graphite"
+            className="min-w-0 flex-1 bg-transparent text-16 text-ink outline-none placeholder:text-graphite"
           />
           {searchQuery ? (
             <button

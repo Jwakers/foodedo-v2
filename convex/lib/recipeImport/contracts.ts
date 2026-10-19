@@ -1,3 +1,5 @@
+export const RECIPE_NORMALIZATION_VERSION = 12;
+
 export const RECIPE_IMPORT_LIMITS = {
   htmlBytes: 2_000_000,
   imageBytes: 8_000_000,
@@ -16,6 +18,7 @@ export const CURRENT_IMPORT_FAILURE_CODES = [
   "incomplete_recipe",
   "unsafe_result",
   "ai_unavailable",
+  "invalid_model_output",
   "internal",
   "timed_out",
 ] as const;
@@ -68,6 +71,7 @@ export class ImportFailure extends Error {
     readonly details?: RecipeImportFailureDetail[],
     readonly sourceIds?: string[],
     readonly reasons?: string[],
+    readonly validationFindings?: Array<{ path: string; code: string }>,
   ) {
     super(message);
     this.name = "ImportFailure";
@@ -76,4 +80,18 @@ export class ImportFailure extends Error {
 
 export function importFailureCode(error: unknown): CurrentImportFailureCode {
   return error instanceof ImportFailure ? error.code : "internal";
+}
+
+export function invalidModelOutput(
+  message: string,
+  findings: NonNullable<ImportFailure["validationFindings"]>,
+) {
+  return new ImportFailure(
+    "invalid_model_output",
+    message,
+    ["contract"],
+    undefined,
+    undefined,
+    findings,
+  );
 }

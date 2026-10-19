@@ -206,7 +206,7 @@ export function ActiveWeek({
             id="saved-week-selector"
             value={plan._id}
             onChange={(event) => onSelectPlan(event.target.value)}
-            className="h-12 w-full appearance-none rounded-sm border border-border bg-paper px-3 pt-3.5 pr-10 text-14 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+            className="h-12 w-full appearance-none rounded-sm border border-border bg-paper px-3 pt-3.5 pr-10 text-16 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
           >
             {plans.map((option) => (
               <option key={option._id} value={option._id}>

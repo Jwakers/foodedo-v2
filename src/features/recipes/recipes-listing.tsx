@@ -35,6 +35,7 @@ import {
   formatMealDurationLabel,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
+import { formatPersonalRecipeSourceLabel } from "@/lib/domain/recipe-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import {
   filterRecipes,
@@ -150,7 +151,7 @@ export function RecipesListing() {
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search recipes"
           aria-label="Search recipes"
-          className="min-w-0 flex-1 bg-transparent text-15 text-ink outline-none placeholder:text-graphite"
+          className="min-w-0 flex-1 bg-transparent text-16 text-ink outline-none placeholder:text-graphite"
         />
         {searchQuery ? (
           <Button
@@ -613,8 +614,15 @@ type PersonalRecipeView = FunctionReturnType<
 >["page"][number];
 
 function personalRecipeMeta(recipe: PersonalRecipeView) {
-  const source = recipe.source.type === "import" ? "IMPORTED" : "YOUR RECIPE";
-  if (recipe.reviewIssues.length > 0) return `NEEDS REVIEW · ${source}`;
+  const source = formatPersonalRecipeSourceLabel(recipe.source);
+  if (recipe.reviewIssues.length > 0) {
+    return (
+      <>
+        <span className="text-cadmium">Needs review</span>
+        {source ? ` · ${source}` : null}
+      </>
+    );
+  }
   const duration = formatMealDurationLabel(
     recipe.prepMinutes,
     recipe.cookMinutes,

@@ -11,22 +11,24 @@ import {
   ImportFailure,
   importFailureCode,
   RECIPE_IMPORT_LIMITS,
+  RECIPE_NORMALIZATION_VERSION,
 } from "./contracts";
 import { safeFetch, readBoundedBytes } from "./network";
 import { validateDownloadedRecipeImage } from "./images";
-import {
-  extractTextCandidate,
-  extractUrlCandidate,
-  type RecipeSourceCandidate,
-} from "./source";
+import { type RecipeSourceCandidate } from "./source";
 import { organiseCandidate } from "./extraction";
+import { acquireRecipeSource } from "./sources";
+import { createGatewayRecipeImportModelClient } from "./models";
 export {
   extractHtmlCandidate,
   extractTextCandidate,
   extractUrlCandidate,
 } from "./source";
 export { organiseCandidate } from "./extraction";
-const NORMALIZATION_VERSION = 9;
+import {
+  draftRecipeText,
+  preserveDraftMetadataProvenance,
+} from "../../../src/lib/domain/recipe-import-draft";
 const MAX_IMAGE_BYTES = RECIPE_IMPORT_LIMITS.imageBytes;
 
 export async function processImportHandler(
@@ -40,6 +42,9 @@ export async function processImportHandler(
   if (!claimed) return null;
 
   const startedAt = Date.now();
+  let sourceMs: number | undefined;
+  let normalizationMs: number | undefined;
+  let modelCalls = 0;
   try {
     const payload = await ctx.runQuery(internal.recipeImports.getPayload, {
       importId,
@@ -52,22 +57,85 @@ export async function processImportHandler(
       if (!payload.sourceUrl) {
         throw new ImportFailure("invalid_url", "Recipe URL is missing.");
       }
-      candidate = await extractUrlCandidate(payload.sourceUrl);
+      candidate = await acquireRecipeSource({
+        type: "url",
+        url: payload.sourceUrl,
+      });
     } else {
       if (!payload.inputText) {
         throw new ImportFailure("no_recipe", "Recipe text is missing.");
       }
-      candidate = extractTextCandidate(payload.inputText);
+      candidate = await acquireRecipeSource({
+        type: "text",
+        text: payload.recoveredDraft
+          ? `Additional recipe text:\n${payload.inputText}\nPreviously recovered recipe (not new publisher evidence):\n${draftRecipeText(payload.recoveredDraft.recipe, payload.recoveredDraft.metadataProvenance)}`
+          : payload.inputText,
+      });
+      if (payload.sourceUrl) candidate.sourceUrl = payload.sourceUrl;
+      if (payload.sourceName) candidate.sourceName = payload.sourceName;
+      if (payload.sourceAuthor) candidate.sourceAuthor = payload.sourceAuthor;
+      if (payload.sourceImageUrls)
+        candidate.sourceImageUrls = payload.sourceImageUrls;
     }
 
+    sourceMs = Date.now() - startedAt;
     await ctx.runMutation(internal.recipeImports.setPhase, {
       importId,
       attempt,
       phase: "organising",
     });
 
-    const { recipe, metadataProvenance, normalizationWarnings } =
-      await organiseCandidate(candidate, undefined, startedAt + 110_000);
+    const normalizationStartedAt = Date.now();
+    const modelClient = createGatewayRecipeImportModelClient((event) => {
+      modelCalls++;
+      console.info("recipe_import_job_model_task", {
+        importId,
+        attempt,
+        ...event,
+      });
+    });
+    const outcome = await organiseCandidate(
+      candidate,
+      modelClient,
+      startedAt + 110_000,
+    );
+    normalizationMs = Date.now() - normalizationStartedAt;
+    const persistenceStartedAt = Date.now();
+    const { recipe, metadataProvenance, normalizationWarnings } = outcome;
+    const retainedProvenance = payload.recoveredDraft
+      ? preserveDraftMetadataProvenance(
+          payload.recoveredDraft.recipe,
+          payload.recoveredDraft.metadataProvenance,
+          recipe,
+          metadataProvenance,
+        )
+      : metadataProvenance;
+    if (outcome.status === "draft") {
+      await ctx.runMutation(internal.recipeImports.stageDraft, {
+        importId,
+        attempt,
+        recipe,
+        issues: outcome.issues,
+        metadataProvenance: retainedProvenance,
+        ...(candidate.sourceName ? { sourceName: candidate.sourceName } : {}),
+        ...(candidate.sourceAuthor
+          ? { sourceAuthor: candidate.sourceAuthor }
+          : {}),
+        ...(candidate.sourceImageUrls
+          ? { sourceImageUrls: candidate.sourceImageUrls }
+          : {}),
+      });
+      console.info("recipe_import_draft_staged", {
+        importId,
+        attempt,
+        durationMs: Date.now() - startedAt,
+        sourceMs,
+        normalizationMs,
+        persistenceMs: Date.now() - persistenceStartedAt,
+        modelCalls,
+      });
+      return null;
+    }
     const fingerprint = contentFingerprint(recipe);
     await ctx.runMutation(internal.recipeImports.setPhase, {
       importId,
@@ -80,7 +148,7 @@ export async function processImportHandler(
         importId,
         attempt,
         recipe,
-        method: payload.sourceType,
+        method: payload.method,
         ...(candidate.sourceUrl === undefined
           ? {}
           : { sourceUrl: candidate.sourceUrl }),
@@ -93,9 +161,9 @@ export async function processImportHandler(
         ...(candidate.sourceImageUrls === undefined
           ? {}
           : { sourceImageUrls: candidate.sourceImageUrls }),
-        normalizationVersion: NORMALIZATION_VERSION,
+        normalizationVersion: RECIPE_NORMALIZATION_VERSION,
         contentFingerprint: fingerprint,
-        metadataProvenance,
+        metadataProvenance: retainedProvenance,
         ...(normalizationWarnings.length === 0
           ? {}
           : { normalizationWarnings }),
@@ -106,12 +174,16 @@ export async function processImportHandler(
       attempt,
       extractor: candidate.extractor,
       durationMs: Date.now() - startedAt,
+      sourceMs,
+      normalizationMs,
+      persistenceMs: Date.now() - persistenceStartedAt,
+      modelCalls,
       result: recipeId === null ? "stale" : "saved",
       reviewIssues: getRecipeReviewIssues({
         ...recipe,
         source: {
           type: "import",
-          method: payload.sourceType,
+          method: payload.method,
           importedAt: startedAt,
           ...(normalizationWarnings.length === 0
             ? {}
@@ -129,6 +201,9 @@ export async function processImportHandler(
       attempt,
       durationMs: Date.now() - startedAt,
       failureCode,
+      sourceMs,
+      normalizationMs,
+      modelCalls,
       errorName: error instanceof Error ? error.name : "UnknownError",
     });
     await ctx.runMutation(internal.recipeImports.failImport, {

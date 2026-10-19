@@ -114,7 +114,7 @@ test("omits water and labels staples while deriving recipe items", () => {
   });
 });
 
-test("combines compatible amounts into a supermarket-friendly label", () => {
+test("combines compatible amounts without pluralising the ingredient name", () => {
   const [lemons] = deriveShoppingListItems([
     {
       recipeId: "chicken",
@@ -144,7 +144,40 @@ test("combines compatible amounts into a supermarket-friendly label", () => {
     },
   ]);
 
-  expect(lemons?.displayName).toBe("2 lemons");
+  expect(lemons?.displayName).toBe("2 lemon");
+});
+
+test("keeps garlic singular when combining whole amounts", () => {
+  const [garlic] = deriveShoppingListItems([
+    {
+      recipeId: "one",
+      title: "One",
+      ingredients: [
+        {
+          id: "garlic-1",
+          name: "garlic",
+          shoppingCategory: "fruit_and_veg",
+          quantity: "1",
+          unit: "whole",
+        },
+      ],
+    },
+    {
+      recipeId: "two",
+      title: "Two",
+      ingredients: [
+        {
+          id: "garlic-2",
+          name: "garlic",
+          shoppingCategory: "fruit_and_veg",
+          quantity: "1",
+          unit: "whole",
+        },
+      ],
+    },
+  ]);
+
+  expect(garlic?.displayName).toBe("2 garlic");
 });
 
 test("uses the shopping category authored on each ingredient", () => {

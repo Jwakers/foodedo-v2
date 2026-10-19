@@ -232,6 +232,18 @@ export class RecipeValidationError extends Error {
 }
 
 export function prepareRecipeContent(input: RecipeContent): RecipeContent {
+  return prepareContent(input, false);
+}
+
+/** Import drafts share content bounds, but need not yet have ingredients or a method. */
+export function prepareRecipeDraft(input: RecipeContent): RecipeContent {
+  return prepareContent(input, true);
+}
+
+function prepareContent(
+  input: RecipeContent,
+  incomplete: boolean,
+): RecipeContent {
   const description = optionalText(
     input.description,
     "Description",
@@ -259,8 +271,8 @@ export function prepareRecipeContent(input: RecipeContent): RecipeContent {
   const preheat = optionalPreheat(input.preheat);
   const notes =
     input.notes === undefined ? undefined : prepareNotes(input.notes);
-  const ingredients = prepareIngredients(input.ingredients);
-  const steps = prepareSteps(input.steps);
+  const ingredients = prepareIngredients(input.ingredients, incomplete ? 0 : 1);
+  const steps = prepareSteps(input.steps, incomplete ? 0 : 1);
   validateNoteReferences(ingredients, steps, notes);
   return {
     title: requiredText(input.title, "Title", RECIPE_LIMITS.title),
@@ -327,8 +339,14 @@ export function prepareCatalogue(input: Catalogue): Catalogue {
 
 function prepareIngredients(
   ingredients: RecipeIngredientLine[],
+  minimum = 1,
 ): RecipeIngredientLine[] {
-  boundedList(ingredients, "Ingredients", 1, RECIPE_LIMITS.ingredientLines);
+  boundedList(
+    ingredients,
+    "Ingredients",
+    minimum,
+    RECIPE_LIMITS.ingredientLines,
+  );
   uniqueIds(ingredients, "Ingredient");
 
   return ingredients.map((ingredient) => {
@@ -388,8 +406,8 @@ function prepareIngredients(
   });
 }
 
-function prepareSteps(steps: RecipeStep[]): RecipeStep[] {
-  boundedList(steps, "Steps", 1, RECIPE_LIMITS.steps);
+function prepareSteps(steps: RecipeStep[], minimum = 1): RecipeStep[] {
+  boundedList(steps, "Steps", minimum, RECIPE_LIMITS.steps);
   uniqueIds(steps, "Step");
 
   const prepared = steps.map((step) => {

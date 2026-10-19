@@ -69,6 +69,8 @@ type Measure = z.infer<typeof measureSchema>;
 
 /** Conversions use exact international avoirdupois factors; display rounds to 3 significant figures. */
 export function metricMeasure(measure: Measure): Measure {
+  if (measure.unit === "kg") return { value: measure.value * 1000, unit: "g" };
+  if (measure.unit === "l") return { value: measure.value * 1000, unit: "ml" };
   if (measure.unit !== "lb" && measure.unit !== "oz") return measure;
   const grams =
     measure.value * (measure.unit === "lb" ? 453.59237 : 28.349523125);
@@ -79,7 +81,7 @@ function preferredMeasure(primary: Measure, equivalents: Measure[]): Measure {
   const publishedMetric = [primary, ...equivalents].find((measure) =>
     ["g", "kg", "ml", "l"].includes(measure.unit ?? ""),
   );
-  const selected = publishedMetric ?? metricMeasure(primary);
+  const selected = metricMeasure(publishedMetric ?? primary);
   return selected.unit === "piece" ? { ...selected, unit: null } : selected;
 }
 function numberText(value: number) {
@@ -102,12 +104,21 @@ export function formatImportAmount(amount: ImportAmount): {
       return { amountText: amount.text.trim() };
     case "exact": {
       const measure = preferredMeasure(amount, amount.equivalents);
+      const convertedQualifier =
+        amount.qualifier && measure.unit !== amount.unit;
+      const display = [
+        numberText(measure.value),
+        convertedQualifier ? null : amount.qualifier,
+        measure.unit,
+      ]
+        .filter(Boolean)
+        .join(" ");
       return {
         quantity: numberText(measure.value),
         ...(measure.unit ? { unit: measure.unit } : {}),
-        amountText: [numberText(measure.value), amount.qualifier, measure.unit]
-          .filter(Boolean)
-          .join(" "),
+        amountText: convertedQualifier
+          ? `${display} (${[numberText(amount.value), amount.qualifier, amount.unit].filter(Boolean).join(" ")})`
+          : display,
       };
     }
     case "range": {
@@ -140,177 +151,4 @@ export function isScalableImportAmount(amount: ImportAmount): boolean {
       amount.unit ?? "",
     )
   );
-}
-
-const factors: Partial<Record<NonNullable<Measure["unit"]>, number>> = {
-  g: 1,
-  kg: 1000,
-  oz: 28.349523125,
-  lb: 453.59237,
-  ml: 1,
-  l: 1000,
-};
-function dimension(unit: Measure["unit"]) {
-  if (unit === "piece") return null;
-  if (["g", "kg", "lb", "oz"].includes(unit ?? "")) return "mass";
-  if (["ml", "l"].includes(unit ?? "")) return "volume";
-  return unit;
-}
-function sameMeasure(a: Measure, b: Measure) {
-  if (dimension(a.unit) !== dimension(b.unit)) return false;
-  const av = a.value * (a.unit ? (factors[a.unit] ?? 1) : 1);
-  const bv = b.value * (b.unit ? (factors[b.unit] ?? 1) : 1);
-  return Math.abs(av - bv) <= Math.max(0.00001, Math.abs(av) * 0.006);
-}
-const aliases: Record<string, NonNullable<Measure["unit"]>> = {
-  grams: "g",
-  gram: "g",
-  kilograms: "kg",
-  kilogram: "kg",
-  pounds: "lb",
-  pound: "lb",
-  lbs: "lb",
-  ounces: "oz",
-  ounce: "oz",
-  millilitres: "ml",
-  milliliters: "ml",
-  millilitre: "ml",
-  milliliter: "ml",
-  litres: "l",
-  liters: "l",
-  litre: "l",
-  liter: "l",
-  tablespoon: "tbsp",
-  tablespoons: "tbsp",
-  teaspoon: "tsp",
-  teaspoons: "tsp",
-  cups: "cup",
-  cloves: "clove",
-  cans: "can",
-  tins: "tin",
-  slices: "slice",
-  packets: "packet",
-  bunches: "bunch",
-  heads: "head",
-  sprigs: "sprig",
-  stalks: "stalk",
-};
-function normalizedSource(text: string) {
-  return (
-    text
-      // Separate mixed vulgar fractions before NFKC expands them (1½ -> 1 1/2).
-      .replace(/([0-9])([¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])/g, "$1 $2")
-      .normalize("NFKC")
-      .replace(/⁄/g, "/")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-  );
-}
-export function numericValue(text: string): number {
-  const parts = text.trim().split(/\s+/);
-  return parts.reduce((sum, part) => {
-    const [a, b] = part.split("/").map(Number);
-    return sum + (b ? a / b : a);
-  }, 0);
-}
-/** Checks measurements, not exact spelling or numeric tokens. Semantic coverage is audited separately by AI. */
-export type MeasurementEvidence = "supported" | "conflicting" | "inconclusive";
-export function checkSourceAmount(
-  amount: ImportAmount,
-  source: string,
-): MeasurementEvidence {
-  if (amount.kind === "unspecified" || amount.kind === "qualitative")
-    return "inconclusive";
-  const text = normalizedSource(source);
-  const quantities = [
-    ...text.matchAll(
-      /(\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?)\s*[-–]?\s*(?:(?:heaped|level|generous|rounded|scant|small|medium|large)\s+)?(kg|kilograms?|grams?|g|millilitres?|milliliters?|ml|litres?|liters?|l|lbs?|pounds?|oz|ounces?|tbsp|tablespoons?|tsp|teaspoons?|cups?|cloves?|cans?|tins?|slices?|packets?|bunches|heads?|sprigs?|stalks?)\b/g,
-    ),
-  ].map((match) => ({
-    value: numericValue(match[1]),
-    unit: (aliases[match[2]] ?? match[2]) as Measure["unit"],
-  }));
-  const leading = text.match(
-    /^\s*(?:[-*•◦□▢☐☑]\s*|\d+[.)]\s+)?(\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?)/,
-  );
-  if (leading) quantities.push({ value: numericValue(leading[1]), unit: null });
-  if (
-    leading &&
-    amount.kind === "exact" &&
-    amount.unit &&
-    !factors[amount.unit] &&
-    !["tsp", "tbsp", "cup"].includes(amount.unit)
-  ) {
-    const words = text.split(/[^a-z]+/).map((word) => aliases[word] ?? word);
-    if (words.includes(amount.unit))
-      quantities.push({ value: numericValue(leading[1]), unit: amount.unit });
-  }
-  const checkMeasure = (measure: Measure): MeasurementEvidence =>
-    quantities.some((candidate) => sameMeasure(measure, candidate))
-      ? "supported"
-      : quantities.some(
-            (candidate) =>
-              dimension(candidate.unit) === dimension(measure.unit),
-          )
-        ? "conflicting"
-        : "inconclusive";
-  const combine = (checks: MeasurementEvidence[]): MeasurementEvidence =>
-    checks.includes("conflicting")
-      ? "conflicting"
-      : checks.includes("inconclusive")
-        ? "inconclusive"
-        : "supported";
-  if (amount.kind === "exact")
-    return combine([amount, ...amount.equivalents].map(checkMeasure));
-  if (amount.kind === "package") {
-    // "A 250-gram package" explicitly denotes one package, not 250 packages.
-    // Only accept an article when a container noun is present; never infer a size.
-    const articlePackage =
-      /^\s*an?\s+/.test(text) &&
-      /\b(?:package|packet|pack|can|tin|bottle|jar)\b/.test(text);
-    const count = leading
-      ? numericValue(leading[1])
-      : articlePackage
-        ? 1
-        : undefined;
-    return combine([
-      count === undefined
-        ? "inconclusive"
-        : count === amount.count
-          ? "supported"
-          : "conflicting",
-      ...[amount.size, ...amount.equivalents].map(checkMeasure),
-    ]);
-  }
-  if (amount.lower > amount.upper) return "conflicting";
-  const ranges = [
-    ...text.matchAll(
-      /(\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?)\s*(?:to|[-–—])\s*(\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?)\s*([a-z]+)?/g,
-    ),
-  ];
-  const checks = ranges.map((range): MeasurementEvidence => {
-    const unit = range[3] ? (aliases[range[3]] ?? range[3]) : null;
-    // Words such as “cloves” are explicit count units; unrelated following words leave a unitless count.
-    const parsed = measurementUnitSchema.safeParse(unit);
-    const sourceUnit = parsed.success ? parsed.data : null;
-    const supported =
-      sameMeasure(
-        { value: amount.lower, unit: amount.unit },
-        { value: numericValue(range[1]), unit: sourceUnit },
-      ) &&
-      sameMeasure(
-        { value: amount.upper, unit: amount.unit },
-        { value: numericValue(range[2]), unit: sourceUnit },
-      );
-    return supported
-      ? "supported"
-      : parsed.success && dimension(sourceUnit) === dimension(amount.unit)
-        ? "conflicting"
-        : "inconclusive";
-  });
-  return checks.includes("supported")
-    ? "supported"
-    : checks.includes("conflicting")
-      ? "conflicting"
-      : "inconclusive";
 }

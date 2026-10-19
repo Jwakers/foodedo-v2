@@ -14,6 +14,7 @@ export type RecipeEvidenceBlock = {
 export type RecipeSourceCandidate = {
   blocks: RecipeEvidenceBlock[];
   truncated: boolean;
+  omittedBlocks?: Array<{ kind: RecipeEvidenceBlock["kind"]; path?: string }>;
   sourceText: string;
   extractor: "html" | "text";
   sourceUrl?: string;
@@ -21,7 +22,7 @@ export type RecipeSourceCandidate = {
   sourceAuthor?: string;
   sourceImageUrls?: string[];
 };
-type SourceInput = Omit<RecipeEvidenceBlock, "id">;
+type SourceInput = Omit<RecipeEvidenceBlock, "id"> & { priority?: number };
 // Keep recipe evidence, not linked publisher/site graphs or unrelated entities.
 const recipeEvidenceFields = [
   "image",
@@ -54,28 +55,67 @@ function packageSource(
   inputs: SourceInput[],
   extractor: RecipeSourceCandidate["extractor"],
 ): RecipeSourceCandidate {
-  const blocks: RecipeEvidenceBlock[] = [];
+  const selected: Array<{
+    index: number;
+    size: number;
+    block: Omit<RecipeEvidenceBlock, "id">;
+  }> = [];
   const seen = new Set<string>();
   let used = 200;
   let truncated = false;
-  for (const input of inputs) {
+  const omittedBlocks: NonNullable<RecipeSourceCandidate["omittedBlocks"]> = [];
+  const omit = (input: SourceInput) => {
+    truncated = true;
+    if (omittedBlocks.length >= 24) return;
+    const diagnostic = {
+      kind: input.kind,
+      ...(input.path ? { path: input.path.slice(0, 160) } : {}),
+    };
+    omittedBlocks.push(diagnostic);
+    used += JSON.stringify(diagnostic).length + 1;
+  };
+  // Rank only for budget selection, then restore authored order. Small sources
+  // keep exactly the same evidence order; long articles cannot starve recipe data.
+  const ranked = inputs
+    .map((input, index) => ({ input, index }))
+    .sort(
+      (a, b) =>
+        (b.input.priority ?? 0) - (a.input.priority ?? 0) || a.index - b.index,
+    );
+  for (const { input, index } of ranked) {
     const text = cleanText(input.text);
     if (!text) continue;
     const key = input.kind + ":" + (input.path ?? "") + ":" + text;
     if (seen.has(key)) continue;
     seen.add(key);
-    const block = { ...input, text, id: `B${blocks.length + 1}` };
-    const size = JSON.stringify(block).length + 2;
+    const block = {
+      kind: input.kind,
+      ...(input.path ? { path: input.path } : {}),
+      text,
+    };
+    const size =
+      JSON.stringify({ ...block, id: `B${inputs.length}` }).length + 2;
     if (used + size > RECIPE_IMPORT_LIMITS.modelSourceCharacters) {
-      truncated = true;
+      omit(input);
       continue;
     }
-    blocks.push(block);
+    selected.push({ index, size, block });
     used += size;
   }
+  // Omission diagnostics themselves consume context. Evict only the lowest
+  // priority trailing selections if those diagnostics took us over the bound.
+  while (used > RECIPE_IMPORT_LIMITS.modelSourceCharacters && selected.length) {
+    const dropped = selected.pop()!;
+    used -= dropped.size;
+    omit(dropped.block);
+  }
+  const blocks = selected
+    .sort((a, b) => a.index - b.index)
+    .map(({ block }, index) => ({ ...block, id: `B${index + 1}` }));
   return {
     blocks,
     truncated,
+    omittedBlocks,
     sourceText: blocks.map((block) => block.text).join("\n"),
     extractor,
   };
@@ -84,6 +124,7 @@ export function serializeRecipeEvidence(candidate: RecipeSourceCandidate) {
   return JSON.stringify({
     sourceType: candidate.extractor === "text" ? "pasted_text" : "web_page",
     truncated: candidate.truncated,
+    omittedBlocks: candidate.omittedBlocks ?? [],
     blocks: candidate.blocks,
   });
 }
@@ -209,12 +250,28 @@ export function extractHtmlCandidate(
       $('meta[name="twitter:image"]').attr("content"),
     finalUrl,
   );
-  const structured = recipes.flatMap((recipe, index) =>
-    structuredBlocks(recipe, `recipe[${index + 1}]`),
-  );
+  const structured = recipes
+    .flatMap((recipe, index) =>
+      structuredBlocks(recipe, `recipe[${index + 1}]`),
+    )
+    .map((block) => ({
+      ...block,
+      priority:
+        /^recipe\[\d+\]\.(?:name|recipeIngredient|recipeInstructions|recipeYield|prepTime|cookTime|totalTime|recipeNotes|notes)(?:\[|\.|$)/.test(
+          block.path ?? "",
+        )
+          ? 2
+          : 1,
+    }));
   const inputs: SourceInput[] = [];
   const title = $("h1").first().text() || $("title").text();
-  if (title) inputs.unshift({ kind: "page", path: "page.title", text: title });
+  if (title)
+    inputs.unshift({
+      kind: "page",
+      path: "page.title",
+      text: title,
+      priority: 3,
+    });
   $(
     "script, style, noscript, nav, header, footer, form, button, iframe, [role=navigation], .comments, #comments, .comment-list",
   ).remove();
@@ -228,14 +285,30 @@ export function extractHtmlCandidate(
       : $("body");
   const nodeIds = new WeakMap<object, number>();
   let nextNodeId = 1;
-  const read = (region: ReturnType<typeof $>) => {
+  const read = (region: ReturnType<typeof $>, priority = 0) => {
+    let recipeHeadingLevel: number | undefined;
     region.find("br").replaceWith("\n");
     const emit = (node: ReturnType<typeof $>, text: string) => {
       const element = node.get(0);
       if (!element) return;
       if (!nodeIds.has(element)) nodeIds.set(element, nextNodeId++);
+      if (node.is("h1,h2,h3,h4,h5,h6")) {
+        const level = Number(node.prop("tagName")?.slice(1));
+        if (
+          /^(?:ingredients|what you(?:’|')ll need|method|instructions|directions|preparation|recipe notes)\b/i.test(
+            text.trim(),
+          )
+        )
+          recipeHeadingLevel = level;
+        else if (
+          recipeHeadingLevel !== undefined &&
+          level <= recipeHeadingLevel
+        )
+          recipeHeadingLevel = undefined;
+      }
       inputs.push({
         kind: "page",
+        priority: priority || (recipeHeadingLevel !== undefined ? 3 : 0),
         path: [
           node.prop("tagName"),
           node.attr("class"),
@@ -295,10 +368,10 @@ export function extractHtmlCandidate(
     walk(region);
   };
   // Recipe cards are readable page content, without the surrounding blog/chrome.
-  // Cards first, then supplementary article content, then structured evidence.
+  // Keep authored order; packageSource prioritizes core evidence if it must truncate.
   // Node identities deduplicate overlap, not repeated authored rows. Empty jump
   // anchors cannot suppress the article; AI still selects the relevant recipe.
-  card.each((_, element) => read($(element)));
+  card.each((_, element) => read($(element), 3));
   read(root);
   inputs.push(...structured);
   const candidate = packageSource(inputs, "html");

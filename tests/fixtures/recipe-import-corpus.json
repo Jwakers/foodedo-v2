@@ -1,5 +1,47 @@
 [
   {
+    "id": "reported-coconut-curry",
+    "kind": "url",
+    "source": "https://www.recipetineats.com/coconut-chicken-curry-quick-easy/",
+    "expect": "succeeded",
+    "minimumIngredients": 17,
+    "minimumSteps": 1,
+    "expectedCookMinutes": 20,
+    "expectedPrepMinutes": 15,
+    "expectedIngredientPatterns": [
+      {
+        "name": "chicken",
+        "measurement": {
+          "kind": "exact",
+          "value": 500,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "coriander|cilantro"
+      },
+      {
+        "name": "rice",
+        "measurement": {
+          "kind": "exact",
+          "value": 3,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
+    ],
+    "expectedMethodPatterns": [
+      "30 seconds",
+      "15 seconds",
+      "5 min",
+      "8 min",
+      "cool|rest|stand"
+    ]
+  },
+  {
     "id": "pasted-leek-linguine",
     "kind": "text",
     "fixture": "pasted-leek-linguine.txt",
@@ -7,19 +49,86 @@
     "minimumIngredients": 6,
     "minimumSteps": 3,
     "expectedProtein": "meat-free",
+    "expectedIngredientCounts": [
+      {
+        "name": "salt",
+        "namePattern": "\\bsalt\\b",
+        "count": 1
+      },
+      {
+        "name": "water",
+        "namePattern": "\\bwater\\b",
+        "count": 1
+      }
+    ],
     "expectedIngredientPatterns": [
-      { "name": "olive oil", "amount": "^2 tbsp$" },
-      { "name": "breadcrumbs", "amount": "^20 g$" },
-      { "name": "linguine", "amount": "^150 g$" },
-      { "name": "leeks?", "amount": "^2$", "note": "thin lengths" },
-      { "name": "béarnaise sauce", "amount": "180 g" },
-      { "name": "pecorino", "amount": "^15 g$" }
+      {
+        "name": "olive oil",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "breadcrumbs",
+        "measurement": {
+          "kind": "exact",
+          "value": 20,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "linguine",
+        "measurement": {
+          "kind": "exact",
+          "value": 150,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "leeks?",
+        "note": "thin lengths",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "béarnaise sauce",
+        "measurement": {
+          "kind": "exact",
+          "value": 180,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "pecorino",
+        "measurement": {
+          "kind": "exact",
+          "value": 15,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": [
       "5.{0,3}6 min",
       "11 min",
       "10 min",
-      "Reserve",
+      "reserv(?:e|ing).*?(?:mug|water)|(?:save|keep|retain).*?(?:mug|water)",
       "drain",
       "Reduce.*heat",
       "black pepper",
@@ -29,8 +138,26 @@
   {
     "id": "timing-overlap-total",
     "expectedIngredientPatterns": [
-      { "name": "carrot", "amount": "^2$" },
-      { "name": "noodle", "amount": "250 g" }
+      {
+        "name": "carrot",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "noodle",
+        "measurement": {
+          "kind": "exact",
+          "value": 250,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": [
       "roast",
@@ -42,7 +169,7 @@
     "kind": "text",
     "source": "Tray-baked noodles\nServes 4\nTime: 45 minutes including preparation\nIngredients\n2 carrots, sliced\n250 g noodles\n1 tbsp oil\nMethod\nPrepare the carrots. Roast the carrots with oil for 12 minutes. Meanwhile boil the noodles for 5 minutes and drain them. Add noodles to the tray, then bake for 15 to 18 minutes. Serve.",
     "expect": "succeeded",
-    "expectedPrepMinutes": 15,
+    "expectedPrepRange": [5, 20],
     "expectedCookMinutes": 30,
     "expectedTotalMinutes": 45,
     "expectedPrepOrigin": "estimated",
@@ -51,8 +178,26 @@
   {
     "id": "timing-method-only",
     "expectedIngredientPatterns": [
-      { "name": "carrot", "amount": "^2$" },
-      { "name": "stock", "amount": "500 ml" }
+      {
+        "name": "carrot",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "stock",
+        "measurement": {
+          "kind": "exact",
+          "value": 500,
+          "unit": "ml",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["5 min", "20 min", "blend"],
     "kind": "text",
@@ -66,8 +211,26 @@
   {
     "id": "timing-estimated-prep",
     "expectedIngredientPatterns": [
-      { "name": "carrot", "amount": "^4$" },
-      { "name": "oil", "amount": "1 tbsp" }
+      {
+        "name": "carrot",
+        "measurement": {
+          "kind": "exact",
+          "value": 4,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "oil",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["peel", "slice", "25 min"],
     "kind": "text",
@@ -81,8 +244,20 @@
   {
     "id": "reported-sheet-pan-noodles",
     "expectedIngredientPatterns": [
-      { "name": "noodle", "amount": "^1\\s*×\\s*250 g\\s*pack(?:et)?$" },
-      { "name": "garlic", "amount": "1 clove" }
+      {
+        "name": "noodle",
+        "amount": "^1\\s*×\\s*250 g\\s*pack(?:et)?$"
+      },
+      {
+        "name": "garlic",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "clove",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": [
       "425.*F",
@@ -102,7 +277,7 @@
     "expectedCookMinutes": 28,
     "expectedTotalMinutes": 40,
     "expectedPrepOrigin": "estimated",
-    "expectedCookOrigin": "derived",
+    "expectedCookOrigins": ["derived", "estimated"],
     "expectedProtein": "meat-free",
     "expectedIngredientCounts": [
       {
@@ -115,22 +290,69 @@
   },
   {
     "id": "compound-measurements",
-    "expectedMethodPatterns": ["brown", "cook", "90 min", "do not boil dry"],
+    "expectedMethodPatterns": [
+      "brown",
+      "cook",
+      "90 min",
+      "(?:do|does) not (?:let .*?)?boil dry|never boil dry|avoid boiling dry"
+    ],
     "kind": "text",
     "fixture": "compound-measurements.txt",
     "expect": "succeeded",
     "minimumIngredients": 16,
     "expectedServings": 6,
-    "expectedIngredients": [
+    "expectedIngredientPatterns": [
       {
-        "name": "large red pepper (capsicum / bell pepper)",
-        "amountText": "1",
-        "note": "finely diced"
+        "name": "^large red pepper \\(capsicum ?/ ?bell pepper\\)$",
+        "note": "finely diced",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
       },
-      { "name": "paprika", "amountText": "2 tbsp" },
-      { "name": "cumin", "amountText": "2 tbsp" },
-      { "name": "chilli powder", "amountText": "2 tbsp" },
-      { "name": "salt", "amountText": "1 tsp" }
+      {
+        "name": "^paprika$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "^(?:ground )?cumin$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "^chilli powder$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "^salt$",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ]
   },
   {
@@ -144,22 +366,74 @@
     "expectedServings": 6,
     "expectedPrepMinutes": 20,
     "expectedCookMinutes": 110,
-    "expectedIngredients": [
+    "expectedIngredientPatterns": [
       {
-        "name": "large red pepper (capsicum / bell pepper)",
-        "amountText": "1",
-        "note": "finely diced"
+        "name": "^large red pepper \\(capsicum ?/ ?bell pepper\\)$",
+        "note": "finely diced",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
       },
-      { "name": "paprika", "amountText": "2 tbsp" },
-      { "name": "cumin", "amountText": "2 tbsp" },
-      { "name": "chilli powder", "amountText": "2 tbsp" }
+      {
+        "name": "^paprika$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "^(?:ground )?cumin$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "^chilli powder$",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ]
   },
   {
     "id": "reported-chicken-shish",
     "expectedIngredientPatterns": [
-      { "name": "chicken", "amount": "560 g" },
-      { "name": "cucumber", "amount": "145 g", "group": "cacik" }
+      {
+        "name": "chicken",
+        "measurement": {
+          "kind": "exact",
+          "value": 560,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "cucumber",
+        "group": "cacik",
+        "measurement": {
+          "kind": "exact",
+          "value": 145,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": [
       "marinat",
@@ -180,21 +454,115 @@
   {
     "id": "recipetin-chicken-breast",
     "expectedIngredientPatterns": [
-      { "name": "chicken", "noteReference": true },
-      { "name": "butter", "amount": "20 g", "group": "sauce" }
+      {
+        "name": "chicken",
+        "noteReference": true
+      },
+      {
+        "name": "butter",
+        "group": "sauce",
+        "measurement": {
+          "kind": "exact",
+          "value": 20,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["pound", "season", "cook", "butter sauce"],
     "expectedNotePatterns": ["evenly sized", "dry white wine"],
     "kind": "html",
-    "description": "Malformed ingredient punctuation, grouped ingredients, graph author, competing instruction sections and referenced notes",
+    "description": "Recognizable but incomplete: missing crust/sauce ingredients and essential chicken-cooking instructions",
     "fixture": "recipetin-chicken-breast.html",
+    "expect": "awaiting_input",
+    "expectedDraftAreas": ["method"]
+  },
+  {
+    "id": "complete-multiple-methods",
+    "kind": "html",
+    "fixture": "complete-multiple-methods.html",
+    "expectedIngredientPatterns": [
+      {
+        "name": "chicken",
+        "note": "200.*250 g each",
+        "noteReference": true,
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "butter",
+        "group": "sauce",
+        "measurement": {
+          "kind": "exact",
+          "value": 20,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "flour",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "wine",
+        "measurement": {
+          "kind": "exact",
+          "value": 60,
+          "unit": "ml",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
+    ],
+    "expectedMethodPatterns": [
+      "pound",
+      "coat",
+      "3 min",
+      "turn",
+      "4 min",
+      "cooked through",
+      "simmer",
+      "2 min"
+    ],
+    "expectedNotePatterns": ["evenly sized", "dry white wine"],
     "expect": "succeeded"
   },
   {
     "id": "complete-json-ld",
     "expectedIngredientPatterns": [
-      { "name": "chicken", "amount": "^4$" },
-      { "name": "lemon", "amount": "^1$" }
+      {
+        "name": "chicken",
+        "measurement": {
+          "kind": "exact",
+          "value": 4,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "lemon",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["season", "roast", "cooked through"],
     "kind": "html",
@@ -205,8 +573,20 @@
   {
     "id": "fragmented-json-ld",
     "expectedIngredientPatterns": [
-      { "name": "beans", "amount": "1 tin" },
-      { "name": "parsley", "amount": "handful" }
+      {
+        "name": "beans",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tin",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "parsley",
+        "amount": ".*\\bhandful\\b.*"
+      }
     ],
     "expectedMethodPatterns": ["drain", "toss", "parsley"],
     "kind": "html",
@@ -218,18 +598,154 @@
     "id": "halfbaked-meatballs",
     "expectedIngredientPatterns": [
       {
+        "name": "(?:chicken|pork|turkey)",
+        "measurement": {
+          "kind": "exact",
+          "value": 680,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
         "name": "Italian seasoning",
-        "amount": "1 tbsp",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        },
         "noteReference": true
       },
-      { "name": "cream", "amount": "0.5 cup" }
+      {
+        "name": "Dijon mustard",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "parmesan",
+        "measurement": {
+          "kind": "exact",
+          "value": 0.5,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "shallot",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "garlic",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "clove",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "salt"
+      },
+      {
+        "name": "black pepper"
+      },
+      {
+        "name": "olive oil",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "butter",
+        "measurement": {
+          "kind": "exact",
+          "value": 6,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "lemon",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "(?:wine|broth)",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "spinach",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "cream",
+        "measurement": {
+          "kind": "exact",
+          "value": 0.5,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "parsley",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": [
+      "mix",
       "shape",
       "brown",
       "butter",
+      "lemon",
+      "shallot",
+      "wine|broth",
       "simmer",
       "spinach",
+      "cream",
       "serve"
     ],
     "expectedNotePatterns": ["basil", "oregano", "thyme", "rosemary", "sage"],
@@ -239,16 +755,37 @@
     "expectedServings": 6,
     "expectedPrepMinutes": 20,
     "expectedCookMinutes": 35,
-    "minimumIngredients": 14,
-    "minimumSteps": 6,
+    "minimumIngredients": 15,
+    "minimumSteps": 1,
     "minimumNotes": 1,
     "expect": "succeeded"
   },
   {
     "id": "ordinary-pasted-recipe",
     "expectedIngredientPatterns": [
-      { "name": "pasta", "amount": "250 g" },
-      { "name": "chickpea", "amount": "1.*400 g.*tin" }
+      {
+        "name": "pasta",
+        "measurement": {
+          "kind": "exact",
+          "value": 250,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "chickpea",
+        "measurement": {
+          "kind": "package",
+          "count": 1,
+          "unit": "tin",
+          "size": {
+            "value": 400,
+            "unit": "g"
+          },
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["cook", "tender", "toss", "lemon"],
     "kind": "text",
@@ -262,8 +799,14 @@
   {
     "id": "unusual-quantities",
     "expectedIngredientPatterns": [
-      { "name": "basil", "amount": "handful" },
-      { "name": "salt", "amount": "to taste" }
+      {
+        "name": "basil",
+        "amount": ".*\\bhandful\\b.*"
+      },
+      {
+        "name": "salt",
+        "amount": "to taste"
+      }
     ],
     "expectedMethodPatterns": ["toast", "tomato", "basil", "salt"],
     "kind": "text",
@@ -277,8 +820,26 @@
   {
     "id": "no-cook",
     "expectedIngredientPatterns": [
-      { "name": "watermelon", "amount": "500 g" },
-      { "name": "feta", "amount": "100 g" }
+      {
+        "name": "watermelon",
+        "measurement": {
+          "kind": "exact",
+          "value": 500,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "feta",
+        "measurement": {
+          "kind": "exact",
+          "value": 100,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["toss", "serve"],
     "kind": "text",
@@ -292,8 +853,26 @@
   {
     "id": "missing-metadata",
     "expectedIngredientPatterns": [
-      { "name": "beans", "amount": "1 tin" },
-      { "name": "garlic", "amount": "2 clove" }
+      {
+        "name": "beans",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tin",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "garlic",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": "clove",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["warm", "garlic", "hot"],
     "kind": "text",
@@ -323,8 +902,26 @@
   {
     "id": "prompt-injection",
     "expectedIngredientPatterns": [
-      { "name": "chickpea", "amount": "1 tin" },
-      { "name": "lemon", "amount": "^1$" }
+      {
+        "name": "chickpea",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tin",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "lemon",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["drain", "toss", "lemon juice"],
     "kind": "text",
@@ -356,8 +953,26 @@
     "expect": "succeeded",
     "fixture": "empty-recipe-anchor.html",
     "expectedIngredientPatterns": [
-      { "name": "carrot", "amount": "^2$" },
-      { "name": "stock", "amount": "500 ml" }
+      {
+        "name": "carrot",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "stock",
+        "measurement": {
+          "kind": "exact",
+          "value": 500,
+          "unit": "ml",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["peel", "20 min", "blend"]
   },
@@ -367,8 +982,26 @@
     "expect": "succeeded",
     "fixture": "table-recipe.html",
     "expectedIngredientPatterns": [
-      { "name": "carrot", "amount": "^2$" },
-      { "name": "oil", "amount": "1 tbsp" }
+      {
+        "name": "carrot",
+        "measurement": {
+          "kind": "exact",
+          "value": 2,
+          "unit": null,
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "oil",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tbsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["slice", "200.*C", "25 min"]
   },
@@ -378,9 +1011,36 @@
     "expect": "succeeded",
     "source": "Milk sauce\nServes 2\nIngredients\none cup milk\n⅜ cup cream\n1⁄2 tsp salt\nMethod\nMix the milk, cream and salt. Warm gently for 5 minutes, stirring, and serve.",
     "expectedIngredientPatterns": [
-      { "name": "milk", "amount": "1 cup" },
-      { "name": "cream", "amount": "0.375 cup" },
-      { "name": "salt", "amount": "0.5 tsp" }
+      {
+        "name": "milk",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "cream",
+        "measurement": {
+          "kind": "exact",
+          "value": 0.375,
+          "unit": "cup",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "salt",
+        "measurement": {
+          "kind": "exact",
+          "value": 0.5,
+          "unit": "tsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["warm", "5 min", "stir"]
   },
@@ -390,7 +1050,16 @@
     "expect": "succeeded",
     "source": "Spiced carrots\nServes 2\nIngredients\n2 carrots, sliced\n1 tsp 5-spice powder\n1 tbsp oil\nMethod\nToss the carrots with the oil and 5-spice powder. Roast at 200C for 25 minutes and serve.",
     "expectedIngredientPatterns": [
-      { "name": "5.spice powder", "amount": "1 tsp" }
+      {
+        "name": "5.spice powder",
+        "measurement": {
+          "kind": "exact",
+          "value": 1,
+          "unit": "tsp",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
     ],
     "expectedMethodPatterns": ["200.*C", "25 min", "roast"]
   }

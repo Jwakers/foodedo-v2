@@ -13,10 +13,16 @@ import {
 } from "../convex/lib/recipeImport/models";
 import type { RecipeSourceCandidate } from "../convex/lib/recipeImport/source";
 import { ImportFailure } from "../convex/lib/recipeImport/contracts";
+import { parallelBenchmarkClient } from "./recipe-import-parallel-benchmark";
+import {
+  formatImportAmount,
+  type ImportAmount,
+} from "../convex/lib/recipeImport/measurements";
 import {
   getRecipeReviewIssues,
   type RecipeContent,
   type RecipeMetadataProvenance,
+  type RecipeIngredientLine,
 } from "../src/lib/domain/recipes";
 
 export type CorpusItem = {
@@ -24,7 +30,8 @@ export type CorpusItem = {
   kind: "html" | "text" | "url";
   source?: string;
   fixture?: string;
-  expect: "succeeded" | "needs_review" | "failed";
+  expect: "succeeded" | "needs_review" | "awaiting_input" | "failed";
+  expectedDraftAreas?: string[];
   expectedFailure?: string;
   expectedProtein?: RecipeContent["proteinCategory"];
   expectedServings?: number;
@@ -34,6 +41,9 @@ export type CorpusItem = {
   expectedPrepRange?: [number, number];
   expectedPrepOrigin?: RecipeMetadataProvenance["prepMinutes"];
   expectedCookOrigin?: RecipeMetadataProvenance["cookMinutes"];
+  expectedCookOrigins?: Array<
+    NonNullable<RecipeMetadataProvenance["cookMinutes"]>
+  >;
   minimumIngredients?: number;
   minimumSteps?: number;
   minimumNotes?: number;
@@ -42,6 +52,7 @@ export type CorpusItem = {
   expectedIngredientPatterns?: Array<{
     name: string;
     amount?: string;
+    measurement?: ImportAmount;
     note?: string;
     group?: string;
     noteReference?: boolean;
@@ -53,7 +64,8 @@ export type CorpusItem = {
   }>;
   expectedIngredientCounts?: Array<{
     name: string;
-    amountText: string;
+    namePattern?: string;
+    amountText?: string;
     count: number;
     distinctGroups?: boolean;
   }>;
@@ -95,11 +107,16 @@ export async function main() {
 
   for (const item of corpus) {
     if (selectedIds && !selectedIds.includes(item.id)) continue;
+    let baseline: string | undefined;
     for (let run = 1; run <= repeat; run++) {
       const telemetry: RecipeImportModelTelemetry[] = [];
-      const modelClient = createGatewayRecipeImportModelClient((event) =>
+      const baseClient = createGatewayRecipeImportModelClient((event) =>
         telemetry.push(event),
       );
+      const parallel = process.argv.includes("--benchmark-parallel");
+      const modelClient = parallel
+        ? parallelBenchmarkClient(baseClient)
+        : baseClient;
       const startedAt = performance.now();
       try {
         const candidate = await candidateFor(item);
@@ -110,24 +127,83 @@ export async function main() {
               case: item.id,
               recipe: outcome.recipe,
               metadataProvenance: outcome.metadataProvenance,
+              issues: outcome.issues,
             }),
           );
         const metrics = score(outcome.recipe, item, outcome.metadataProvenance);
+        const signature = measurementSignature(outcome.recipe, item);
+        const repeatMeasurementsStable =
+          baseline === undefined || signature === baseline;
+        baseline ??= signature;
         results.push({
           case: item.id,
+          experiment: parallel ? "parallel" : "coherent",
           run,
           ...metrics,
+          ...(!metrics.core
+            ? {
+                coreDiagnostics: {
+                  ingredients: outcome.recipe.ingredients.map(
+                    ({ name, amountText }) => ({ name, amountText }),
+                  ),
+                  steps: outcome.recipe.steps.map(({ text }) => text),
+                },
+              }
+            : {}),
+          metadata: {
+            servings: outcome.recipe.servings,
+            prepMinutes: outcome.recipe.prepMinutes,
+            cookMinutes: outcome.recipe.cookMinutes,
+            provenance: outcome.metadataProvenance,
+          },
+          ...(!metrics.measurementAccuracy
+            ? {
+                ingredientDiagnostics: outcome.recipe.ingredients.map(
+                  ({ name, amountText, group }) => ({
+                    name,
+                    amountText,
+                    group,
+                  }),
+                ),
+              }
+            : {}),
+          ...(!metrics.methodCoverage
+            ? {
+                methodDiagnostics: outcome.recipe.steps.map(({ text }) => text),
+              }
+            : {}),
+          outcome: outcome.status,
+          repeatMeasurementsStable,
           passed:
             item.expect === "failed"
               ? false
-              : metrics.core &&
+              : (item.expect === "awaiting_input"
+                  ? outcome.status === "draft" &&
+                    (item.expectedDraftAreas ?? []).every((area) =>
+                      outcome.issues.some(
+                        (issue) => issue.blocking && issue.area === area,
+                      ),
+                    )
+                  : outcome.status === "usable") &&
+                metrics.core &&
                 metrics.semanticPreservation &&
                 metrics.metadataAccuracy &&
                 metrics.measurementAccuracy &&
                 !metrics.formattingDefect &&
                 metrics.noteResolution,
+          // Repeated imports may differ in prose, not quantities or component membership.
           latencyMs: Math.round(performance.now() - startedAt),
           modelCalls: telemetry.length,
+          failedModelCalls: telemetry.filter(
+            (event) => event.outcome && event.outcome !== "succeeded",
+          ).length,
+          usageComplete: telemetry.every(
+            (event) => event.usageAvailable !== false,
+          ),
+          costEstimateIncomplete: telemetry.some(
+            (event) =>
+              event.usageAvailable === false || !pricing[event.resolvedModel],
+          ),
           fallbackUsed: telemetry.some((event) => event.gatewayFallbackUsed),
           inputTokens: total(telemetry, "inputTokens"),
           outputTokens: total(telemetry, "outputTokens"),
@@ -136,6 +212,7 @@ export async function main() {
             0,
           ),
         });
+        if (!repeatMeasurementsStable) results.at(-1)!.passed = false;
       } catch (error) {
         results.push({
           case: item.id,
@@ -148,9 +225,23 @@ export async function main() {
           hardFailure: true,
           latencyMs: Math.round(performance.now() - startedAt),
           modelCalls: telemetry.length,
+          failedModelCalls: telemetry.filter(
+            (event) => event.outcome && event.outcome !== "succeeded",
+          ).length,
+          usageComplete: telemetry.every(
+            (event) => event.usageAvailable !== false,
+          ),
+          costEstimateIncomplete: telemetry.some(
+            (event) =>
+              event.usageAvailable === false || !pricing[event.resolvedModel],
+          ),
           fallbackUsed: telemetry.some((event) => event.gatewayFallbackUsed),
           inputTokens: total(telemetry, "inputTokens"),
           outputTokens: total(telemetry, "outputTokens"),
+          estimatedCostUsd: telemetry.reduce(
+            (sum, event) => sum + estimateCost(event, pricing),
+            0,
+          ),
           error: error instanceof Error ? error.name : "UnknownError",
           failureCode: error instanceof ImportFailure ? error.code : "internal",
           failureDetails:
@@ -201,6 +292,9 @@ export async function main() {
       inputTokens: sum(results, "inputTokens"),
       outputTokens: sum(results, "outputTokens"),
       estimatedCostUsd: sum(results, "estimatedCostUsd") || "set pricing env",
+      costEstimateIncomplete: results.some(
+        (result) => result.costEstimateIncomplete,
+      ),
     },
   ]);
   if (results.some((result) => !result.passed)) process.exitCode = 1;
@@ -247,6 +341,14 @@ export function score(
     steps >= (item.minimumSteps ?? 1);
   const matches = (pattern: string, value: string) =>
     new RegExp(pattern, "i").test(value.normalize("NFKC"));
+  // Summary times are estimates: assess plausibility, not transcription/arithmetic identity.
+  const plausibleTime = (
+    actual: number | undefined,
+    expected: number | undefined,
+  ) =>
+    expected === undefined ||
+    (actual !== undefined &&
+      Math.abs(actual - expected) <= Math.max(2, Math.ceil(expected * 0.2)));
   // Identity checks ignore typography only, never missing words or quantities.
   const identity = (value: string) =>
     value
@@ -255,7 +357,18 @@ export function score(
       .trim()
       .replace(/\s*\/\s*/g, "/")
       .replace(/\s+/g, " ");
-  const method = recipe.steps.map((step) => step.text).join("\n");
+  // Cook displays referenced notes alongside steps. Essential details may live
+  // there; unrelated/unreferenced notes must not mask a missing method action.
+  const method = recipe.steps
+    .map((step) =>
+      [
+        step.text,
+        ...(step.noteRefs ?? []).map(
+          (id) => recipe.notes?.find((note) => note.id === id)?.text ?? "",
+        ),
+      ].join("\n"),
+    )
+    .join("\n");
   const methodCoverage =
     Boolean(item.expectedMethodPatterns?.length) &&
     item.expectedMethodPatterns!.every((pattern) => matches(pattern, method));
@@ -270,7 +383,9 @@ export function score(
         (line) =>
           matches(expected.name, line.name) &&
           (!expected.amount ||
-            matches(expected.amount, line.amountText ?? "")) &&
+            matches(`^(?:${expected.amount})$`, line.amountText ?? "")) &&
+          (!expected.measurement ||
+            matchesMeasurement(line, expected.measurement)) &&
           (!expected.note || matches(expected.note, line.note ?? "")) &&
           (!expected.group || matches(expected.group, line.group ?? "")) &&
           (!expected.noteReference || Boolean(line.noteRefs?.length)),
@@ -288,8 +403,11 @@ export function score(
     (item.expectedIngredientCounts ?? []).every((expected) => {
       const lines = recipe.ingredients.filter(
         (actual) =>
-          identity(actual.name) === identity(expected.name) &&
-          actual.amountText === expected.amountText,
+          (expected.namePattern
+            ? matches(expected.namePattern, actual.name)
+            : identity(actual.name) === identity(expected.name)) &&
+          (expected.amountText === undefined ||
+            actual.amountText === expected.amountText),
       );
       return (
         lines.length === expected.count &&
@@ -314,7 +432,7 @@ export function score(
     (item.expectedNotePatterns ?? []).every((pattern) =>
       matches(
         pattern,
-        (recipe.notes ?? []).map((note) => note.text).join("\n"),
+        [...(recipe.notes ?? []).map((note) => note.text), method].join("\n"),
       ),
     );
   return {
@@ -328,15 +446,15 @@ export function score(
         recipe.proteinCategory === item.expectedProtein) &&
       (item.expectedServings === undefined ||
         recipe.servings === item.expectedServings) &&
-      (item.expectedPrepMinutes === undefined ||
-        recipe.prepMinutes === item.expectedPrepMinutes) &&
-      (item.expectedCookMinutes === undefined ||
-        recipe.cookMinutes === item.expectedCookMinutes) &&
+      plausibleTime(recipe.prepMinutes, item.expectedPrepMinutes) &&
+      plausibleTime(recipe.cookMinutes, item.expectedCookMinutes) &&
       (item.expectedTotalMinutes === undefined ||
         (recipe.prepMinutes !== undefined &&
           recipe.cookMinutes !== undefined &&
-          recipe.prepMinutes + recipe.cookMinutes ===
-            item.expectedTotalMinutes)) &&
+          plausibleTime(
+            recipe.prepMinutes + recipe.cookMinutes,
+            item.expectedTotalMinutes,
+          ))) &&
       (!item.expectedPrepRange ||
         (recipe.prepMinutes !== undefined &&
           recipe.prepMinutes >= item.expectedPrepRange[0] &&
@@ -344,13 +462,19 @@ export function score(
       (item.expectedPrepOrigin === undefined ||
         provenance.prepMinutes === item.expectedPrepOrigin) &&
       (item.expectedCookOrigin === undefined ||
-        provenance.cookMinutes === item.expectedCookOrigin),
+        provenance.cookMinutes === item.expectedCookOrigin) &&
+      (item.expectedCookOrigins === undefined ||
+        (provenance.cookMinutes !== undefined &&
+          item.expectedCookOrigins.includes(provenance.cookMinutes))),
     formattingDefect: recipe.ingredients.some((ingredient) =>
-      /\(\s*\(|\)\s*\)|,\s*,|^(?:g|l|ml|mg)\s/i.test(
+      /,\s*,|^(?:g|l|ml|mg)\s/i.test(
         `${ingredient.amountText ?? ""} ${ingredient.name} ${ingredient.note ?? ""}`,
       ),
     ),
     methodCoverage,
+    missingMethodPatterns: (item.expectedMethodPatterns ?? []).filter(
+      (pattern) => !matches(pattern, method),
+    ),
     noteResolution,
     reviewRequired:
       getRecipeReviewIssues({
@@ -363,6 +487,101 @@ export function score(
       }).length > 0,
     hardFailure: false,
   };
+}
+
+/** Compare fixture-selected measurements and grouping, not AI wording or inferred times. */
+export function measurementSignature(recipe: RecipeContent, item: CorpusItem) {
+  const selectors = [
+    ...(item.expectedIngredientPatterns ?? []).map(
+      (expected) => (name: string) => new RegExp(expected.name, "i").test(name),
+    ),
+    ...(item.expectedIngredients ?? []).map(
+      (expected) => (name: string) =>
+        name.toLowerCase().trim() === expected.name.toLowerCase().trim(),
+    ),
+    ...(item.expectedIngredientCounts ?? []).map(
+      (expected) => (name: string) =>
+        expected.namePattern
+          ? new RegExp(expected.namePattern, "i").test(name)
+          : name.toLowerCase().trim() === expected.name.toLowerCase().trim(),
+    ),
+  ];
+  const rows = selectors.map((select) =>
+    recipe.ingredients.filter((line) => select(line.name)),
+  );
+  return JSON.stringify({
+    amounts: rows.map((lines, index) =>
+      lines
+        .map((line) => ({
+          amount:
+            item.expectedIngredientPatterns?.[index]?.measurement &&
+            matchesMeasurement(
+              line,
+              item.expectedIngredientPatterns[index].measurement!,
+            )
+              ? (formatImportAmount(
+                  item.expectedIngredientPatterns[index].measurement!,
+                ).amountText ?? "")
+              : canonicalAmount(
+                  line.amountText ??
+                    [line.quantity, line.unit].filter(Boolean).join(" "),
+                ),
+          category: line.shoppingCategory,
+        }))
+        .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+    ),
+    // Only fixture-declared component relationships are release gates. Optional
+    // AI-inferred group enrichment is not an authored-source quantity change.
+    sameGroups:
+      item.expectedIngredientPatterns?.some((expected) => expected.group) ||
+      item.expectedIngredientCounts?.some((expected) => expected.distinctGroups)
+        ? rows.map((left) =>
+            rows.map((right) =>
+              left.some((a) =>
+                right.some((b) => (a.group ?? "") === (b.group ?? "")),
+              ),
+            ),
+          )
+        : [],
+  });
+}
+
+function matchesMeasurement(
+  line: RecipeIngredientLine,
+  expected: ImportAmount,
+) {
+  const amount = (
+    line.amountText ?? [line.quantity, line.unit].filter(Boolean).join(" ")
+  ).trim();
+  if (
+    canonicalAmount(amount) ===
+    canonicalAmount(formatImportAmount(expected).amountText ?? "")
+  )
+    return true;
+  // A counted identity can carry its noun in the name rather than the amount:
+  // "1 clove garlic" and "1 small garlic clove" describe the same quantity.
+  // Do not equate bare "1 garlic" with a clove, or accept a different count.
+  if (
+    expected.kind !== "exact" ||
+    !expected.unit ||
+    !["clove", "slice", "head", "sprig", "stalk"].includes(expected.unit)
+  )
+    return false;
+  return (
+    new RegExp(`\\b${expected.unit}s?\\b`, "i").test(line.name) &&
+    amount === formatImportAmount({ ...expected, unit: null }).amountText
+  );
+}
+
+/** Purchase-container spelling does not change a package count or its size. */
+function canonicalAmount(amount: string) {
+  return amount
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b(?:packs?|packets?)\b/g, "packet")
+    .replace(/\b(?:tins?|cans?)\b/g, "can");
 }
 
 type Pricing = Record<string, { input: number; output: number }>;

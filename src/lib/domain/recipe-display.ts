@@ -23,6 +23,54 @@ export function formatIngredientNote(
   return note || undefined;
 }
 
+const LISTING_SOURCE_LABEL_MAX = 28;
+
+/** Quiet listing credit for a personal recipe: site, host, or a short origin. */
+export function formatPersonalRecipeSourceLabel(source: RecipeSource): string {
+  if (source.type === "manual") return "Your recipe";
+  if (source.type !== "import") return "";
+
+  const named = shortenSourceLabel(source.sourceName);
+  if (named) return named;
+
+  const fromUrl = hostnameLabel(source.sourceUrl);
+  if (fromUrl) return fromUrl;
+
+  return source.method === "text" ? "Pasted" : "Imported";
+}
+
+function shortenSourceLabel(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (looksLikeHostname(trimmed)) {
+    return hostnameLabel(
+      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
+    );
+  }
+  return truncateLabel(trimmed);
+}
+
+function looksLikeHostname(value: string) {
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
+}
+
+function hostnameLabel(url?: string): string | undefined {
+  if (!url?.trim()) return undefined;
+  try {
+    const host = new URL(url.includes("://") ? url : `https://${url}`).hostname
+      .replace(/^www\./i, "")
+      .toLowerCase();
+    return host ? truncateLabel(host) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function truncateLabel(value: string) {
+  if (value.length <= LISTING_SOURCE_LABEL_MAX) return value;
+  return `${value.slice(0, LISTING_SOURCE_LABEL_MAX - 1).trimEnd()}…`;
+}
+
 export function formatImportedMetadataNotice(source?: RecipeSource) {
   if (source?.type !== "import" || !source.metadataProvenance) return undefined;
   const inferred = metadataLabels(source.metadataProvenance, "derived");

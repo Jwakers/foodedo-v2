@@ -524,7 +524,9 @@ async function shoppingItemView(
     _id: item._id,
     name: item.name,
     displayName:
-      item.displayName ?? formatShoppingItemDisplayName(item.name, sources),
+      sources.length > 0
+        ? formatShoppingItemDisplayName(item.name, sources)
+        : (item.displayName ?? item.name),
     category: item.category ?? ("other" as const),
     detailLines: item.detailLines,
     sources,

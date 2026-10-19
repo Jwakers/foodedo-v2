@@ -447,7 +447,7 @@ function SignedInDrawerContent({
                 type="date"
                 value={startDate}
                 aria-label="Choose plan start date"
-                className="h-11 w-full rounded-sm border border-border bg-paper px-3 text-14 font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+                className="h-11 w-full rounded-sm border border-border bg-paper px-3 text-16 font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
                 onChange={(event) => {
                   if (event.target.value !== "") {
                     setStartDate(event.target.value);

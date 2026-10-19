@@ -15,7 +15,7 @@ active meal plan
 ## Interaction contract
 
 - The checkbox and ingredient label form one large purchased-state target that remains comfortably usable one-handed.
-- The trailing chevron is a separate, labelled details action that opens the ingredient's `Used for` provenance sheet.
+- The trailing chevron is a separate, labelled details action that opens the ingredient's `Used for` provenance sheet. Each meal in that sheet links through to its recipe.
 - Completion and provenance must remain separate controls within the row.
 - Checked items remain in their current category and position unless the user explicitly hides them.
 - `Hide checked` appears after at least one item is checked. While checked items are hidden, the control becomes `Show checked (N)`, where `N` is the number hidden.

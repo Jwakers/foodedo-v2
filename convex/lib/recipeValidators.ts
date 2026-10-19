@@ -110,6 +110,24 @@ export const recipeContentFields = {
 
 export const recipeContentValidator = v.object(recipeContentFields);
 
+export const importDraftIssueValidator = v.object({
+  area: v.union(
+    v.literal("ingredients"),
+    v.literal("method"),
+    v.literal("metadata"),
+    v.literal("notes"),
+  ),
+  code: v.union(
+    v.literal("ambiguous"),
+    v.literal("unresolved_reference"),
+    v.literal("source_conflict"),
+    v.literal("partial_coverage"),
+  ),
+  targetId: v.union(v.string(), v.null()),
+  message: v.string(),
+  blocking: v.boolean(),
+});
+
 export const recipeMetadataOriginValidator = v.union(
   v.literal("published"),
   v.literal("derived"),
@@ -120,6 +138,17 @@ export const recipeMetadataProvenanceValidator = v.object({
   servings: v.optional(recipeMetadataOriginValidator),
   prepMinutes: v.optional(recipeMetadataOriginValidator),
   cookMinutes: v.optional(recipeMetadataOriginValidator),
+});
+
+export const importDraftValidator = v.object({
+  recipe: recipeContentValidator,
+  issues: v.array(importDraftIssueValidator),
+  resolvedIssueIndexes: v.array(v.number()),
+  revision: v.number(),
+  sourceName: v.optional(v.string()),
+  sourceAuthor: v.optional(v.string()),
+  sourceImageUrls: v.optional(v.array(v.string())),
+  metadataProvenance: v.optional(recipeMetadataProvenanceValidator),
 });
 
 export const recipeNormalizationWarningValidator = v.object({

@@ -34,11 +34,15 @@ export const metadata: Metadata = {
   },
 };
 
+const isCapacitorBuild = process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true";
+
 export const viewport: Viewport = {
   themeColor: foodedoColors.paper,
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Native shell only: prevent iOS focus-zoom traps. The website stays zoomable.
+  ...(isCapacitorBuild ? { maximumScale: 1, userScalable: false } : {}),
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

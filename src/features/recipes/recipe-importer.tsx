@@ -36,6 +36,7 @@ import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store"
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 import { importJobAccess, importJobResumePath } from "./recipe-import-state";
+import { RecipeImportDraftEditor } from "./recipe-import-draft-editor";
 import type { ImportFailureCode } from "../../../convex/lib/recipeImport/contracts";
 
 type ImportMode = "url" | "text";
@@ -195,13 +196,21 @@ export function RecipeImporter() {
     importId &&
     (job === undefined || (recipe === undefined && job?.resultRecipeId))
   ) {
-    return <ImportProgress />;
+    return <ImportProgress importId={importId} />;
   }
   if (importId && job === null) {
     return (
       <ImportUnavailable
         onStartAgain={() => router.replace("/recipes/import")}
       />
+    );
+  }
+  if (
+    job?.draft &&
+    (job.status === "awaiting_input" || job.status === "failed")
+  ) {
+    return (
+      <RecipeImportDraftEditor key={`${job._id}:${job.attempt}`} job={job} />
     );
   }
   if (job?.status === "failed") {
@@ -243,7 +252,7 @@ export function RecipeImporter() {
       </>
     );
   }
-  if (importId) return <ImportProgress />;
+  if (importId) return <ImportProgress importId={importId} />;
 
   return (
     <>
@@ -389,8 +398,10 @@ export function RecipeImporter() {
 
 function ImportProgress({
   accountLoading = false,
+  importId,
 }: {
   accountLoading?: boolean;
+  importId?: string;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-175 flex-col items-center px-page-inline pt-16 text-center">
@@ -402,8 +413,13 @@ function ImportProgress({
       <p className="mt-3 max-w-85 text-15 leading-5.5 text-graphite">
         {accountLoading
           ? "Checking your sign-in so we can resume your import."
-          : "We’re reading and checking the ingredients and method. This can take up to two minutes. You can leave this page and return to this import link."}
+          : "We’re organising the recipe and checking for missing cooking details. This can take up to two minutes. You can keep using Foodedo—we’ll notify you in the app when it’s ready or needs your attention."}
       </p>
+      {importId ? (
+        <ButtonLink variant="inline" className="mt-3" href="/recipes">
+          Continue using Foodedo
+        </ButtonLink>
+      ) : null}
       <div className="mt-7 w-full animate-pulse rounded-surface bg-mist p-4 motion-reduce:animate-none">
         <div className="h-40 rounded-surface bg-border" />
         <div className="mt-3 h-5 w-3/5 rounded-sm bg-border" />
@@ -638,9 +654,9 @@ export function importFailureMessage(
   }
   if (failureCode === "no_recipe") {
     return {
-      title: "We couldn’t find a complete recipe",
+      title: "We couldn’t find a recipe",
       description:
-        "The page did not contain enough ingredients and method information to save safely. You can paste the recipe text instead.",
+        "We couldn’t identify a recipe in that content. Paste the ingredients and cooking instructions to organise them instead.",
     };
   }
   if (failureCode === "ai_unavailable") {
@@ -669,6 +685,13 @@ export function importFailureMessage(
       title: "We couldn’t preserve this recipe safely",
       description:
         "Some important quantities or instructions could not be matched back to the source. Paste the recipe text so nothing important is lost.",
+    };
+  }
+  if (failureCode === "invalid_model_output") {
+    return {
+      title: "We couldn’t finish organising this recipe",
+      description:
+        "The AI service couldn’t return a usable recipe format. Nothing was saved. Try again, or paste the recipe text.",
     };
   }
   if (failureCode === "invalid_result") {

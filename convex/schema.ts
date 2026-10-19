@@ -7,6 +7,7 @@ import {
   shoppingCategoryValidator,
   recipeImportFailureCodeValidator,
   recipeImportFailureDetailValidator,
+  importDraftValidator,
 } from "./lib/recipeValidators";
 
 export default defineSchema({
@@ -68,11 +69,15 @@ export default defineSchema({
     sourceType: v.union(v.literal("url"), v.literal("text")),
     sourceUrl: v.optional(v.string()),
     inputText: v.optional(v.string()),
+    sourceName: v.optional(v.string()),
+    sourceAuthor: v.optional(v.string()),
+    sourceImageUrls: v.optional(v.array(v.string())),
     status: v.union(
       v.literal("queued"),
       v.literal("processing"),
       v.literal("succeeded"),
       v.literal("needs_review"),
+      v.literal("awaiting_input"),
       v.literal("failed"),
     ),
     phase: v.union(
@@ -83,6 +88,8 @@ export default defineSchema({
       v.literal("complete"),
     ),
     attempt: v.number(),
+    draft: v.optional(importDraftValidator),
+    expiresAt: v.optional(v.number()),
     failureCode: v.optional(recipeImportFailureCodeValidator),
     failureDetails: v.optional(v.array(recipeImportFailureDetailValidator)),
     resultRecipeId: v.optional(v.id("recipes")),

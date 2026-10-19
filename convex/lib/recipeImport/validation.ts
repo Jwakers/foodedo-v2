@@ -1,17 +1,43 @@
 import {
-  prepareRecipeContent,
+  prepareRecipeDraft,
   type RecipeContent,
   type RecipeMetadataProvenance,
   type RecipeNormalizationWarning,
 } from "../../../src/lib/domain/recipes";
-import {
-  formatImportAmount,
-  isScalableImportAmount,
-  checkSourceAmount,
-} from "./measurements";
-import type { ImportedRecipe, ImportFinding } from "./models";
+import { formatImportAmount, isScalableImportAmount } from "./measurements";
+import type { ImportedRecipe } from "./models";
 import type { RecipeSourceCandidate } from "./source";
-import { validateTiming } from "./timing";
+import type { ImportDraftIssue } from "../../../src/lib/domain/recipe-import-draft";
+
+/** A missing method link must be repaired or explicitly judged nonessential. */
+export function unresolvedMethodNoteIssues(
+  output: ImportedRecipe,
+  issues: ImportDraftIssue[],
+): ImportDraftIssue[] {
+  const notes = new Set(output.notes.map((note) => note.id));
+  return output.steps.flatMap((step, index) => {
+    const missing = step.noteRefs.filter((id) => !notes.has(id));
+    const targetId = `step-${index + 1}`;
+    const explicitlyOptional = issues.some(
+      (issue) =>
+        issue.area === "method" &&
+        issue.code === "unresolved_reference" &&
+        issue.targetId === targetId &&
+        !issue.blocking,
+    );
+    return !missing.length || explicitlyOptional
+      ? []
+      : [
+          {
+            area: "method",
+            code: "unresolved_reference",
+            targetId,
+            message: `Restore the missing guidance referenced by this instruction (${missing.join(", ").slice(0, 120)}). If the link is nonessential, remove it or explicitly mark this method reference nonblocking.`,
+            blocking: true,
+          },
+        ];
+  });
+}
 
 function sourceText(
   ids: string[],
@@ -27,34 +53,27 @@ function optionalText(value: string | null) {
   return value?.trim() || undefined;
 }
 /** Audit the consumer-facing measurements, not the extraction model's internal amount union. */
-export function recipeForVerification(output: ImportedRecipe) {
+export function recipeForCorrection(output: ImportedRecipe) {
   const notes = new Map(output.notes.map((note) => [note.id, note.text]));
   const resolveNotes = (refs: string[]) =>
     refs.map((id) => ({ id, text: notes.get(id) ?? null }));
   return {
-    title: output.title,
-    description: output.description,
-    servings: output.servings,
-    prepMinutes: output.prepMinutes,
-    cookMinutes: output.cookMinutes,
-    timingBasis: output.timingBasis,
+    ...output,
     ingredients: output.ingredients.map((ingredient, index) => ({
+      ...ingredient,
+      index,
       line: index + 1,
-      sourceIds: ingredient.sourceIds,
-      name: ingredient.name,
-      amount: formatImportAmount(ingredient.amount).amountText ?? "unspecified",
-      preparation: ingredient.note,
-      group: ingredient.group,
+      displayAmount:
+        formatImportAmount(ingredient.amount).amountText ?? "unspecified",
       referencedNotes: resolveNotes(ingredient.noteRefs),
     })),
     steps: output.steps.map((step, index) => ({
+      ...step,
+      index,
       step: index + 1,
-      sourceIds: step.sourceIds,
-      instruction: step.text,
-      group: step.group,
       referencedNotes: resolveNotes(step.noteRefs),
     })),
-    notes: output.notes,
+    notes: output.notes.map((note, index) => ({ ...note, index })),
   };
 }
 export function toRecipeContent(
@@ -65,7 +84,18 @@ export function toRecipeContent(
   metadataProvenance: RecipeMetadataProvenance;
   normalizationWarnings: RecipeNormalizationWarning[];
 } {
-  const recipe = prepareRecipeContent({
+  const noteIds = new Set(output.notes.map((note) => note.id));
+  const normalizationWarnings: RecipeNormalizationWarning[] = [];
+  const resolvedReferences = (refs: string[], targetId: string) => {
+    if (refs.some((id) => !noteIds.has(id)))
+      normalizationWarnings.push({
+        area: "notes",
+        code: "unresolved_reference",
+        targetId,
+      });
+    return [...new Set(refs.filter((id) => noteIds.has(id)))];
+  };
+  const recipe = prepareRecipeDraft({
     title: output.title.trim(),
     ...(optionalText(output.description)
       ? { description: output.description!.trim() }
@@ -83,14 +113,23 @@ export function toRecipeContent(
       ...(optionalText(ingredient.group)
         ? { group: ingredient.group!.trim() }
         : {}),
-      ...(ingredient.noteRefs.length ? { noteRefs: ingredient.noteRefs } : {}),
+      ...(ingredient.noteRefs.length
+        ? {
+            noteRefs: resolvedReferences(
+              ingredient.noteRefs,
+              `ingredient-${index + 1}`,
+            ),
+          }
+        : {}),
     })),
     steps: output.steps.map((step, index) => ({
       id: `step-${index + 1}`,
       text: step.text.trim(),
       sourceText: sourceText(step.sourceIds, source, 2000),
       ...(optionalText(step.group) ? { group: step.group!.trim() } : {}),
-      ...(step.noteRefs.length ? { noteRefs: step.noteRefs } : {}),
+      ...(step.noteRefs.length
+        ? { noteRefs: resolvedReferences(step.noteRefs, `step-${index + 1}`) }
+        : {}),
     })),
     ...(output.notes.length
       ? {
@@ -118,148 +157,6 @@ export function toRecipeContent(
       ...(output.prepMinutes ? { prepMinutes: output.prepMinutes.origin } : {}),
       ...(output.cookMinutes ? { cookMinutes: output.cookMinutes.origin } : {}),
     },
-    normalizationWarnings: [],
+    normalizationWarnings,
   };
-}
-
-function balancedParentheses(text: string) {
-  let depth = 0;
-  for (const character of text) {
-    if (character === "(") depth++;
-    if (character === ")") depth--;
-    if (depth < 0) return false;
-  }
-  return depth === 0;
-}
-export function validateImportedRecipe(
-  output: ImportedRecipe,
-  source: RecipeSourceCandidate,
-): ImportFinding[] {
-  const findings: ImportFinding[] = validateTiming(output);
-  const ids = new Set(source.blocks.map((block) => block.id));
-  const notes = new Set(output.notes.map((note) => note.id));
-  const checkRefs = (sourceIds: string[], area: ImportFinding["area"]) => {
-    if (sourceIds.some((id) => !ids.has(id)))
-      findings.push({
-        area,
-        code: "source_reference",
-        detail: "Use only source block IDs present in the evidence package.",
-        sourceIds: sourceIds.filter((id) => !ids.has(id)).slice(0, 24),
-      });
-  };
-  checkRefs(output.titleSourceIds, "metadata");
-  for (const metadata of [
-    output.servings,
-    output.prepMinutes,
-    output.cookMinutes,
-    output.timingBasis.totalMinutes,
-  ])
-    if (metadata) checkRefs(metadata.sourceIds, "metadata");
-  for (const ingredient of output.ingredients) {
-    checkRefs(ingredient.sourceIds, "ingredients");
-    if (
-      (ingredient.amount.kind === "exact" ||
-        ingredient.amount.kind === "range") &&
-      /\b(?:small|medium|large)\b/i.test(ingredient.amount.qualifier ?? "")
-    )
-      findings.push({
-        area: "ingredients",
-        code: "formatting",
-        sourceIds: ingredient.sourceIds,
-        detail:
-          "Move ingredient size (large/medium/small) from amount.qualifier into name. Keep the numeric amount unchanged; qualifiers are for measurements such as heaped/level.",
-      });
-    if (
-      checkSourceAmount(
-        ingredient.amount,
-        sourceText(ingredient.sourceIds, source, Infinity),
-      ) === "conflicting"
-    )
-      findings.push({
-        area: "ingredients",
-        code: "measurement",
-        detail: `Amount not supported by cited source: ${JSON.stringify(ingredient.amount).slice(0, 230)}. Remove invented equivalents or package sizes; retain the published amount.`,
-        sourceIds: ingredient.sourceIds,
-      });
-    if (
-      !balancedParentheses(ingredient.name) ||
-      (ingredient.note && !balancedParentheses(ingredient.note)) ||
-      /\bEACH\s*:/i.test(ingredient.name)
-    )
-      findings.push({
-        area: "ingredients",
-        code: "formatting",
-        detail:
-          "Separate quantities and preparation from ingredient identity; balance parentheses.",
-        sourceIds: ingredient.sourceIds,
-      });
-    if (ingredient.noteRefs.some((ref) => !notes.has(ref)))
-      findings.push({
-        area: "notes",
-        code: "note_reference",
-        detail:
-          "Every note reference must resolve to a returned recipe note ID.",
-        sourceIds: ingredient.sourceIds,
-      });
-  }
-  for (const step of output.steps) {
-    checkRefs(step.sourceIds, "method");
-    if (step.noteRefs.some((ref) => !notes.has(ref)))
-      findings.push({
-        area: "notes",
-        code: "note_reference",
-        detail:
-          "Every note reference must resolve to a returned recipe note ID.",
-        sourceIds: step.sourceIds,
-      });
-  }
-  for (const note of output.notes) checkRefs(note.sourceIds, "notes");
-  if (notes.size !== output.notes.length)
-    findings.push({
-      area: "notes",
-      code: "note_reference",
-      sourceIds: [],
-      detail: "Recipe note IDs must be unique.",
-    });
-  try {
-    toRecipeContent(output, source);
-  } catch {
-    findings.push({
-      area: "contract",
-      code: "formatting",
-      sourceIds: [],
-      detail: "The recipe must satisfy the durable recipe content bounds.",
-    });
-  }
-  return findings.slice(0, 30);
-}
-
-/** Unknown source notation is not a rejection, but it needs an explicit independent audit. */
-export function requiredMeasurementConfirmations(
-  output: ImportedRecipe,
-  source: RecipeSourceCandidate,
-) {
-  return output.ingredients.flatMap((ingredient, index) =>
-    checkSourceAmount(
-      ingredient.amount,
-      sourceText(ingredient.sourceIds, source, Infinity),
-    ) === "inconclusive"
-      ? [index + 1]
-      : [],
-  );
-}
-
-export function validateMeasurementConfirmations(
-  output: ImportedRecipe,
-  required: number[],
-  confirmed: number[],
-): ImportFinding[] {
-  return required
-    .filter((line) => !confirmed.includes(line))
-    .map((line) => ({
-      area: "ingredients",
-      code: "measurement",
-      sourceIds: output.ingredients[line - 1].sourceIds,
-      detail: `Ingredient line ${line} requires explicit independent confirmation of its amount against the cited source. Do not invent or silently accept uncertain quantities.`,
-    }));
 }

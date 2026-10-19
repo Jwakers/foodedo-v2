@@ -4,6 +4,7 @@ import { expect, test } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 import { formatImportAmount } from "./lib/recipeImport/measurements";
+import { RECIPE_NORMALIZATION_VERSION } from "./lib/recipeImport/contracts";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -41,6 +42,402 @@ const recipeCore = {
   steps: [{ id: "step-1", text: "Simmer the tomatoes." }],
   proteinCategory: "meat-free" as const,
 };
+
+test("app-wide notification reads are bounded, private and exclude retained source/drafts", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "notifications-owner");
+  const other = await seedUser(t, "notifications-other");
+  await t.run(async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    const ownerId = users.find(
+      (user) => user.authSubject === "notifications-owner",
+    )!._id;
+    for (let index = 0; index < 25; index++)
+      await ctx.db.insert("recipeImports", {
+        ownerId,
+        clientRequestId: `notification-${index}`,
+        sourceType: "text",
+        inputText: "Private source text",
+        status: "queued",
+        phase: "waiting",
+        attempt: 1,
+        createdAt: index,
+        updatedAt: index,
+      });
+  });
+  const jobs = await owner.query(api.recipeImports.notificationJobs, {});
+  expect(jobs).toHaveLength(20);
+  expect(jobs.map((job) => job.updatedAt)).toEqual(
+    Array.from({ length: 20 }, (_, index) => 24 - index),
+  );
+  expect(Object.keys(jobs[0]).sort()).toEqual([
+    "_id",
+    "attempt",
+    "status",
+    "updatedAt",
+  ]);
+  expect(await other.query(api.recipeImports.notificationJobs, {})).toEqual([]);
+  expect(await t.query(api.recipeImports.notificationJobs, {})).toEqual([]);
+  expect(
+    await t
+      .withIdentity({ subject: "not-yet-synced" })
+      .query(api.recipeImports.notificationJobs, {}),
+  ).toEqual([]);
+});
+
+const missingMethodIssue = {
+  area: "method" as const,
+  code: "partial_coverage" as const,
+  targetId: null,
+  message: "Add the missing cooking instructions.",
+  blocking: true,
+};
+
+async function stagedDraft(
+  t: ReturnType<typeof createTestContext>,
+  owner: Awaited<ReturnType<typeof seedUser>>,
+  request = "draft",
+) {
+  const importId = await owner.mutation(api.recipeImports.beginImport, {
+    clientRequestId: request,
+    source: {
+      type: "text",
+      text: "Ingredients: 400 g tomatoes. The cooking instructions are missing.",
+    },
+  });
+  await t.mutation(internal.recipeImports.claimAttempt, {
+    importId,
+    attempt: 1,
+  });
+  await t.mutation(internal.recipeImports.stageDraft, {
+    importId,
+    attempt: 1,
+    recipe: { ...recipeCore, steps: [] },
+    issues: [missingMethodIssue],
+    metadataProvenance: {},
+  });
+  return importId;
+}
+
+test("incomplete imports remain owner-private drafts outside the recipe library", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "draft-owner");
+  const other = await seedUser(t, "draft-other");
+  const importId = await stagedDraft(t, owner);
+  const job = await owner.query(api.recipeImports.getImport, { importId });
+  expect(job).toMatchObject({
+    status: "awaiting_input",
+    draft: { recipe: { steps: [] }, revision: 1 },
+  });
+  expect(
+    await other.query(api.recipeImports.getImport, { importId }),
+  ).toBeNull();
+  await expect(
+    other.mutation(api.recipeImports.updateDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+      recipe: recipeCore,
+      resolvedIssueIndexes: [0],
+    }),
+  ).rejects.toThrow("Import not found");
+  await t.run(async (ctx) => {
+    expect(await ctx.db.query("recipes").collect()).toHaveLength(0);
+    expect((await ctx.db.get(importId))?.inputText).toBeUndefined();
+  });
+});
+
+test("draft editing and finalization are revision-guarded, atomic and idempotent", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "draft-finalizer");
+  const importId = await stagedDraft(t, owner);
+  await expect(
+    owner.mutation(api.recipeImports.finalizeDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+    }),
+  ).rejects.toThrow("Resolve the highlighted");
+  const revision = await owner.mutation(api.recipeImports.updateDraft, {
+    importId,
+    attempt: 1,
+    revision: 1,
+    recipe: recipeCore,
+    resolvedIssueIndexes: [0],
+  });
+  await expect(
+    owner.mutation(api.recipeImports.updateDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+      recipe: recipeCore,
+      resolvedIssueIndexes: [0],
+    }),
+  ).rejects.toThrow("This draft changed");
+  const recipeId = await owner.mutation(api.recipeImports.finalizeDraft, {
+    importId,
+    attempt: 1,
+    revision,
+  });
+  expect(
+    await owner.mutation(api.recipeImports.finalizeDraft, {
+      importId,
+      attempt: 1,
+      revision,
+    }),
+  ).toBe(recipeId);
+  expect(
+    await owner.query(api.recipeImports.getImport, { importId }),
+  ).toMatchObject({ resultRecipeId: recipeId });
+  expect(
+    (await owner.query(api.recipeImports.getImport, { importId }))?.draft,
+  ).toBeUndefined();
+  const recipe = await owner.query(api.recipes.getMine, { recipeId });
+  expect(recipe).toMatchObject({
+    title: recipeCore.title,
+    source: { normalizationVersion: RECIPE_NORMALIZATION_VERSION },
+    servingScaling: "source_only",
+  });
+  await t.run(async (ctx) => {
+    expect(await ctx.db.query("recipes").collect()).toHaveLength(1);
+  });
+});
+
+test("draft acknowledgement cannot save an empty method or bypass recipe bounds", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "draft-bounds");
+  const importId = await stagedDraft(t, owner);
+  const revision = await owner.mutation(api.recipeImports.updateDraft, {
+    importId,
+    attempt: 1,
+    revision: 1,
+    recipe: { ...recipeCore, steps: [] },
+    resolvedIssueIndexes: [0],
+  });
+  await expect(
+    owner.mutation(api.recipeImports.finalizeDraft, {
+      importId,
+      attempt: 1,
+      revision,
+    }),
+  ).rejects.toThrow();
+  await expect(
+    owner.mutation(api.recipeImports.updateDraft, {
+      importId,
+      attempt: 1,
+      revision,
+      recipe: {
+        ...recipeCore,
+        ingredients: [recipeCore.ingredients[0], recipeCore.ingredients[0]],
+      },
+      resolvedIssueIndexes: [0],
+    }),
+  ).rejects.toThrow();
+  await t.run(async (ctx) => {
+    expect(await ctx.db.query("recipes").collect()).toHaveLength(0);
+  });
+});
+
+test("appending source text resumes the same import and prevents stale actions", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "draft-resume");
+  const importId = await stagedDraft(t, owner);
+  expect(
+    await owner.mutation(api.recipeImports.resumeDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+      text: "Simmer the tomatoes for 10 minutes, then serve.",
+    }),
+  ).toBe(2);
+  await t.mutation(internal.recipeImports.stageDraft, {
+    importId,
+    attempt: 1,
+    recipe: recipeCore,
+    issues: [],
+    metadataProvenance: {},
+  });
+  await t.mutation(internal.recipeImports.markTimedOut, {
+    importId,
+    attempt: 1,
+  });
+  expect(
+    await owner.query(api.recipeImports.getImport, { importId }),
+  ).toMatchObject({ attempt: 2, status: "queued" });
+  expect(
+    (await owner.query(api.recipeImports.getImport, { importId }))?.draft,
+  ).toMatchObject({ recipe: { steps: [] }, revision: 1 });
+  await t.mutation(internal.recipeImports.claimAttempt, {
+    importId,
+    attempt: 2,
+  });
+  const payload = await t.query(internal.recipeImports.getPayload, {
+    importId,
+    attempt: 2,
+  });
+  expect(payload?.inputText).toContain("Simmer the tomatoes for 10 minutes");
+  expect(payload?.recoveredDraft?.recipe).toMatchObject({ steps: [] });
+});
+
+test("draft expiry is fixed and cleanup remains effective after editing", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "draft-expiry");
+  const importId = await stagedDraft(t, owner);
+  await t.run(async (ctx) =>
+    ctx.db.patch(importId, { expiresAt: 1, updatedAt: 500 }),
+  );
+  await expect(
+    owner.mutation(api.recipeImports.finalizeDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+    }),
+  ).rejects.toThrow("This draft expired");
+  await t.mutation(internal.recipeImports.cleanupImport, {
+    importId,
+    expectedUpdatedAt: 100,
+  });
+  expect(
+    await owner.query(api.recipeImports.getImport, { importId }),
+  ).toBeNull();
+});
+
+test.each(["ai_unavailable", "timed_out"] as const)(
+  "resumed drafts survive %s and can be edited and retried",
+  async (failureCode) => {
+    const t = createTestContext();
+    const owner = await seedUser(t, `retained-${failureCode}`);
+    const other = await seedUser(t, `other-${failureCode}`);
+    const importId = await stagedDraft(t, owner);
+    const before = await owner.query(api.recipeImports.getImport, { importId });
+    await owner.mutation(api.recipeImports.resumeDraft, {
+      importId,
+      attempt: 1,
+      revision: 1,
+      text: "Simmer the tomatoes for 10 minutes.",
+    });
+    await t.mutation(internal.recipeImports.claimAttempt, {
+      importId,
+      attempt: 2,
+    });
+    if (failureCode === "timed_out")
+      await t.mutation(internal.recipeImports.markTimedOut, {
+        importId,
+        attempt: 2,
+      });
+    else
+      await t.mutation(internal.recipeImports.failImport, {
+        importId,
+        attempt: 2,
+        failureCode,
+      });
+    const failed = await owner.query(api.recipeImports.getImport, { importId });
+    expect(failed).toMatchObject({
+      status: "failed",
+      failureCode,
+      draft: before!.draft,
+      expiresAt: before!.expiresAt,
+    });
+    expect(
+      await other.query(api.recipeImports.getImport, { importId }),
+    ).toBeNull();
+    const revision = await owner.mutation(api.recipeImports.updateDraft, {
+      importId,
+      attempt: 2,
+      revision: 1,
+      recipe: { ...recipeCore, title: "Edited after outage" },
+      resolvedIssueIndexes: [0],
+    });
+    await owner.mutation(api.recipeImports.retryImport, { importId });
+    await t.mutation(internal.recipeImports.claimAttempt, {
+      importId,
+      attempt: 3,
+    });
+    const payload = await t.query(internal.recipeImports.getPayload, {
+      importId,
+      attempt: 3,
+    });
+    expect(payload?.recoveredDraft).toMatchObject({
+      recipe: { title: "Edited after outage" },
+      revision,
+    });
+    expect(payload?.inputText).toBe("Simmer the tomatoes for 10 minutes.");
+    await t.mutation(internal.recipeImports.stageDraft, {
+      importId,
+      attempt: 2,
+      recipe: recipeCore,
+      issues: [],
+      metadataProvenance: {},
+    });
+    expect(
+      (await owner.query(api.recipeImports.getImport, { importId }))?.attempt,
+    ).toBe(3);
+    await t.mutation(internal.recipeImports.completeImport, {
+      importId,
+      attempt: 3,
+      recipe: recipeCore,
+      method: "text",
+    });
+    const completed = await owner.query(api.recipeImports.getImport, {
+      importId,
+    });
+    expect(completed?.draft).toBeUndefined();
+    expect(completed?.expiresAt).toBeUndefined();
+    expect(
+      (await t.run(async (ctx) => ctx.db.get(importId)))?.inputText,
+    ).toBeUndefined();
+  },
+);
+
+test("failed retained drafts can finalize once and still expire after edits", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "retained-finalize");
+  const importId = await stagedDraft(t, owner);
+  await owner.mutation(api.recipeImports.resumeDraft, {
+    importId,
+    attempt: 1,
+    revision: 1,
+    text: "Simmer the tomatoes for 10 minutes.",
+  });
+  await t.mutation(internal.recipeImports.failImport, {
+    importId,
+    attempt: 2,
+    failureCode: "ai_unavailable",
+  });
+  const revision = await owner.mutation(api.recipeImports.updateDraft, {
+    importId,
+    attempt: 2,
+    revision: 1,
+    recipe: recipeCore,
+    resolvedIssueIndexes: [0],
+  });
+  const recipeId = await owner.mutation(api.recipeImports.finalizeDraft, {
+    importId,
+    attempt: 2,
+    revision,
+  });
+  expect(
+    await owner.mutation(api.recipeImports.finalizeDraft, {
+      importId,
+      attempt: 2,
+      revision,
+    }),
+  ).toBe(recipeId);
+  expect(
+    (await owner.query(api.recipeImports.getImport, { importId }))?.failureCode,
+  ).toBeUndefined();
+  const expiredId = await stagedDraft(t, owner, "expired-retained");
+  await t.run(async (ctx) =>
+    ctx.db.patch(expiredId, { expiresAt: 1, status: "failed", updatedAt: 100 }),
+  );
+  await t.mutation(internal.recipeImports.cleanupImport, {
+    importId: expiredId,
+    expectedUpdatedAt: 0,
+  });
+  expect(
+    await owner.query(api.recipeImports.getImport, { importId: expiredId }),
+  ).toBeNull();
+});
 
 test("persists normalized measurements through the existing recipe contract without changing older recipes", async () => {
   const t = createTestContext();

@@ -238,7 +238,7 @@ export function ActivePlanAdjustDrawer({
                 aria-label="Change plan start date"
                 value={startDate}
                 disabled={isApplying}
-                className="h-11 w-36 rounded-sm border border-border bg-paper px-2.5 text-13 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+                className="h-11 w-36 rounded-sm border border-border bg-paper px-2.5 text-16 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
                 onChange={(event) => {
                   if (event.target.value !== "") {
                     setStartDate(event.target.value);

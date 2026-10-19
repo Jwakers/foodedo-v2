@@ -162,7 +162,7 @@ export function formatShoppingItemDisplayName<TRecipeId extends string>(
     : String(Number(quantity.toFixed(2)));
 
   if (unit === "whole" || unit === "piece" || unit === "") {
-    return `${quantityLabel} ${quantity === 1 ? name : pluraliseIngredient(name)}`;
+    return `${quantityLabel} ${name}`;
   }
   return `${quantityLabel} ${formatUnit(unit, quantity)} ${name}`;
 }
@@ -221,19 +221,4 @@ function formatUnit(unit: string, quantity: number) {
   if (["tin", "can", "clove", "head"].includes(unit)) return `${unit}s`;
   if (unit === "bunch") return "bunches";
   return unit;
-}
-
-function pluraliseIngredient(name: string) {
-  const lowerName = name.toLowerCase();
-  if (
-    lowerName.endsWith("s") ||
-    lowerName === "broccoli" ||
-    lowerName === "coriander" ||
-    lowerName === "parsley"
-  ) {
-    return name;
-  }
-  if (/[^aeiou]y$/i.test(name)) return `${name.slice(0, -1)}ies`;
-  if (/(ch|sh|x|z)$/i.test(name)) return `${name}es`;
-  return `${name}s`;
 }
