@@ -38,6 +38,11 @@ export type GuestPlanClaim = {
 
 /** Current in-memory shape; persisted schema versions are an implementation detail. */
 export type GuestDraft = {
+  reviewSource?: {
+    spaceKey: string;
+    planId: string | null;
+    updatedAt?: number;
+  };
   schemaVersion: typeof GUEST_DRAFT_SCHEMA_VERSION;
   planStartDate: string;
   planDays: PlanDays;
@@ -213,6 +218,7 @@ export function extendGuestPlanByOneDay(
         catalogueVersion: catalogueVersions.get(catalogueMealId)!,
       },
     ],
+    ...(draft.reviewSource ? { reviewSource: draft.reviewSource } : {}),
     createdAt: draft.createdAt,
     updatedAt: now,
   };
@@ -238,6 +244,7 @@ export function rebaseGuestPlanStartDate(
       catalogueMealId: choice.catalogueMealId,
       catalogueVersion: choice.catalogueVersion,
     })),
+    ...(draft.reviewSource ? { reviewSource: draft.reviewSource } : {}),
     createdAt: draft.createdAt,
     updatedAt: now,
   };
@@ -283,8 +290,29 @@ export function readGuestDraft(
   const claim = readClaim(input.claim, acceptedAt, input.updatedAt);
   if (claim === null) return null;
 
+  let reviewSource: GuestDraft["reviewSource"];
+  if (input.reviewSource !== undefined) {
+    const value = input.reviewSource;
+    if (
+      !isRecord(value) ||
+      typeof value.spaceKey !== "string" ||
+      value.spaceKey.length > 200 ||
+      (value.planId !== null && typeof value.planId !== "string") ||
+      (value.planId !== null && !isTimestamp(value.updatedAt))
+    )
+      return null;
+    reviewSource = {
+      spaceKey: value.spaceKey,
+      planId: value.planId,
+      ...(typeof value.updatedAt === "number"
+        ? { updatedAt: value.updatedAt }
+        : {}),
+    };
+  }
+
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    ...(reviewSource ? { reviewSource } : {}),
     planStartDate: input.planStartDate,
     planDays: input.planDays,
     servings: input.servings,
@@ -673,6 +701,7 @@ function editableDraft(
     planDays: draft.planDays,
     servings: draft.servings,
     mealChoices,
+    ...(draft.reviewSource ? { reviewSource: draft.reviewSource } : {}),
     createdAt: draft.createdAt,
     updatedAt: now,
   };

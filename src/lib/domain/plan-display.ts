@@ -133,6 +133,7 @@ export function formatMealDurationLabel(
 }
 
 export type ActivePlanMealSlot = {
+  recipeId?: string;
   date: string;
   title: string;
   description: string | null;

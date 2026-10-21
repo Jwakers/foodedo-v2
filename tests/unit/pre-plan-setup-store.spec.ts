@@ -36,3 +36,23 @@ test("shares one pending pre-plan setup and notifies every surface", () => {
   unsubscribeWeek();
   clearPendingPrePlanSetup();
 });
+
+test("keeps context-specific overrides and clears only the originating context", () => {
+  const privateKey = "account-one:private";
+  const householdKey = "account-one:household";
+  const privateSetup = {
+    planDays: 3 as const,
+    startDate: "2026-10-21",
+    servings: 1,
+    prioritiseSavedRecipes: true,
+  };
+  const householdSetup = { ...privateSetup, planDays: 7 as const, servings: 4 };
+  setPendingPrePlanSetup(privateSetup, privateKey);
+  setPendingPrePlanSetup(householdSetup, householdKey);
+  expect(getPendingPrePlanSetup(privateKey)).toEqual(privateSetup);
+  expect(getPendingPrePlanSetup(householdKey)).toEqual(householdSetup);
+  clearPendingPrePlanSetup(householdKey);
+  expect(getPendingPrePlanSetup(privateKey)).toEqual(privateSetup);
+  expect(getPendingPrePlanSetup(householdKey)).toBeNull();
+  clearPendingPrePlanSetup(privateKey);
+});

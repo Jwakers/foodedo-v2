@@ -1,5 +1,10 @@
 "use client";
 
+import { getDraftSpaceKey } from "@/lib/platform/draft-space";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { bindReviewSource } from "./review-source";
+import { useHouseholdSpace } from "@/features/household/household-context";
+
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -38,7 +43,12 @@ import {
 } from "@/lib/domain/recipes";
 
 type PlannerTarget =
-  | { kind: "saved"; today: string }
+  | {
+      kind: "saved";
+      today: string;
+      mealPlanId: Id<"mealPlans">;
+      expectedUpdatedAt: number;
+    }
   | {
       kind: "draft";
       today: string;
@@ -58,11 +68,12 @@ export function usePlanThisMeal({
   catalogueMealId: string;
   catalogueVersion: number;
 }) {
+  const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const router = useRouter();
   const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const preferences = useQuery(
     api.planningPreferences.getCurrent,
@@ -152,10 +163,18 @@ export function usePlanThisMeal({
   }
 
   async function startWeek(reviewPath: "/week" | "/week/new") {
+    const generationKey = getDraftSpaceKey();
     if (guestCatalogue === null) {
       throw new Error("The catalogue is unavailable.");
     }
+    if (isAuthenticated) {
+      if (currentPlan === undefined)
+        throw new Error("Your week is still loading.");
+    }
     await beginGuestPlanDraftWithMeal({
+      reviewSource: isAuthenticated
+        ? bindReviewSource(currentPlan ?? null)
+        : undefined,
       catalogue: guestCatalogue,
       catalogueMealId,
       catalogueVersion,
@@ -167,6 +186,7 @@ export function usePlanThisMeal({
         : [],
     });
     await refreshStoredReferences();
+    if (getDraftSpaceKey() !== generationKey) return;
     router.push(reviewPath);
   }
 
@@ -189,7 +209,12 @@ export function usePlanThisMeal({
     setPending({ kind: "opening" });
     try {
       if (currentPlan && savedPlanDays(currentPlan, today).length > 0) {
-        setTarget({ kind: "saved", today });
+        setTarget({
+          kind: "saved",
+          today,
+          mealPlanId: currentPlan._id,
+          expectedUpdatedAt: currentPlan.updatedAt,
+        });
         return;
       }
       const draft = await readCurrentGuestPlanDraft(guestCatalogue);
@@ -223,8 +248,9 @@ export function usePlanThisMeal({
           return;
         }
         const result = await planSavedMeal({
-          mealPlanId: currentPlan._id,
-          expectedUpdatedAt: currentPlan.updatedAt,
+          ...spaceArgs,
+          mealPlanId: target.mealPlanId,
+          expectedUpdatedAt: target.expectedUpdatedAt,
           date,
           catalogueMealId,
           catalogueVersion,
@@ -279,8 +305,9 @@ export function usePlanThisMeal({
           return;
         }
         const result = await addSavedPlanDay({
-          mealPlanId: currentPlan._id,
-          expectedUpdatedAt: currentPlan.updatedAt,
+          ...spaceArgs,
+          mealPlanId: target.mealPlanId,
+          expectedUpdatedAt: target.expectedUpdatedAt,
           catalogueMealId,
           catalogueVersion,
         });

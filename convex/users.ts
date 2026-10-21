@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "./_generated/server";
+import { leaveMembership } from "./lib/spaces";
 import { getCurrentUser } from "./lib/auth";
 
 const syncedUserFields = {
@@ -55,6 +56,7 @@ export const deleteFromClerk = internalMutation({
       .unique();
     if (existing === null) return null;
     const ownerId = existing._id;
+    await leaveMembership(ctx, ownerId);
 
     const planningPreferences = await ctx.db
       .query("planningPreferences")

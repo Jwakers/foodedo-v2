@@ -7,13 +7,19 @@ import Link from "next/link";
 import type { FunctionReturnType } from "convex/server";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { FeatureDiscovery } from "@/components/feature-discovery";
 import {
   formatPlanWeekdayUpper,
   resolveActivePlanFocus,
   resolveActivePlanRestOfWeek,
   type ActivePlanMealSlot,
 } from "@/lib/domain/plan-display";
-import { recipeCookPath, recipeDetailPath } from "@/lib/routing/recipes";
+import {
+  personalRecipeDetailPath,
+  personalRecipeCookPath,
+  recipeCookPath,
+  recipeDetailPath,
+} from "@/lib/routing/recipes";
 import { api } from "../../../convex/_generated/api";
 
 type ActiveMealPlan = NonNullable<
@@ -29,7 +35,7 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
   return (
     <section
       aria-labelledby="active-plan-heading"
-      className="mx-auto flex w-full max-w-175 flex-col gap-5 pb-2"
+      className="mx-auto flex w-full max-w-175 flex-col gap-6"
     >
       <h1 id="active-plan-heading" className="sr-only">
         Your week
@@ -62,16 +68,18 @@ function TonightFocus({
   const overline = durationLabel
     ? `${timingLabel} · ${durationLabel.toUpperCase()}`
     : timingLabel;
-  const href = meal.catalogueMealSlug
-    ? recipeDetailPath(
-        meal.catalogueMealSlug,
-        {
-          catalogueMealId: meal.catalogueMealId ?? undefined,
-          catalogueVersion: meal.catalogueVersion ?? undefined,
-        },
-        servings,
-      )
-    : null;
+  const href = meal.recipeId
+    ? personalRecipeDetailPath(meal.recipeId, servings, servings)
+    : meal.catalogueMealSlug
+      ? recipeDetailPath(
+          meal.catalogueMealSlug,
+          {
+            catalogueMealId: meal.catalogueMealId ?? undefined,
+            catalogueVersion: meal.catalogueVersion ?? undefined,
+          },
+          servings,
+        )
+      : null;
 
   return (
     <article className="flex flex-col gap-3.5">
@@ -119,13 +127,17 @@ function TonightFocus({
       </div>
 
       <div className="flex gap-2">
-        {meal.catalogueMealSlug ? (
+        {meal.recipeId || meal.catalogueMealSlug ? (
           <ButtonLink
             className="min-w-0 flex-1"
-            href={recipeCookPath(meal.catalogueMealSlug, servings, {
-              catalogueMealId: meal.catalogueMealId ?? undefined,
-              catalogueVersion: meal.catalogueVersion ?? undefined,
-            })}
+            href={
+              meal.recipeId
+                ? personalRecipeCookPath(meal.recipeId, servings, servings)
+                : recipeCookPath(meal.catalogueMealSlug!, servings, {
+                    catalogueMealId: meal.catalogueMealId ?? undefined,
+                    catalogueVersion: meal.catalogueVersion ?? undefined,
+                  })
+            }
           >
             Cook this meal
             <ArrowRight aria-hidden="true" className="size-4.5" />
@@ -202,16 +214,18 @@ function RestOfWeekCard({
   meal: ActivePlanMealSlot;
   servings: number;
 }) {
-  const href = meal.catalogueMealSlug
-    ? recipeDetailPath(
-        meal.catalogueMealSlug,
-        {
-          catalogueMealId: meal.catalogueMealId ?? undefined,
-          catalogueVersion: meal.catalogueVersion ?? undefined,
-        },
-        servings,
-      )
-    : null;
+  const href = meal.recipeId
+    ? personalRecipeDetailPath(meal.recipeId, servings, servings)
+    : meal.catalogueMealSlug
+      ? recipeDetailPath(
+          meal.catalogueMealSlug,
+          {
+            catalogueMealId: meal.catalogueMealId ?? undefined,
+            catalogueVersion: meal.catalogueVersion ?? undefined,
+          },
+          servings,
+        )
+      : null;
   const content = (
     <>
       <div className="relative aspect-111/70 overflow-hidden rounded-sm bg-mist">
@@ -272,26 +286,15 @@ function ShoppingListReady({ mealCount }: { mealCount: number }) {
 
 function ImportRecipeNudge() {
   return (
-    <Link
+    <FeatureDiscovery
+      headingId="import-discovery-heading"
       href="/recipes/import"
-      aria-label="Import a recipe into Foodedo"
-      className="group flex min-h-22 items-center gap-3.5 border-t border-border pt-4.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-    >
-      <span className="flex size-[72px] shrink-0 items-center justify-center rounded-surface bg-cadmium-soft text-ink transition-colors group-hover:bg-border">
-        <Download aria-hidden="true" className="size-7" strokeWidth={1.8} />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-10 font-bold tracking-overline text-cadmium uppercase">
-          Found a recipe elsewhere?
-        </span>
-        <span className="font-display text-20 font-semibold tracking-card text-ink">
-          Bring it into Foodedo
-        </span>
-        <span className="flex items-center gap-1 text-13 font-semibold text-leaf">
-          Import a recipe
-          <ArrowRight aria-hidden="true" className="size-3.5" />
-        </span>
-      </span>
-    </Link>
+      ariaLabel="Import a recipe into Foodedo"
+      label="Found a recipe elsewhere?"
+      title="Bring it into Foodedo"
+      action="Import a recipe"
+      icon={<Download className="size-6" strokeWidth={1.8} />}
+      tone="cadmium"
+    />
   );
 }

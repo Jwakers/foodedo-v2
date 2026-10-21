@@ -1,5 +1,9 @@
 "use client";
 
+import { SpaceHeader } from "@/components/space-header";
+import { ContextSelector } from "@/features/household/context-selector";
+import { useHouseholdSpace } from "@/features/household/household-context";
+
 import type { OptimisticLocalStore } from "convex/browser";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -137,17 +141,18 @@ function optimisticallyUpdateShoppingItem(
 }
 
 export function ShoppingListPage() {
+  const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { status, isAuthenticated } = useFoodedoAuth();
   const current = useQuery(
     api.shoppingLists.getCurrent,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const recentLists = useQuery(
     api.shoppingLists.getRecentSummaries,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const requestedListId = searchParams.get("list");
   const requestedList = recentLists?.find(
@@ -159,7 +164,7 @@ export function ShoppingListPage() {
     isAuthenticated &&
       requestedList !== undefined &&
       requestedList._id !== currentListId
-      ? { shoppingListId: requestedList._id }
+      ? { ...spaceArgs, shoppingListId: requestedList._id }
       : "skip",
   );
 
@@ -176,6 +181,7 @@ export function ShoppingListPage() {
 
   if (
     status === "loading" ||
+    !spaceReady ||
     (isAuthenticated && (current === undefined || recentLists === undefined))
   ) {
     return <ShoppingListLoading />;
@@ -248,6 +254,11 @@ function ReadyShoppingListPage({
   selectedList: SelectedShoppingList | null;
   onSelectList: (shoppingListId: Id<"shoppingLists"> | null) => void;
 }) {
+  const { spaceArgs, isHousehold } = useHouseholdSpace();
+  const addExtra = useMutation(api.shoppingLists.addItem);
+  const [extraOpen, setExtraOpen] = useState(false);
+  const [extraName, setExtraName] = useState("");
+  const [addingExtra, setAddingExtra] = useState(false);
   const ensureList = useMutation(api.shoppingLists.ensureForCurrentPlan);
   const setItemCheckedMutation = useMutation(api.shoppingLists.setItemChecked);
   const removeItemMutation = useMutation(api.shoppingLists.removeItem);
@@ -318,7 +329,7 @@ function ReadyShoppingListPage({
     if (!needsSync || attemptedSync.current) return;
     attemptedSync.current = true;
     setIsSyncing(true);
-    void ensureList({})
+    void ensureList(spaceArgs)
       .then((result) => {
         if (result.status !== "ready") {
           setSyncError(syncErrorMessage(result.status));
@@ -329,7 +340,7 @@ function ReadyShoppingListPage({
         setSyncError("Foodedo couldn’t prepare your list. Try again.");
       })
       .finally(() => setIsSyncing(false));
-  }, [ensureList, needsSync, syncAttempt]);
+  }, [ensureList, needsSync, syncAttempt, spaceArgs]);
 
   if (current !== null && (needsSync || current.list === null)) {
     return (
@@ -397,7 +408,11 @@ function ReadyShoppingListPage({
 
   async function handleCheckedChange(item: ShoppingItem, checked: boolean) {
     try {
-      const result = await setItemChecked({ itemId: item._id, checked });
+      const result = await setItemChecked({
+        ...spaceArgs,
+        itemId: item._id,
+        checked,
+      });
       if (result.status !== "updated") throw new Error("Item is unavailable");
     } catch (error) {
       console.error("Failed to update a shopping item.", error);
@@ -408,16 +423,43 @@ function ReadyShoppingListPage({
   async function handleRemoveItem(item: ShoppingItem) {
     setSelectedItemId(null);
     try {
-      if (item.treatment === "staple") {
-        const result = await setStapleIncluded({
-          itemId: item._id,
-          included: false,
-        });
-        if (result.status !== "updated") throw new Error("Item is unavailable");
-        return;
-      }
-      const result = await removeItem({ itemId: item._id });
+      const result =
+        item.treatment === "staple"
+          ? await setStapleIncluded({
+              ...spaceArgs,
+              itemId: item._id,
+              included: false,
+            })
+          : await removeItem({ ...spaceArgs, itemId: item._id });
       if (result.status !== "updated") throw new Error("Item is unavailable");
+      toast(
+        `${item.displayName} removed · ${isHousehold ? "Household" : "Private"}`,
+        {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              void (async () => {
+                const restored =
+                  item.treatment === "staple"
+                    ? await setStapleIncluded({
+                        ...spaceArgs,
+                        itemId: item._id,
+                        included: true,
+                      })
+                    : await restoreItem({ ...spaceArgs, itemId: item._id });
+                if (restored.status !== "updated")
+                  throw new Error("Item unavailable");
+                if (item.treatment === "staple" && item.checked)
+                  await setItemChecked({
+                    ...spaceArgs,
+                    itemId: item._id,
+                    checked: true,
+                  });
+              })().catch(() => toast.error("That item could not be restored."));
+            },
+          },
+        },
+      );
     } catch (error) {
       console.error("Failed to remove a shopping item.", error);
       toast.error("That item couldn’t be removed. Try again.");
@@ -427,6 +469,7 @@ function ReadyShoppingListPage({
   async function handleIncludeStaple(item: ShoppingItem) {
     try {
       const result = await setStapleIncluded({
+        ...spaceArgs,
         itemId: item._id,
         included: true,
       });
@@ -439,7 +482,7 @@ function ReadyShoppingListPage({
 
   async function handleIncludeAllStaples() {
     try {
-      const result = await includeAllStaples({ shoppingListId });
+      const result = await includeAllStaples({ ...spaceArgs, shoppingListId });
       if (result.status !== "updated") throw new Error("List is unavailable");
     } catch (error) {
       console.error("Failed to add household staples.", error);
@@ -449,7 +492,7 @@ function ReadyShoppingListPage({
 
   async function handleRestoreItem(item: ShoppingItem) {
     try {
-      const result = await restoreItem({ itemId: item._id });
+      const result = await restoreItem({ ...spaceArgs, itemId: item._id });
       if (result.status !== "updated") throw new Error("Item is unavailable");
     } catch (error) {
       console.error("Failed to restore a shopping item.", error);
@@ -499,6 +542,14 @@ function ReadyShoppingListPage({
           );
         })}
 
+        <Button
+          variant="inline"
+          className="mt-4 self-start text-leaf"
+          onClick={() => setExtraOpen(true)}
+        >
+          Add an extra
+        </Button>
+
         {stapleSuggestions.length > 0 ? (
           <CupboardStaplesSection
             items={stapleSuggestions}
@@ -515,6 +566,59 @@ function ReadyShoppingListPage({
         ) : null}
       </main>
 
+      <Drawer open={extraOpen} onOpenChange={setExtraOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <div>
+              <DrawerTitle>Add an extra</DrawerTitle>
+              <DrawerDescription>
+                {isHousehold
+                  ? "Add something to your household shopping list."
+                  : "Add something to your private shopping list."}
+              </DrawerDescription>
+            </div>
+          </DrawerHeader>
+          <DrawerBody>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (addingExtra || !extraName.trim()) return;
+                setAddingExtra(true);
+                try {
+                  const result = await addExtra({
+                    ...spaceArgs,
+                    shoppingListId,
+                    name: extraName,
+                  });
+                  if (result.status !== "added")
+                    throw new Error("List unavailable");
+                  setExtraName("");
+                  setExtraOpen(false);
+                } catch {
+                  toast.error("That extra couldn’t be added. Try again.");
+                } finally {
+                  setAddingExtra(false);
+                }
+              }}
+            >
+              <label className="text-14 font-semibold">
+                What do you need?
+                <input
+                  value={extraName}
+                  maxLength={120}
+                  onChange={(event) => setExtraName(event.target.value)}
+                  className="mt-2 min-h-12 w-full rounded-sm border border-border px-3 text-16 font-normal"
+                  placeholder="e.g. Milk for breakfast"
+                />
+              </label>
+              <Button type="submit" disabled={addingExtra || !extraName.trim()}>
+                {addingExtra ? "Adding…" : "Add to list"}
+              </Button>
+            </form>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
       <IngredientSourcesDrawer
         item={selectedItem}
         open={selectedItem !== null && selectedItem.deletedAt === null}
@@ -627,56 +731,60 @@ function ShoppingListIntro({
   onReturnToCurrent: () => void;
   onToggleCheckedVisibility: () => void;
 }) {
+  const { isHousehold, household } = useHouseholdSpace();
   const progress = itemCount === 0 ? 0 : (checkedCount / itemCount) * 100;
   return (
     <section className="flex flex-col gap-2 pb-5 pt-2">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1
-            id="shopping-heading"
-            className="font-display text-32 font-bold tracking-title text-ink"
-          >
-            Shopping
-          </h1>
-          {hasHistory ? (
+      <SpaceHeader
+        headingId="shopping-heading"
+        title={
+          isHousehold ? "Our shopping" : household ? "My shopping" : "Shopping"
+        }
+        summary={
+          hasHistory ? (
             <button
               type="button"
-              className="mt-0.5 -ml-2 flex min-h-11 items-center gap-1 rounded-sm px-2 text-14 font-medium text-graphite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+              className="flex min-h-11 max-w-full items-center gap-1 text-left text-14 font-medium leading-5 text-graphite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
               aria-label="Choose a recent shopping list"
               onClick={onOpenHistory}
             >
-              {isPreviousList ? "Previous list" : "This week"} ·{" "}
-              {formatPlanDateRange({ startDate, endDate })}
-              <ChevronDown aria-hidden="true" className="size-4" />
+              <span>
+                {isPreviousList ? "Previous list" : "This week"} ·{" "}
+                {formatPlanDateRange({ startDate, endDate })}
+              </span>
+              <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
             </button>
           ) : (
-            <p className="mt-1 text-14 text-graphite">
+            <p className="text-14 leading-5 text-graphite">
               This week · {formatPlanDateRange({ startDate, endDate })}
             </p>
-          )}
-        </div>
-        {showReturnToCurrent ? (
-          <button
-            type="button"
-            className="flex min-h-11 shrink-0 items-center pl-3 text-13 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-            onClick={onReturnToCurrent}
-          >
-            Current list
-          </button>
-        ) : (
-          <Link
-            href="/week"
-            className="flex min-h-11 shrink-0 items-center gap-1.5 pl-3 text-13 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-          >
-            View week <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
-        )}
-      </div>
-      <div className="flex min-h-5 items-center justify-between gap-3 text-14">
+          )
+        }
+        context={household ? <ContextSelector /> : null}
+        action={
+          showReturnToCurrent ? (
+            <button
+              type="button"
+              className="flex min-h-11 shrink-0 items-center text-13 font-semibold leading-5 text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+              onClick={onReturnToCurrent}
+            >
+              Current list
+            </button>
+          ) : (
+            <Link
+              href="/week"
+              className="flex min-h-11 shrink-0 items-center gap-1.5 text-13 font-semibold leading-5 text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+            >
+              View week <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          )
+        }
+      />
+      <div className="flex min-h-11 items-center justify-between gap-3 text-14">
         {hideChecked && checkedCount > 0 ? (
           <button
             type="button"
-            className="min-h-11 -my-3 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+            className="min-h-11 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
             onClick={onToggleCheckedVisibility}
           >
             Show checked ({checkedCount})
@@ -688,7 +796,7 @@ function ShoppingListIntro({
         ) : checkedCount > 0 ? (
           <button
             type="button"
-            className="min-h-11 -my-3 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+            className="min-h-11 font-semibold text-leaf focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
             onClick={onToggleCheckedVisibility}
           >
             Hide checked
@@ -954,6 +1062,7 @@ function IngredientSourcesDrawer({
   onOpenChange: (open: boolean) => void;
   onRemoveItem: (item: ShoppingItem) => void | Promise<void>;
 }) {
+  const { isHousehold } = useHouseholdSpace();
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[min(85dvh,34rem)]">
@@ -1002,6 +1111,11 @@ function IngredientSourcesDrawer({
                   </li>
                 ))}
               </ul>
+              {isHousehold ? (
+                <p className="mt-4 text-14 text-graphite">
+                  Removes it for everyone. You can undo.
+                </p>
+              ) : null}
               <Button
                 variant="secondary"
                 className="mt-5 w-full"
@@ -1018,20 +1132,24 @@ function IngredientSourcesDrawer({
 }
 
 function NoActivePlan() {
+  const { isHousehold, household } = useHouseholdSpace();
   return (
     <main
       aria-labelledby="shopping-heading"
       className="mx-auto flex min-h-[calc(100dvh-var(--app-header-height)-var(--app-nav-height))] w-full max-w-175 flex-col px-page-inline pt-5 pb-8"
     >
-      <h1
-        id="shopping-heading"
-        className="font-display text-32 font-bold tracking-title text-ink"
-      >
-        Shopping
-      </h1>
-      <p className="mt-1 text-14 text-graphite">
-        Your list is created from your active meal plan.
-      </p>
+      <SpaceHeader
+        headingId="shopping-heading"
+        title={
+          isHousehold ? "Our shopping" : household ? "My shopping" : "Shopping"
+        }
+        context={household ? <ContextSelector /> : null}
+        summary={
+          <p className="text-14 leading-5 text-graphite">
+            Your list is created from your active meal plan.
+          </p>
+        }
+      />
       <div className="flex flex-1 flex-col items-center justify-center pb-12 text-center">
         <div className="flex items-center gap-3 text-ink" aria-hidden="true">
           <span className="flex size-14 items-center justify-center rounded-compact bg-mist">

@@ -6,6 +6,10 @@ Orient around jobs, not V1 tables.
 
 Guest access does not create backend documents. Its bounded, versioned draft lives locally until an authenticated user explicitly keeps it. See [identity-and-guest.md](./identity-and-guest.md).
 
+## Household spaces
+
+Plans, slots, shopping lists/items and recipe snapshots use a typed `ownerId` union of user or household IDs. Existing user IDs remain private with no migration. Shared access requires current membership in an open household; personal library mutations still require user ownership. Contexts have separate active plans and history. Creation copies private content; leaving never copies back. See [Household MVP](../../docs/household-mvp.md) for the complete access, invitation, closure and draft contracts.
+
 ## Core entities
 
 ### users
@@ -16,7 +20,7 @@ There are no anonymous/guest `users` rows. A verified Clerk webhook creates or u
 
 **Index:** `by_auth_subject`.
 
-**Deferred:** subscription fields, super-user flags, household membership.
+**Deferred:** subscription fields and super-user flags. Household membership is relational; see [Household MVP](../../docs/household-mvp.md).
 
 ### planningPreferences
 
@@ -185,17 +189,17 @@ An active Cook session—current step, preparation checks, scroll position, and 
 
 ## Explicitly deferred
 
-| V1 concept                         | V2 stance                                             |
-| ---------------------------------- | ----------------------------------------------------- |
-| households, members, invites       | Premium-later                                         |
-| chalkboardItems                    | Not first-class; only if Shop needs a quick add-inbox |
-| ingredients catalog + food groups  | Later, if merge quality requires it                   |
-| public recipes / publishers / feed | Later, separate from private recipe ownership         |
-| mealPlans generation metadata      | Don't migrate as a product surface                    |
-| premium meals / subscriptions      | Later; authenticated, server-verified entitlement     |
-| ads                                | Not initial build                                     |
-| Discover feed                      | Emerges from Remember + context                       |
-| anonymous backend users            | No; guest drafts remain device-local                  |
+| V1 concept                         | V2 stance                                              |
+| ---------------------------------- | ------------------------------------------------------ |
+| households, members, invites       | Household MVP implemented; see `docs/household-mvp.md` |
+| chalkboardItems                    | Not first-class; only if Shop needs a quick add-inbox  |
+| ingredients catalog + food groups  | Later, if merge quality requires it                    |
+| public recipes / publishers / feed | Later, separate from private recipe ownership          |
+| mealPlans generation metadata      | Don't migrate as a product surface                     |
+| premium meals / subscriptions      | Later; authenticated, server-verified entitlement      |
+| ads                                | Not initial build                                      |
+| Discover feed                      | Emerges from Remember + context                        |
+| anonymous backend users            | No; guest drafts remain device-local                   |
 
 ## Indexes reminder
 

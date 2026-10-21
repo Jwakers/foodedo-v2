@@ -1,5 +1,6 @@
 "use client";
 
+import { ButtonLink } from "@/components/ui/button";
 import { useRef, useState } from "react";
 
 import { useSaveGuestPlan } from "@/features/plan/guest-plan-claim";
@@ -27,7 +28,8 @@ export function PlanReview({
     chooseMeal,
     addDay,
   } = useGuestPlanDraft();
-  const { isSaving, savePlan, prepareGuestSaveSignIn } = useSaveGuestPlan();
+  const { isSaving, savePlan, prepareGuestSaveSignIn, needsLatestReview } =
+    useSaveGuestPlan();
   const pendingActionRef = useRef<"shuffle" | "add-day" | null>(null);
   const [pendingAction, setPendingAction] = useState<
     "shuffle" | "add-day" | null
@@ -47,6 +49,19 @@ export function PlanReview({
       setPendingAction(null);
     }
   }
+
+  if (needsLatestReview)
+    return (
+      <main className="mx-auto flex max-w-175 flex-col gap-4 px-page-inline py-7">
+        <h1 className="font-display text-30 font-semibold">
+          This week has changed
+        </h1>
+        <p className="text-15 text-graphite">
+          Review the latest week before replacing it.
+        </p>
+        <ButtonLink href="/week">Review latest week</ButtonLink>
+      </main>
+    );
 
   if (state.status === "loading") {
     return <PlanReviewLoading />;
@@ -73,9 +88,9 @@ export function PlanReview({
       isShuffling={pendingAction === "shuffle"}
       isAddingDay={pendingAction === "add-day"}
       onSavePlan={() => {
-        void savePlan();
+        void savePlan(state.draft);
       }}
-      onPrepareGuestSaveSignIn={prepareGuestSaveSignIn}
+      onPrepareGuestSaveSignIn={() => prepareGuestSaveSignIn(state.draft)}
       onRemoveMeal={removeMeal}
       onReplaceMeal={replaceMeal}
       onChooseMeal={chooseMeal}

@@ -7,6 +7,7 @@ import { scaleIngredients } from "../../src/lib/domain/ingredient-scaling";
 import type { RecipeIngredientLine } from "../../src/lib/domain/recipes";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
+import type { SpaceId } from "./spaces";
 
 const maximumPlanSlots = 31;
 const maximumListsForOnePlan = 10;
@@ -17,7 +18,7 @@ const maximumListsForOnePlan = 10;
  */
 export async function archiveShoppingListForPlan(
   ctx: MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   mealPlanId: Id<"mealPlans">,
   updatedAt: number,
 ) {
@@ -43,7 +44,7 @@ export async function archiveShoppingListForPlan(
  */
 export async function syncShoppingListForPlan(
   ctx: MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   mealPlanId: Id<"mealPlans">,
 ) {
   const mealPlan = await ctx.db.get(mealPlanId);
@@ -223,4 +224,67 @@ async function deleteShoppingList(
   }
   for (const item of items) await ctx.db.delete(item._id);
   await ctx.db.delete(shoppingListId);
+}
+
+/** Carry intentional shopping state across an explicitly reviewed replacement. */
+export async function carryShoppingState(
+  ctx: MutationCtx,
+  previousPlanId: Id<"mealPlans">,
+  nextPlanId: Id<"mealPlans">,
+) {
+  const [previous, next] = await Promise.all(
+    [previousPlanId, nextPlanId].map((mealPlanId) =>
+      ctx.db
+        .query("shoppingLists")
+        .withIndex("by_meal_plan", (q) => q.eq("mealPlanId", mealPlanId))
+        .unique(),
+    ),
+  );
+  if (!previous || !next || previous.ownerId !== next.ownerId) return;
+  const readItems = (shoppingListId: Id<"shoppingLists">) =>
+    ctx.db
+      .query("shoppingListItems")
+      .withIndex("by_list_and_order", (q) =>
+        q.eq("shoppingListId", shoppingListId),
+      )
+      .take(SHOPPING_LIST_LIMITS.items + 1);
+  const [oldItems, newItems] = await Promise.all([
+    readItems(previous._id),
+    readItems(next._id),
+  ]);
+  const manual = oldItems.filter((item) => item.origin === "manual");
+  if (
+    oldItems.length > SHOPPING_LIST_LIMITS.items ||
+    newItems.length + manual.length > SHOPPING_LIST_LIMITS.items
+  )
+    throw new Error("The shopping list exceeds the supported item limit.");
+  const byKey = new Map(
+    oldItems
+      .filter((item) => item.origin === "derived")
+      .map((item) => [
+        shoppingItemIdentityKey(item.name, item.category ?? "other"),
+        item,
+      ]),
+  );
+  for (const item of newItems) {
+    const old = byKey.get(
+      shoppingItemIdentityKey(item.name, item.category ?? "other"),
+    );
+    if (old)
+      await ctx.db.patch(item._id, {
+        checked: old.checked,
+        deletedAt: old.deletedAt,
+        included: item.treatment === "required" || old.included,
+      });
+  }
+  for (const [i, item] of manual.entries()) {
+    const { _id, _creationTime, ...content } = item;
+    void _id;
+    void _creationTime;
+    await ctx.db.insert("shoppingListItems", {
+      ...content,
+      shoppingListId: next._id,
+      order: newItems.length + i,
+    });
+  }
 }

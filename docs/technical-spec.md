@@ -55,7 +55,9 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Optional later UI:** shadcn/ui if primitives are needed; do not install on speculation.
 
-**Not initial build:** subscriptions, premium meal delivery, ads, households, CMS, social.
+**Household MVP:** independent Household/Private plans, lists and history, link invitations, collaboration and retained final-member closure. See [Household MVP](./household-mvp.md).
+
+**Not initial build:** subscriptions, premium meal delivery, ads, CMS, social.
 
 ## 4. Architecture philosophy
 

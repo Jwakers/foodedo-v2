@@ -197,6 +197,7 @@ export const recipeReviewIssueValidator = v.union(
 );
 
 export const recipeViewValidator = v.object({
+  householdSnapshot: v.optional(v.boolean()),
   _id: v.id("recipes"),
   _creationTime: v.number(),
   ...recipeContentFields,

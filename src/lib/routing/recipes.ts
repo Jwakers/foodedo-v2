@@ -19,9 +19,15 @@ export function recipeDetailPath(
   return `/recipes/view?${search.toString()}`;
 }
 
-export function personalRecipeDetailPath(recipeId: string, servings?: number) {
+export function personalRecipeDetailPath(
+  recipeId: string,
+  servings?: number,
+  planServings?: number,
+) {
   const search = new URLSearchParams({ recipeId });
   if (servings !== undefined) search.set("servings", String(servings));
+  if (planServings !== undefined)
+    search.set("planServings", String(planServings));
   return `/recipes/view?${search.toString()}`;
 }
 
@@ -45,9 +51,15 @@ export function recipeCookPath(
   return `/recipes/cook?${search.toString()}`;
 }
 
-export function personalRecipeCookPath(recipeId: string, servings?: number) {
+export function personalRecipeCookPath(
+  recipeId: string,
+  servings?: number,
+  planServings?: number,
+) {
   const search = new URLSearchParams({ recipeId });
   if (servings !== undefined) search.set("servings", String(servings));
+  if (planServings !== undefined)
+    search.set("planServings", String(planServings));
   return `/recipes/cook?${search.toString()}`;
 }
 

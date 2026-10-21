@@ -14,6 +14,7 @@ import type * as catalogueGenerationActions from "../catalogueGenerationActions.
 import type * as catalogueMaintenance from "../catalogueMaintenance.js";
 import type * as catalogueMigration from "../catalogueMigration.js";
 import type * as crons from "../crons.js";
+import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
@@ -42,6 +43,7 @@ import type * as lib_recipeImport_sources from "../lib/recipeImport/sources.js";
 import type * as lib_recipeImport_validation from "../lib/recipeImport/validation.js";
 import type * as lib_recipeValidators from "../lib/recipeValidators.js";
 import type * as lib_shoppingListSync from "../lib/shoppingListSync.js";
+import type * as lib_spaces from "../lib/spaces.js";
 import type * as mealPlans from "../mealPlans.js";
 import type * as planningPreferences from "../planningPreferences.js";
 import type * as recipeImportActions from "../recipeImportActions.js";
@@ -63,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   catalogueMaintenance: typeof catalogueMaintenance;
   catalogueMigration: typeof catalogueMigration;
   crons: typeof crons;
+  households: typeof households;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
@@ -91,6 +94,7 @@ declare const fullApi: ApiFromModules<{
   "lib/recipeImport/validation": typeof lib_recipeImport_validation;
   "lib/recipeValidators": typeof lib_recipeValidators;
   "lib/shoppingListSync": typeof lib_shoppingListSync;
+  "lib/spaces": typeof lib_spaces;
   mealPlans: typeof mealPlans;
   planningPreferences: typeof planningPreferences;
   recipeImportActions: typeof recipeImportActions;

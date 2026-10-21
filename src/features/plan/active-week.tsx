@@ -1,8 +1,16 @@
 "use client";
 
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
 import { useMemo } from "react";
 
+import { ContextSelector } from "@/features/household/context-selector";
+import { SpaceHeader } from "@/components/space-header";
+import { useHouseholdSpace } from "@/features/household/household-context";
+import { ButtonLink } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { ActivePlanAdjustDrawer } from "@/features/plan/active-plan-adjust-drawer";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
@@ -18,7 +26,10 @@ import {
   useCatalogueMeals,
   useCurrentCatalogue,
 } from "@/features/recipes/use-catalogue";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import {
+  personalRecipeDetailPath,
+  recipeDetailPath,
+} from "@/lib/routing/recipes";
 import { catalogueMealReferenceKey } from "@/lib/domain/recipes";
 import { cn } from "@/lib/utils/cn";
 
@@ -31,6 +42,8 @@ export type ActiveWeekPlan = {
   status: "active" | "archived";
   mealSlots: ReadonlyArray<{
     date: string;
+    recipeId?: string;
+    slotId?: string;
     status: "planned" | "cooked" | "skipped";
     title: string;
     description: string | null;
@@ -65,7 +78,11 @@ export function ActiveWeek({
   onStartNextPlan: () => void | Promise<void>;
   isStartingNextPlan: boolean;
 }) {
+  const { isHousehold, household, spaceArgs } = useHouseholdSpace();
   const catalogue = useCurrentCatalogue();
+  const putMeal = useMutation(api.mealPlans.planMeal);
+  const removeMeal = useMutation(api.mealPlans.removeMeal);
+  const swapMeal = useMutation(api.mealPlans.swapMeal);
   const pinnedReferences = useMemo(() => {
     const references = new Map<
       string,
@@ -136,18 +153,24 @@ export function ActiveWeek({
   const hasPendingAction = isReplanning || isStartingNextPlan;
   const recipeHrefByDate = new Map(
     plan.mealSlots.flatMap((slot) =>
-      slot.catalogueMealSlug
+      slot.recipeId || slot.catalogueMealSlug
         ? [
             [
               slot.date,
-              recipeDetailPath(
-                slot.catalogueMealSlug,
-                {
-                  catalogueMealId: slot.catalogueMealId ?? undefined,
-                  catalogueVersion: slot.catalogueVersion ?? undefined,
-                },
-                plan.servings,
-              ),
+              slot.recipeId
+                ? personalRecipeDetailPath(
+                    slot.recipeId,
+                    plan.servings,
+                    plan.servings,
+                  )
+                : recipeDetailPath(
+                    slot.catalogueMealSlug!,
+                    {
+                      catalogueMealId: slot.catalogueMealId ?? undefined,
+                      catalogueVersion: slot.catalogueVersion ?? undefined,
+                    },
+                    plan.servings,
+                  ),
             ] as const,
           ]
         : [],
@@ -179,20 +202,39 @@ export function ActiveWeek({
       aria-labelledby="active-week-heading"
       className="mx-auto flex w-full max-w-175 flex-col px-page-inline pt-4.5 pb-8"
     >
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-3">
-          <h1
-            id="active-week-heading"
-            className="font-display text-30 font-semibold tracking-title text-ink"
-          >
-            {isArchived ? "Previous week" : "This week"}
-          </h1>
-          {isArchived ? null : (
+      <SpaceHeader
+        headingId="active-week-heading"
+        title={
+          isArchived
+            ? "Previous week"
+            : isHousehold
+              ? "Our week"
+              : household
+                ? "My week"
+                : "This week"
+        }
+        summary={
+          <p className="text-14 font-medium leading-5 text-graphite">
+            {summary}
+          </p>
+        }
+        context={household ? <ContextSelector /> : null}
+        action={
+          !isArchived ? (
             <ActivePlanAdjustDrawer plan={plan} disabled={hasPendingAction} />
-          )}
-        </div>
-        <p className="text-14 font-medium text-graphite">{summary}</p>
-      </div>
+          ) : null
+        }
+      />
+
+      {!household ? (
+        <ButtonLink
+          href="/household"
+          variant="inline"
+          className="mt-2 self-start text-leaf"
+        >
+          Share your week
+        </ButtonLink>
+      ) : null}
 
       {plans.length > 1 ? (
         <div className="relative mt-5">
@@ -226,8 +268,80 @@ export function ActiveWeek({
         {rows.map((row) => (
           <li key={row.date}>
             <PlanMealRow
+              key={`${row.date}:${plan.updatedAt}`}
               row={row}
-              readOnly
+              readOnly={isArchived || row.date < today}
+              onRemoveMeal={
+                plan.mealSlots.length > 1
+                  ? async (date) => {
+                      const result = await removeMeal({
+                        ...spaceArgs,
+                        mealPlanId: plan._id as Id<"mealPlans">,
+                        expectedUpdatedAt: plan.updatedAt,
+                        date,
+                      });
+                      if (result.status !== "removed") {
+                        toast.error(
+                          "This week changed. Review the latest week.",
+                        );
+                        throw new Error("Plan changed");
+                      }
+                    }
+                  : undefined
+              }
+              onReplaceMeal={async (date, catalogueMealId) => {
+                const selected = catalogue?.meals.find(
+                  (meal) => meal.id === catalogueMealId,
+                );
+                if (!selected) throw new Error("Recipe unavailable");
+                const result = await putMeal({
+                  ...spaceArgs,
+                  mealPlanId: plan._id as Id<"mealPlans">,
+                  expectedUpdatedAt: plan.updatedAt,
+                  date,
+                  catalogueMealId,
+                  catalogueVersion: selected.version,
+                });
+                if (result.status !== "planned") {
+                  toast.error("This week changed. Review the latest week.");
+                  throw new Error("Plan changed");
+                }
+              }}
+              onChooseMeal={async (date) => {
+                const slot = plan.mealSlots.find((slot) => slot.date === date);
+                if (slot?.slotId) {
+                  const result = await swapMeal({
+                    ...spaceArgs,
+                    mealSlotId: slot.slotId as Id<"mealSlots">,
+                    expectedUpdatedAt: plan.updatedAt,
+                  });
+                  if (result.status !== "swapped")
+                    throw new Error(
+                      "Review the latest week before choosing again.",
+                    );
+                } else {
+                  const candidate = catalogue?.meals.find(
+                    (meal) =>
+                      !plan.mealSlots.some(
+                        (slot) => slot.catalogueMealId === meal.id,
+                      ),
+                  );
+                  if (!candidate)
+                    throw new Error("No matching meal available.");
+                  const result = await putMeal({
+                    ...spaceArgs,
+                    mealPlanId: plan._id as Id<"mealPlans">,
+                    expectedUpdatedAt: plan.updatedAt,
+                    date,
+                    catalogueMealId: candidate.id,
+                    catalogueVersion: candidate.version,
+                  });
+                  if (result.status !== "planned")
+                    throw new Error(
+                      "Review the latest week before choosing again.",
+                    );
+                }
+              }}
               recipeHref={recipeHrefByDate.get(row.date)}
             />
           </li>

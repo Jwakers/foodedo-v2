@@ -204,6 +204,7 @@ export async function ensureGuestPlanDraft({
 
 /** Starts a pre-plan draft from the settings the user just applied. */
 export async function beginConfiguredGuestPlanDraft({
+  reviewSource,
   catalogue,
   planStartDate,
   planDays,
@@ -214,6 +215,7 @@ export async function beginConfiguredGuestPlanDraft({
   now = Date.now(),
   store = guestDraftStore(),
 }: {
+  reviewSource?: GuestDraftV1["reviewSource"];
   catalogue: GuestCatalogueContract;
   planStartDate: string;
   planDays: PlanDays;
@@ -232,18 +234,21 @@ export async function beginConfiguredGuestPlanDraft({
   );
   return store.runMutation(() => {
     return {
-      draft: createGuestDraft({
-        planStartDate,
-        planDays,
-        servings,
-        catalogueMeals: catalogueMeals.map((meal) => ({
-          ...meal,
-          isSaved: preferredIds.includes(meal.catalogueMealId),
-        })),
-        recentPlanMealIds,
-        firstCatalogueMealId,
-        now,
-      }),
+      draft: {
+        ...createGuestDraft({
+          planStartDate,
+          planDays,
+          servings,
+          catalogueMeals: catalogueMeals.map((meal) => ({
+            ...meal,
+            isSaved: preferredIds.includes(meal.catalogueMealId),
+          })),
+          recentPlanMealIds,
+          firstCatalogueMealId,
+          now,
+        }),
+        ...(reviewSource ? { reviewSource } : {}),
+      },
       write: true,
     };
   });
@@ -279,6 +284,7 @@ export async function beginGuestPlanDraftWithMeal({
  * and is replaced with a fresh plan.
  */
 export async function beginNextGuestPlanDraft({
+  reviewSource,
   catalogue,
   preferredCatalogueMealIds = [],
   recentPlanMealIds = [],
@@ -288,6 +294,7 @@ export async function beginNextGuestPlanDraft({
   servings = 4,
   store = guestDraftStore(),
 }: {
+  reviewSource?: GuestDraftV1["reviewSource"];
   catalogue: GuestCatalogueContract;
   preferredCatalogueMealIds?: readonly string[];
   recentPlanMealIds?: readonly (readonly string[])[];
@@ -307,6 +314,7 @@ export async function beginNextGuestPlanDraft({
     if (
       existing !== null &&
       existing.acceptedAt === undefined &&
+      JSON.stringify(existing.reviewSource) === JSON.stringify(reviewSource) &&
       existing.planDays === planDays &&
       existing.servings === servings
     ) {
@@ -316,14 +324,17 @@ export async function beginNextGuestPlanDraft({
     }
 
     return {
-      draft: createGuestDraft({
-        planStartDate,
-        planDays,
-        servings,
-        catalogueMeals,
-        now,
-        recentPlanMealIds,
-      }),
+      draft: {
+        ...createGuestDraft({
+          planStartDate,
+          planDays,
+          servings,
+          catalogueMeals,
+          now,
+          recentPlanMealIds,
+        }),
+        ...(reviewSource ? { reviewSource } : {}),
+      },
       write: true,
     };
   });
@@ -592,11 +603,13 @@ export async function extendCurrentGuestPlanDraft({
  * Retries keep the first key so Convex claim stays idempotent.
  */
 export async function acceptAndPrepareGuestPlanClaim({
+  expectedDraft,
   catalogue,
   now = Date.now(),
   claimKey = createGuestClaimKey(),
   store = guestDraftStore(),
 }: {
+  expectedDraft?: GuestDraftV1;
   catalogue: GuestCatalogueContract;
   now?: number;
   claimKey?: string;
@@ -607,6 +620,20 @@ export async function acceptAndPrepareGuestPlanClaim({
     if (!existing) {
       throw new Error(missingDraftMessage);
     }
+    if (
+      expectedDraft &&
+      !isSameDraftRevision(
+        {
+          ...existing,
+          updatedAt: expectedDraft.updatedAt,
+          claim: expectedDraft.claim,
+        },
+        expectedDraft,
+      )
+    )
+      throw new Error(
+        "This draft changed. Review the latest week before saving.",
+      );
     if (countPlannedGuestMeals(existing) === 0) {
       throw new Error("Save at least one dinner before keeping this plan.");
     }
@@ -656,7 +683,7 @@ export async function clearClaimedGuestPlanDraft({
     const current = parseGuestDraft(raw, catalogue);
     return current !== null && isSameDraftRevision(current, expectedDraft);
   });
-  if (cleared) clearPendingPrePlanSetup();
+  if (cleared) clearPendingPrePlanSetup(store.key);
   return cleared;
 }
 
@@ -694,6 +721,10 @@ function isSameDraftRevision(
   expected: GuestDraftV1,
 ): boolean {
   if (
+    current.createdAt !== expected.createdAt ||
+    current.servings !== expected.servings ||
+    JSON.stringify(current.reviewSource) !==
+      JSON.stringify(expected.reviewSource) ||
     current.schemaVersion !== expected.schemaVersion ||
     current.planStartDate !== expected.planStartDate ||
     current.updatedAt !== expected.updatedAt ||

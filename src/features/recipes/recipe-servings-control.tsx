@@ -11,11 +11,13 @@ export function RecipeServingsControl({
   onServingsChange,
   durationLabel,
   className,
+  cookOnly = false,
 }: {
   servings: number;
   onServingsChange: (servings: number) => void;
   durationLabel?: string | null;
   className?: string;
+  cookOnly?: boolean;
 }) {
   const panelId = useId();
   const [open, setOpen] = useState(false);
@@ -31,7 +33,7 @@ export function RecipeServingsControl({
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
         >
-          Serves {servings}
+          {cookOnly ? "Cook for" : "Serves"} {servings}
           <ChevronDown
             aria-hidden="true"
             className={cn(
@@ -51,7 +53,9 @@ export function RecipeServingsControl({
           <div className="flex flex-col gap-0.5">
             <p className="text-14 font-semibold text-ink">Servings</p>
             <p className="text-11 text-graphite">
-              Ingredient quantities update automatically
+              {cookOnly
+                ? "For this cook only. Your plan and shopping list stay unchanged."
+                : "Ingredient quantities update automatically"}
             </p>
           </div>
           <div className="flex items-center gap-1.5">

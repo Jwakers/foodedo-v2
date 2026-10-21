@@ -29,6 +29,7 @@
     "eval:catalogue-generation": "tsx scripts/catalogue-generation/evaluate.ts"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
     "@capacitor/share": "^8.0.2",

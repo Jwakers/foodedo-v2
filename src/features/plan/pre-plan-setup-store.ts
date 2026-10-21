@@ -1,3 +1,4 @@
+import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import type { PlanDays } from "@/lib/domain/guest-draft";
 
 export type PrePlanSetup = {
@@ -7,25 +8,27 @@ export type PrePlanSetup = {
   prioritiseSavedRecipes: boolean;
 };
 
-let pendingSetup: PrePlanSetup | null = null;
+const pendingSetups = new Map<string, PrePlanSetup>();
 const listeners = new Set<() => void>();
 
-export function getPendingPrePlanSetup() {
-  return pendingSetup;
+export function getPendingPrePlanSetup(key = getDraftSpaceKey()) {
+  return pendingSetups.get(key) ?? null;
 }
 
 export function getEmptyPrePlanSetupSnapshot() {
   return null;
 }
 
-export function setPendingPrePlanSetup(setup: PrePlanSetup) {
-  pendingSetup = setup;
+export function setPendingPrePlanSetup(
+  setup: PrePlanSetup,
+  key = getDraftSpaceKey(),
+) {
+  pendingSetups.set(key, setup);
   emitChange();
 }
 
-export function clearPendingPrePlanSetup() {
-  if (pendingSetup === null) return;
-  pendingSetup = null;
+export function clearPendingPrePlanSetup(key = getDraftSpaceKey()) {
+  if (!pendingSetups.delete(key)) return;
   emitChange();
 }
 

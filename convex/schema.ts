@@ -17,7 +17,32 @@ import {
   telemetryValidator,
 } from "./lib/catalogueGeneration/validators";
 
+const spaceOwner = v.union(v.id("users"), v.id("households"));
+
 export default defineSchema({
+  households: defineTable({
+    creatorId: v.id("users"),
+    createdAt: v.number(),
+    closedAt: v.optional(v.number()),
+  }),
+  householdMembers: defineTable({
+    householdId: v.id("households"),
+    userId: v.id("users"),
+    joinedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_household", ["householdId"]),
+  householdInvites: defineTable({
+    householdId: v.id("households"),
+    inviterId: v.id("users"),
+    token: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    cancelledAt: v.optional(v.number()),
+    acceptedBy: v.optional(v.id("users")),
+  })
+    .index("by_token", ["token"])
+    .index("by_household", ["householdId"]),
   catalogueProposals: defineTable({
     content: v.object(recipeContentFields),
     tags: tagsValidator,
@@ -166,7 +191,7 @@ export default defineSchema({
     .index("by_meal_id_and_status", ["catalogueMealId", "status"])
     .index("by_status_and_slug", ["status", "slug"]),
   recipes: defineTable({
-    ownerId: v.id("users"),
+    ownerId: spaceOwner,
     ...recipeContentFields,
     imageStorageId: v.optional(v.id("_storage")),
     source: recipeSourceValidator,
@@ -219,7 +244,7 @@ export default defineSchema({
     .index("by_owner_and_request", ["ownerId", "clientRequestId"])
     .index("by_owner_and_updated_at", ["ownerId", "updatedAt"]),
   mealPlans: defineTable({
-    ownerId: v.id("users"),
+    ownerId: spaceOwner,
     startDate: v.string(),
     endDate: v.string(),
     // Optional while existing plans are migrated; reads resolve the default.
@@ -236,7 +261,7 @@ export default defineSchema({
     ]),
   mealSlots: defineTable({
     mealPlanId: v.id("mealPlans"),
-    ownerId: v.id("users"),
+    ownerId: spaceOwner,
     date: v.string(),
     recipeId: v.id("recipes"),
     status: v.union(
@@ -251,7 +276,7 @@ export default defineSchema({
     .index("by_owner_and_date", ["ownerId", "date"])
     .index("by_recipe", ["recipeId"]),
   shoppingLists: defineTable({
-    ownerId: v.id("users"),
+    ownerId: spaceOwner,
     mealPlanId: v.id("mealPlans"),
     mealPlanUpdatedAt: v.number(),
     status: v.union(v.literal("active"), v.literal("archived")),
@@ -268,7 +293,7 @@ export default defineSchema({
     .index("by_meal_plan", ["mealPlanId"]),
   shoppingListItems: defineTable({
     shoppingListId: v.id("shoppingLists"),
-    ownerId: v.id("users"),
+    ownerId: spaceOwner,
     name: v.string(),
     displayName: v.optional(v.string()),
     category: v.optional(shoppingCategoryValidator),

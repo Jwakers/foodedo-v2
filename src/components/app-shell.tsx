@@ -2,6 +2,9 @@
 
 import { Suspense, type ReactNode } from "react";
 
+import { useHouseholdSpace } from "@/features/household/household-context";
+import { NativeInviteLinks } from "@/features/household/native-invite-links";
+import { InviteContinuation } from "@/features/household/invite-continuation";
 import { AppHeader } from "@/components/app-header";
 import { AppNavigation } from "@/components/app-navigation";
 import { AppToaster } from "@/components/app-toaster";
@@ -28,6 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function AppShellChrome({ children }: { children: ReactNode }) {
+  const { spaceKey } = useHouseholdSpace();
   const showChrome = useShowAppChrome();
   const pathname = usePathname();
   const isCooking = isCookPath(pathname);
@@ -45,13 +49,18 @@ function AppShellChrome({ children }: { children: ReactNode }) {
       {process.env.NODE_ENV === "development" ? (
         <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}
+      <NativeInviteLinks />
+      <InviteContinuation />
       <GuestPlanClaimResume />
       {showChrome && !isCooking ? (
         <Suspense fallback={null}>
           <AppHeader />
         </Suspense>
       ) : null}
-      <div className={cn("flex-1", showDock && "pb-(--app-nav-height)")}>
+      <div
+        key={spaceKey}
+        className={cn("flex-1", showDock && "pb-(--app-nav-height)")}
+      >
         {children}
       </div>
       {showDock ? <AppNavigation /> : null}

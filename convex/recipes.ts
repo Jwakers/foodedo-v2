@@ -5,6 +5,7 @@ import {
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
+import { canReadSpace } from "./lib/spaces";
 import { requireUserId } from "./lib/auth";
 import {
   proteinCategoryValidator,
@@ -84,10 +85,10 @@ export const getMine = query({
   args: { recipeId: v.id("recipes") },
   returns: v.union(recipeViewValidator, v.null()),
   handler: async (ctx, { recipeId }) => {
-    const ownerId = await requireUserId(ctx);
     const recipe = await ctx.db.get(recipeId);
 
-    if (recipe === null || recipe.ownerId !== ownerId) return null;
+    if (recipe === null || !(await canReadSpace(ctx, recipe.ownerId)))
+      return null;
     return await toRecipeView(ctx, recipe);
   },
 });
@@ -319,6 +320,8 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
       ? undefined
       : ((await ctx.storage.getUrl(recipe.imageStorageId)) ?? undefined);
   const view = {
+    householdSnapshot:
+      ctx.db.normalizeId("households", recipe.ownerId) !== null,
     _id: recipe._id,
     _creationTime: recipe._creationTime,
     title: recipe.title,

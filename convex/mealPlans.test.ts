@@ -158,6 +158,58 @@ test("claim is idempotent, archives the prior plan, and preserves free days", as
   expect(countsAfterRetry).toEqual({ plans: 2, slots: 5, claims: 1 });
 });
 
+test("claimGuestDraft does not treat an omitted expectedUpdatedAt as a stale week", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+  const priorPlanId = await t.run(async (ctx) => {
+    return await ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: "2026-09-14",
+      endDate: "2026-09-20",
+      status: "active",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+  });
+
+  const result = await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    expectedPlanId: priorPlanId,
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+  expect(result.status).toBe("claimed");
+});
+
+test("claimGuestDraft rejects a provided stale expectedUpdatedAt", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+  const priorPlanId = await t.run(async (ctx) => {
+    return await ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: "2026-09-14",
+      endDate: "2026-09-20",
+      status: "active",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+  });
+
+  await expect(
+    asUser.mutation(api.mealPlans.claimGuestDraft, {
+      expectedPlanId: priorPlanId,
+      expectedUpdatedAt: 0,
+      claimKey: "stale_claim_key_123456",
+      schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+      planStartDate,
+      servings: 4,
+      mealChoices: guestMealChoices(),
+    }),
+  ).rejects.toThrow("This week changed");
+});
+
 test("returns only the latest four catalogue histories for the authenticated owner", async () => {
   const t = createTestContext();
   const { asUser } = await authenticateTestUser(t);

@@ -18,10 +18,18 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { requireUserId } from "./lib/auth";
+import {
+  requireSpace,
+  readSpace,
+  spaceArgs,
+  type SpaceId,
+  copyRecipeToSpace,
+} from "./lib/spaces";
 import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
 import { getCatalogueMeal, getCurrentCatalogueMeals } from "./lib/catalogue";
 import { patchPlanningPreferences } from "./lib/planningPreferences";
 import {
+  carryShoppingState,
   syncShoppingListForPlan,
   archiveShoppingListForPlan,
 } from "./lib/shoppingListSync";
@@ -140,6 +148,7 @@ const addPlanDayResultValidator = v.union(
 );
 
 const proposalMealSlotValidator = v.object({
+  previousTitle: v.string(),
   date: v.string(),
   catalogueMealId: v.union(v.string(), v.null()),
   catalogueMealSlug: v.union(v.string(), v.null()),
@@ -200,10 +209,11 @@ const adjustActivePlanResultValidator = v.union(
 );
 
 export const getCurrent = query({
-  args: {},
+  args: { ...spaceArgs },
   returns: v.union(mealPlanViewValidator, v.null()),
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return null;
     const activePlanState = await getActivePlanState(ctx, ownerId);
     const mealPlan = activePlanState.mealPlan;
 
@@ -217,10 +227,11 @@ export const getCurrent = query({
 
 /** Cheap bounded metadata for the Week history selector. */
 export const getRecentArchivedSummaries = query({
-  args: {},
+  args: { ...spaceArgs },
   returns: v.array(archivedMealPlanSummaryValidator),
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return [];
     const mealPlans = await ctx.db
       .query("mealPlans")
       .withIndex("by_owner_and_status_and_updated_at", (q) =>
@@ -240,10 +251,11 @@ export const getRecentArchivedSummaries = query({
 
 /** Bounded catalogue-only memory for the local signed-in plan generator. */
 export const getRecentCatalogueSelectionHistory = query({
-  args: {},
+  args: { ...spaceArgs },
   returns: v.array(v.array(v.string())),
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return [];
     const plans = await getRecentPlansForSelection(ctx, ownerId);
     const history: string[][] = [];
     for (const plan of plans) {
@@ -262,10 +274,11 @@ export const getRecentCatalogueSelectionHistory = query({
 
 /** Hydrate one archived week only after the user selects it. */
 export const getArchived = query({
-  args: { mealPlanId: v.id("mealPlans") },
+  args: { ...spaceArgs, mealPlanId: v.id("mealPlans") },
   returns: v.union(mealPlanViewValidator, v.null()),
-  handler: async (ctx, { mealPlanId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { mealPlanId, householdId }) => {
+    const ownerId = await readSpace(ctx, householdId);
+    if (ownerId === null) return null;
     const mealPlan = await ctx.db.get(mealPlanId);
     if (
       mealPlan === null ||
@@ -282,10 +295,10 @@ export const getArchived = query({
 });
 
 export const resolveActivePlanConflict = mutation({
-  args: { keepMealPlanId: v.id("mealPlans") },
+  args: { ...spaceArgs, keepMealPlanId: v.id("mealPlans") },
   returns: resolveActivePlanConflictResultValidator,
-  handler: async (ctx, { keepMealPlanId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { keepMealPlanId, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const activePlans = await ctx.db
       .query("mealPlans")
       .withIndex("by_owner_and_status_and_updated_at", (q) =>
@@ -316,10 +329,14 @@ export const resolveActivePlanConflict = mutation({
 });
 
 export const swapMeal = mutation({
-  args: { mealSlotId: v.id("mealSlots") },
+  args: {
+    ...spaceArgs,
+    mealSlotId: v.id("mealSlots"),
+    expectedUpdatedAt: v.optional(v.number()),
+  },
   returns: swapResultValidator,
-  handler: async (ctx, { mealSlotId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { mealSlotId, householdId, expectedUpdatedAt }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const mealSlot = await ctx.db.get(mealSlotId);
     if (mealSlot === null || mealSlot.ownerId !== ownerId) {
       return { status: "not_found" } as const;
@@ -334,6 +351,11 @@ export const swapMeal = mutation({
       return { status: "not_found" } as const;
     }
 
+    if (
+      expectedUpdatedAt !== undefined &&
+      mealPlan.updatedAt !== expectedUpdatedAt
+    )
+      return { status: "plan_unavailable" } as const;
     const mealSlots = await getPlanSlots(ctx, mealPlan._id);
     const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
     const currentRecipe = recipesBySlot.get(mealSlot._id);
@@ -344,7 +366,7 @@ export const swapMeal = mutation({
       return { status: "plan_unavailable" } as const;
     }
 
-    const candidatePool = await getPlanningCandidates(ctx, ownerId);
+    const candidatePool = await getPlanningCandidates(ctx);
     const currentCandidateKey = candidateKeyForRecipe(currentRecipe);
     const [replacementKey] = await selectPlanCandidateKeys({
       ctx,
@@ -382,6 +404,7 @@ export const swapMeal = mutation({
 /** Puts one chosen catalogue recipe on a day of the active plan. */
 export const planMeal = mutation({
   args: {
+    ...spaceArgs,
     mealPlanId: v.id("mealPlans"),
     expectedUpdatedAt: v.number(),
     date: v.string(),
@@ -390,7 +413,7 @@ export const planMeal = mutation({
   },
   returns: planMealResultValidator,
   handler: async (ctx, args) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await requireSpace(ctx, args.householdId);
     if (!isPlanDate(args.date)) {
       throwInvalidPlan("The plan date is invalid.");
     }
@@ -460,6 +483,7 @@ export const planMeal = mutation({
 /** Extends the active plan by one day and puts a chosen recipe on it. */
 export const addPlanDay = mutation({
   args: {
+    ...spaceArgs,
     mealPlanId: v.id("mealPlans"),
     expectedUpdatedAt: v.number(),
     catalogueMealId: v.string(),
@@ -467,7 +491,7 @@ export const addPlanDay = mutation({
   },
   returns: addPlanDayResultValidator,
   handler: async (ctx, args) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await requireSpace(ctx, args.householdId);
     const activePlan = await resolveExpectedActivePlan(ctx, ownerId, args);
     if (activePlan.status !== "ready") return activePlan;
     const mealPlan = activePlan.mealPlan;
@@ -514,10 +538,11 @@ export const addPlanDay = mutation({
 });
 
 export const getRegenerationProposal = query({
-  args: { fromDate: v.string(), variant: v.number() },
+  args: { ...spaceArgs, fromDate: v.string(), variant: v.number() },
   returns: regenerationProposalResultValidator,
   handler: async (ctx, args) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return { status: "plan_unavailable" } as const;
     validateProposalRequest(args);
     const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null) {
@@ -546,6 +571,7 @@ export const getRegenerationProposal = query({
 
 export const applyRegenerationProposal = mutation({
   args: {
+    ...spaceArgs,
     sourcePlanId: v.id("mealPlans"),
     sourceUpdatedAt: v.number(),
     fromDate: v.string(),
@@ -553,7 +579,7 @@ export const applyRegenerationProposal = mutation({
   },
   returns: applyProposalResultValidator,
   handler: async (ctx, args) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await requireSpace(ctx, args.householdId);
     validateProposalRequest(args);
     const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null) {
@@ -588,6 +614,8 @@ export const applyRegenerationProposal = mutation({
       createdAt: updatedAt,
     });
 
+    await carryShoppingState(ctx, mealPlan._id, mealPlanId);
+
     return {
       status: "applied" as const,
       mealPlanId,
@@ -599,6 +627,7 @@ export const applyRegenerationProposal = mutation({
 
 export const undoPlanReplacement = mutation({
   args: {
+    ...spaceArgs,
     currentMealPlanId: v.id("mealPlans"),
     previousMealPlanId: v.id("mealPlans"),
     currentUpdatedAt: v.number(),
@@ -606,9 +635,9 @@ export const undoPlanReplacement = mutation({
   returns: undoReplacementResultValidator,
   handler: async (
     ctx,
-    { currentMealPlanId, previousMealPlanId, currentUpdatedAt },
+    { currentMealPlanId, previousMealPlanId, currentUpdatedAt, householdId },
   ) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await requireSpace(ctx, householdId);
     const activePlan = await getSingleActivePlan(ctx, ownerId);
     if (
       activePlan === null ||
@@ -644,6 +673,7 @@ export const undoPlanReplacement = mutation({
  */
 export const adjustActivePlan = mutation({
   args: {
+    ...spaceArgs,
     mealPlanId: v.id("mealPlans"),
     expectedUpdatedAt: v.number(),
     planDays: v.number(),
@@ -653,7 +683,7 @@ export const adjustActivePlan = mutation({
   },
   returns: adjustActivePlanResultValidator,
   handler: async (ctx, args) => {
-    const ownerId = await requireUserId(ctx);
+    const ownerId = await requireSpace(ctx, args.householdId);
     validateActivePlanAdjustment(args);
     const mealPlan = await getSingleActivePlan(ctx, ownerId);
     if (mealPlan === null) return { status: "no_active_plan" } as const;
@@ -765,7 +795,7 @@ export const adjustActivePlan = mutation({
     if (args.persistForFuture) {
       await patchPlanningPreferences(
         ctx,
-        ownerId,
+        await requireUserId(ctx),
         {
           ...(isPlanDays(args.planDays)
             ? { usualPlanDays: args.planDays }
@@ -784,6 +814,9 @@ export const adjustActivePlan = mutation({
 
 export const claimGuestDraft = mutation({
   args: {
+    ...spaceArgs,
+    expectedPlanId: v.optional(v.union(v.id("mealPlans"), v.null())),
+    expectedUpdatedAt: v.optional(v.number()),
     claimKey: v.string(),
     schemaVersion: v.literal(GUEST_DRAFT_SCHEMA_VERSION),
     planStartDate: v.string(),
@@ -791,8 +824,20 @@ export const claimGuestDraft = mutation({
     mealChoices: v.array(mealChoiceValidator),
   },
   returns: claimResultValidator,
-  handler: async (ctx, { claimKey, planStartDate, servings, mealChoices }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (
+    ctx,
+    {
+      claimKey,
+      planStartDate,
+      servings,
+      mealChoices,
+      householdId,
+      expectedPlanId,
+      expectedUpdatedAt,
+    },
+  ) => {
+    const ownerId = await requireSpace(ctx, householdId);
+    const actorId = await requireUserId(ctx);
     const validation = await validateGuestPlan(ctx, {
       claimKey,
       planStartDate,
@@ -802,11 +847,14 @@ export const claimGuestDraft = mutation({
     const existingClaim = await ctx.db
       .query("guestClaims")
       .withIndex("by_owner_and_claim_key", (q) =>
-        q.eq("ownerId", ownerId).eq("claimKey", claimKey),
+        q.eq("ownerId", actorId).eq("claimKey", claimKey),
       )
       .unique();
 
     if (existingClaim !== null) {
+      const claimedPlan = await ctx.db.get(existingClaim.mealPlanId);
+      if (!claimedPlan || claimedPlan.ownerId !== ownerId)
+        throw new ConvexError("This draft was already saved in another space.");
       return {
         status: "already_claimed" as const,
         mealPlanId: existingClaim.mealPlanId,
@@ -817,6 +865,19 @@ export const claimGuestDraft = mutation({
     }
 
     const activePlan = await getSingleActivePlan(ctx, ownerId);
+    if (
+      (householdId && expectedPlanId === undefined) ||
+      (expectedPlanId !== undefined &&
+        ((activePlan?._id ?? null) !== expectedPlanId ||
+          (expectedUpdatedAt !== undefined &&
+            activePlan !== null &&
+            activePlan.updatedAt !== expectedUpdatedAt)))
+    ) {
+      throw new ConvexError({
+        code: "PLAN_CHANGED",
+        message: "This week changed. Review the latest week before saving.",
+      });
+    }
     const claimedAt = nextMealPlanUpdatedAt(
       ...(activePlan === null ? [] : [activePlan]),
     );
@@ -836,8 +897,10 @@ export const claimGuestDraft = mutation({
       createdAt: claimedAt,
     });
 
+    if (activePlan) await carryShoppingState(ctx, activePlan._id, mealPlanId);
+
     await ctx.db.insert("guestClaims", {
-      ownerId,
+      ownerId: actorId,
       claimKey,
       mealPlanId,
       claimedAt,
@@ -849,7 +912,7 @@ export const claimGuestDraft = mutation({
 
 async function buildMealPlanView(
   ctx: QueryCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   mealPlan: Doc<"mealPlans">,
   { hasActivePlanConflict }: { hasActivePlanConflict: boolean },
 ) {
@@ -930,7 +993,7 @@ async function buildMealPlanView(
 
 async function getSingleActivePlan(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ): Promise<Doc<"mealPlans"> | null> {
   const state = await getActivePlanState(ctx, ownerId);
   if (state.hasConflict) {
@@ -941,7 +1004,7 @@ async function getSingleActivePlan(
 
 async function resolveExpectedActivePlan(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   expected: {
     mealPlanId: Id<"mealPlans">;
     expectedUpdatedAt: number;
@@ -965,7 +1028,7 @@ async function resolveExpectedActivePlan(
 
 async function getActivePlanState(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ) {
   const activePlans = await ctx.db
     .query("mealPlans")
@@ -999,7 +1062,7 @@ async function getPlanSlots(
 async function buildRegenerationProposal(
   ctx: QueryCtx | MutationCtx,
   mealPlan: Doc<"mealPlans">,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   fromDate: string,
   variant: number,
 ): Promise<
@@ -1015,6 +1078,7 @@ async function buildRegenerationProposal(
         prepMinutes: number | null;
         cookMinutes: number | null;
         isChanged: boolean;
+        previousTitle: string;
       }>;
       mealChoices: PlanRecipeChoice[];
     }
@@ -1030,7 +1094,7 @@ async function buildRegenerationProposal(
     return { status: "no_future_meals" };
   }
 
-  const candidatePool = await getPlanningCandidates(ctx, ownerId);
+  const candidatePool = await getPlanningCandidates(ctx);
   const currentCandidateKeys = mealSlots.map((slot) =>
     candidateKeyForRecipe(recipesBySlot.get(slot._id)!),
   );
@@ -1070,6 +1134,7 @@ async function buildRegenerationProposal(
     prepMinutes: number | null;
     cookMinutes: number | null;
     isChanged: boolean;
+    previousTitle: string;
   }> = [];
   for (let index = 0; index < mealChoices.length; index += 1) {
     const mealSlot = mealSlots[index]!;
@@ -1087,6 +1152,7 @@ async function buildRegenerationProposal(
       prepMinutes: candidate.prepMinutes,
       cookMinutes: candidate.cookMinutes,
       isChanged: candidate.key !== currentCandidateKeys[index],
+      previousTitle: currentRecipe.title,
     });
   }
 
@@ -1100,7 +1166,7 @@ async function buildRegenerationProposal(
 async function resolvePlanRecipes(
   ctx: QueryCtx | MutationCtx,
   mealSlots: Array<Doc<"mealSlots">>,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ) {
   const recipesBySlot = new Map<Id<"mealSlots">, Doc<"recipes">>();
   for (const mealSlot of mealSlots) {
@@ -1112,14 +1178,12 @@ async function resolvePlanRecipes(
   return recipesBySlot;
 }
 
-async function getPlanningCandidates(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
-) {
+async function getPlanningCandidates(ctx: QueryCtx | MutationCtx) {
+  const actorId = await requireUserId(ctx);
   const savedRecipes = await ctx.db
     .query("recipes")
     .withIndex("by_owner_and_saved_at", (q) =>
-      q.eq("ownerId", ownerId).gt("savedAt", 0),
+      q.eq("ownerId", actorId).gt("savedAt", 0),
     )
     .order("desc")
     .take(maximumPersonalPlanCandidates);
@@ -1145,7 +1209,7 @@ async function getPlanningCandidates(
 
 async function selectAdditionalPlanCandidates(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   mealPlan: Doc<"mealPlans">,
   mealSlots: Array<Doc<"mealSlots">>,
   numberOfMeals: number,
@@ -1154,7 +1218,7 @@ async function selectAdditionalPlanCandidates(
   const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
   if (recipesBySlot.size !== mealSlots.length) return null;
 
-  const candidatePool = await getPlanningCandidates(ctx, ownerId);
+  const candidatePool = await getPlanningCandidates(ctx);
   const selectedKeys = await selectPlanCandidateKeys({
     ctx,
     ownerId,
@@ -1182,17 +1246,18 @@ async function selectPlanCandidateKeys({
   variationKey,
 }: {
   ctx: QueryCtx | MutationCtx;
-  ownerId: Id<"users">;
+  ownerId: SpaceId;
   candidatePool: Awaited<ReturnType<typeof getPlanningCandidates>>;
   excludedCandidateKeys: readonly string[];
   numberOfMeals: number;
   variationKey: string;
 }): Promise<string[]> {
+  const actorId = await requireUserId(ctx);
   const [recentPlans, preferences] = await Promise.all([
     getRecentSelectionHistory(ctx, ownerId),
     ctx.db
       .query("planningPreferences")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner", (q) => q.eq("ownerId", actorId))
       .unique(),
   ]);
   return selectMealPlanCandidates(
@@ -1213,7 +1278,7 @@ async function selectPlanCandidateKeys({
 
 async function getRecentSelectionHistory(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ): Promise<RecentMealSelectionPlan[]> {
   const plans = await getRecentPlansForSelection(ctx, ownerId);
   const history: RecentMealSelectionPlan[] = [];
@@ -1230,7 +1295,7 @@ async function getRecentSelectionHistory(
 async function getPlanRecipesForSelection(
   ctx: QueryCtx | MutationCtx,
   plan: Doc<"mealPlans">,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ) {
   const slots = await getPlanSlots(ctx, plan._id);
   const recipes = await resolvePlanRecipes(ctx, slots, ownerId);
@@ -1239,7 +1304,7 @@ async function getPlanRecipesForSelection(
 
 async function getRecentPlansForSelection(
   ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ): Promise<Array<Doc<"mealPlans">>> {
   const [activePlans, archivedPlans] = await Promise.all([
     ctx.db
@@ -1321,15 +1386,19 @@ function candidateKeyForRecipe(recipe: Doc<"recipes">) {
 
 async function resolveRecipeReference(
   ctx: MutationCtx,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
   recipeReference: PlanRecipeReference,
 ) {
   if (recipeReference.type === "existing") {
     const recipe = await ctx.db.get(recipeReference.recipeId);
-    if (recipe?.ownerId !== ownerId) {
+    if (
+      recipe === null ||
+      (recipe.ownerId !== ownerId &&
+        recipe.ownerId !== (await requireUserId(ctx)))
+    ) {
       throw new Error("A selected personal recipe could not be resolved.");
     }
-    return recipe._id;
+    return await copyRecipeToSpace(ctx, recipe, ownerId);
   }
 
   const recipe = await getOrCreateCatalogueRecipe(ctx, {
@@ -1365,7 +1434,7 @@ async function createPlanFromGuestMealChoices(
     mealChoices,
     createdAt,
   }: {
-    ownerId: Id<"users">;
+    ownerId: SpaceId;
     startDate: string;
     servings: number;
     mealChoices: ReadonlyArray<{
@@ -1433,7 +1502,7 @@ async function createPlanFromRecipeChoices(
     servings,
     createdAt,
   }: {
-    ownerId: Id<"users">;
+    ownerId: SpaceId;
     mealChoices: readonly PlanRecipeChoice[];
     servings: number;
     createdAt: number;
@@ -1595,3 +1664,35 @@ function planDayOffset(startDate: string, date: string) {
 function nextMealPlanUpdatedAt(...plans: Array<Doc<"mealPlans">>) {
   return Math.max(Date.now(), ...plans.map((plan) => plan.updatedAt + 1));
 }
+
+/** Removing one meal never retargets a newer active plan. */
+export const removeMeal = mutation({
+  args: {
+    ...spaceArgs,
+    mealPlanId: v.id("mealPlans"),
+    expectedUpdatedAt: v.number(),
+    date: v.string(),
+  },
+  returns: v.union(
+    v.object({ status: v.literal("removed") }),
+    v.object({ status: v.literal("plan_changed") }),
+    v.object({ status: v.literal("no_active_plan") }),
+    v.object({ status: v.literal("plan_unavailable") }),
+    v.object({ status: v.literal("last_meal") }),
+  ),
+  handler: async (ctx, args) => {
+    const ownerId = await requireSpace(ctx, args.householdId);
+    const active = await resolveExpectedActivePlan(ctx, ownerId, args);
+    if (active.status !== "ready") return active;
+    const slots = await getPlanSlots(ctx, active.mealPlan._id);
+    const slot = slots.find((slot) => slot.date === args.date);
+    if (!slot) return { status: "plan_unavailable" } as const;
+    if (slots.length <= 1) return { status: "last_meal" } as const;
+    await ctx.db.delete(slot._id);
+    await ctx.db.patch(active.mealPlan._id, {
+      updatedAt: nextMealPlanUpdatedAt(active.mealPlan),
+    });
+    await syncShoppingListForPlan(ctx, ownerId, active.mealPlan._id);
+    return { status: "removed" } as const;
+  },
+});

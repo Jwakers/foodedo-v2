@@ -1,5 +1,6 @@
 "use client";
 
+import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -216,7 +217,7 @@ export function useGuestPlanDraft() {
   };
 }
 
-export function useGuestDraftCatalogue(): {
+export function useGuestDraftCatalogue(storeKey?: string): {
   catalogue: GuestDraftCatalogueSelection | null | undefined;
   refreshStoredReferences: () => Promise<void>;
 } {
@@ -228,16 +229,22 @@ export function useGuestDraftCatalogue(): {
 
   const refreshStoredReferences = useCallback(async () => {
     try {
-      setStoredReferences(await readStoredGuestPlanDraftMealReferences());
+      setStoredReferences(
+        await readStoredGuestPlanDraftMealReferences(
+          createIndexedDbGuestDraftStore(storeKey),
+        ),
+      );
     } catch (error) {
       console.error("Failed to inspect the guest plan draft.", error);
       setStoredReferences(null);
     }
-  }, []);
+  }, [storeKey]);
 
   useEffect(() => {
     let cancelled = false;
-    void readStoredGuestPlanDraftMealReferences()
+    void readStoredGuestPlanDraftMealReferences(
+      createIndexedDbGuestDraftStore(storeKey),
+    )
       .then((references) => {
         if (!cancelled) setStoredReferences(references);
       })
@@ -248,7 +255,7 @@ export function useGuestDraftCatalogue(): {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [storeKey]);
 
   const pinnedMeals = useCatalogueMeals(storedReferences ?? null);
 

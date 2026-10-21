@@ -1,5 +1,7 @@
 "use client";
 
+import { useHouseholdSpace } from "@/features/household/household-context";
+
 import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
@@ -11,14 +13,17 @@ import { formatGuestPlanSummary } from "@/lib/domain/plan-display";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 export function SavedWeekPage() {
+  const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
 
   const isCheckingPlan =
-    status === "loading" || (isAuthenticated && currentPlan === undefined);
+    status === "loading" ||
+    !spaceReady ||
+    (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) return <PlanReviewLoading />;
 

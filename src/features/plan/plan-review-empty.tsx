@@ -1,3 +1,7 @@
+"use client";
+import { ContextSelector } from "@/features/household/context-selector";
+import { SpaceHeader } from "@/components/space-header";
+import { useHouseholdSpace } from "@/features/household/household-context";
 import { PlanAction } from "@/features/plan/plan-action";
 import { ButtonLink } from "@/components/ui/button";
 
@@ -6,23 +10,29 @@ export function PlanReviewEmpty({
 }: {
   onPlanWeek: () => void | Promise<unknown>;
 }) {
+  const { isHousehold, household } = useHouseholdSpace();
   return (
     <main
       aria-labelledby="plan-empty-heading"
       className="mx-auto flex w-full max-w-175 flex-col gap-4 px-page-inline pt-4.5 pb-8"
     >
-      <div className="flex flex-col gap-1.5">
-        <h1
-          id="plan-empty-heading"
-          className="font-display text-30 font-semibold tracking-title text-ink"
-        >
-          No week planned yet
-        </h1>
-        <p className="text-14 font-medium text-graphite">
-          Set up the week that works for you, then review every meal before
-          saving.
-        </p>
-      </div>
+      <SpaceHeader
+        headingId="plan-empty-heading"
+        title={
+          isHousehold
+            ? "Our week"
+            : household
+              ? "My week"
+              : "No week planned yet"
+        }
+        context={household ? <ContextSelector /> : null}
+        summary={
+          <p className="text-14 font-medium leading-5 text-graphite">
+            Set up the week that works for you, then review every meal before
+            saving.
+          </p>
+        }
+      />
       <PlanAction onPlanCreated={onPlanWeek} />
     </main>
   );

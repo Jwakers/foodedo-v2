@@ -254,6 +254,40 @@ test("starts a replacement plan tomorrow when no editable draft exists", async (
   expect(store.writes).toBe(1);
 });
 
+test("starting another week does not reuse a draft reviewed against an older plan revision", async () => {
+  const store = createMemoryStore();
+  const options = {
+    catalogue,
+    planStartDate: "2026-11-01",
+    planDays: 4 as const,
+    servings: 4,
+    store,
+  };
+  const source = {
+    spaceKey: "alice:household",
+    planId: "plan-one",
+    updatedAt: 1,
+  };
+  const first = await beginNextGuestPlanDraft({
+    ...options,
+    reviewSource: source,
+    now: 100,
+  });
+  const resumed = await beginNextGuestPlanDraft({
+    ...options,
+    reviewSource: source,
+    now: 200,
+  });
+  expect(resumed.createdAt).toBe(first.createdAt);
+  const refreshed = await beginNextGuestPlanDraft({
+    ...options,
+    reviewSource: { ...source, updatedAt: 2 },
+    now: 300,
+  });
+  expect(refreshed.createdAt).toBe(300);
+  expect(refreshed.reviewSource?.updatedAt).toBe(2);
+});
+
 test("repairs an unedited next-plan draft from the retired automatic free-day policy", async () => {
   const legacyDraft = createGuestDraft({
     planStartDate: "2026-08-29",
@@ -729,4 +763,61 @@ test("refuses to prepare a claim when every day is empty", async () => {
       store,
     }),
   ).rejects.toThrow("Save at least one dinner");
+});
+
+test("binds reviewed saves to their original context/version through draft edits and retries", async () => {
+  const store = createMemoryStore();
+  const reviewSource = {
+    spaceKey: "alice:household-one",
+    planId: "plan-one",
+    updatedAt: 100,
+  };
+  const reviewed = await beginGuestPlanDraftWithMeal({
+    catalogue,
+    catalogueMealId: "meal-1",
+    planStartDate: "2026-10-22",
+    planDays: 3,
+    servings: 4,
+    reviewSource,
+    store,
+    now: 1000,
+  });
+  const changed = await replaceGuestPlanMeal({
+    catalogue,
+    date: "2026-10-22",
+    catalogueMealId: "meal-2",
+    store,
+    now: 1001,
+  });
+  expect(changed.reviewSource).toEqual(reviewSource);
+  await expect(
+    acceptAndPrepareGuestPlanClaim({
+      catalogue,
+      expectedDraft: reviewed,
+      store,
+      now: 1002,
+    }),
+  ).rejects.toThrow("This draft changed");
+  const saved = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
+    expectedDraft: changed,
+    store,
+    claimKey: "first_review_key_123456",
+    now: 1003,
+  });
+  const retried = await acceptAndPrepareGuestPlanClaim({
+    catalogue,
+    expectedDraft: changed,
+    store,
+    claimKey: "second_review_key_12345",
+    now: 1004,
+  });
+  expect(retried.claim?.key).toBe(saved.claim?.key);
+  expect(retried.reviewSource).toEqual(reviewSource);
+  const extended = await extendCurrentGuestPlanDraft({
+    catalogue,
+    store,
+    now: 1005,
+  });
+  expect(extended.reviewSource).toEqual(reviewSource);
 });

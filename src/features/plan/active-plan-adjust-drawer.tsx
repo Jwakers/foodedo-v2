@@ -1,4 +1,5 @@
 "use client";
+import { useHouseholdSpace } from "@/features/household/household-context";
 
 import { useMutation } from "convex/react";
 import { Minus, Plus, X } from "lucide-react";
@@ -53,15 +54,20 @@ export function ActivePlanAdjustDrawer({
   plan: AdjustablePlan;
   disabled: boolean;
 }) {
+  const { spaceArgs } = useHouseholdSpace();
   const adjustActivePlan = useMutation(api.mealPlans.adjustActivePlan);
+  const [open, setOpen] = useState(false);
+  const [reviewedPlan, setReviewedPlan] = useState(plan);
+  // The form and its explanation must use the same revision as the write.
+  // A partner's live edits are rejected on apply, rather than retargeting it.
+  const baseline = open ? reviewedPlan : plan;
   const initialDays = countPlanDays({
-    startDate: plan.startDate,
-    endDate: plan.endDate,
+    startDate: baseline.startDate,
+    endDate: baseline.endDate,
   });
   const visiblePlanDayOptions = isPlanDayOption(initialDays)
     ? PLAN_DAY_OPTIONS
     : [...PLAN_DAY_OPTIONS, initialDays].toSorted((a, b) => a - b);
-  const [open, setOpen] = useState(false);
   const [planDays, setPlanDays] = useState(initialDays);
   const [startDate, setStartDate] = useState(plan.startDate);
   const [servings, setServings] = useState(plan.servings);
@@ -70,23 +76,26 @@ export function ActivePlanAdjustDrawer({
 
   const hasChanges =
     planDays !== initialDays ||
-    startDate !== plan.startDate ||
-    servings !== plan.servings;
+    startDate !== baseline.startDate ||
+    servings !== baseline.servings;
   const removedDates = planDatesRemovedByShortening({
-    startDate: plan.startDate,
+    startDate: baseline.startDate,
     currentPlanDays: initialDays,
     nextPlanDays: planDays,
   });
 
-  function resetForm() {
-    setPlanDays(initialDays);
-    setStartDate(plan.startDate);
-    setServings(plan.servings);
+  function resetForm(source = baseline) {
+    setPlanDays(countPlanDays(source));
+    setStartDate(source.startDate);
+    setServings(source.servings);
     setScope("this-plan");
   }
 
   function handleOpenChange(nextOpen: boolean) {
-    if (nextOpen) resetForm();
+    if (nextOpen) {
+      setReviewedPlan(plan);
+      resetForm(plan);
+    }
     setOpen(nextOpen);
   }
 
@@ -99,8 +108,9 @@ export function ActivePlanAdjustDrawer({
     setIsApplying(true);
     try {
       const result = await adjustActivePlan({
-        mealPlanId: plan._id as Id<"mealPlans">,
-        expectedUpdatedAt: plan.updatedAt,
+        ...spaceArgs,
+        mealPlanId: reviewedPlan._id as Id<"mealPlans">,
+        expectedUpdatedAt: reviewedPlan.updatedAt,
         planDays,
         startDate,
         servings,
@@ -149,8 +159,8 @@ export function ActivePlanAdjustDrawer({
     <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerTrigger asChild>
         <Button
-          variant="secondary"
-          className="h-11 shrink-0 rounded-full px-3.5 text-13 font-semibold"
+          variant="inline"
+          className="min-h-11 shrink-0 text-13 font-semibold leading-5 text-leaf"
           disabled={disabled}
         >
           Edit this week
@@ -171,7 +181,7 @@ export function ActivePlanAdjustDrawer({
               size="headerIcon"
               className="w-auto px-2 text-graphite"
               disabled={!hasChanges || isApplying}
-              onClick={resetForm}
+              onClick={() => resetForm()}
             >
               Reset
             </Button>

@@ -21,12 +21,15 @@ import {
 import { parseRecipeServings } from "@/lib/routing/recipes";
 import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { RecipeAccountRecovery } from "./recipe-account-recovery";
 import {
   buildRecipeRepairPatch,
   RecipeReviewDrawer,
 } from "@/features/recipes/recipe-review-drawer";
 
 export function RecipeDetailPage() {
+  const { status, isAuthenticated } = useFoodedoAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
@@ -80,6 +83,9 @@ export function RecipeDetailPage() {
     };
   }, [meal]);
 
+  if (personalRecipeId && !isAuthenticated)
+    return <RecipeAccountRecovery status={status} />;
+
   if ((slug === null && personalRecipeId === null) || meal === null) {
     return (
       <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
@@ -114,11 +120,21 @@ export function RecipeDetailPage() {
           (personalRecipeId ? meal.servings : defaultServings)
         }
         personalRecipeId={personalRecipeId ?? undefined}
+        householdSnapshot={personalMeal?.householdSnapshot ?? false}
+        planServings={
+          parseRecipeServings(searchParams.get("planServings")) ?? undefined
+        }
         reviewIssues={personalRecipeId ? personalMeal?.reviewIssues : undefined}
-        onReview={personalRecipeId ? () => setRepairOpen(true) : undefined}
+        onReview={
+          personalRecipeId && !personalMeal?.householdSnapshot
+            ? () => setRepairOpen(true)
+            : undefined
+        }
         source={personalRecipeId ? personalMeal?.source : undefined}
         ownerActions={
-          personalRecipeId && personalMeal?.source.type === "import" ? (
+          personalRecipeId &&
+          !personalMeal?.householdSnapshot &&
+          personalMeal?.source.type === "import" ? (
             <Button
               variant="secondary"
               onClick={() =>
@@ -133,7 +149,7 @@ export function RecipeDetailPage() {
           personalRecipeId ? undefined : <PlanThisMeal meal={meal} />
         }
       />
-      {personalRecipeId && personalMeal ? (
+      {personalRecipeId && personalMeal && !personalMeal.householdSnapshot ? (
         <RecipeReviewDrawer
           open={repairOpen}
           issues={personalMeal.reviewIssues}

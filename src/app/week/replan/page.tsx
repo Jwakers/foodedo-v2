@@ -1,5 +1,9 @@
-import { PlanReview } from "@/features/plan/plan-review";
-
+import { Suspense } from "react";
+import { ReplanReview } from "@/features/plan/replan-review";
 export default function ReplanWeekRoutePage() {
-  return <PlanReview mode="replan" />;
+  return (
+    <Suspense>
+      <ReplanReview />
+    </Suspense>
+  );
 }

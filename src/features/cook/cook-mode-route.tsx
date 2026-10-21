@@ -13,8 +13,11 @@ import { parsePersonalRecipeId } from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
 import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { RecipeAccountRecovery } from "@/features/recipes/recipe-account-recovery";
 
 export function CookModeRoute() {
+  const { status, isAuthenticated } = useFoodedoAuth();
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug")?.trim() || null;
   const personalRecipeId = parsePersonalRecipeId(searchParams);
@@ -30,6 +33,9 @@ export function CookModeRoute() {
   const personalMeal = usePersonalRecipe(personalRecipeId);
   const catalogueMeal = reference === null ? currentMeal : pinnedMeal;
   const meal = personalRecipeId ? personalMeal : catalogueMeal;
+
+  if (personalRecipeId && !isAuthenticated)
+    return <RecipeAccountRecovery status={status} />;
 
   if ((slug === null && personalRecipeId === null) || meal === null) {
     return (

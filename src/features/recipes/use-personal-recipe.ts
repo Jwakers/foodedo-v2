@@ -16,6 +16,7 @@ export type PersonalRecipeMeal = CatalogueMeal & {
   reviewIssues: RecipeReviewIssue[];
   source: RecipeSource;
   contentEditedAt?: number;
+  householdSnapshot?: boolean;
 };
 
 type PersonalRecipeQueryResult = NonNullable<
@@ -39,6 +40,7 @@ export function toPersonalRecipeMeal(
 ): PersonalRecipeMeal {
   return {
     id: recipe._id,
+    householdSnapshot: recipe.householdSnapshot,
     version: 1,
     slug: `personal-${recipe._id}`,
     position: 0,

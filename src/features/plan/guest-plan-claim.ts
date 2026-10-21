@@ -1,5 +1,14 @@
 "use client";
 
+import { pendingInvite } from "@/features/household/invite-continuation";
+import { useHouseholdSpace } from "@/features/household/household-context";
+import {
+  createIndexedDbGuestDraftStore,
+  type GuestDraftStore,
+} from "@/lib/platform/guest-draft-store";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { ConvexError } from "convex/values";
+import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
@@ -30,11 +39,13 @@ import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
  * open Clerk; signed-in users claim immediately when Convex auth is ready.
  */
 export function useSaveGuestPlan() {
+  const { spaceArgs } = useHouseholdSpace();
   const { status, isClerkLoaded, isSignedIn } = useFoodedoAuth();
   const { openSignIn } = useClerk();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [needsLatestReview, setNeedsLatestReview] = useState(false);
   const { catalogue } = useGuestDraftCatalogue();
 
   const catalogueContract = useMemo(
@@ -54,7 +65,7 @@ export function useSaveGuestPlan() {
     [catalogue],
   );
 
-  async function prepareGuestSaveSignIn() {
+  async function prepareGuestSaveSignIn(expectedDraft?: GuestDraft) {
     if (!isClerkLoaded) {
       throw new Error("Foodedo is still checking your account. Try again.");
     }
@@ -63,11 +74,14 @@ export function useSaveGuestPlan() {
       throw new Error("The recipe catalogue is unavailable. Try again.");
     }
 
-    await acceptAndPrepareGuestPlanClaim({ catalogue: catalogueContract });
+    await acceptAndPrepareGuestPlanClaim({
+      catalogue: catalogueContract,
+      expectedDraft,
+    });
     openSignIn({});
   }
 
-  async function savePlan() {
+  async function savePlan(expectedDraft?: GuestDraft) {
     if (isSaving) return;
 
     if (!isClerkLoaded) {
@@ -75,6 +89,9 @@ export function useSaveGuestPlan() {
       return;
     }
 
+    const submittedKey = getDraftSpaceKey();
+    const submittedStore = createIndexedDbGuestDraftStore(submittedKey);
+    const targetSpace = spaceArgs;
     setIsSaving(true);
     try {
       if (!catalogueContract) {
@@ -82,6 +99,8 @@ export function useSaveGuestPlan() {
       }
       const draft = await acceptAndPrepareGuestPlanClaim({
         catalogue: catalogueContract,
+        store: submittedStore,
+        expectedDraft,
       });
 
       if (!isSignedIn) {
@@ -96,13 +115,38 @@ export function useSaveGuestPlan() {
         return;
       }
 
-      const result = await claimGuestDraft(guestPlanClaimMutationArgs(draft));
+      const source = draft.reviewSource;
+      if (!source || source.spaceKey !== submittedKey) {
+        setNeedsLatestReview(true);
+        return;
+      }
+      if (getDraftSpaceKey() !== submittedKey) return;
+      const result = await claimGuestDraft({
+        ...guestPlanClaimMutationArgs(draft),
+        ...targetSpace,
+        expectedPlanId: source.planId as Id<"mealPlans"> | null,
+        ...(source.updatedAt !== undefined
+          ? { expectedUpdatedAt: source.updatedAt }
+          : {}),
+      });
       await handleClaimResult(result, {
         catalogue: catalogueContract,
         router,
         submittedDraft: draft,
+        submittedStore,
+        submittedKey,
       });
     } catch (error) {
+      if (
+        error instanceof ConvexError &&
+        typeof error.data === "object" &&
+        error.data !== null &&
+        "code" in error.data &&
+        error.data.code === "PLAN_CHANGED"
+      ) {
+        setNeedsLatestReview(true);
+        return;
+      }
       console.error("Failed to save guest plan.", error);
       toast.error(
         error instanceof Error && error.message.startsWith("Save at least")
@@ -114,7 +158,7 @@ export function useSaveGuestPlan() {
     }
   }
 
-  return { isSaving, savePlan, prepareGuestSaveSignIn };
+  return { isSaving, savePlan, prepareGuestSaveSignIn, needsLatestReview };
 }
 
 /**
@@ -122,6 +166,7 @@ export function useSaveGuestPlan() {
  * Mount once at app-shell so any route can finish the save.
  */
 export function GuestPlanClaimResume() {
+  const { household, ready } = useHouseholdSpace();
   const { userId, isAuthenticated } = useFoodedoAuth();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const currentPlan = useQuery(
@@ -131,7 +176,7 @@ export function GuestPlanClaimResume() {
   const router = useRouter();
   const isResumingRef = useRef(false);
   const didHydrateClearRef = useRef(false);
-  const { catalogue } = useGuestDraftCatalogue();
+  const { catalogue } = useGuestDraftCatalogue("current");
   const catalogueContract = useMemo(
     () =>
       catalogue
@@ -156,7 +201,15 @@ export function GuestPlanClaimResume() {
       hasCatalogue: catalogueContract !== null,
       isResuming: isResumingRef.current,
     });
-    if (!canResume || currentPlan === undefined || catalogueContract === null) {
+    if (
+      !ready ||
+      household ||
+      pendingInvite() ||
+      window.location.pathname.startsWith("/household") ||
+      !canResume ||
+      currentPlan === undefined ||
+      catalogueContract === null
+    ) {
       return;
     }
 
@@ -166,18 +219,24 @@ export function GuestPlanClaimResume() {
       try {
         await resumePendingGuestPlanClaim({
           currentPlan,
-          readDraft: () => readCurrentGuestPlanDraft(catalogueContract),
+          readDraft: () =>
+            readCurrentGuestPlanDraft(
+              catalogueContract,
+              createIndexedDbGuestDraftStore("current"),
+            ),
           claimDraft: (draft) =>
             claimGuestDraft(guestPlanClaimMutationArgs(draft)),
           clearDraft: (draft) =>
             clearClaimedGuestPlanDraft({
               catalogue: catalogueContract,
               expectedDraft: draft,
+              store: createIndexedDbGuestDraftStore("current"),
             }),
           cancelClaim: (draft) =>
             cancelPendingGuestPlanClaim({
               catalogue: catalogueContract,
               expectedDraft: draft,
+              store: createIndexedDbGuestDraftStore("current"),
             }),
           onSuccessfulClaim: () => navigateAfterSuccessfulClaim(router),
           onCleanupFailure: () => {
@@ -202,6 +261,8 @@ export function GuestPlanClaimResume() {
       }
     })();
   }, [
+    ready,
+    household,
     catalogueContract,
     claimGuestDraft,
     currentPlan,
@@ -217,6 +278,10 @@ export function GuestPlanClaimResume() {
   useEffect(() => {
     if (
       !isAuthenticated ||
+      !ready ||
+      !!household ||
+      !!pendingInvite() ||
+      window.location.pathname.startsWith("/household") ||
       currentPlan === undefined ||
       currentPlan === null ||
       catalogueContract === null ||
@@ -229,18 +294,23 @@ export function GuestPlanClaimResume() {
       try {
         didHydrateClearRef.current = await clearHydratedGuestPlanDraft({
           currentPlan,
-          readDraft: () => readCurrentGuestPlanDraft(catalogueContract),
+          readDraft: () =>
+            readCurrentGuestPlanDraft(
+              catalogueContract,
+              createIndexedDbGuestDraftStore("current"),
+            ),
           clearDraft: (draft) =>
             clearClaimedGuestPlanDraft({
               catalogue: catalogueContract,
               expectedDraft: draft,
+              store: createIndexedDbGuestDraftStore("current"),
             }),
         });
       } catch (error) {
         console.error("Failed to clear matching guest plan draft.", error);
       }
     })();
-  }, [catalogueContract, currentPlan, isAuthenticated]);
+  }, [catalogueContract, currentPlan, isAuthenticated, ready, household]);
 
   return null;
 }
@@ -251,10 +321,14 @@ async function handleClaimResult(
     catalogue,
     router,
     submittedDraft,
+    submittedStore,
+    submittedKey,
   }: {
     catalogue: GuestCatalogueContract;
     router: ReturnType<typeof useRouter>;
     submittedDraft: GuestDraft;
+    submittedStore: GuestDraftStore;
+    submittedKey: string;
   },
 ) {
   switch (result.status) {
@@ -264,6 +338,7 @@ async function handleClaimResult(
         await clearClaimedGuestPlanDraft({
           catalogue,
           expectedDraft: submittedDraft,
+          store: submittedStore,
         });
       } catch (error) {
         console.error("Plan saved, but local draft cleanup failed.", error);
@@ -272,12 +347,14 @@ async function handleClaimResult(
             "Foodedo couldn’t clear the local copy yet, but your account plan is safe.",
         });
       }
-      navigateAfterSuccessfulClaim(router);
+      if (getDraftSpaceKey() === submittedKey)
+        navigateAfterSuccessfulClaim(router);
       return;
     case "catalogue_unsupported":
       await cancelPendingGuestPlanClaim({
         catalogue,
         expectedDraft: submittedDraft,
+        store: submittedStore,
       });
       toast.error(
         "This plan uses an older recipe catalogue. Plan a new week to continue.",

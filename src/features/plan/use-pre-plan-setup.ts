@@ -1,5 +1,6 @@
 "use client";
 
+import { useHouseholdSpace } from "@/features/household/household-context";
 import { useSyncExternalStore } from "react";
 
 import {
@@ -36,14 +37,16 @@ export function fallbackPrePlanSetup(
 }
 
 export function usePrePlanSetup(fallback: PrePlanSetup) {
+  const { spaceKey } = useHouseholdSpace();
+  const key = spaceKey === "guest" ? "current" : spaceKey;
   const pendingSetup = useSyncExternalStore(
     subscribeToPendingPrePlanSetup,
-    getPendingPrePlanSetup,
+    () => getPendingPrePlanSetup(key),
     getEmptyPrePlanSetupSnapshot,
   );
 
   return {
     setup: pendingSetup ?? fallback,
-    applySetup: setPendingPrePlanSetup,
+    applySetup: (setup: PrePlanSetup) => setPendingPrePlanSetup(setup, key),
   };
 }

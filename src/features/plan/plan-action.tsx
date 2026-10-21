@@ -1,5 +1,9 @@
 "use client";
 
+import { getDraftSpaceKey } from "@/lib/platform/draft-space";
+import { bindReviewSource } from "./review-source";
+import { useHouseholdSpace } from "@/features/household/household-context";
+
 import {
   ClerkFailed,
   ClerkLoaded,
@@ -72,12 +76,17 @@ export function PlanAction({
 }: {
   onPlanCreated?: () => void | Promise<unknown>;
 } = {}) {
+  const { spaceArgs, isHousehold, ready: spaceReady } = useHouseholdSpace();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPlanning, setIsPlanning] = useState(false);
   const { status, isSignedIn, isAuthenticated } = useFoodedoAuth();
   const { openSignIn } = useClerk();
   const catalogue = useCurrentCatalogue();
+  const currentPlan = useQuery(
+    api.mealPlans.getCurrent,
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
+  );
   const preferences = useQuery(
     api.planningPreferences.getCurrent,
     isAuthenticated ? {} : "skip",
@@ -88,7 +97,7 @@ export function PlanAction({
   );
   const recentSelectionHistory = useQuery(
     api.mealPlans.getRecentCatalogueSelectionHistory,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   // Vaul treats nested Clerk modal clicks as outside-dismiss. Close the drawer
   // before opening Clerk, and keep the intent for post-auth Adjust resume.
@@ -155,12 +164,20 @@ export function PlanAction({
 
   async function planWeek() {
     if (isPlanning) return;
+    const generationKey = getDraftSpaceKey();
     setIsPlanning(true);
     try {
       if (catalogue === undefined || catalogue === null) {
         throw new Error("The catalogue is unavailable.");
       }
+      if (isAuthenticated) {
+        if (currentPlan === undefined)
+          throw new Error("Your week is still loading.");
+      }
       await beginConfiguredGuestPlanDraft({
+        reviewSource: isAuthenticated
+          ? bindReviewSource(currentPlan ?? null)
+          : undefined,
         catalogue: {
           currentMeals: catalogue.meals.map((meal) => ({
             catalogueMealId: meal.id,
@@ -181,6 +198,7 @@ export function PlanAction({
           : [],
         recentPlanMealIds: recentSelectionHistory ?? [],
       });
+      if (getDraftSpaceKey() !== generationKey) return;
       if (onPlanCreated) {
         await onPlanCreated();
       } else {
@@ -212,7 +230,11 @@ export function PlanAction({
         aria-busy={isPlanning}
         onClick={() => void planWeek()}
       >
-        {isPlanning ? "Planning your week…" : "Plan my week"}
+        {isPlanning
+          ? "Planning your week…"
+          : isHousehold
+            ? "Plan our week"
+            : "Plan my week"}
         <ArrowRight aria-hidden="true" className="size-4.5" />
       </Button>
 

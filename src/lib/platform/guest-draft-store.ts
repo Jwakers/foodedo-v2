@@ -1,3 +1,4 @@
+import { getDraftSpaceKey } from "./draft-space";
 import type { GuestDraft } from "@/lib/domain/guest-draft";
 import {
   localObjectStores,
@@ -14,6 +15,7 @@ export type GuestDraftMutationResult = {
 };
 
 export interface GuestDraftStore {
+  readonly key?: string;
   read(): Promise<unknown | null>;
   write(draft: GuestDraft): Promise<void>;
   clear(): Promise<void>;
@@ -33,10 +35,12 @@ export interface GuestDraftStore {
 }
 
 const objectStoreName = localObjectStores.guestDrafts;
-const currentDraftKey = "current";
 
-export function createIndexedDbGuestDraftStore(): GuestDraftStore {
+export function createIndexedDbGuestDraftStore(
+  currentDraftKey = getDraftSpaceKey(),
+): GuestDraftStore {
   return {
+    key: currentDraftKey,
     async read() {
       const database = await openFoodedoDatabase();
       try {

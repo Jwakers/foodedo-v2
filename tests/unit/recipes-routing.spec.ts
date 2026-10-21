@@ -99,3 +99,12 @@ test("parses the recipe slug query", () => {
   ).toBe("lemon herb");
   expect(parseRecipeDetailSlug("/week", new URLSearchParams())).toBeNull();
 });
+
+test("keeps household plan servings separate from local cook servings", () => {
+  expect(personalRecipeCookPath("snapshot-1", 2, 4)).toBe(
+    "/recipes/cook?recipeId=snapshot-1&servings=2&planServings=4",
+  );
+  expect(personalRecipeDetailPath("snapshot-1", 2, 4)).toBe(
+    "/recipes/view?recipeId=snapshot-1&servings=2&planServings=4",
+  );
+});

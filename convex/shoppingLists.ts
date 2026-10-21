@@ -10,7 +10,7 @@ import { normaliseImportedDisplayAmount } from "../src/lib/domain/recipe-normali
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { requireUserId } from "./lib/auth";
+import { readSpace, requireSpace, spaceArgs, type SpaceId } from "./lib/spaces";
 import { shoppingCategoryValidator } from "./lib/recipeValidators";
 import { syncShoppingListForPlan } from "./lib/shoppingListSync";
 
@@ -108,10 +108,11 @@ const selectedShoppingListValidator = v.union(
 );
 
 export const getCurrent = query({
-  args: {},
+  args: { ...spaceArgs },
   returns: currentShoppingListValidator,
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return { status: "no_active_plan" } as const;
     const activePlans = await getActivePlans(ctx, ownerId);
     if (activePlans.length === 0) {
       return { status: "no_active_plan" } as const;
@@ -176,10 +177,11 @@ export const getCurrent = query({
 
 /** Bounded metadata for the recent-list picker; full items load on selection. */
 export const getRecentSummaries = query({
-  args: {},
+  args: { ...spaceArgs },
   returns: v.array(shoppingListSummaryValidator),
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return [];
     const retainedLists = await ctx.db
       .query("shoppingLists")
       .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
@@ -243,10 +245,11 @@ export const getRecentSummaries = query({
 
 /** Hydrate one previous plan's list only after the user selects it. */
 export const getById = query({
-  args: { shoppingListId: v.id("shoppingLists") },
+  args: { ...spaceArgs, shoppingListId: v.id("shoppingLists") },
   returns: selectedShoppingListValidator,
-  handler: async (ctx, { shoppingListId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { shoppingListId, householdId }) => {
+    const ownerId = await readSpace(ctx, householdId);
+    if (ownerId === null) return null;
     const list = await ctx.db.get(shoppingListId);
     if (list === null || list.ownerId !== ownerId) return null;
 
@@ -289,10 +292,10 @@ export const getById = query({
 });
 
 export const ensureForCurrentPlan = mutation({
-  args: {},
+  args: { ...spaceArgs },
   returns: ensureResultValidator,
-  handler: async (ctx) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, args) => {
+    const ownerId = await requireSpace(ctx, args.householdId);
     const activePlans = await getActivePlans(ctx, ownerId);
     if (activePlans.length === 0) {
       return { status: "no_active_plan" } as const;
@@ -317,10 +320,14 @@ export const ensureForCurrentPlan = mutation({
 });
 
 export const setItemChecked = mutation({
-  args: { itemId: v.id("shoppingListItems"), checked: v.boolean() },
+  args: {
+    ...spaceArgs,
+    itemId: v.id("shoppingListItems"),
+    checked: v.boolean(),
+  },
   returns: itemMutationResultValidator,
-  handler: async (ctx, { itemId, checked }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { itemId, checked, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
     if (editableItem.item.included === false) {
@@ -335,10 +342,14 @@ export const setItemChecked = mutation({
 });
 
 export const setStapleIncluded = mutation({
-  args: { itemId: v.id("shoppingListItems"), included: v.boolean() },
+  args: {
+    ...spaceArgs,
+    itemId: v.id("shoppingListItems"),
+    included: v.boolean(),
+  },
   returns: itemMutationResultValidator,
-  handler: async (ctx, { itemId, included }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { itemId, included, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
     if (editableItem.item.treatment !== "staple") {
@@ -358,13 +369,13 @@ export const setStapleIncluded = mutation({
 });
 
 export const includeAllStaples = mutation({
-  args: { shoppingListId: v.id("shoppingLists") },
+  args: { ...spaceArgs, shoppingListId: v.id("shoppingLists") },
   returns: v.union(
     v.object({ status: v.literal("updated"), count: v.number() }),
     v.object({ status: v.literal("not_found") }),
   ),
-  handler: async (ctx, { shoppingListId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { shoppingListId, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const list = await ctx.db.get(shoppingListId);
     if (list === null || list.ownerId !== ownerId) {
       return { status: "not_found" } as const;
@@ -399,7 +410,11 @@ export const includeAllStaples = mutation({
 });
 
 export const addItem = mutation({
-  args: { shoppingListId: v.id("shoppingLists"), name: v.string() },
+  args: {
+    ...spaceArgs,
+    shoppingListId: v.id("shoppingLists"),
+    name: v.string(),
+  },
   returns: v.union(
     v.object({
       status: v.literal("added"),
@@ -408,8 +423,8 @@ export const addItem = mutation({
     v.object({ status: v.literal("not_found") }),
     v.object({ status: v.literal("list_full") }),
   ),
-  handler: async (ctx, { shoppingListId, name }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { shoppingListId, name, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const list = await ctx.db.get(shoppingListId);
     if (list === null || list.ownerId !== ownerId) {
       return { status: "not_found" } as const;
@@ -450,10 +465,10 @@ export const addItem = mutation({
 });
 
 export const removeItem = mutation({
-  args: { itemId: v.id("shoppingListItems") },
+  args: { ...spaceArgs, itemId: v.id("shoppingListItems") },
   returns: itemMutationResultValidator,
-  handler: async (ctx, { itemId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { itemId, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
 
@@ -468,10 +483,10 @@ export const removeItem = mutation({
 });
 
 export const restoreItem = mutation({
-  args: { itemId: v.id("shoppingListItems") },
+  args: { ...spaceArgs, itemId: v.id("shoppingListItems") },
   returns: itemMutationResultValidator,
-  handler: async (ctx, { itemId }) => {
-    const ownerId = await requireUserId(ctx);
+  handler: async (ctx, { itemId, householdId }) => {
+    const ownerId = await requireSpace(ctx, householdId);
     const editableItem = await getEditableItem(ctx, itemId, ownerId);
     if (editableItem === null) return { status: "not_found" } as const;
 
@@ -485,10 +500,7 @@ export const restoreItem = mutation({
   },
 });
 
-async function getActivePlans(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: Id<"users">,
-) {
+async function getActivePlans(ctx: QueryCtx | MutationCtx, ownerId: SpaceId) {
   return await ctx.db
     .query("mealPlans")
     .withIndex("by_owner_and_status_and_updated_at", (q) =>
@@ -501,7 +513,7 @@ async function getActivePlans(
 async function getEditableItem(
   ctx: MutationCtx,
   itemId: Id<"shoppingListItems">,
-  ownerId: Id<"users">,
+  ownerId: SpaceId,
 ) {
   const item = await ctx.db.get(itemId);
   if (item === null || item.ownerId !== ownerId) return null;

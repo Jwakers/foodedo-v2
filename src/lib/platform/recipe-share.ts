@@ -18,8 +18,16 @@ export async function shareRecipe({
   title: string;
   path: string;
 }): Promise<RecipeShareResult> {
-  const url = recipeShareUrl(path);
+  return shareUrl({ title, url: recipeShareUrl(path) });
+}
 
+export async function shareUrl({
+  title,
+  url,
+}: {
+  title: string;
+  url: string;
+}): Promise<RecipeShareResult> {
   try {
     if (Capacitor.isNativePlatform()) {
       await Share.share({

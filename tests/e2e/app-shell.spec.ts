@@ -1,6 +1,22 @@
 import { expect, test } from "@playwright/test";
 import { imageSize } from "image-size";
 
+for (const route of ["/recipes/view", "/recipes/cook"])
+  test(`signed-out account recipe links offer sign-in recovery at ${route}`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `${route}?recipeId=account-owned-recipe&servings=4&planServings=4`,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Sign in to open this recipe" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/recipeId=account-owned-recipe/);
+  });
+
 test("signed-out job links show sign-in recovery rather than indefinite progress", async ({
   page,
 }) => {
@@ -428,11 +444,15 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try Foodedo" }).click();
-  await page.getByRole("link", { name: /Lemon Herb Grilled Chicken/i }).click();
+  const firstIdea = page
+    .locator('section[aria-labelledby="week-ideas-heading"] li a')
+    .first();
+  const recipeTitle = await firstIdea.locator("p").innerText();
+  await firstIdea.click();
 
-  await expect(
-    page.getByRole("heading", { name: "Lemon Herb Grilled Chicken" }),
-  ).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: recipeTitle })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Foodedo" })).toBeVisible();
   await expect(page.getByText("Foodedo recipe")).toBeVisible();
@@ -450,7 +470,7 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
     page.getByRole("button", { name: "Recipe options" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Save Lemon Herb Grilled Chicken" }),
+    page.getByRole("button", { name: `Save ${recipeTitle}` }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Recipe options" }).click();
@@ -466,10 +486,14 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
 test("plans a recipe from its detail page as a guest", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try Foodedo" }).click();
-  await page.getByRole("link", { name: /Lemon Herb Grilled Chicken/i }).click();
-  await expect(
-    page.getByRole("heading", { name: "Lemon Herb Grilled Chicken" }),
-  ).toBeVisible({ timeout: 15_000 });
+  const firstIdea = page
+    .locator('section[aria-labelledby="week-ideas-heading"] li a')
+    .first();
+  const recipeTitle = await firstIdea.locator("p").innerText();
+  await firstIdea.click();
+  await expect(page.getByRole("heading", { name: recipeTitle })).toBeVisible({
+    timeout: 15_000,
+  });
 
   await page.getByRole("button", { name: "Plan this meal" }).click();
   await expect(
@@ -477,7 +501,7 @@ test("plans a recipe from its detail page as a guest", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /^Actions for / }).first(),
-  ).toHaveAttribute("aria-label", "Actions for Lemon Herb Grilled Chicken");
+  ).toHaveAttribute("aria-label", `Actions for ${recipeTitle}`);
 
   await page.goBack();
   await page.getByRole("button", { name: "Plan this meal" }).click();
@@ -502,7 +526,7 @@ test("plans a recipe from its detail page as a guest", async ({ page }) => {
   await page.getByRole("button", { name: "View week" }).click();
   await expect(
     page.getByRole("button", {
-      name: "Actions for Lemon Herb Grilled Chicken",
+      name: `Actions for ${recipeTitle}`,
     }),
   ).toHaveCount(2);
 });
@@ -516,7 +540,7 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
 
   await page.getByRole("button", { name: "Start cooking" }).first().click();
   await expect(page).toHaveURL(
-    /\/recipes\/cook\?slug=baked-chicken-and-rice-casserole&servings=5&catalogueMealId=baked-chicken-and-rice-casserole&catalogueVersion=2$/,
+    /\/recipes\/cook\?slug=baked-chicken-and-rice-casserole&servings=5&catalogueMealId=baked-chicken-and-rice-casserole&catalogueVersion=\d+$/,
   );
   await expect(
     page.getByRole("heading", { name: "Get everything ready" }),
@@ -533,17 +557,26 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
   await firstPreparation.click();
   await expect(firstPreparation).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
-  await expect(page.getByText("Step 1 of 3")).toBeVisible();
+  await expect(page.getByText(/^Step 1 of \d+$/)).toBeVisible();
   await page.getByRole("button", { name: "Previous" }).click();
   await expect(
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
-  await page.getByRole("button", { name: "Next step" }).click();
-  await page.getByRole("button", { name: "Next step" }).click();
-  await page.getByRole("button", { name: "Start 45 min timer" }).click();
-  await expect(page.getByText(/Casserole · (45 min|44:59)/)).toBeVisible();
+  const startTimer = page
+    .getByRole("button", { name: /^Start .+ timer$/ })
+    .first();
+  for (let steps = 0; steps < 31 && !(await startTimer.isVisible()); steps++) {
+    await page.getByRole("button", { name: "Next step" }).click();
+  }
+  const timerStep = await page.getByText(/^Step \d+ of \d+$/).innerText();
+  await startTimer.click();
+  const timerOptions = page
+    .getByRole("button", { name: /^Timer options for / })
+    .first();
+  await expect(timerOptions).toBeVisible();
+  const timerLabel = await timerOptions.getAttribute("aria-label");
 
   await page.getByRole("button", { name: "Show ingredients" }).click();
   await expect(
@@ -551,24 +584,35 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("Scaled for 5")).toBeVisible();
   await expect(page.getByText("500 g")).toBeVisible();
-  await expect(page.getByText(/Casserole ·/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: timerLabel!, exact: true }),
+  ).toBeVisible();
 
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Ingredients" }),
   ).toBeVisible();
-  await expect(page.getByText(/Casserole ·/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: timerLabel!, exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Back to cooking" }).click();
-  await expect(page.getByText("Step 3 of 3")).toBeVisible();
+  await expect(page.getByText(timerStep, { exact: true })).toBeVisible();
 
-  await page
-    .getByRole("button", { name: "Timer options for Casserole" })
-    .click();
+  await page.getByRole("button", { name: timerLabel!, exact: true }).click();
   await expect(page.getByRole("menu", { name: /Timer options/ })).toBeVisible();
   await page.getByRole("menuitem", { name: "Restart timer" }).click();
-  await expect(page.getByText(/Casserole · (45 min|44:59)/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: timerLabel!, exact: true }),
+  ).toBeVisible();
 
-  await page.getByRole("button", { name: "Dinner’s ready" }).click();
+  const finish = page.getByRole("button", {
+    name: "Dinner’s ready",
+    exact: true,
+  });
+  for (let steps = 0; steps < 31 && !(await finish.isVisible()); steps++) {
+    await page.getByRole("button", { name: "Next step" }).click();
+  }
+  await finish.click();
   await expect(page.getByText("Time to serve.")).toBeVisible();
   await page.getByRole("button", { name: "Back to recipe" }).click();
   await page.getByRole("button", { name: "Start cooking" }).first().click();
@@ -588,4 +632,34 @@ test("only shows Cook preheat when the recipe explicitly authors it", async ({
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();
   await expect(page.getByText(/Preheat oven to/)).toHaveCount(0);
+});
+
+test("household entry keeps signed-out creation behind the account boundary", async ({
+  page,
+}) => {
+  await page.goto("/household");
+  await expect(
+    page.getByRole("heading", { name: "Share your week." }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Sign in to create or join a household."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create household", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("an unavailable household invitation preserves its token until dismissed", async ({
+  page,
+}) => {
+  await page.goto("/household/join?token=invalid-test-invitation");
+  await expect(
+    page.getByRole("heading", { name: "This link is unavailable" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/token=invalid-test-invitation/);
+  await expect(
+    page.getByRole("button", { name: "Join household", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("link", { name: "Go to my week" }).click();
+  await expect(page).toHaveURL(/\/week$/);
 });

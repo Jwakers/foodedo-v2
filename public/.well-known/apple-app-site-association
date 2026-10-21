@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["2UFQ4ZW67L.com.foodedo.app"],
+        "components": [{ "/": "/household/join", "?": { "token": "*" }, "comment": "Household invitation links" }]
+      }
+    ]
+  }
+}

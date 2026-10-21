@@ -8,7 +8,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/react";
-import { ChevronLeft } from "lucide-react";
+import { UsersRound, ChevronLeft } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -162,6 +162,11 @@ function AccountButton() {
         }}
       >
         <UserButton.MenuItems>
+          <UserButton.Link
+            label="Household"
+            labelIcon={<UsersRound className="size-4" />}
+            href="/household"
+          />
           <UserButton.Action label="manageAccount" />
           <UserButton.Action label="signOut" />
         </UserButton.MenuItems>

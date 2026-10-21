@@ -1,5 +1,6 @@
 "use client";
 
+import { useHouseholdSpace } from "@/features/household/household-context";
 import { Show, useAuth } from "@clerk/react";
 import { ArrowRight, Clock, Plus } from "lucide-react";
 import { useRef, useState } from "react";
@@ -48,6 +49,7 @@ export function PlanReviewReady({
   onAddDay: () => Promise<void>;
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { household, isHousehold } = useHouseholdSpace();
   const [saveDrawerOpen, setSaveDrawerOpen] = useState(false);
   const [isPreparingSignIn, setIsPreparingSignIn] = useState(false);
   // Closing the drawer for Clerk must not clear the pending claim key.
@@ -107,6 +109,11 @@ export function PlanReviewReady({
       aria-labelledby="plan-review-heading"
       className="mx-auto flex w-full max-w-175 flex-col px-page-inline pt-4.5 pb-8"
     >
+      {household ? (
+        <p className="mb-3 text-12 font-bold tracking-label text-leaf uppercase">
+          {isHousehold ? "Household plan" : "Private plan"}
+        </p>
+      ) : null}
       <div className="flex flex-col gap-1.5">
         <h1
           id="plan-review-heading"
@@ -122,8 +129,8 @@ export function PlanReviewReady({
       {mode === "replan" ? (
         <p className="mt-4 rounded-sm bg-mist px-3 py-2.5 text-13 leading-5 text-graphite">
           Your dates, servings and free days stay the same. Saving replaces the
-          planned meals, and your current Shopping list will be marked out of
-          date so you can rebuild it.
+          planned meals and updates the linked shopping list. Extras and checks
+          on ingredients still needed stay.
         </p>
       ) : null}
 
@@ -201,7 +208,9 @@ export function PlanReviewReady({
             ? "Saving…"
             : mode === "replan"
               ? "Replace this week"
-              : "Save my plan"}
+              : isHousehold
+                ? "Save household plan"
+                : "Save my plan"}
           <ArrowRight aria-hidden="true" className="size-4.5" />
         </Button>
         <Button

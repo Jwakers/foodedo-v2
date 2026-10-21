@@ -1,5 +1,8 @@
 "use client";
 
+import { HouseholdDiscovery } from "@/features/household/household-discovery";
+import { useHouseholdSpace } from "@/features/household/household-context";
+
 import {
   ClerkFailed,
   ClerkLoaded,
@@ -23,17 +26,20 @@ import { recipeDetailPath } from "@/lib/routing/recipes";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 export function Dashboard() {
+  const { household, spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const catalogue = useCurrentCatalogue();
   const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
-    isAuthenticated ? {} : "skip",
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
 
   // Resolve Clerk before choosing guest/account UI. Signed-in users also wait
   // for Convex so Home never flashes the guest “Plan my week” state.
   const isCheckingPlan =
-    status === "loading" || (isAuthenticated && currentPlan === undefined);
+    status === "loading" ||
+    !spaceReady ||
+    (isAuthenticated && currentPlan === undefined);
 
   if (isCheckingPlan) {
     return (
@@ -54,7 +60,12 @@ export function Dashboard() {
   }
 
   if (currentPlan) {
-    return <ActivePlanDashboard plan={currentPlan} />;
+    return (
+      <>
+        <ActivePlanDashboard plan={currentPlan} />
+        {isAuthenticated && household === null ? <HouseholdDiscovery /> : null}
+      </>
+    );
   }
 
   return (
@@ -66,6 +77,7 @@ export function Dashboard() {
       <DashboardImage />
       <PlanAction />
       <AccountNotice />
+      {isAuthenticated && household === null ? <HouseholdDiscovery /> : null}
       <IdeasForYourWeek catalogue={catalogue} />
     </section>
   );

@@ -14,7 +14,7 @@ export async function getOrCreateCatalogueRecipe(
     catalogueVersion,
     saveToLibrary,
   }: {
-    ownerId: Id<"users">;
+    ownerId: Id<"users"> | Id<"households">;
     catalogueMealId: string;
     catalogueVersion: number;
     saveToLibrary: boolean;

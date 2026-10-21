@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -39,6 +39,14 @@ export function CookModePage({
   personalRecipeId?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planServingsValue = Number(searchParams.get("planServings"));
+  const planServings =
+    Number.isInteger(planServingsValue) &&
+    planServingsValue >= 1 &&
+    planServingsValue <= 1000
+      ? planServingsValue
+      : undefined;
   const context = useMemo<CookRecipeContext>(
     () => ({
       catalogueVersion,
@@ -97,7 +105,11 @@ export function CookModePage({
     void setCookScreenAwake(false);
     router.push(
       personalRecipeId
-        ? personalRecipeDetailPath(personalRecipeId, session.servings)
+        ? personalRecipeDetailPath(
+            personalRecipeId,
+            session.servings,
+            planServings,
+          )
         : recipeDetailPath(
             meal.slug,
             {
@@ -165,7 +177,11 @@ export function CookModePage({
         onRecipe={() =>
           router.push(
             personalRecipeId
-              ? personalRecipeDetailPath(personalRecipeId, session.servings)
+              ? personalRecipeDetailPath(
+                  personalRecipeId,
+                  session.servings,
+                  planServings,
+                )
               : recipeDetailPath(
                   meal.slug,
                   {

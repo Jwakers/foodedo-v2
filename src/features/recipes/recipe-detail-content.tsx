@@ -41,6 +41,8 @@ export function RecipeDetailContent({
   onReview,
   source,
   ownerActions,
+  householdSnapshot = false,
+  planServings,
 }: {
   meal: CatalogueMeal;
   presentation: RecipeDetailPresentation;
@@ -53,6 +55,8 @@ export function RecipeDetailContent({
   onReview?: () => void;
   source?: RecipeSource;
   ownerActions?: ReactNode;
+  householdSnapshot?: boolean;
+  planServings?: number;
 }) {
   const router = useRouter();
   const defaultServings = initialServings ?? meal.servings ?? 1;
@@ -113,7 +117,11 @@ export function RecipeDetailContent({
     }
     router.push(
       personalRecipeId
-        ? personalRecipeCookPath(personalRecipeId, selectedServings)
+        ? personalRecipeCookPath(
+            personalRecipeId,
+            selectedServings,
+            planServings,
+          )
         : recipeCookPath(meal.slug, selectedServings, {
             catalogueMealId: meal.id,
             catalogueVersion: meal.version,
@@ -137,15 +145,19 @@ export function RecipeDetailContent({
 
       <div className="flex flex-col gap-2.5 px-page-inline pt-6 pb-5">
         <p className="text-12 font-bold tracking-overline text-cadmium uppercase">
-          Foodedo recipe
+          {householdSnapshot ? "From your household week" : "Foodedo recipe"}
         </p>
         <h1 className="font-display text-34 font-semibold tracking-heading text-ink">
           {meal.title}
         </h1>
 
+        {householdSnapshot && planServings ? (
+          <p className="text-14 text-graphite">Plan serves {planServings}</p>
+        ) : null}
         {meal.servings != null && scalingSafe ? (
           <RecipeServingsControl
             servings={selectedServings}
+            cookOnly={householdSnapshot}
             onServingsChange={(servings) =>
               setServingSelection({
                 recipeSlug: meal.slug,
