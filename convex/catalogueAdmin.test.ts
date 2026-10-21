@@ -669,7 +669,7 @@ test("disabled scheduling exits without creating work, even when directly invoke
   ).toHaveLength(0);
 });
 
-test("cron invocations deduplicate a 30-minute slot and allow the next slot", async () => {
+test("cron invocations deduplicate the configured slot and allow the next slot", async () => {
   const { t } = setup();
   vi.setSystemTime(new Date("2026-10-21T09:00:00Z"));
   const runId = await t.mutation(internal.catalogueAdmin.beginScheduled, {});
@@ -680,14 +680,24 @@ test("cron invocations deduplicate a 30-minute slot and allow the next slot", as
     token: run.attemptToken,
     failure: "Test provider failure",
   });
-  vi.setSystemTime(new Date("2026-10-21T09:10:00Z"));
+  vi.setSystemTime(
+    new Date(
+      new Date("2026-10-21T09:00:00Z").getTime() +
+        catalogueSchedule.intervalMinutes * 30_000,
+    ),
+  );
   expect(await t.mutation(internal.catalogueAdmin.beginScheduled, {})).toBe(
     runId,
   );
   expect(
     await t.run((ctx) => ctx.db.query("catalogueGenerationRuns").collect()),
   ).toHaveLength(1);
-  vi.setSystemTime(new Date("2026-10-21T09:30:00Z"));
+  vi.setSystemTime(
+    new Date(
+      new Date("2026-10-21T09:00:00Z").getTime() +
+        catalogueSchedule.intervalMinutes * 60_000,
+    ),
+  );
   const nextRunId = await t.mutation(
     internal.catalogueAdmin.beginScheduled,
     {},

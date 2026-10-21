@@ -1,6 +1,7 @@
 "use node";
 import { generateText, generateImage, Output } from "ai";
 import { z } from "zod";
+import { isGenerationTimeout, generationTimeoutMessage } from "./errors";
 import {
   PROTEIN_CATEGORIES,
   COST_BANDS,
@@ -153,6 +154,13 @@ export function gatewayGenerationClient(
       await onPhase?.(role);
       const started = Date.now();
       if (started >= deadline) throw new Error("Generation deadline reached.");
+      const configuredTimeout =
+        role === "authoring" || role === "targeted_repair"
+          ? (config.textCallTimeoutMs ?? 90_000)
+          : (config.reviewCallTimeoutMs ?? 90_000);
+      const remaining = deadline - Date.now();
+      const timeoutMs = Math.max(1, Math.min(configuredTimeout, remaining));
+      const signal = AbortSignal.timeout(timeoutMs);
       let event: ModelEvent = {
         role,
         requestedModel: config.textModel,
@@ -165,9 +173,7 @@ export function gatewayGenerationClient(
           model: config.textModel,
           maxRetries: 0,
           maxOutputTokens: config.maxOutputTokens,
-          abortSignal: AbortSignal.timeout(
-            Math.max(1, Math.min(90_000, deadline - Date.now())),
-          ),
+          abortSignal: signal,
           system,
           prompt: JSON.stringify(input),
           output: Output.object({ schema }),
@@ -190,6 +196,20 @@ export function gatewayGenerationClient(
         const output = schema.parse(result.output);
         event.outcome = "succeeded";
         return output;
+      } catch (error) {
+        if (signal.aborted || isGenerationTimeout(error)) {
+          event.outcome = "timed_out";
+          throw new Error(
+            generationTimeoutMessage(
+              role,
+              timeoutMs,
+              signal.aborted,
+              remaining < configuredTimeout,
+            ),
+            { cause: error },
+          );
+        }
+        throw error;
       } finally {
         event.durationMs = Date.now() - started;
         await telemetry(event);

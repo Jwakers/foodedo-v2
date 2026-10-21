@@ -6,6 +6,7 @@ import {
   validateGeneratedRecipe,
   type AnalysisMeal,
   type QualityFinding,
+  type EditorialTags,
 } from "../../../src/lib/domain/catalogue-generation";
 import type { RecipeContent } from "../../../src/lib/domain/recipes";
 import {
@@ -177,13 +178,25 @@ export function culinaryComparisons(
   };
 }
 
+export type ImprovementProgress =
+  | { stage: "original_review"; findings: QualityFinding[] }
+  | {
+      stage: "authored";
+      content: RecipeContent;
+      tags: EditorialTags;
+      changeSummary: string[];
+      findings: QualityFinding[];
+      originalFindings: QualityFinding[];
+    };
+
 /** Review first; only rewrite when there is a concrete improvement or request. */
 export async function improveProposal(
   client: GenerationClient,
   original: RecipeContent,
-  originalTags: import("../../../src/lib/domain/catalogue-generation").EditorialTags,
+  originalTags: EditorialTags,
   meals: AnalysisMeal[],
   feedback?: string,
+  onProgress?: (progress: ImprovementProgress) => Promise<void>,
 ) {
   const administratorRequest = feedback?.trim();
   if ((administratorRequest?.length ?? 0) > 2000)
@@ -205,6 +218,7 @@ export async function improveProposal(
     ...originalValidation.findings,
     ...originalReview.findings,
   ];
+  await onProgress?.({ stage: "original_review", findings: originalFindings });
   if (!administratorRequest && !originalFindings.length)
     return {
       content: originalValidation.content,
@@ -229,6 +243,14 @@ export async function improveProposal(
   let content = revisedRecipeContent(revised.recipe);
   let tags = revised.tags;
   let validation = validateGeneratedRecipe(content, meals);
+  await onProgress?.({
+    stage: "authored",
+    content,
+    tags,
+    changeSummary: revised.changeSummary,
+    findings: validation.findings,
+    originalFindings,
+  });
   const review = await client.text(
     "culinary_review",
     reviewSchema,
@@ -244,6 +266,14 @@ export async function improveProposal(
     },
   );
   let findings = [...validation.findings, ...review.findings];
+  await onProgress?.({
+    stage: "authored",
+    content,
+    tags,
+    changeSummary: revised.changeSummary,
+    findings,
+    originalFindings,
+  });
   if (findings.some((finding) => finding.blocking)) {
     const repaired = await client.text(
       "targeted_repair",
@@ -262,6 +292,14 @@ export async function improveProposal(
     tags = repaired.tags;
     validation = validateGeneratedRecipe(content, meals);
     findings = [...validation.findings, ...repaired.findings];
+    await onProgress?.({
+      stage: "authored",
+      content,
+      tags,
+      changeSummary: revised.changeSummary,
+      findings,
+      originalFindings,
+    });
   }
   if (findings.some((finding) => finding.blocking))
     throw new Error(

@@ -77,6 +77,9 @@ export default defineSchema({
     active: v.boolean(),
     attemptToken: v.string(),
     deadline: v.number(),
+    checkpointStage: v.optional(
+      v.union(v.literal("original_review"), v.literal("authored")),
+    ),
     config: v.object({
       version: v.string(),
       promptVersion: v.string(),
@@ -99,6 +102,8 @@ export default defineSchema({
         v.union(v.literal("low"), v.literal("medium")),
       ),
       deadlineMs: v.number(),
+      textCallTimeoutMs: v.optional(v.number()),
+      reviewCallTimeoutMs: v.optional(v.number()),
       maxTextCalls: v.number(),
       maxOutputTokens: v.number(),
       enrichmentBatchSize: v.number(),

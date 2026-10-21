@@ -10,6 +10,7 @@ import {
   ProposalChanges,
   ProposalHistory,
 } from "./proposal-context";
+import { ProposalRunFeedback } from "./proposal-run-feedback";
 import { ProposalContentEditor } from "./proposal-content-editor";
 import { ProposalPreview } from "./proposal-preview";
 import {
@@ -152,19 +153,25 @@ export function ProposalEditor({
         {proposalStatusLabels[p.status]} · Revision {p.revision}
       </p>
       <h2 className="mt-2 font-display text-3xl">{p.content.title}</h2>
-      {p.latestRun && ["failed", "timed_out"].includes(p.latestRun.status) ? (
-        <p
-          role="alert"
-          className="mt-3 border-l-4 border-cadmium bg-mist p-3 text-sm"
-        >
-          The last {p.latestRun.operation} task failed:{" "}
-          {p.latestRun.failure ?? "Please retry when ready."} No changes were
-          published.{" "}
-          {p.latestRun.operation === "improve"
-            ? "Use More actions to retry the improvement with your guidance."
-            : "The current draft is retained for review or retry."}
-        </p>
-      ) : null}
+      <ProposalRunFeedback
+        proposal={p}
+        busy={busy || dirty || sourceStale}
+        onRetry={() =>
+          void perform(
+            () =>
+              begin({
+                operation: "improve",
+                requestKey: crypto.randomUUID(),
+                proposalId: p._id,
+                expectedRevision: p.revision,
+                ...(p.latestRun?.feedback
+                  ? { feedback: p.latestRun.feedback }
+                  : {}),
+              }),
+            "Improvement restarted using the previous request. Completed progress will be saved privately.",
+          )
+        }
+      />
       {p.sourceMealId ? (
         <p className="mt-3 text-sm text-graphite">
           Catalogue update · source revision{" "}
@@ -280,7 +287,7 @@ export function ProposalEditor({
                   </Button>
                 )}
                 <Button
-                  variant={reviewed && blocked ? "primary" : "secondary"}
+                  variant={blocked ? "primary" : "secondary"}
                   disabled={busy || sourceStale}
                   onClick={() => setEditing(true)}
                 >
@@ -309,24 +316,31 @@ export function ProposalEditor({
       ) : (
         <section
           aria-label="Culinary review"
-          className={`mb-5 border-l-4 bg-mist p-4 ${reviewed && blocked ? "border-cadmium" : ready ? "border-leaf" : "border-border"}`}
+          className={`mb-5 border-l-4 bg-mist p-4 ${blocked ? "border-cadmium" : ready ? "border-leaf" : "border-border"}`}
         >
           <h3 className="font-semibold">
-            {!reviewed
-              ? "Culinary review needed"
-              : blocked
-                ? "Culinary review: changes needed"
+            {blocked
+              ? "Culinary review: changes needed"
+              : !reviewed
+                ? "Culinary review needed"
                 : "Culinary review passed"}
           </h3>
           <p className="mt-1 text-sm">
-            {!reviewed
-              ? "These findings have not been checked against the current saved revision."
-              : ready
-                ? "The saved recipe has passed the automated checks. Your judgement is still needed before approval."
-                : "Blocking findings must be resolved before approval."}
+            {blocked
+              ? "Blocking findings must be resolved before approval."
+              : !reviewed
+                ? "A successful culinary review of the current saved draft is required before approval."
+                : "The saved recipe has passed the automated checks. Your judgement is still needed before approval."}
           </p>
           {p.findings.length ? (
-            <details className="mt-2" open={reviewed && blocked}>
+            <details
+              className="mt-2"
+              open={
+                blocked ||
+                (p.latestRun?.checkpointStage === "original_review" &&
+                  !p.latestRun.active)
+              }
+            >
               <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">
                 Review findings ({p.findings.length})
               </summary>

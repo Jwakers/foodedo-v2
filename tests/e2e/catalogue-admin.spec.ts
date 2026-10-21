@@ -420,3 +420,73 @@ for (const width of [320, 1280]) {
     });
   });
 }
+
+test("a failed rewrite exposes the saved critique and retries the exact previous request", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://editorial.fixture/?screen=catalogue&fail=improvement-write",
+  );
+  await page.getByRole("button", { name: /^Lemon chickpea rice/ }).click();
+  await page
+    .getByLabel("Recipe improvement request (optional)", { exact: true })
+    .fill("Use a roux for a reliable sauce");
+  await page
+    .getByRole("button", { name: "Review and improve recipe", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Recipe writing timed out after 90 seconds",
+  );
+  await expect(page.getByRole("alert")).toContainText(
+    "completed critical review is saved",
+  );
+  await expect(
+    page.getByText("The sauce needs a reliable thickening step.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Retry improvement", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Improvement restarted using the previous request",
+  );
+  await expect(
+    page.getByText("Use a roux for a reliable sauce", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Approve recipe and generate image" }),
+  ).toBeEnabled();
+});
+
+test("a final-review timeout keeps the written candidate and allows review without another rewrite", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://editorial.fixture/?screen=catalogue&fail=improvement-review",
+  );
+  await page.getByRole("button", { name: /^Lemon chickpea rice/ }).click();
+  await page
+    .getByRole("button", { name: "Review and improve recipe", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Written changes and available findings are saved",
+  );
+  await expect(
+    page.getByText("A saved improvement awaiting culinary review.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Approve recipe and generate image" }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Run culinary review", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Approve recipe and generate image" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Retry improvement", exact: true }),
+  ).toHaveCount(0);
+});

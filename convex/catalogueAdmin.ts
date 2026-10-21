@@ -9,6 +9,7 @@ import {
   type MutationCtx,
 } from "./_generated/server";
 import { isAdministrator, requireAdministrator } from "./lib/auth";
+import { prepareRecipeContent } from "../src/lib/domain/recipes";
 import { recipeContentValidator } from "./lib/recipeValidators";
 import {
   findingValidator,
@@ -18,6 +19,7 @@ import {
 } from "./lib/catalogueGeneration/validators";
 import {
   generationConfig,
+  improvementLimits,
   scheduledGenerationPolicy,
   catalogueSchedule,
 } from "./lib/catalogueGeneration/config";
@@ -246,6 +248,15 @@ export async function enqueue(
       });
     }
   }
+  const config = {
+    ...generationConfig,
+    ...(args.operation === "improve" ||
+    (args.operation === "regenerate" &&
+      args.proposalId &&
+      (await ctx.db.get(args.proposalId))?.sourceMealId)
+      ? { deadlineMs: improvementLimits.deadlineMs }
+      : {}),
+  };
   const now = Date.now();
   const runId = await ctx.db.insert("catalogueGenerationRuns", {
     ...args,
@@ -253,8 +264,8 @@ export async function enqueue(
     phase: "waiting",
     active: true,
     attemptToken: `${args.actor}:${args.requestKey}`,
-    deadline: now + generationConfig.deadlineMs,
-    config: generationConfig,
+    deadline: now + config.deadlineMs,
+    config,
     usage: [],
     createdAt: now,
     updatedAt: now,
@@ -263,7 +274,7 @@ export async function enqueue(
     runId,
   });
   await ctx.scheduler.runAfter(
-    generationConfig.deadlineMs + 1000,
+    config.deadlineMs + 1000,
     internal.catalogueAdmin.expireRun,
     { runId },
   );
@@ -677,6 +688,90 @@ export const recordUsage = internalMutation({
       await ctx.db.patch(runId, { usage: [...run.usage, event] });
   },
 });
+// Completed stages remain private and explicitly unapproved. No provider call
+// is replayed automatically, and concurrent edits invalidate stale checkpoints.
+export const checkpointImprovement = internalMutation({
+  args: {
+    runId: v.id("catalogueGenerationRuns"),
+    token: v.string(),
+    progress: v.union(
+      v.object({
+        stage: v.literal("original_review"),
+        findings: v.array(findingValidator),
+      }),
+      v.object({
+        stage: v.literal("authored"),
+        content: recipeContentValidator,
+        tags: tagsValidator,
+        changeSummary: v.array(v.string()),
+        findings: v.array(findingValidator),
+        originalFindings: v.array(findingValidator),
+      }),
+    ),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, { runId, token, progress }) => {
+    const run = await currentRun(ctx, runId, token);
+    if (!run || run.operation !== "improve" || !run.proposalId) return false;
+    const proposal = (await ctx.db.get(run.proposalId))!;
+    await currentProposalSource(ctx, proposal);
+    const now = Date.now();
+    let revision = proposal.revision;
+    if (progress.stage === "original_review") {
+      await ctx.db.patch(proposal._id, {
+        findings: progress.findings.slice(0, 30),
+        reviewedRevision: undefined,
+        updatedAt: now,
+      });
+    } else {
+      if (
+        progress.changeSummary.length > 12 ||
+        progress.changeSummary.some((change) => change.length > 400)
+      )
+        fail("Change summary exceeds limits.");
+      // Checkpoints are private drafts, not approvals. Full current-catalogue
+      // validation still runs on final review, completion and publication.
+      const content = prepareRecipeContent(progress.content);
+      const tags = validateTags(progress.tags);
+      const fingerprint = await recipeFingerprint(content);
+      if (
+        fingerprint !== proposal.fingerprint ||
+        JSON.stringify(tags) !== JSON.stringify(proposal.tags)
+      )
+        revision++;
+      await removeImage(ctx, proposal);
+      await ctx.db.patch(proposal._id, {
+        content,
+        tags,
+        fingerprint,
+        revision,
+        reviewedRevision: undefined,
+        maintenanceMode: "recipe",
+        status: "pending_review",
+        findings: progress.findings.slice(0, 30),
+        changeSummary: progress.changeSummary,
+        rationale:
+          `Critical review: ${progress.originalFindings.map((f) => f.message).join(" ") || "Administrator-requested change."}`.slice(
+            0,
+            4000,
+          ),
+        approvedAt: undefined,
+        approvedBy: undefined,
+        approvedRevision: undefined,
+        imageStorageId: undefined,
+        imageFingerprint: undefined,
+        updatedAt: now,
+      });
+    }
+    await ctx.db.patch(run._id, {
+      checkpointStage: progress.stage,
+      expectedRevision: revision,
+      updatedAt: now,
+    });
+    return true;
+  },
+});
+
 export const completeRecipe = internalMutation({
   args: {
     runId: v.id("catalogueGenerationRuns"),
@@ -711,17 +806,24 @@ export const completeRecipe = internalMutation({
       const proposal = (await ctx.db.get(run.proposalId))!;
       await currentProposalSource(ctx, proposal);
       await removeImage(ctx, proposal);
+      const fingerprint = await recipeFingerprint(content);
+      const tags = validateTags(args.tags);
+      const revision =
+        fingerprint === proposal.fingerprint &&
+        JSON.stringify(tags) === JSON.stringify(proposal.tags)
+          ? proposal.revision
+          : proposal.revision + 1;
       await ctx.db.patch(proposal._id, {
         content,
-        tags: validateTags(args.tags),
+        tags,
         rationale: args.rationale,
         changeSummary: args.changeSummary,
         maintenanceMode: "recipe",
         initialPrompt: run.feedback ?? proposal.initialPrompt,
         findings: allFindings,
-        fingerprint: await recipeFingerprint(content),
-        revision: proposal.revision + 1,
-        reviewedRevision: proposal.revision + 1,
+        fingerprint,
+        revision,
+        reviewedRevision: revision,
         status: "pending_review",
         imageStorageId: undefined,
         imageFingerprint: undefined,

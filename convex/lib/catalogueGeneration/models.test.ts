@@ -13,6 +13,8 @@ vi.mock("ai", async (original) => ({
 import { gatewayGenerationClient, type ModelEvent } from "./models";
 import { generationConfig } from "./config";
 afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
   provider.generateText.mockReset();
   provider.generateImage.mockReset();
 });
@@ -146,4 +148,113 @@ test("historical image configurations keep their original default quality and as
   expect(provider.generateImage.mock.calls[0][0]).not.toHaveProperty(
     "providerOptions",
   );
+});
+
+test("writing can complete beyond the old 90-second cutoff without reducing reasoning quality", async () => {
+  vi.useFakeTimers();
+  const timeout = vi
+    .spyOn(AbortSignal, "timeout")
+    .mockImplementation(() => new AbortController().signal);
+  provider.generateText.mockImplementation(async () => {
+    vi.setSystemTime(Date.now() + 100_000);
+    return valid;
+  });
+  const events: ModelEvent[] = [];
+  const client = gatewayGenerationClient(
+    generationConfig,
+    Date.now() + 480_000,
+    async (event) => {
+      events.push(event);
+    },
+  );
+  await expect(
+    client.text("authoring", z.object({ dish: z.string() }), "policy", {}),
+  ).resolves.toEqual({ dish: "pie" });
+  expect(timeout).toHaveBeenCalledWith(180_000);
+  expect(events[0]).toMatchObject({
+    durationMs: 100_000,
+    outcome: "succeeded",
+  });
+  expect(
+    provider.generateText.mock.calls[0][0].providerOptions.openai
+      .reasoningEffort,
+  ).toBe("medium");
+  timeout.mockRestore();
+  vi.useRealTimers();
+});
+
+test("request timeouts are actionable, recorded as timed out and never retried automatically", async () => {
+  const controller = new AbortController();
+  const timeout = vi
+    .spyOn(AbortSignal, "timeout")
+    .mockReturnValue(controller.signal);
+  provider.generateText.mockImplementation(async () => {
+    controller.abort(new DOMException("Timeout", "TimeoutError"));
+    throw new Error(
+      "Invalid error response format: Gateway request failed: The operation was aborted due to timeout",
+    );
+  });
+  const events: ModelEvent[] = [];
+  const client = gatewayGenerationClient(
+    generationConfig,
+    Date.now() + 480_000,
+    async (event) => {
+      events.push(event);
+    },
+  );
+  await expect(
+    client.text("authoring", z.object({ dish: z.string() }), "policy", {}),
+  ).rejects.toThrow("Recipe writing timed out after 180 seconds");
+  expect(provider.generateText).toHaveBeenCalledOnce();
+  expect(events[0]).toMatchObject({ outcome: "timed_out", role: "authoring" });
+  expect(events[0].costUsd).toBeUndefined();
+  timeout.mockRestore();
+});
+
+test("review timeout is bounded by the overall time remaining", async () => {
+  const controller = new AbortController();
+  const timeout = vi
+    .spyOn(AbortSignal, "timeout")
+    .mockReturnValue(controller.signal);
+  provider.generateText.mockImplementation(async () => {
+    controller.abort();
+    throw new Error("Aborted");
+  });
+  const client = gatewayGenerationClient(
+    generationConfig,
+    Date.now() + 5_000,
+    async () => {},
+  );
+  await expect(
+    client.text(
+      "culinary_review",
+      z.object({ dish: z.string() }),
+      "policy",
+      {},
+    ),
+  ).rejects.toThrow("exhausted the remaining time");
+  expect(timeout.mock.calls[0][0]).toBeLessThanOrEqual(5_000);
+  expect(timeout.mock.calls[0][0]).toBeGreaterThan(0);
+  timeout.mockRestore();
+});
+
+test("upstream Gateway timeouts are distinguished from Foodedo's own cutoff", async () => {
+  provider.generateText.mockRejectedValue(
+    new Error("Invalid error response format", {
+      cause: new Error("Gateway operation was aborted due to timeout"),
+    }),
+  );
+  const events: ModelEvent[] = [];
+  const client = gatewayGenerationClient(
+    generationConfig,
+    Date.now() + 480_000,
+    async (event) => {
+      events.push(event);
+    },
+  );
+  await expect(
+    client.text("authoring", z.object({ dish: z.string() }), "policy", {}),
+  ).rejects.toThrow("AI provider timed out during recipe writing");
+  expect(events[0].outcome).toBe("timed_out");
+  expect(provider.generateText).toHaveBeenCalledOnce();
 });

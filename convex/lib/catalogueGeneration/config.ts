@@ -1,5 +1,5 @@
 export const generationConfig = {
-  version: "catalogue-v5",
+  version: "catalogue-v6",
   promptVersion: "culinary-v3",
   imageStyleVersion: "natural-food-v3",
   textModel: "openai/gpt-5.4",
@@ -8,6 +8,8 @@ export const generationConfig = {
   reasoningEffort: "medium",
   selectionReasoningEffort: "low",
   deadlineMs: 300_000,
+  textCallTimeoutMs: 180_000,
+  reviewCallTimeoutMs: 120_000,
   maxTextCalls: 4,
   maxOutputTokens: 10_000,
   enrichmentBatchSize: 5,
@@ -22,6 +24,10 @@ export const scheduledGenerationPolicy = {
 
 // Pause scheduled generation by setting enabled to false and syncing Convex.
 export const catalogueSchedule = {
-  enabled: true,
+  enabled: false,
   intervalMinutes: 30,
 } as const;
+
+// More room for review → full revision → independent review (and one repair).
+// This remains below Convex's ten-minute Node action limit.
+export const improvementLimits = { deadlineMs: 480_000 } as const;

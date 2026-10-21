@@ -1,3 +1,4 @@
+import { generationConfig } from "../../../convex/lib/catalogueGeneration/config";
 import { useSyncExternalStore } from "react";
 import { prepareRecipeContent } from "../../../src/lib/domain/recipes";
 import { getFunctionName, type FunctionReference } from "convex/server";
@@ -73,6 +74,7 @@ type FixtureProposal = Doc<"catalogueProposals"> & {
   imageUrl: string | null;
   nearest: unknown[];
   sourceMeal?: Doc<"catalogueMeals">;
+  latestRun?: Doc<"catalogueGenerationRuns">;
 };
 let proposal: FixtureProposal | null = null;
 const proposals = new Map<string, FixtureProposal>();
@@ -196,12 +198,73 @@ export function useMutation(reference: FunctionReference<"mutation">) {
       };
     if (name === "start" && proposal && args.mode === "image")
       proposal = { ...proposal, status: "image_review", imageUrl };
+    const failedStage = new URLSearchParams(location.search).get("fail");
+    if (
+      name === "start" &&
+      args.mode === "recipe" &&
+      proposal &&
+      failedStage?.startsWith("improvement-")
+    ) {
+      const authored = failedStage === "improvement-review";
+      proposal = {
+        ...proposal,
+        reviewedRevision: undefined,
+        findings: authored
+          ? []
+          : [
+              {
+                area: "method",
+                message: "The sauce needs a reliable thickening step.",
+                blocking: true,
+              },
+            ],
+        content: authored
+          ? {
+              ...proposal.content,
+              description: "A saved improvement awaiting culinary review.",
+            }
+          : proposal.content,
+        latestRun: {
+          _id: "failed-run" as Id<"catalogueGenerationRuns">,
+          _creationTime: 1,
+          operation: "improve",
+          trigger: "manual",
+          actor: "admin",
+          requestKey: "failed",
+          proposalId: proposal._id,
+          expectedRevision: proposal.revision,
+          status: "failed",
+          phase: "complete",
+          active: false,
+          attemptToken: "failed",
+          deadline: 300000,
+          config: generationConfig,
+          createdAt: 1,
+          updatedAt: 90007,
+          checkpointStage: authored ? "authored" : "original_review",
+          feedback: args.feedback as string | undefined,
+          failure:
+            "Invalid error response format: Gateway request failed: The operation was aborted due to timeout",
+          usage: [
+            {
+              role: authored ? "culinary_review" : "authoring",
+              durationMs: 90006,
+              outcome: "failed",
+              requestedModel: generationConfig.textModel,
+              resolvedModel: generationConfig.textModel,
+            },
+          ],
+        },
+      };
+    }
     if (name === "begin" && args.operation === "improve" && proposal)
       proposal = {
         ...proposal,
         revision: proposal.revision + 1,
         reviewedRevision: proposal.revision + 1,
         maintenanceMode: "recipe",
+        findings: [],
+        latestRun: undefined,
         initialPrompt: String(args.feedback ?? ""),
         changeSummary: ["Applied the requested improvement."],
       };
@@ -239,7 +302,12 @@ export function useMutation(reference: FunctionReference<"mutation">) {
         imageUrl: null,
       };
     if (name === "begin" && args.operation === "review" && proposal)
-      proposal = { ...proposal, reviewedRevision: proposal.revision };
+      proposal = {
+        ...proposal,
+        reviewedRevision: proposal.revision,
+        latestRun: undefined,
+        findings: [],
+      };
     if (name === "begin" && args.operation === "image" && proposal)
       proposal = {
         ...proposal,

@@ -19,6 +19,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
 import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
 import type * as lib_catalogueGeneration_config from "../lib/catalogueGeneration/config.js";
+import type * as lib_catalogueGeneration_errors from "../lib/catalogueGeneration/errors.js";
 import type * as lib_catalogueGeneration_models from "../lib/catalogueGeneration/models.js";
 import type * as lib_catalogueGeneration_pipeline from "../lib/catalogueGeneration/pipeline.js";
 import type * as lib_catalogueGeneration_prompts from "../lib/catalogueGeneration/prompts.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogue": typeof lib_catalogue;
   "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;
   "lib/catalogueGeneration/config": typeof lib_catalogueGeneration_config;
+  "lib/catalogueGeneration/errors": typeof lib_catalogueGeneration_errors;
   "lib/catalogueGeneration/models": typeof lib_catalogueGeneration_models;
   "lib/catalogueGeneration/pipeline": typeof lib_catalogueGeneration_pipeline;
   "lib/catalogueGeneration/prompts": typeof lib_catalogueGeneration_prompts;

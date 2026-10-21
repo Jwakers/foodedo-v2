@@ -253,3 +253,188 @@ test("catalogue improvement action passes the request through review and authori
       ?.description,
   ).toBeUndefined();
 });
+
+async function recoverableImprovement() {
+  const t = convexTest(schema, modules);
+  const admin = t.withIdentity({ subject: "admin" });
+  const mealId = await t.run(async (ctx) =>
+    ctx.db.insert("catalogueMeals", {
+      ...content,
+      catalogueMealId: "recoverable-rice",
+      version: 1,
+      status: "published",
+      slug: "recoverable-rice",
+      position: 0,
+      imageStorageId: await ctx.storage.store(new Blob(["old image"])),
+      createdAt: 1,
+      publishedAt: 1,
+    }),
+  );
+  const started = await admin.mutation(api.catalogueMaintenance.start, {
+    mealId,
+    mode: "recipe",
+    requestKey: "recovery",
+    feedback: "Improve the sauce",
+  });
+  const tags = (await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId: started.proposalId,
+  }))!.tags;
+  const revised = {
+    recipe: {
+      ...content,
+      description: "Improved rice.",
+      costBand: "budget",
+      preheat: null,
+      notes: [],
+      ingredients: [
+        ...content.ingredients,
+        {
+          id: "rice",
+          name: "rice",
+          quantity: "250",
+          unit: "g",
+          shoppingCategory: "pantry",
+        },
+      ].map((line) => ({
+        ...line,
+        note: null,
+        unit: line.unit ?? null,
+        group: null,
+        noteRefs: [],
+      })),
+      steps: content.steps.map((step) => ({
+        ...step,
+        group: null,
+        noteRefs: [],
+        timerCues: [],
+      })),
+    },
+    tags,
+    changeSummary: ["Improved the sauce method."],
+  };
+  return { t, admin, mealId, ...started, revised };
+}
+
+test("a writing timeout retains the completed original critique privately", async () => {
+  const { t, admin, proposalId, runId } = await recoverableImprovement();
+  const finding = {
+    area: "method",
+    message: "The sauce needs a reliable thickening step.",
+    blocking: true,
+  };
+  provider.text
+    .mockResolvedValueOnce({ findings: [finding] })
+    .mockRejectedValueOnce(
+      new Error("Recipe writing timed out after 180 seconds."),
+    );
+  await t.action(internal.catalogueGenerationActions.process, {
+    runId: runId!,
+  });
+  const proposal = await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId,
+  });
+  expect(proposal).toMatchObject({
+    revision: 1,
+    findings: [finding],
+    status: "pending_review",
+    latestRun: { status: "failed", checkpointStage: "original_review" },
+  });
+  expect(proposal?.reviewedRevision).toBeUndefined();
+  expect(provider.text).toHaveBeenCalledTimes(2);
+  expect(provider.image).not.toHaveBeenCalled();
+  expect(
+    (
+      await t.query(api.catalogue.getCurrentMealBySlug, {
+        slug: "recoverable-rice",
+      })
+    )?.version,
+  ).toBe(1);
+});
+
+test("a final review timeout preserves the written draft and recovery needs only culinary review", async () => {
+  const { t, admin, proposalId, runId, revised } =
+    await recoverableImprovement();
+  provider.text
+    .mockResolvedValueOnce({ findings: [] })
+    .mockResolvedValueOnce(revised)
+    .mockRejectedValueOnce(new Error("Culinary review timed out."));
+  await t.action(internal.catalogueGenerationActions.process, {
+    runId: runId!,
+  });
+  const proposal = (await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId,
+  }))!;
+  expect(proposal).toMatchObject({
+    content: { description: "Improved rice." },
+    revision: 2,
+    status: "pending_review",
+    changeSummary: ["Improved the sauce method."],
+    latestRun: {
+      status: "failed",
+      checkpointStage: "authored",
+      expectedRevision: 2,
+    },
+  });
+  expect(proposal.reviewedRevision).toBeUndefined();
+  await expect(
+    admin.mutation(api.catalogueAdmin.begin, {
+      operation: "image",
+      requestKey: "no-bypass",
+      proposalId,
+      expectedRevision: 2,
+    }),
+  ).rejects.toThrow("culinary");
+  provider.text.mockReset();
+  provider.text.mockResolvedValue({ findings: [] });
+  const reviewId = await admin.mutation(api.catalogueAdmin.begin, {
+    operation: "review",
+    requestKey: "recover-review",
+    proposalId,
+    expectedRevision: 2,
+  });
+  await t.action(internal.catalogueGenerationActions.process, {
+    runId: reviewId,
+  });
+  expect(provider.text).toHaveBeenCalledOnce();
+  expect(provider.text.mock.calls[0][0]).toBe("culinary_review");
+  expect(
+    (await admin.query(api.catalogueAdmin.getProposal, { proposalId }))
+      ?.reviewedRevision,
+  ).toBe(2);
+  expect(
+    (
+      await t.query(api.catalogue.getCurrentMealBySlug, {
+        slug: "recoverable-rice",
+      })
+    )?.description,
+  ).toBeUndefined();
+});
+
+test("a concurrent administrator edit prevents stale authored progress and stops further paid calls", async () => {
+  const { t, admin, proposalId, runId, revised } =
+    await recoverableImprovement();
+  provider.text
+    .mockResolvedValueOnce({ findings: [] })
+    .mockImplementationOnce(async () => {
+      const p = (await admin.query(api.catalogueAdmin.getProposal, {
+        proposalId,
+      }))!;
+      await admin.mutation(api.catalogueAdmin.updateProposal, {
+        proposalId,
+        revision: p.revision,
+        content: { ...p.content, title: "Administrator's correction" },
+        tags: p.tags,
+      });
+      return revised;
+    });
+  await t.action(internal.catalogueGenerationActions.process, {
+    runId: runId!,
+  });
+  expect(provider.text).toHaveBeenCalledTimes(2);
+  const proposal = (await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId,
+  }))!;
+  expect(proposal.content.title).toBe("Administrator's correction");
+  expect(proposal.reviewedRevision).toBeUndefined();
+  expect(proposal.latestRun?.status).toBe("failed");
+});

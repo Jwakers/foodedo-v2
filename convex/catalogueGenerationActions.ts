@@ -176,6 +176,18 @@ export const process = internalAction({
                 run.operation === "improve"
                   ? run.feedback
                   : (run.feedback ?? proposal.initialPrompt),
+                run.operation === "improve"
+                  ? async (progress) => {
+                      const saved = await ctx.runMutation(
+                        internal.catalogueAdmin.checkpointImprovement,
+                        { runId, token, progress },
+                      );
+                      if (!saved)
+                        throw new Error(
+                          "The draft changed before progress could be saved. Completed work was not applied over your edits.",
+                        );
+                    }
+                  : undefined,
               )
             : await generateProposal(
                 client,
