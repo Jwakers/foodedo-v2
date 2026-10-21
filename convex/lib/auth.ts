@@ -36,3 +36,24 @@ export async function getCurrentUser(ctx: AuthContext) {
     .withIndex("by_auth_subject", (q) => q.eq("authSubject", identity.subject))
     .unique();
 }
+
+export async function isAdministrator(ctx: AuthContext) {
+  const identity = await ctx.auth.getUserIdentity();
+  return (
+    identity !== null &&
+    (process.env.FOODEDO_ADMIN_CLERK_USER_IDS ?? "")
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .includes(identity.subject)
+  );
+}
+
+export async function requireAdministrator(ctx: AuthContext) {
+  if (!(await isAdministrator(ctx))) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message: "Administrator access required.",
+    });
+  }
+  return (await ctx.auth.getUserIdentity())!.subject;
+}

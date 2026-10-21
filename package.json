@@ -25,7 +25,8 @@
     "convex:codegen": "convex codegen",
     "cap:sync:ios": "pnpm build:ios:web && pnpm exec cap sync ios",
     "cap:open:ios": "pnpm exec cap open ios",
-    "cap:run:ios:live": "pnpm exec cap run ios --live-reload"
+    "cap:run:ios:live": "pnpm exec cap run ios --live-reload",
+    "eval:catalogue-generation": "tsx scripts/catalogue-generation/evaluate.ts"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",

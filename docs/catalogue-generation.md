@@ -1,0 +1,74 @@
+# Catalogue editorial and AI generation
+
+The catalogue supports manual generation and scheduled generation every 30 minutes. `/admin/recipes` creates one proposal per successful generation run. Text approval authorises image generation; a second image approval publishes one immutable catalogue revision. Neither generation stage publishes automatically. `convex/crons.ts` registers the recurring job while `catalogueSchedule.enabled` is `true`. Setting the shared flag to `false` and syncing Convex removes the registration and makes the scheduled mutation exit immediately. The scheduled entry point skips generation when **five or more proposals** are still in the approval workflow (`pending_review`, `generating_image` or `image_review`). Published, rejected, replaced and deleted proposals do not count. This check runs transactionally before enqueueing, schedules no work and incurs no AI calls when full. Generation can resume on a later invocation after the backlog drops below five. Manual generation remains available regardless of this scheduling limit; the shared active-run lock still applies. The threshold lives in `scheduledGenerationPolicy` in `convex/lib/catalogueGeneration/config.ts`.
+
+## Setup
+
+1. Deploy the V2 functions/schema through the project's normal development workflow (`pnpm exec convex dev`). Never point these functions at V1.
+2. Set `FOODEDO_ADMIN_CLERK_USER_IDS` in the V2 Convex environment to comma-separated Clerk user IDs. An empty value denies all administrators. Changes do not require rebuilding the client.
+3. Ensure `AI_GATEWAY_API_KEY` is configured in that Convex deployment. No AI credentials or administrator list belongs in `NEXT_PUBLIC_` variables.
+4. Sign in with an allowlisted account and open **Editorial** in the app header, or `/admin/recipes` directly.
+
+Administrator checks run on all editorial reads and mutations. The access predicate returns only a boolean. Administrator accounts do not need a new auth provider or personal recipe ownership. Scheduled work uses internal functions and records its initiating identity; it does not depend on a browser session remaining open.
+
+## Editorial workflow
+
+- **Optional: improve catalogue suggestions → Suggest tags for 5 recipes** offers editorial tagging of the existing catalogue. It is not a prerequisite for generation. Five currently unclassified meals receive proposed tags per run. Review/edit and accept rows in batches of up to 100. Repeat to continue. Pending classifications never contribute to category distributions; unknown values are retained. Existing cost bands remain editorial bands, not currency estimates.
+- **Trigger new recipe** with an empty request selects an opportunity, authors a recipe, independently reviews its cooking quality, and performs at most one targeted repair. For a specific dish, type a brief in **Recipe request (optional)**: this skips gap selection entirely and goes straight to authoring. Duplicate detection, culinary review, text/image approvals and publication checks still apply. The request stays with the proposal and its replacements. Success creates one private `pending_review` proposal.
+- Inspect rationale, nearest matches and culinary findings. Review portions, sides, technique, flavour, sequencing, timings and food safety yourself. Automated review is a quality aid, not a substitute for this approval.
+- Editing invalidates culinary review and text/image approval. Save, run culinary review, then **Approve recipe and generate image**. Simple supported quantities use the existing serving scaler; ambiguous expressions remain source-only. Edits preserve authored ingredient/step IDs and recipe notes.
+- Inspect the image for ingredients, garnishes, cooked appearance and style. Regenerate if needed. **Approve image and publish** is the only public publication path.
+- Regeneration retains the same dish concept and optional editorial feedback. The original stays usable if replacement fails; a successful replacement supersedes it.
+- Reject with a reason or delete a draft. Published recipes cannot be deleted or edited in place. Use Catalogue maintenance to propose a new immutable revision. Saved personal snapshots and historical meal revisions are unchanged.
+
+### Finding your way around the admin panel
+
+The review queue defaults to **To review**; **History** contains published, rejected and replaced proposals. Queue results cover the latest 200 proposals. Selecting a proposal opens a compact preview with collapsed ingredients, method and notes, a publication stage indicator, and the next useful action above the recipe. **Back to review actions** returns to those controls after reading a long section.
+
+Use **Edit recipe** to open the form. Save controls appear above it; ingredients, method, notes and editorial tags expand independently. Saving invalidates the previous culinary review and photograph. A current culinary review is shown as passed or needing changes rather than inviting a redundant paid recheck. The review itself only reports findings; it does not edit recipe content.
+
+**Regenerate image** sits beside an unpublished proposal's photograph. For existing public meals, open Catalogue maintenance and choose Replace the photograph only. Recipe replacement, rejection and deletion are under **More actions**, with separate guidance and rejection fields. Catalogue tagging and detailed run telemetry remain optional, collapsed sections below the workspace.
+
+Unsaved changes are protected when switching proposals, following links or leaving/reloading the document. A newer server revision preserves a dirty local draft and blocks saving until it is discarded; server revision checks remain authoritative. Browser history navigation within the client app does not have a custom interception mechanism. A failed save leaves the editor open with the draft intact. Deleting a recipe note also removes ingredient/method references to that note.
+
+The admin workspace, account header and access states share one maximum width. The consumer bottom navigation is hidden on admin routes, with an explicit return link to Foodedo. Regular consumer routes retain their layout.
+
+Public clients observe new meals through existing Convex catalogue queries. Sitemap entries refresh on the next web build; this feature does not trigger deployments.
+
+## Existing catalogue maintenance
+
+Open **Editorial → Catalogue maintenance** (`/admin/catalogue`). This admin-only page lists all current published catalogue recipes, with title search. It does not expose private user recipes or add user-facing image generation.
+
+Select a recipe and use **Review and improve recipe**, optionally entering a focused brief such as “Use a roux for a more reliable sauce.” The original receives a critical culinary review. A concrete finding or request triggers a scoped rewrite, followed by a separate review and at most one repair. With no request or findings, the text is retained instead of rewritten for its own sake. The same four-text-call limit, Gateway clients, telemetry, run lock and timeout controls apply. Revisions retain stable ingredient/method/note IDs where appropriate, section grouping, note links and authored Cook timers. The administrator sees a change summary and can expand the original recipe and photograph for comparison.
+
+Text improvements require recipe approval and a new photograph, followed by image approval and publication. Under **More actions**, a maintenance draft also accepts further improvement guidance. Failed tasks retain the draft and leave the current catalogue untouched; an existing open draft for a meal is reused rather than silently overwritten by another request.
+
+**Replace the photograph only → Generate replacement photograph** copies the published recipe verbatim and authorises one image call through the existing photography pipeline. It makes no culinary/text AI call, including for older recipes with incomplete timing metadata. The new photograph stays private until **Approve image and publish**. Any subsequent text edit converts the draft into a recipe revision and invalidates inherited text approval and image eligibility.
+
+Maintenance proposals reference an exact source `catalogueMeals` document using `sourceMealId` and `maintenanceMode`. Final publication requires that source still be current. It atomically retires the previous published revision and inserts the next version with the same stable meal ID, slug and position. Repeated publication returns the same result. Historical recipe content/images and saved personal snapshots remain readable; rejecting/deleting a maintenance draft never deletes the source photograph. A source changed by another editor blocks stale completion/publication. Image-only updates retain reviewed editorial tags when available and do not pretend unreviewed classifications were accepted.
+
+Revision drafts count toward the scheduled five-proposal review backlog. They do not count as additional meals in opportunity distributions. New-recipe duplicate checks still consider both live text and pending edited text; a maintenance draft excludes only its own source from its comparison set. Sitemap entries continue to refresh on the next web build.
+
+## Quality, configuration and operations
+
+`convex/lib/catalogueGeneration/config.ts` fixes model assignments, reasoning effort, output/call limits and a five-minute run deadline. Prompt changes live in `prompts.ts`; bump the corresponding version alongside changes. Each run snapshots configuration and records per-call timing, resolved text model, tokens and Gateway cost when provided. Unknown usage/cost stays unknown.
+
+The text model remains `openai/gpt-5.4`: writing, culinary review and repair retain medium reasoning; only automatic gap selection uses low reasoning. Selection receives compact catalogue metadata, authors receive titles and a few nearby ingredient summaries, and reviewers receive full content for the three nearest comparisons. Directed requests omit catalogue context during authoring. These changes reduce repeated input and skip a call for specific requests; actual savings must be measured through recorded run usage. The UI shows live stages plus total elapsed time and recorded cost (explicitly partial or unavailable when appropriate). The image model is **Nano Banana Pro** (`google/gemini-3-pro-image`) at explicit **2K resolution**, with 16:9 framing, through the existing AI Gateway account. Gemini images use the SDK's multimodal `generateText` API with image-only output; exactly one returned image is required. This is a quality-focused trial upgrade from GPT Image 2; compare regenerated drafts before accepting the new look. It may cost more or take longer; actual usage remains visible per run. The `natural-food-v3` style asks for realistic cookbook photography: neutral daylight, true ingredient colours, irregular food textures, relaxed plating and restrained gloss. The v3 prompt removes v2’s explicit request for “a few natural crumbs”; naturalism comes from the food texture and lighting rather than added debris. Existing `natural-food-v1` and `natural-food-v2` queued runs retain their recorded prompt style and image settings. See [Nano Banana Pro on AI Gateway](https://vercel.com/ai-gateway/models/gemini-3-pro-image) and [Google image options in the AI SDK](https://ai-sdk.dev/providers/ai-sdk-providers/google#language-models). Image bytes, dimensions and media types must validate before storage is associated with the proposal.
+
+Culinary prompts adapt V1's `RECIPE-GENERATION-PROMPT.md` and `RECIPE_AUTHORING_METHODOLOGY.md`: accessible UK ingredients, practical technique, satisfying composition, explicit sides and genuine meal variety. V1 taxonomy, nutrition estimates, pantry removal, batch quotas and publication scripts are not reused. Safety policy is based on [FSA cooking guidance](https://www.food.gov.uk/safety-hygiene/cooking-your-food), including thorough cooking and applicable probe checks for poultry, pork and minced meat. Revisit the source when revising that policy.
+
+One global active run covers generation, regeneration, enrichment, review and image calls. Overlapping triggers return the active run. Request replay returns its original run. Convex transactions enforce the lock; attempt/deadline/revision checks reject stale results. A one-off timeout mutation releases a stuck run and leaves proposals private. No automatic paid retries occur. A timed-out request may still have been billed; inspect recent runs/Gateway before an explicit retry. Late images are deleted. Minimal run history is retained after draft deletion.
+
+The cron definition calls `internal.catalogueAdmin.beginScheduled` every 30 minutes. It derives a stable request key for each 30-minute slot and uses the same enqueue and processing implementation as manual generation. `catalogueSchedule.enabled` is checked in as `true`, as authorised for the current pre-launch application. It is not an environment-specific toggle. To pause scheduling, set it to `false` and sync Convex; manual generation remains available. Seasonal briefs/bulk work can later supply context or enqueue separate one-recipe runs without changing publication rules.
+
+## Validation and release gate
+
+Automated tests inject model responses and use `convex-test`; they never call paid providers. Run `pnpm test:convex`, `pnpm test:unit`, `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm build:ios:web`. Browser coverage checks access recovery and the editorial UI; backend integration tests enforce the actual security and publication transitions.
+
+Paid evaluation is deliberately opt-in:
+
+```sh
+pnpm eval:catalogue-generation --live --references=/absolute/path/reviewed-v2-recipes.json --images
+```
+
+Supply a JSON array of at least three reviewed V2 recipe-content objects representing strong migrated V1 recipes. The evaluator checks 12 varied briefs through the production text pipeline and optionally generates one sample image. The 12 briefs exercise the directed-request path; unit tests also cover unprompted gap selection. It writes local JSON artifacts under ignored `.catalogue-generation-evaluation/`, never Convex. Review every sample against reference quality on cookability, flavour/coherence, portions, timing, clarity, variety and safety. Complete cook-throughs for three representative recipes. Provider availability, image quality and those human checks must be verified before release; automated green tests do not satisfy that gate.

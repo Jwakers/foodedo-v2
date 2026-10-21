@@ -191,3 +191,28 @@ test("updating an imported recipe removes optional fields the owner cleared", as
   expect(updated?.costBand).toBeUndefined();
   expect(updated?.notes).toBeUndefined();
 });
+
+test("catalogue detail and personal snapshots preserve cooking notes and scaling restrictions", async () => {
+  const t = createTestContext();
+  const { asUser } = await seedUserAndRelease(t);
+  const notes = [
+    { id: "marinade", text: "Allow 2 hours for marinating before cooking." },
+  ];
+  await t.run(async (ctx) => {
+    const meal = await ctx.db.query("catalogueMeals").first();
+    await ctx.db.patch(meal!._id, { notes, servingScaling: "source_only" });
+  });
+  const detail = await t.query(api.catalogue.getMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  expect(detail?.notes).toEqual(notes);
+  expect(detail?.servingScaling).toBe("source_only");
+  await asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  const snapshot = await t.run((ctx) => ctx.db.query("recipes").first());
+  expect(snapshot?.notes).toEqual(notes);
+  expect(snapshot?.servingScaling).toBe("source_only");
+});

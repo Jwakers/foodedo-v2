@@ -9,11 +9,21 @@
  */
 
 import type * as catalogue from "../catalogue.js";
+import type * as catalogueAdmin from "../catalogueAdmin.js";
+import type * as catalogueGenerationActions from "../catalogueGenerationActions.js";
+import type * as catalogueMaintenance from "../catalogueMaintenance.js";
 import type * as catalogueMigration from "../catalogueMigration.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
+import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
+import type * as lib_catalogueGeneration_config from "../lib/catalogueGeneration/config.js";
+import type * as lib_catalogueGeneration_models from "../lib/catalogueGeneration/models.js";
+import type * as lib_catalogueGeneration_pipeline from "../lib/catalogueGeneration/pipeline.js";
+import type * as lib_catalogueGeneration_prompts from "../lib/catalogueGeneration/prompts.js";
+import type * as lib_catalogueGeneration_revisions from "../lib/catalogueGeneration/revisions.js";
+import type * as lib_catalogueGeneration_validators from "../lib/catalogueGeneration/validators.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
 import type * as lib_recipeImport_contracts from "../lib/recipeImport/contracts.js";
@@ -47,11 +57,21 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   catalogue: typeof catalogue;
+  catalogueAdmin: typeof catalogueAdmin;
+  catalogueGenerationActions: typeof catalogueGenerationActions;
+  catalogueMaintenance: typeof catalogueMaintenance;
   catalogueMigration: typeof catalogueMigration;
   crons: typeof crons;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
+  "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;
+  "lib/catalogueGeneration/config": typeof lib_catalogueGeneration_config;
+  "lib/catalogueGeneration/models": typeof lib_catalogueGeneration_models;
+  "lib/catalogueGeneration/pipeline": typeof lib_catalogueGeneration_pipeline;
+  "lib/catalogueGeneration/prompts": typeof lib_catalogueGeneration_prompts;
+  "lib/catalogueGeneration/revisions": typeof lib_catalogueGeneration_revisions;
+  "lib/catalogueGeneration/validators": typeof lib_catalogueGeneration_validators;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
   "lib/planningPreferences": typeof lib_planningPreferences;
   "lib/recipeImport/contracts": typeof lib_recipeImport_contracts;

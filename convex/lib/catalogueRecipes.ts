@@ -89,6 +89,12 @@ export async function getOrCreateCatalogueRecipe(
       ...(catalogueMeal.preheat === undefined
         ? {}
         : { preheat: catalogueMeal.preheat }),
+      ...(catalogueMeal.notes === undefined
+        ? {}
+        : { notes: catalogueMeal.notes }),
+      ...(catalogueMeal.servingScaling === undefined
+        ? {}
+        : { servingScaling: catalogueMeal.servingScaling }),
     });
   } catch (error) {
     if (error instanceof RecipeValidationError) {

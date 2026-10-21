@@ -44,6 +44,16 @@ An early catalogue can be small because the product is early. Do not model a sep
 
 Premium meals and subscription entitlements are deferred. When implemented, premium content must be delivered only after server-side authentication and entitlement checks; do not rely on a client-only visibility flag.
 
+### Catalogue editorial workflow
+
+`catalogueProposals` holds private generated recipe content, editorial analysis tags, rationale, findings, revision/fingerprint guards, text approval, generated image and publication references. The lifecycle is `pending_review` → `generating_image` → `image_review` → `published`, with rejection and supersession kept outside public reads. Editing invalidates approvals; publication inserts a new immutable catalogue meal without changing personal snapshots.
+
+`catalogueGenerationRuns` stores request idempotency, initiating administrator/trigger, operation, active-run lock, deadline/attempt token, model/prompt configuration, provider usage and bounded failures. Generation, regeneration, review, enrichment and image work share one enqueue path. A one-off timeout check releases stalled runs; no recurring cron is enabled.
+
+`catalogueAnalysisMetadata` stores inferred/reviewed tags against an exact meal revision and content fingerprint. Only reviewed current tags contribute to statistics. Cuisine, technique, complexity and vegetarian/vegan suitability remain private editorial metadata, not consumer allergy guarantees.
+
+All editorial reads and mutations require a verified Clerk subject present in Convex's server-only `FOODEDO_ADMIN_CLERK_USER_IDS` allowlist. This does not alter guest catalogue access or introduce user role fields. See [catalogue generation](../../docs/catalogue-generation.md).
+
 ### recipes (private snapshots)
 
 The private Capture unit: something an account wants to cook. `ownerId` is a typed `users` document ID resolved server-side from the verified Clerk identity; it is never accepted from a client.
@@ -190,3 +200,5 @@ An active Cook session—current step, preparation checks, scroll position, and 
 ## Indexes reminder
 
 Always index owner and join keys. Prefer `withIndex` over `filter`. Paginate unbounded lists such as the recipe library and events.
+
+Catalogue maintenance (`/admin/catalogue`) reuses `catalogueProposals`, adding optional `sourceMealId` (the exact published document), `maintenanceMode` (`recipe`/`image`) and `changeSummary`. Source/status and proposal/run-time indexes support idempotent open-draft reuse and scoped failure feedback. The `improve` run operation audits existing content before a scoped rewrite and separate review. Publication checks source currency, retires the previous revision, and preserves the stable meal ID, slug, ordering and all historical images. Image-only proposals retain published text exactly; editing converts them to normal reviewed recipe revisions. Private user recipes remain outside this admin tool.

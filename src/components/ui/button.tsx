@@ -24,7 +24,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "h-12 justify-center gap-2 rounded-compact px-page-inline bg-cadmium text-paper text-base hover:opacity-90 disabled:cursor-wait disabled:opacity-55",
+          "h-12 justify-center gap-2 rounded-compact px-page-inline bg-cadmium text-paper text-base hover:opacity-90 disabled:opacity-55",
         secondary:
           "h-12 justify-center gap-2 rounded-compact px-page-inline border border-control-muted bg-paper text-ink text-sm hover:border-ink disabled:border-border disabled:text-graphite",
         // Text colour is left to the caller (`text-leaf`, `text-ink`, …).

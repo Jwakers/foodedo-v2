@@ -115,5 +115,9 @@ export async function catalogueMealView(
     ingredients: meal.ingredients,
     steps: meal.steps,
     ...(meal.preheat === undefined ? {} : { preheat: meal.preheat }),
+    ...(meal.notes === undefined ? {} : { notes: meal.notes }),
+    ...(meal.servingScaling === undefined
+      ? {}
+      : { servingScaling: meal.servingScaling }),
   };
 }

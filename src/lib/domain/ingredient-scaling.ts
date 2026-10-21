@@ -13,6 +13,14 @@ const fractionValues: Record<string, number> = {
 const fractionCharacters = Object.keys(fractionValues).join("");
 const simpleAmount = new RegExp(`^(\\d+(?:\\.\\d+)?|[${fractionCharacters}])$`);
 
+/** Whether the existing scaling renderer can safely interpret an authored amount. */
+export function canScaleIngredientQuantity(quantity: string | undefined) {
+  return (
+    quantity !== undefined &&
+    (simpleAmount.test(quantity.trim()) || /^to taste$/i.test(quantity.trim()))
+  );
+}
+
 /** Safe cooking display scaling. Authoritative text remains untouched when ambiguous. */
 export function scaleIngredientLine(
   line: RecipeIngredientLine,

@@ -32,7 +32,9 @@ function AppShellChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isCooking = isCookPath(pathname);
   const hideDockForGuestReview = useGuestPlanReviewDockHidden();
-  const showDock = showChrome && !hideDockForGuestReview && !isCooking;
+  const isAdmin = pathname.startsWith("/admin/");
+  const showDock =
+    showChrome && !hideDockForGuestReview && !isCooking && !isAdmin;
 
   return (
     <div className="flex min-h-full flex-1 flex-col">

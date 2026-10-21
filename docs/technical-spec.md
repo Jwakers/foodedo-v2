@@ -76,9 +76,11 @@ Detail and Cook use client-hydrated static shells: catalogue content uses `/reci
 
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
-The current Convex catalogue contains 30 published system meals, each presently at meal revision 2 with a storage-backed hero image. Stable IDs, slugs, and positions preserve deterministic product behavior. Each meal can be staged and published independently; retired meal revisions remain readable for pinned guest drafts and exact snapshot creation.
+Catalogue size and current revisions are deployment data; the local migration review records 112 accepted candidates. Every published system meal has a storage-backed hero image. Stable IDs, slugs, and positions preserve deterministic product behavior. Each meal can be staged and published independently; retired meal revisions remain readable for pinned guest drafts and exact snapshot creation.
 
 Guest mode is not unauthenticated personal storage. The initial standard catalogue and guest draft can be local; persistent personal Convex access requires authentication. Standard catalogue meals are not auth-gated. Future premium meals require authentication plus a server-verified active subscription. See [ADR 0006](../knowledge/decisions/0006-guest-first-account-boundary.md) and [ADR 0007](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md).
+
+The catalogue editorial workflow is at `/admin/recipes`, with existing-meal maintenance at `/admin/catalogue`, a static client shell backed by Convex administrator checks. It stores generated proposals outside public catalogue rows, requires text approval before image generation and separate image approval before publication, and preserves immutable catalogue revisions and personal snapshots. Existing AI Gateway, recipe validation and Convex storage are reused. Reviewed editorial metadata supports deterministic gap analysis; scheduled generation runs every 30 minutes with a five-proposal backlog limit. Catalogue maintenance proposes scoped recipe improvements or image-only updates, publishes immutable revisions under the same stable identity/slug/position, and preserves historical/personal snapshots. See [catalogue-generation.md](./catalogue-generation.md).
 
 ## 5. Runtime: Next.js web → Capacitor iOS
 

@@ -10,7 +10,120 @@ import {
   importDraftValidator,
 } from "./lib/recipeValidators";
 
+import {
+  tagsValidator,
+  findingValidator,
+  operationValidator,
+  telemetryValidator,
+} from "./lib/catalogueGeneration/validators";
+
 export default defineSchema({
+  catalogueProposals: defineTable({
+    content: v.object(recipeContentFields),
+    tags: tagsValidator,
+    rationale: v.string(),
+    concept: v.string(),
+    initialPrompt: v.optional(v.string()),
+    sourceMealId: v.optional(v.id("catalogueMeals")),
+    maintenanceMode: v.optional(
+      v.union(v.literal("recipe"), v.literal("image")),
+    ),
+    changeSummary: v.optional(v.array(v.string())),
+    status: v.union(
+      v.literal("pending_review"),
+      v.literal("generating_image"),
+      v.literal("image_review"),
+      v.literal("published"),
+      v.literal("rejected"),
+      v.literal("superseded"),
+    ),
+    revision: v.number(),
+    fingerprint: v.string(),
+    findings: v.array(findingValidator),
+    reviewedRevision: v.optional(v.number()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    approvedRevision: v.optional(v.number()),
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.number()),
+    imageStorageId: v.optional(v.id("_storage")),
+    imageFingerprint: v.optional(v.string()),
+    publishedMealId: v.optional(v.id("catalogueMeals")),
+    publishedBy: v.optional(v.string()),
+    replacesProposalId: v.optional(v.id("catalogueProposals")),
+    rejectionReason: v.optional(v.string()),
+  })
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_source_and_status", ["sourceMealId", "status"]),
+  catalogueGenerationRuns: defineTable({
+    operation: operationValidator,
+    trigger: v.union(v.literal("manual"), v.literal("scheduled")),
+    requestKey: v.string(),
+    actor: v.string(),
+    proposalId: v.optional(v.id("catalogueProposals")),
+    expectedRevision: v.optional(v.number()),
+    feedback: v.optional(v.string()),
+    initialPrompt: v.optional(v.string()),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("succeeded"),
+      v.literal("failed"),
+      v.literal("timed_out"),
+    ),
+    phase: v.string(),
+    active: v.boolean(),
+    attemptToken: v.string(),
+    deadline: v.number(),
+    config: v.object({
+      version: v.string(),
+      promptVersion: v.string(),
+      imageStyleVersion: v.string(),
+      textModel: v.string(),
+      imageModel: v.string(),
+      imageSize: v.optional(v.string()),
+      imageQuality: v.optional(
+        v.union(
+          v.literal("auto"),
+          v.literal("low"),
+          v.literal("medium"),
+          v.literal("high"),
+          v.literal("xhigh"),
+          v.literal("max"),
+        ),
+      ),
+      reasoningEffort: v.literal("medium"),
+      selectionReasoningEffort: v.optional(
+        v.union(v.literal("low"), v.literal("medium")),
+      ),
+      deadlineMs: v.number(),
+      maxTextCalls: v.number(),
+      maxOutputTokens: v.number(),
+      enrichmentBatchSize: v.number(),
+      catalogueLimit: v.number(),
+      imageBytes: v.number(),
+    }),
+    usage: v.array(telemetryValidator),
+    failure: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_request", ["actor", "requestKey"])
+    .index("by_proposal_and_created_at", ["proposalId", "createdAt"])
+    .index("by_active", ["active"])
+    .index("by_created_at", ["createdAt"]),
+  catalogueAnalysisMetadata: defineTable({
+    catalogueMealId: v.string(),
+    catalogueVersion: v.number(),
+    fingerprint: v.string(),
+    tags: tagsValidator,
+    status: v.union(v.literal("proposed"), v.literal("reviewed")),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_meal_revision", ["catalogueMealId", "catalogueVersion"]),
   users: defineTable({
     authSubject: v.string(),
     email: v.union(v.string(), v.null()),

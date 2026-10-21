@@ -12,6 +12,8 @@ import { ChevronLeft } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { adminContainerClass } from "@/features/admin/admin-layout";
+import { AdminNavigationLink } from "@/features/admin/admin-navigation-link";
 import { BrandLogo } from "@/components/brand-logo";
 import { HeaderModeSlot } from "@/components/header-mode-slot";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ import { cn } from "@/lib/utils/cn";
 export function AppHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isAdmin = pathname.startsWith("/admin/");
   const router = useRouter();
   // Track prior in-app path so Back can distinguish SPA history from deep links.
   // (history.length / history.state.idx are unreliable across browsers and this Next version.)
@@ -49,7 +52,8 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 bg-paper pt-[env(safe-area-inset-top)]">
       <div
         className={cn(
-          "mx-auto flex h-13.5 w-full max-w-175 items-center transition-[padding] duration-300 ease-out",
+          "flex h-13.5 items-center transition-[padding] duration-300 ease-out",
+          isAdmin ? adminContainerClass : "mx-auto w-full max-w-175",
           isRecipeSubpage ? "px-3" : "px-page-inline",
         )}
       >
@@ -136,6 +140,7 @@ function DefaultAccountControls() {
         </Show>
 
         <Show when="signed-in">
+          <AdminNavigationLink />
           <AccountButton />
         </Show>
       </ClerkLoaded>
