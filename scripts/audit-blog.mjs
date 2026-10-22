@@ -6,7 +6,7 @@ const base = new URL(process.argv[2] || "http://127.0.0.1:3100");
 const canonical =
   process.env.SITE_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://foodedo.com";
+  "https://www.foodedo.com";
 const inventory = JSON.parse(
   await readFile(
     new URL("../docs/blog-url-inventory.json", import.meta.url),
@@ -46,10 +46,7 @@ assert.match(sitemapResponse.headers.get("content-type") || "", /xml/);
 const sitemap = await sitemapResponse.text();
 const robots = await (await get(new URL("/robots.txt", base))).text();
 assert.ok(robots.includes(`Sitemap: ${new URL("/sitemap.xml", canonical)}`));
-assert.ok(
-  sitemap.includes("/recipes/view?slug="),
-  "Catalogue sitemap entries were lost",
-);
+assert.ok(sitemap.includes("/recipes/"), "Catalogue sitemap entries were lost");
 
 const articles = [...entries.values()];
 for (let offset = 0; offset < articles.length; offset += 4) {
@@ -83,7 +80,7 @@ for (let offset = 0; offset < articles.length; offset += 4) {
       );
       assert.doesNotMatch(
         html,
-        /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing|discover)(?:[/?"#])/,
+        /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
         `Unresolved V1 link: ${path}`,
       );
     }),

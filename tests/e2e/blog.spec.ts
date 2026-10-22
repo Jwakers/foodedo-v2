@@ -35,7 +35,7 @@ test("blog HTML lists every migrated URL without app chrome or account providers
   const html = await response.text();
   for (const article of [...inventory.cmsArticles, ...inventory.localGuides])
     expect(html).toContain(`href="${article.path}"`);
-  expect(html).toContain('rel="canonical" href="https://foodedo.com/blog"');
+  expect(html).toContain('rel="canonical" href="https://www.foodedo.com/blog"');
   expect(html).not.toMatch(/clerk\.browser|clerk-js|clerk\.accounts/);
   await page.route(/clerk|convex/, (route) => route.abort());
   await page.goto("/blog");
@@ -46,7 +46,7 @@ test("blog HTML lists every migrated URL without app chrome or account providers
     0,
   );
   await expect(
-    page.getByRole("navigation", { name: "Blog navigation" }),
+    page.getByRole("navigation", { name: "Public navigation" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
@@ -65,7 +65,7 @@ test("all 33 migrated articles serve initial HTML and matching metadata", async 
     expect(response.status(), article.path).toBe(200);
     const html = await response.text();
     expect(html, article.path).toContain(
-      `href="https://foodedo.com${article.path}"`,
+      `href="https://www.foodedo.com${article.path}"`,
     );
     const structured =
       /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
@@ -76,7 +76,7 @@ test("all 33 migrated articles serve initial HTML and matching metadata", async 
     });
     expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
     expect(html, article.path).not.toMatch(
-      /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing|discover)(?:[/?"#])/,
+      /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
     );
   }
   expect(
@@ -91,11 +91,11 @@ test("sitemap and robots expose every article while preserving catalogue URLs", 
   expect(response.status()).toBe(200);
   const xml = await response.text();
   for (const article of [...inventory.cmsArticles, ...inventory.localGuides])
-    expect(xml).toContain(`<loc>https://foodedo.com${article.path}</loc>`);
-  expect(xml).toContain("/recipes/view?slug=");
+    expect(xml).toContain(`<loc>https://www.foodedo.com${article.path}</loc>`);
+  expect(xml).toContain("/recipes/");
   const robots = await request.get("/robots.txt");
   expect(await robots.text()).toContain(
-    "Sitemap: https://foodedo.com/sitemap.xml",
+    "Sitemap: https://www.foodedo.com/sitemap.xml",
   );
 });
 
@@ -135,7 +135,7 @@ test("blog CTA enters the guest product directly, including a fresh tab", async 
   ).toHaveCount(0);
   await newTab.close();
   await page
-    .getByRole("navigation", { name: "Blog navigation" })
+    .getByRole("navigation", { name: "Public navigation" })
     .getByRole("link", { name: "Try Foodedo" })
     .click();
   await expect(
@@ -167,7 +167,7 @@ test("returning from the blog preserves an existing guest plan", async ({
   expect(meals).toHaveLength(7);
   await page.goto("/blog");
   await page
-    .getByRole("navigation", { name: "Blog navigation" })
+    .getByRole("navigation", { name: "Public navigation" })
     .getByRole("link", { name: "Try Foodedo" })
     .click();
   await page

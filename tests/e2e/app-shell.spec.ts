@@ -419,8 +419,8 @@ test("serves the published catalogue sitemap", async ({ request }) => {
   const xml = await response.text();
   expect(xml.match(/<url>/g)?.length).toBeGreaterThan(0);
   expect(xml).toContain("<urlset");
-  expect(xml).toContain("/recipes/view?slug=");
-  expect(xml).toContain("/recipes/view?slug=chicken-fajitas");
+  expect(xml).toContain("/recipes/");
+  expect(xml).toContain("/recipes/chicken-fajitas");
   expect(xml).not.toContain("/recipes/cook");
 });
 

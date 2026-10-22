@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { TryFoodedoLink } from "./try-foodedo-link";
 
 const actionClass =
-  "inline-flex min-h-11 items-center justify-center gap-3 rounded-full bg-cadmium px-4 py-3 text-14 font-semibold text-paper transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium";
+  "inline-flex min-h-11 shrink-0 items-center justify-center gap-3 rounded-full bg-cadmium px-4 py-3 text-14 font-semibold whitespace-nowrap text-paper transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium";
 
 export function EditorialShell({ children }: { children: ReactNode }) {
   return (
@@ -20,7 +20,16 @@ export function EditorialShell({ children }: { children: ReactNode }) {
       <header className="border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-360 items-center justify-between px-page-inline py-3 lg:px-24 lg:py-6">
           <BrandLogo href="/" />
-          <nav aria-label="Blog navigation" className="flex items-center gap-6">
+          <nav
+            aria-label="Public navigation"
+            className="flex items-center gap-4 sm:gap-6"
+          >
+            <Link
+              href="/recipes"
+              className="hidden min-h-11 items-center text-14 underline-offset-4 hover:underline focus-visible:outline-cadmium sm:inline-flex"
+            >
+              Recipes
+            </Link>
             <Link
               href="/blog"
               className="hidden min-h-11 items-center text-14 underline-offset-4 hover:underline focus-visible:outline-cadmium sm:inline-flex"
@@ -38,7 +47,13 @@ export function EditorialShell({ children }: { children: ReactNode }) {
       <footer className="mt-auto border-t border-border">
         <div className="mx-auto flex max-w-360 flex-col justify-between gap-4 px-page-inline pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] text-14 text-graphite sm:flex-row sm:items-center lg:px-24 lg:py-8">
           <p>Foodedo · Make food decisions easier.</p>
-          <nav aria-label="Blog footer" className="flex gap-6">
+          <nav aria-label="Public footer" className="flex gap-6">
+            <Link
+              href="/recipes"
+              className="inline-flex min-h-11 items-center text-ink underline-offset-4 hover:underline"
+            >
+              Recipes
+            </Link>
             <Link
               href="/blog"
               className="inline-flex min-h-11 items-center text-ink underline-offset-4 hover:underline"

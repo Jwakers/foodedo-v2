@@ -1,0 +1,499 @@
+{
+  "capturedOn": "2026-10-22",
+  "source": "https://www.foodedo.com/sitemap.xml",
+  "recipes": [
+    {
+      "path": "/discover/recipe/baked-chicken-and-rice-casserole",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/baked-chicken-and-rice-casserole"
+    },
+    {
+      "path": "/discover/recipe/baked-fish-with-lemon-and-herbs",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/baked-fish-with-lemon-and-herbs"
+    },
+    {
+      "path": "/discover/recipe/baked-pesto-fish-with-vegetables",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/baked-pesto-fish-with-vegetables"
+    },
+    {
+      "path": "/discover/recipe/baked-turkey-meatballs-with-spaghetti",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/baked-turkey-meatballs-with-spaghetti"
+    },
+    {
+      "path": "/discover/recipe/bbq-pulled-pork-sandwiches",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/bbq-pulled-pork-sandwiches"
+    },
+    {
+      "path": "/discover/recipe/beef-and-broccoli-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-and-broccoli-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/beef-and-mushroom-pie",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-and-mushroom-pie"
+    },
+    {
+      "path": "/discover/recipe/beef-and-mushroom-stroganoff",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-and-mushroom-stroganoff"
+    },
+    {
+      "path": "/discover/recipe/beef-and-vegetable-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-and-vegetable-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/beef-and-vegetable-traybake",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-and-vegetable-traybake"
+    },
+    {
+      "path": "/discover/recipe/beef-bolognese",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-bolognese"
+    },
+    {
+      "path": "/discover/recipe/beef-fajitas",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-fajitas"
+    },
+    {
+      "path": "/discover/recipe/beef-kofta-with-couscous",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-kofta-with-couscous"
+    },
+    {
+      "path": "/discover/recipe/beef-lasagne",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-lasagne"
+    },
+    {
+      "path": "/discover/recipe/beef-stroganoff",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-stroganoff"
+    },
+    {
+      "path": "/discover/recipe/beef-tacos",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/beef-tacos"
+    },
+    {
+      "path": "/discover/recipe/caprese-salad-with-garlic-bread",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/caprese-salad-with-garlic-bread"
+    },
+    {
+      "path": "/discover/recipe/chicken-alfredo-pasta",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-alfredo-pasta"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-chorizo-paella",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-and-chorizo-paella"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-leek-pie",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-and-leek-pie"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-mushroom-risotto",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-and-mushroom-risotto"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-spinach-pasta",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-and-spinach-pasta"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-vegetable-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-and-vegetable-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/chicken-fajitas",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-fajitas"
+    },
+    {
+      "path": "/discover/recipe/chicken-katsu-curry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-katsu-curry"
+    },
+    {
+      "path": "/discover/recipe/chicken-parmesan-bake",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-parmesan-bake"
+    },
+    {
+      "path": "/discover/recipe/chicken-shawarma-wraps",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-shawarma-wraps"
+    },
+    {
+      "path": "/discover/recipe/chicken-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/chicken-tacos-with-avocado-salsa",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-tacos-with-avocado-salsa"
+    },
+    {
+      "path": "/discover/recipe/chicken-tacos-with-salsa",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-tacos-with-salsa"
+    },
+    {
+      "path": "/discover/recipe/chicken-teriyaki-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-teriyaki-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/chicken-tikka-masala",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chicken-tikka-masala"
+    },
+    {
+      "path": "/discover/recipe/chickpea-and-spinach-stuffed-sweet-potatoes",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chickpea-and-spinach-stuffed-sweet-potatoes"
+    },
+    {
+      "path": "/discover/recipe/chickpea-curry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chickpea-curry"
+    },
+    {
+      "path": "/discover/recipe/chinese-lemon-fish-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/chinese-lemon-fish-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/cottage-pie",
+      "outcome": "intentional-404",
+      "canonicalPath": "/recipes/cottage-pie"
+    },
+    {
+      "path": "/discover/recipe/crispy-pork-hoisin-sesame-wraps",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/crispy-pork-hoisin-sesame-wraps"
+    },
+    {
+      "path": "/discover/recipe/duck-breast-with-orange-sauce",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/duck-breast-with-orange-sauce"
+    },
+    {
+      "path": "/discover/recipe/fish-pie",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/fish-pie"
+    },
+    {
+      "path": "/discover/recipe/fish-tacos-with-cabbage-slaw",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/fish-tacos-with-cabbage-slaw"
+    },
+    {
+      "path": "/discover/recipe/fish-tacos-with-mango-salsa",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/fish-tacos-with-mango-salsa"
+    },
+    {
+      "path": "/discover/recipe/grilled-mackerel-with-lemon-and-dill",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/grilled-mackerel-with-lemon-and-dill"
+    },
+    {
+      "path": "/discover/recipe/grilled-sardines-with-lemon-and-garlic",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/grilled-sardines-with-lemon-and-garlic"
+    },
+    {
+      "path": "/discover/recipe/honey-garlic-chicken",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/honey-garlic-chicken"
+    },
+    {
+      "path": "/discover/recipe/honey-garlic-pork-chops",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/honey-garlic-pork-chops"
+    },
+    {
+      "path": "/discover/recipe/italian-beef-meatballs",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/italian-beef-meatballs"
+    },
+    {
+      "path": "/discover/recipe/lamb-and-mint-pasta",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lamb-and-mint-pasta"
+    },
+    {
+      "path": "/discover/recipe/lamb-and-vegetable-traybake",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lamb-and-vegetable-traybake"
+    },
+    {
+      "path": "/discover/recipe/lamb-biryani",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lamb-biryani"
+    },
+    {
+      "path": "/discover/recipe/lamb-kofta-kebabs-with-tzatziki",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lamb-kofta-kebabs-with-tzatziki"
+    },
+    {
+      "path": "/discover/recipe/lemon-garlic-butter-prawns",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lemon-garlic-butter-prawns"
+    },
+    {
+      "path": "/discover/recipe/lemon-garlic-butter-salmon",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lemon-garlic-butter-salmon"
+    },
+    {
+      "path": "/discover/recipe/lemon-herb-grilled-chicken",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lemon-herb-grilled-chicken"
+    },
+    {
+      "path": "/discover/recipe/lemon-herb-roasted-chicken-thighs",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/lemon-herb-roasted-chicken-thighs"
+    },
+    {
+      "path": "/discover/recipe/mac-and-cheese",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mac-and-cheese"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-baked-salmon",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mediterranean-baked-salmon"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-chicken-bake",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mediterranean-chicken-bake"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-chickpea-salad",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mediterranean-chickpea-salad"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-quinoa-bowl",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mediterranean-quinoa-bowl"
+    },
+    {
+      "path": "/discover/recipe/mushroom-and-spinach-quesadillas",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mushroom-and-spinach-quesadillas"
+    },
+    {
+      "path": "/discover/recipe/mushroom-risotto",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/mushroom-risotto"
+    },
+    {
+      "path": "/discover/recipe/one-pan-beef-and-potatoes",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/one-pan-beef-and-potatoes"
+    },
+    {
+      "path": "/discover/recipe/one-pan-lemon-herb-chicken-and-vegetables",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/one-pan-lemon-herb-chicken-and-vegetables"
+    },
+    {
+      "path": "/discover/recipe/oven-baked-cod-with-tomato-and-basil",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/oven-baked-cod-with-tomato-and-basil"
+    },
+    {
+      "path": "/discover/recipe/pasta-primavera",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pasta-primavera"
+    },
+    {
+      "path": "/discover/recipe/pasta-puttanesca-with-olives-and-capers",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pasta-puttanesca-with-olives-and-capers"
+    },
+    {
+      "path": "/discover/recipe/pork-and-apple-casserole",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-and-apple-casserole"
+    },
+    {
+      "path": "/discover/recipe/pork-and-mushroom-pasta",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-and-mushroom-pasta"
+    },
+    {
+      "path": "/discover/recipe/pork-and-sweet-potato-hash",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-and-sweet-potato-hash"
+    },
+    {
+      "path": "/discover/recipe/pork-ramen-bowl",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-ramen-bowl"
+    },
+    {
+      "path": "/discover/recipe/pork-schnitzel-with-potato-salad",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-schnitzel-with-potato-salad"
+    },
+    {
+      "path": "/discover/recipe/pork-stir-fry-with-vegetables",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-stir-fry-with-vegetables"
+    },
+    {
+      "path": "/discover/recipe/pork-tacos-with-salsa",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/pork-tacos-with-salsa"
+    },
+    {
+      "path": "/discover/recipe/prawn-and-chorizo-risotto",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/prawn-and-chorizo-risotto"
+    },
+    {
+      "path": "/discover/recipe/roast-gammon-with-onion-sauce",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/roast-gammon-with-onion-sauce"
+    },
+    {
+      "path": "/discover/recipe/roasted-vegetable-and-hummus-wrap",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/roasted-vegetable-and-hummus-wrap"
+    },
+    {
+      "path": "/discover/recipe/shrimp-fried-rice",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/shrimp-fried-rice"
+    },
+    {
+      "path": "/discover/recipe/spaghetti-carbonara",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/spaghetti-carbonara"
+    },
+    {
+      "path": "/discover/recipe/spicy-chicken-and-chickpea-stew",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/spicy-chicken-and-chickpea-stew"
+    },
+    {
+      "path": "/discover/recipe/spinach-and-feta-stuffed-mushrooms",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/spinach-and-feta-stuffed-mushrooms"
+    },
+    {
+      "path": "/discover/recipe/stuffed-peppers",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/stuffed-peppers"
+    },
+    {
+      "path": "/discover/recipe/thai-fish-curry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/thai-fish-curry"
+    },
+    {
+      "path": "/discover/recipe/thai-green-curry-chicken",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/thai-green-curry-chicken"
+    },
+    {
+      "path": "/discover/recipe/thai-green-curry-with-fish",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/thai-green-curry-with-fish"
+    },
+    {
+      "path": "/discover/recipe/thai-noodle-soup",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/thai-noodle-soup"
+    },
+    {
+      "path": "/discover/recipe/thai-red-curry-with-tofu",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/thai-red-curry-with-tofu"
+    },
+    {
+      "path": "/discover/recipe/tofu-stir-fry-with-broccoli-and-peppers",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+    },
+    {
+      "path": "/discover/recipe/turkey-and-spinach-traybake",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/turkey-and-spinach-traybake"
+    },
+    {
+      "path": "/discover/recipe/turkey-and-vegetable-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/turkey-and-vegetable-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/turkey-tacos",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/turkey-tacos"
+    },
+    {
+      "path": "/discover/recipe/vegetable-biryani",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/vegetable-biryani"
+    },
+    {
+      "path": "/discover/recipe/vegetable-lasagna",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/vegetable-lasagna"
+    },
+    {
+      "path": "/discover/recipe/vegetable-stir-fry",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/vegetable-stir-fry"
+    },
+    {
+      "path": "/discover/recipe/vegetarian-chili",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/vegetarian-chili"
+    },
+    {
+      "path": "/discover/recipe/vegetarian-tacos",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/vegetarian-tacos"
+    },
+    {
+      "path": "/discover/recipe/veggie-stuffed-sweet-potatoes",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/veggie-stuffed-sweet-potatoes"
+    },
+    {
+      "path": "/discover/recipe/venison-chilli",
+      "outcome": "permanent-redirect",
+      "canonicalPath": "/recipes/venison-chilli"
+    }
+  ],
+  "retiredRecipes": [
+    {
+      "path": "/discover/recipe/cottage-pie",
+      "legacyV1RecipeId": "j57awyx0r26fyj7jnepfn48g6h8dz0q4",
+      "reason": "Explicitly removed in the reviewed V1-to-V2 catalogue migration because of its missing image. No confirmed replacement provenance for classic-cottage-pie-with-peas.",
+      "evidence": "docs/catalogue-migration.md; local migration decisions.json records decision=remove for this V1 ID."
+    }
+  ]
+}

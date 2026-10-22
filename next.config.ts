@@ -34,6 +34,16 @@ const nextConfig: NextConfig = {
   },
   ...(!isCapacitorBuild
     ? {
+        async redirects() {
+          return [
+            { source: "/discover", destination: "/recipes", permanent: true },
+            {
+              source: "/discover/recipe/:slug",
+              destination: "/recipes/:slug",
+              permanent: true,
+            },
+          ];
+        },
         async headers() {
           return [
             {

@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { shareRecipe } from "@/lib/platform/recipe-share";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import { publicRecipePath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 
@@ -57,7 +57,7 @@ export function RecipeOverflowMenu({
 
     const result = await shareRecipe({
       title: recipeTitle,
-      path: recipeDetailPath(recipeSlug),
+      path: publicRecipePath(recipeSlug),
     });
 
     if (result === "copied") {

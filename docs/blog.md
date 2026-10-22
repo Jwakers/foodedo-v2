@@ -24,7 +24,7 @@ Try links carry `/?try=1` and synchronously invoke the existing welcome-skip act
 
 `next.config.ts` discovers `.web.tsx`/`.web.ts` entrypoints for web and `.native.tsx`/`.native.ts` for iOS, alongside normal extensions. Blog entrypoints use the web suffix. Explicit `sitemap.xml/route.*.ts` handlers preserve the catalogue sitemap in both builds and add live blog entries only on web; `robots.txt/route.web.ts` advertises the web sitemap. Explicit handlers are intentional: this installed Next.js version discovers suffixed metadata files such as `sitemap.web.ts` but does not produce a working GET handler for them.
 
-The web sitemap includes `/`, `/blog`, catalogue meals and every guide/article. Canonicals, sitemap URLs and structured data use `SITE_URL`, then `NEXT_PUBLIC_SITE_URL`, then `https://foodedo.com`. Optional article metadata and `BlogPosting` data reflect real CMS dates and images. Structured JSON is escaped for safe HTML embedding.
+The web sitemap includes `/`, `/blog`, `/recipes`, public catalogue pages at `/recipes/[slug]` and every guide/article. It shares the public directory’s 30-minute catalogue listing cache while retaining its 60-second route lifetime for blog discovery. Native sitemap behavior remains unchanged. See [Public recipes](./public-recipes.md). Canonicals, sitemap URLs and structured data use `SITE_URL`, then `NEXT_PUBLIC_SITE_URL`, then `https://www.foodedo.com`. Optional article metadata and `BlogPosting` data reflect real CMS dates and images. Structured JSON is escaped for safe HTML embedding.
 
 ## Verification and launch
 

@@ -1,12 +1,23 @@
 /**
  * Recipe App Router path helpers — keep shell chrome and feature links
- * aligned on the shared static query-route contract.
+ * aligned across public web URLs and native/pinned static query routes.
  */
 
 export type RecipeCatalogueReference = {
   catalogueMealId: string;
   catalogueVersion: number;
 };
+
+export function publicRecipePath(slug: string): string {
+  return `/recipes/${encodeURIComponent(slug)}`;
+}
+
+/** Public web browsing shares the app UI; native keeps its static query route. */
+export function catalogueBrowsePath(slug: string): string {
+  return process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true"
+    ? recipeDetailPath(slug)
+    : publicRecipePath(slug);
+}
 
 export function recipeDetailPath(
   slug: string,
@@ -80,7 +91,18 @@ export function isRecipesSectionPath(pathname: string): boolean {
 
 /** True for any path under `/recipes/…` (not the listing index). */
 export function isRecipeDetailPath(pathname: string): boolean {
-  return pathname === "/recipes/view" || pathname === "/recipes/cook";
+  return (
+    pathname === "/recipes/view" ||
+    pathname === "/recipes/cook" ||
+    publicRecipeSlug(pathname) !== null
+  );
+}
+
+function publicRecipeSlug(pathname: string): string | null {
+  const match = /^\/recipes\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(pathname);
+  return match && !["view", "cook", "edit", "import"].includes(match[1])
+    ? match[1]
+    : null;
 }
 
 /**
@@ -92,6 +114,8 @@ export function parseRecipeDetailSlug(
   searchParams: Pick<URLSearchParams, "get">,
 ): string | null {
   if (!isRecipeDetailPath(pathname)) return null;
+  const routeSlug = publicRecipeSlug(pathname);
+  if (routeSlug !== null) return routeSlug;
   const slug = searchParams.get("slug")?.trim();
   return slug ? slug : null;
 }

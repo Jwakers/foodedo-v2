@@ -10,7 +10,31 @@ import {
   personalRecipeDetailPath,
   recipeCookPath,
   recipeDetailPath,
+  catalogueBrowsePath,
+  publicRecipePath,
 } from "@/lib/routing/recipes";
+
+test("canonical browsing preserves native query routes and ignores conflicting slug queries on web", () => {
+  const previous = process.env.NEXT_PUBLIC_CAPACITOR_BUILD;
+  try {
+    process.env.NEXT_PUBLIC_CAPACITOR_BUILD = "false";
+    expect(catalogueBrowsePath("beef-lasagne")).toBe("/recipes/beef-lasagne");
+    expect(publicRecipePath("beef-lasagne")).toBe("/recipes/beef-lasagne");
+    expect(
+      parseRecipeDetailSlug(
+        "/recipes/beef-lasagne",
+        new URLSearchParams("slug=other-recipe"),
+      ),
+    ).toBe("beef-lasagne");
+    process.env.NEXT_PUBLIC_CAPACITOR_BUILD = "true";
+    expect(catalogueBrowsePath("beef-lasagne")).toBe(
+      "/recipes/view?slug=beef-lasagne",
+    );
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_CAPACITOR_BUILD;
+    else process.env.NEXT_PUBLIC_CAPACITOR_BUILD = previous;
+  }
+});
 
 test("builds catalogue detail hrefs", () => {
   expect(recipeDetailPath("lemon-herb-grilled-chicken")).toBe(
@@ -80,7 +104,9 @@ test("detects recipes section and detail paths", () => {
 
   expect(isRecipeDetailPath("/recipes")).toBe(false);
   expect(isRecipeDetailPath("/recipes/view")).toBe(true);
-  expect(isRecipeDetailPath("/recipes/saved")).toBe(false);
+  expect(isRecipeDetailPath("/recipes/beef-lasagne")).toBe(true);
+  expect(isRecipeDetailPath("/recipes/import")).toBe(false);
+  expect(isRecipeDetailPath("/recipes/edit")).toBe(false);
 });
 
 test("parses the recipe slug query", () => {

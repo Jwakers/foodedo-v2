@@ -44,7 +44,7 @@ import {
   type RecipeSort,
 } from "@/lib/domain/recipe-filtering";
 import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import { catalogueBrowsePath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
@@ -55,8 +55,16 @@ type RecipeScope = (typeof scopes)[number];
 
 const recipeDrawerViews = { filters: "filters", sort: "sort" } as const;
 
-export function RecipesListing() {
-  const catalogue = useCurrentCatalogue();
+export function RecipesListing({
+  initialMeals,
+}: {
+  initialMeals?: CatalogueMealSummary[];
+}) {
+  const liveCatalogue = useCurrentCatalogue();
+  const catalogue =
+    liveCatalogue === undefined && initialMeals !== undefined
+      ? { meals: initialMeals }
+      : liveCatalogue;
   const { isLoaded, isSignedIn } = useAuth();
   const { isAuthenticated } = useFoodedoAuth();
   const personalRecipeQuery = usePaginatedQuery(
@@ -422,7 +430,7 @@ function CatalogueGrid({
           {meals.map((meal) => (
             <li key={meal.id}>
               <RecipeCard
-                href={recipeDetailPath(meal.slug)}
+                href={catalogueBrowsePath(meal.slug)}
                 title={meal.title}
                 meta={catalogueMealMeta(meal)}
                 imageSrc={meal.imageSrc}

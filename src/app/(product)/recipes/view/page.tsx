@@ -6,6 +6,7 @@ import { RecipeDetailPage } from "@/features/recipes/recipe-detail-page";
 export const metadata: Metadata = {
   title: "Recipe · Foodedo",
   description: "Ingredients and method for a Foodedo recipe.",
+  robots: { index: false },
 };
 
 export default function RecipeViewPage() {

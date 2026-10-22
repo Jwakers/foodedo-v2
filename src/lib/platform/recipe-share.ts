@@ -3,7 +3,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Share } from "@capacitor/share";
 
-const defaultWebOrigin = "https://foodedo.com";
+const defaultWebOrigin = "https://www.foodedo.com";
 
 export type RecipeShareResult = "shared" | "copied" | "cancelled" | "failed";
 

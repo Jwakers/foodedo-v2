@@ -147,13 +147,13 @@ export function formatBlogDate(value: string): string {
 }
 
 const legacyDestinations: Record<string, string> = {
+  "/discover": "/recipes",
   "/dashboard/meal-plan": "/week",
   "/dashboard/shopping-list": "/shop",
   "/dashboard/my-recipes": "/recipes",
   "/dashboard/import-recipe": "/recipes/import",
   "/dashboard/households": "/household",
   "/dashboard/chalkboard": "/shop",
-  "/discover": "/recipes",
   "/sign-in": "/?try=1",
   "/sign-up": "/?try=1",
   "/pricing": "/?try=1",
@@ -174,6 +174,9 @@ export function resolveBlogLink(href: unknown): string | undefined {
     if (url.protocol === "mailto:") return url.href;
     if (["foodedo.com", "www.foodedo.com"].includes(url.hostname)) {
       const path = url.pathname.replace(/\/$/, "") || "/";
+      const recipeMatch = /^\/discover\/recipe\/([a-z0-9-]+)$/.exec(path);
+      if (recipeMatch)
+        return `/recipes/${recipeMatch[1]}${url.search}${url.hash}`;
       const destination = legacyDestinations[path];
       if (destination) {
         const mapped = new URL(destination, "https://foodedo.com");

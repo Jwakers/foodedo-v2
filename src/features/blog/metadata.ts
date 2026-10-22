@@ -54,6 +54,4 @@ export function articleStructuredData(article: BlogSummary) {
   };
 }
 
-export function jsonLd(value: unknown) {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
-}
+export { jsonLd } from "@/lib/seo/structured-data";
