@@ -2,29 +2,29 @@
   {
     "slug": "how-to-turn-recipes-into-one-grocery-list",
     "title": "How to Turn Recipes Into One Grocery List",
-    "excerpt": "Use this practical method to go from saved recipes to one clear shopping list for the week.",
+    "excerpt": "Go from a suggested week of dinners to one linked shopping list, without copying ingredients by hand.",
     "seoDescription": "A practical way to turn multiple recipes into a single weekly grocery list without missed ingredients.",
     "indexExcerpt": "A practical recipe-to-list guide for creating one weekly grocery list.",
     "sections": [
       {
-        "heading": "Pick this week's meals first",
-        "body": "Before writing any list, choose the meals you are genuinely likely to cook this week. This keeps your shop focused on real dinners, not good intentions."
+        "heading": "Start with a suggested week",
+        "body": "On Home, choose Plan my week to get suggested dinners. Review the meals, swap any that do not suit your week and leave a day free when you will not cook. You can try this without an account or a saved recipe collection."
       },
       {
-        "heading": "Create one list from all meals",
-        "body": "Once the plan is set, generate one shopping list from all selected meals. You avoid switching between recipe tabs and reduce the chance of missing items."
+        "heading": "Save the plan to create your list",
+        "body": "Choose Save my plan when the meals look right. If you are a guest, sign in or create an account at this point to keep the plan. Saving creates its shopping list automatically; there is no separate list-generation step."
       },
       {
-        "heading": "Add household staples and pantry checks",
-        "body": "Add basics like milk, foil, or cleaning supplies before heading out. Then quickly check your pantry and remove items you already have so you only buy what you need."
+        "heading": "Check your cupboards and add extras",
+        "body": "Open Shopping to review the ingredients from your saved plan. Check your cupboards lets you add suggested staples if you need them. Remove ingredients you already have, and add extras such as milk, foil or cleaning supplies. Foodedo does not track your pantry stock for you."
       },
       {
         "heading": "Use the list while you shop",
-        "body": "Tick items off as you go in-store. If meals change later in the week, adjust your plan and let the list update so everything stays aligned."
+        "body": "Tick items off as you pick them up. Open an ingredient’s details to see which meals use it. If you change a meal in your saved plan, its linked list updates automatically. Manual extras stay, and checks on matching ingredients that are still needed are retained."
       },
       {
-        "heading": "Quick reset for next week",
-        "body": "After cooking, keep the meals that worked and replace the ones that did not. This makes next week faster without starting from zero."
+        "heading": "Make next week another small decision",
+        "body": "Think about which dinners worked before reviewing your next suggested week. Keep useful suggestions and swap the ones that do not fit. You do not need to rebuild a recipe collection to plan again."
       }
     ]
   },
@@ -36,24 +36,24 @@
     "indexExcerpt": "Plan several meals and combine ingredients into one shopping-ready list.",
     "sections": [
       {
-        "heading": "Set your meal count first",
-        "body": "Decide how many dinners you need this week. A clear meal count keeps planning simple and makes shopping easier to estimate."
+        "heading": "Start with the dinners you need",
+        "body": "Check which evenings you will cook, then choose Plan my week on Home. Foodedo suggests meals for you to review. Swap unsuitable meals and leave days free where you do not need dinner planned."
       },
       {
-        "heading": "Add all meals to one weekly plan",
-        "body": "Bring all selected recipes into one plan first, then generate your list from that plan. This gives you one place to manage everything."
+        "heading": "Keep the meals in one saved plan",
+        "body": "Choose Save my plan once the review looks right. Guests can review and swap meals before creating an account; signing in is needed to keep the plan and use its shopping list."
       },
       {
-        "heading": "Generate one shopping list",
-        "body": "Create a single list from all meals rather than separate mini lists. It is easier to follow in-store and less likely to miss ingredients."
+        "heading": "Review the automatically combined list",
+        "body": "Saving the plan creates one linked shopping list. Matching ingredient names are grouped, and compatible amounts can be added together. Different names may remain separate, and amounts with incompatible units are not automatically added together. Check the ingredient details before shopping rather than assuming every similar ingredient has been merged."
       },
       {
-        "heading": "Do a quick pantry edit",
-        "body": "Check what you already have, then remove items you do not need before shopping. This keeps the final list practical and helps avoid overbuying."
+        "heading": "Check what you already have",
+        "body": "Open an ingredient’s details to see the meals that need it. Check your cupboards yourself, then remove items you do not need to buy. Removed items can be restored if you change your mind."
       },
       {
-        "heading": "Add non-recipe essentials",
-        "body": "Include household basics to your shopping list so one shopping trip covers meals and everyday items together."
+        "heading": "Add the rest of your shop",
+        "body": "Add non-recipe essentials to the same list. If you swap a meal in the saved plan later, Foodedo updates the linked ingredients and keeps your manual extras. You do not need to rebuild the list."
       }
     ]
   },
@@ -61,28 +61,28 @@
     "slug": "weekly-meal-plan-and-shopping-list-guide",
     "title": "Weekly Meal Plan and Shopping List Guide",
     "excerpt": "A repeatable weekly routine for planning meals, shopping once, and staying on track.",
-    "seoDescription": "A repeatable weekly routine to plan meals and generate one grocery list for households and families.",
+    "seoDescription": "A repeatable weekly routine to review suggested dinners, save your meal plan and use its linked shopping list.",
     "indexExcerpt": "A repeatable weekly planning rhythm for households and families.",
     "sections": [
       {
         "heading": "Pick one planning window each week",
-        "body": "Use one short planning slot each week, such as Sunday evening. Keeping the same routine reduces decision fatigue during busy weekdays."
+        "body": "Set aside a short time to check your calendar before shopping. Notice evenings when you will be out or need a simple dinner. The aim is a useful plan, not a perfectly filled week."
       },
       {
-        "heading": "Build your week before you shop",
-        "body": "Choose your meals first, then place them across the week. Starting with a realistic plan makes your shopping list much more useful."
+        "heading": "Review suggestions instead of starting from scratch",
+        "body": "Choose Plan my week on Home. Look through the suggested dinners, swap meals that do not fit and leave days free where needed. You can try this review without an account. Signed-in users can also adjust their usual plan length, servings and planning preferences."
       },
       {
-        "heading": "Generate one shopping list from the plan",
-        "body": "Once the week looks right, generate one list from all meals. This keeps shopping tied to what you are actually cooking."
+        "heading": "Save your week and open Shopping",
+        "body": "Choose Save my plan when you are happy with the review. Sign in or create an account if you have been trying it as a guest. The saved plan creates its shopping list automatically. Open Shopping, remove ingredients already in your cupboards and add any extras you need."
       },
       {
-        "heading": "Share plan and list if you live with others",
-        "body": "If multiple people cook or shop, keep one shared plan and one shared list so there is less confusion and fewer duplicate purchases."
+        "heading": "Set up a household when you want to share",
+        "body": "After signing in, use Share your week on Home to create a household and invite someone. They sign in and explicitly join using the invitation. Household members share that space’s plan and shopping list; Private remains a separate space. Select Household when you want to plan or shop together."
       },
       {
-        "heading": "Review and adjust next week",
-        "body": "At the end of the week, keep what worked and swap what did not. This makes the next plan quicker and more accurate."
+        "heading": "Adjust the plan when the week changes",
+        "body": "Swap a meal in the saved plan when your plans change; the linked shopping list updates with it. Check items off while shopping. Before planning the next week, think about which dinners were useful and which suggestions you would rather replace."
       }
     ]
   },
@@ -94,20 +94,20 @@
     "indexExcerpt": "A quick routine for planning dinners when time is tight.",
     "sections": [
       {
-        "heading": "Minute 1-3: set your week shape",
-        "body": "Check your calendar and mark your busiest nights first. Decide how many dinners you actually need this week."
+        "heading": "Minutes 1–3: check your week",
+        "body": "Look at your calendar and decide which evenings need dinner at home. Note busy nights and meals out. Treat this as a short routine to aim for, rather than a deadline for finding the perfect week."
       },
       {
-        "heading": "Minute 4-7: add your easiest wins",
-        "body": "Place 2 to 3 reliable favourites first. This reduces decision fatigue and gives your week a stable base."
+        "heading": "Minutes 4–7: start with Foodedo’s suggestions",
+        "body": "Choose Plan my week on Home to get a suggested week. You can do this without an account or a saved recipe library. Read through the meals before deciding what needs changing."
       },
       {
-        "heading": "Minute 8-11: fill gaps with one or two fresh ideas",
-        "body": "Use your saved recipes or Foodedo’s meal catalogue to fill the remaining nights. Keep it simple and realistic."
+        "heading": "Minutes 8–11: change only what needs changing",
+        "body": "Swap suggestions that do not suit your evenings, open recipes to check their ingredients or method, and leave a day free when you will not cook. Keep meals that already look useful instead of replacing every suggestion."
       },
       {
-        "heading": "Minute 12-15: generate list and prep to shop",
-        "body": "Generate one shopping list from your planned meals, add household basics, and check your pantry before leaving."
+        "heading": "Minutes 12–15: save and prepare to shop",
+        "body": "Choose Save my plan. If you are a guest, sign in or create an account to keep it. Foodedo creates the linked shopping list automatically. Open Shopping, check what you already have, remove items you do not need and add everyday extras. Take more time if your week needs it."
       }
     ]
   },
@@ -119,20 +119,20 @@
     "indexExcerpt": "Avoid repeating the same meals with a simple weekly mix.",
     "sections": [
       {
-        "heading": "Use a weekly mix, not seven brand-new meals",
-        "body": "Aim for a simple mix each week: one quick meal, one comfort meal, one high-veg meal, and one flexible leftovers night."
+        "heading": "Start with a suggested mix",
+        "body": "Choose Plan my week and review the dinners Foodedo suggests. You do not need seven unfamiliar recipes: a mix of easy favourites and a few different meals is often more practical. Leave an evening free if it is for leftovers or eating out."
       },
       {
-        "heading": "Keep favourites, rotate one slot",
-        "body": "Do not replace everything at once. Keep your reliable favourites and rotate just one meal each week to build variety over time."
+        "heading": "Change one or two meals, not the whole week",
+        "body": "Keep suggestions that work and swap a meal where the week feels repetitive. Open the recipe to check its ingredients and method before choosing it. Small changes make variety easier to manage."
       },
       {
-        "heading": "Vary ingredients and prep style",
-        "body": "If meals feel repetitive, change one element like protein, side, or seasoning. Small swaps make a big difference."
+        "heading": "Look for different kinds of dinners",
+        "body": "Compare the recipes in your review: are they all similar dishes, or does the week offer a mix of ingredients and cooking styles? Choose a different meal through the swap options where you want a change. You do not have to rewrite recipe ingredients to get a different dinner."
       },
       {
-        "heading": "Review before you generate your shopping list",
-        "body": "Check your week for repeats before finalising. Then generate your list from the final plan so the shop reflects that variety."
+        "heading": "Save the mix and let Shopping follow",
+        "body": "Choose Save my plan when you are happy with the week, signing in if you are a guest. The shopping list is created automatically. Later swaps in the saved plan update its linked ingredients, so your shop stays connected to the dinners you intend to cook."
       }
     ]
   },
@@ -144,24 +144,24 @@
     "indexExcerpt": "Compare tools and see why connected planning + shopping is easier.",
     "sections": [
       {
-        "heading": "Recipe apps store ideas and instructions",
-        "body": "Recipe tools are great for saving meals and instructions. They help with ideas, but not always with choosing what to cook across a full week."
+        "heading": "Recipe apps help you find and keep ideas",
+        "body": "Recipes provide ingredients and cooking instructions. A collection can be useful, but having more recipes does not always make it easier to decide what to cook tonight or across a busy week."
       },
       {
-        "heading": "Meal planners decide what gets cooked this week",
-        "body": "Meal planning turns recipe ideas into a practical week. This is where you choose what happens on each day, especially on busy evenings."
+        "heading": "Meal planners help you make the dinner decision",
+        "body": "A meal plan turns ideas into dinners for particular days. Foodedo starts with suggestions: choose Plan my week, review the proposed meals and swap the ones that do not suit you. You can try that before creating an account or collecting recipes."
       },
       {
-        "heading": "Grocery list tools execute the plan",
-        "body": "A grocery list helps you buy what you need. It works best when it comes directly from your meal plan instead of a manual note."
+        "heading": "Shopping lists turn the decision into a shop",
+        "body": "A connected list uses the ingredients from your plan instead of making you copy each recipe into a note. In Foodedo, saving a plan creates its shopping list automatically, and changes to saved meals update the linked list."
       },
       {
-        "heading": "The easiest setup for most households",
-        "body": "Use one place that handles recipes, meal planning, and shopping together. That way, every part of the week supports the next step."
+        "heading": "Choose the sharing setup you actually need",
+        "body": "You can keep your saved plan and list private. If you want to cook or shop together, signed-in users can create a household and invite another person to join. Household and Private have separate plans and shopping lists; joining does not make everyone’s personal recipe library shared."
       },
       {
-        "heading": "What to do first if you are starting today",
-        "body": "Start by building a simple 5 to 7 meal plan, then generate your shopping list from it. You can improve variety and speed in later weeks."
+        "heading": "Try the decision before committing",
+        "body": "Start with Plan my week and review the suggestions as a guest. Choose Save my plan and sign in when you want to keep the week and use its shopping list. Then check your cupboards, remove items you already have and add any extras for your shop."
       }
     ]
   }
