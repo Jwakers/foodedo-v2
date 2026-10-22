@@ -30,6 +30,7 @@ import {
 import { analysisSnapshot } from "./lib/catalogueGeneration/catalogue";
 import {
   catalogueStatistics,
+  culinaryContentChanged,
   recipeFingerprint,
   validateGeneratedRecipe,
   normaliseRecipeText,
@@ -347,10 +348,25 @@ export const updateProposal = mutation({
   handler: async (ctx, args) => {
     await requireAdministrator(ctx);
     const p = await editable(ctx, args.proposalId, args.revision);
-    const { content, findings } = validateGeneratedRecipe(
-      args.content,
-      await analysisSnapshot(ctx, p._id),
-    );
+    const meals = await analysisSnapshot(ctx, p._id);
+    const { content, findings } = validateGeneratedRecipe(args.content, meals);
+    const keepCulinaryReview =
+      p.reviewedRevision === p.revision &&
+      !culinaryContentChanged(p.content, content);
+    // Recalculate deterministic checks (including title duplicates), while
+    // retaining the completed culinary findings for unchanged cooking content.
+    const previousChecks = validateGeneratedRecipe(p.content, meals).findings;
+    const retainedFindings = keepCulinaryReview
+      ? p.findings.filter(
+          (finding) =>
+            !previousChecks.some(
+              (check) =>
+                check.area === finding.area &&
+                check.message === finding.message &&
+                check.blocking === finding.blocking,
+            ),
+        )
+      : [];
     await removeImage(ctx, p);
     await ctx.db.patch(p._id, {
       content,
@@ -359,8 +375,8 @@ export const updateProposal = mutation({
       fingerprint: await recipeFingerprint(content),
       revision: p.revision + 1,
       status: "pending_review",
-      findings,
-      reviewedRevision: undefined,
+      findings: [...findings, ...retainedFindings].slice(0, 30),
+      reviewedRevision: keepCulinaryReview ? p.revision + 1 : undefined,
       approvedAt: undefined,
       approvedBy: undefined,
       approvedRevision: undefined,

@@ -28,6 +28,8 @@ jobs:
       - run: pnpm test:unit
       - run: pnpm test:convex
       - run: pnpm build:ios:web
+      - run: node scripts/check-blog-build.mjs native
       - run: pnpm build
+      - run: node scripts/check-blog-build.mjs web
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

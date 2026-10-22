@@ -266,7 +266,10 @@ test("editing invalidates culinary and image approvals; stale writes cannot over
   const revision = await admin.mutation(api.catalogueAdmin.updateProposal, {
     proposalId,
     revision: 1,
-    content: { ...content, description: "An edited meal." },
+    content: {
+      ...content,
+      steps: [...content.steps, { id: "extra", text: "Serve hot." }],
+    },
     tags,
   });
   expect(revision).toBe(2);
@@ -309,6 +312,122 @@ test("editing invalidates culinary and image approvals; stale writes cannot over
   expect(p?.revision).toBe(3);
   expect((await t.run((ctx) => ctx.db.get(runId)))?.status).toBe("failed");
 });
+test("cosmetic edits retain culinary findings and allow photography without a paid recheck", async () => {
+  const { t, admin } = setup();
+  const proposalId = await seedProposal(t);
+  const advice = {
+    area: "flavour",
+    message: "Taste before serving.",
+    blocking: false,
+  };
+  await t.run((ctx) => ctx.db.patch(proposalId, { findings: [advice] }));
+  await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId,
+    revision: 1,
+    content: {
+      ...content,
+      title: "Rustic lemon chickpea rice",
+      description: "A comforting rice dish.",
+    },
+    tags,
+  });
+  const proposal = await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId,
+  });
+  expect(proposal?.reviewedRevision).toBe(2);
+  expect(proposal?.findings).toContainEqual(advice);
+  const runId = await admin.mutation(api.catalogueAdmin.begin, {
+    operation: "image",
+    requestKey: "cosmetic-image",
+    proposalId,
+    expectedRevision: 2,
+  });
+  expect((await t.run((ctx) => ctx.db.get(runId)))?.operation).toBe("image");
+});
+
+test("cosmetic edits never grant a missing culinary review", async () => {
+  const { t, admin } = setup();
+  const proposalId = await seedProposal(t);
+  await t.run((ctx) =>
+    ctx.db.patch(proposalId, { reviewedRevision: undefined }),
+  );
+  await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId,
+    revision: 1,
+    content: { ...content, description: "A new description." },
+    tags,
+  });
+  expect(
+    (await t.run((ctx) => ctx.db.get(proposalId)))?.reviewedRevision,
+  ).toBeUndefined();
+});
+
+test("renaming to an existing title blocks approval even when culinary review is retained", async () => {
+  const { t, admin } = setup();
+  const proposalId = await seedProposal(t);
+  await seedProposal(t, "Another rice dish");
+  await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId,
+    revision: 1,
+    content: { ...content, title: "Another rice dish" },
+    tags,
+  });
+  await expect(
+    admin.mutation(api.catalogueAdmin.begin, {
+      operation: "image",
+      requestKey: "duplicate-title",
+      proposalId,
+      expectedRevision: 2,
+    }),
+  ).rejects.toThrow();
+  expect((await t.run((ctx) => ctx.db.get(proposalId)))?.findings).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ area: "duplicate", blocking: true }),
+    ]),
+  );
+  await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId,
+    revision: 2,
+    content: { ...content, title: "A unique rice dish" },
+    tags,
+  });
+  const proposal = await t.run((ctx) => ctx.db.get(proposalId));
+  expect(proposal?.reviewedRevision).toBe(3);
+  expect(proposal?.findings).not.toEqual(
+    expect.arrayContaining([expect.objectContaining({ area: "duplicate" })]),
+  );
+});
+
+test.each([
+  [
+    "ingredients",
+    {
+      ingredients: content.ingredients.map((line) => ({
+        ...line,
+        quantity: "300",
+      })),
+    },
+  ],
+  [
+    "method",
+    { steps: [...content.steps, { id: "serve", text: "Serve hot." }] },
+  ],
+  ["servings", { servings: 2 }],
+  ["timing", { cookMinutes: 25 }],
+])("%s edits require a new culinary review", async (_, changes) => {
+  const { t, admin } = setup();
+  const proposalId = await seedProposal(t);
+  await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId,
+    revision: 1,
+    content: { ...content, ...changes },
+    tags,
+  });
+  expect(
+    (await t.run((ctx) => ctx.db.get(proposalId)))?.reviewedRevision,
+  ).toBeUndefined();
+});
+
 test("blocking culinary findings prevent text approval", async () => {
   const { t, admin } = setup();
   const proposalId = await seedProposal(t);

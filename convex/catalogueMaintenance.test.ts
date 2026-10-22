@@ -347,7 +347,7 @@ test("failed maintenance and draft deletion leave the current recipe and image i
   ).not.toBeNull();
 });
 
-test("editing an image-only proposal invalidates the inherited text approval", async () => {
+test("changing cooking content in an image-only proposal invalidates inherited text approval", async () => {
   const { t, admin, mealId } = await setup();
   const started = await admin.mutation(api.catalogueMaintenance.start, {
     mealId,
@@ -361,7 +361,7 @@ test("editing an image-only proposal invalidates the inherited text approval", a
   const revision = await admin.mutation(api.catalogueAdmin.updateProposal, {
     proposalId: proposal._id,
     revision: 1,
-    content: { ...content, description: "Edited" },
+    content: { ...content, cookMinutes: 30 },
     tags: proposal.tags,
   });
   const updated = (await admin.query(api.catalogueAdmin.getProposal, {

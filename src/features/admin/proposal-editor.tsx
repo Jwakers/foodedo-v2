@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import Image from "next/image";
 import { api } from "../../../convex/_generated/api";
+import { culinaryContentChanged } from "@/lib/domain/catalogue-generation";
 import { Button } from "@/components/ui/button";
 import { EditorField } from "@/features/recipes/recipe-editor-fields";
 import {
@@ -231,16 +232,22 @@ export function ProposalEditor({
                 <Button
                   disabled={busy || !dirty || conflict || sourceStale}
                   onClick={() =>
-                    perform(async () => {
-                      const revision = await update({
-                        proposalId: p._id,
-                        revision: baseline.revision,
-                        content,
-                        tags,
-                      });
-                      setBaseline({ ...p, revision, content, tags });
-                      setEditing(false);
-                    }, "Changes saved. Run culinary review before approving.")
+                    perform(
+                      async () => {
+                        const revision = await update({
+                          proposalId: p._id,
+                          revision: baseline.revision,
+                          content,
+                          tags,
+                        });
+                        setBaseline({ ...p, revision, content, tags });
+                        setEditing(false);
+                      },
+                      p.reviewedRevision === p.revision &&
+                        !culinaryContentChanged(p.content, content)
+                        ? "Changes saved. Culinary review retained."
+                        : "Changes saved. Run culinary review before approving.",
+                    )
                   }
                 >
                   Save changes

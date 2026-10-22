@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import type { ReactNode } from "react";
-import { AppProviders } from "@/components/app-providers";
-import { AppShell } from "@/components/app-shell";
 import { foodedoColors } from "@/lib/design-system/tokens";
 import { cn } from "@/lib/utils/cn";
 import "./globals.css";
@@ -56,9 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       )}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <AppProviders>
-          <AppShell>{children}</AppShell>
-        </AppProviders>
+        {children}
       </body>
     </html>
   );

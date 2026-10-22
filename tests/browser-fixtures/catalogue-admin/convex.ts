@@ -1,3 +1,4 @@
+import { culinaryContentChanged } from "../../../src/lib/domain/catalogue-generation";
 import { generationConfig } from "../../../convex/lib/catalogueGeneration/config";
 import { useSyncExternalStore } from "react";
 import { prepareRecipeContent } from "../../../src/lib/domain/recipes";
@@ -297,7 +298,14 @@ export function useMutation(reference: FunctionReference<"mutation">) {
         content: prepareRecipeContent(args.content as typeof content),
         tags: args.tags as NonNullable<typeof proposal>["tags"],
         revision: proposal.revision + 1,
-        reviewedRevision: undefined,
+        reviewedRevision:
+          proposal.reviewedRevision === proposal.revision &&
+          !culinaryContentChanged(
+            proposal.content,
+            args.content as typeof content,
+          )
+            ? proposal.revision + 1
+            : undefined,
         status: "pending_review",
         imageUrl: null,
       };

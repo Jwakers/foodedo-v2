@@ -21,6 +21,14 @@ const convexStoragePattern = new URL(
 );
 
 const nextConfig: NextConfig = {
+  // Only the web build discovers editorial entrypoints and its live sitemap.
+  pageExtensions: [
+    ...(isCapacitorBuild ? ["native.tsx", "native.ts"] : ["web.tsx", "web.ts"]),
+    "tsx",
+    "ts",
+    "jsx",
+    "js",
+  ],
   env: {
     NEXT_PUBLIC_CAPACITOR_BUILD: String(isCapacitorBuild),
   },
@@ -37,7 +45,14 @@ const nextConfig: NextConfig = {
       }
     : {}),
   images: {
-    remotePatterns: [convexStoragePattern],
+    remotePatterns: [
+      convexStoragePattern,
+      {
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        pathname: `/images/${process.env.SANITY_PROJECT_ID?.trim() || "i8ook8b1"}/${process.env.SANITY_DATASET?.trim() || "production"}/**`,
+      },
+    ],
     ...(isCapacitorBuild ? { unoptimized: true } : {}),
   },
   ...(isCapacitorBuild

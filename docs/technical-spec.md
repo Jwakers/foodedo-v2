@@ -30,6 +30,7 @@ Authoritative product writing:
 | Quality         | ESLint (`eslint-config-next` + Prettier), `tsc --noEmit`     |
 | CI              | Format, lint, typecheck, both builds, Chromium web smoke     |
 | Hosting (web)   | Vercel (when deployed)                                       |
+| Editorial blog  | Existing Sanity CMS, public read-only integration, web only  |
 
 The original shell and auth foundations are complete. The recipe kernel adds private authenticated persistence, platform-independent recipe contracts, and a guest-visible standard catalogue with an authenticated save proof. It does not add manual recipe management, taxonomy, publishing, shadcn, or Android. Static export is used only for the native bundle; it is not the Vercel deployment mode.
 
@@ -57,7 +58,9 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Household MVP:** independent Household/Private plans, lists and history, link invitations, collaboration and retained final-member closure. See [Household MVP](./household-mvp.md).
 
-**Not initial build:** subscriptions, premium meal delivery, ads, CMS, social.
+**Web blog — implemented:** `/blog` and `/blog/[slug]` reuse the existing Sanity CMS with published-only reads, plus six preserved local guides. Editorial routes have an independent server-rendered layout, a guest-first Try Foodedo action, article metadata and a live sitemap. They are excluded from the Capacitor export. No CMS schema or backend migration is involved. See [Web blog](./blog.md).
+
+**Not initial build:** subscriptions, premium meal delivery, ads, a new CMS/editor, social.
 
 ## 4. Architecture philosophy
 
@@ -74,7 +77,7 @@ Convex is the backend: queries/mutations/actions, indexes, custom authenticated 
 
 Personal recipes are private snapshots. Catalogue content, future publications, and canonical ingredient enrichment remain separate layers; see [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md). Import processing runs in Convex Node actions rather than Next.js Route Handlers or Server Actions, preserving the static native route contract.
 
-Detail and Cook use client-hydrated static shells: catalogue content uses `/recipes/view?slug=…` and `/recipes/cook?slug=…&servings=…`; owner-scoped personal content uses the same routes with `recipeId`. Cook session schema version 3 invalidates the retired method-variant session shape. `/recipes/edit?recipeId=…` provides the imported-recipe correction surface. A catalogue slug is distinct from the stable identity used by plans and saved snapshots. Convex is the sole runtime recipe source, so neither web nor Capacitor bundles embed meals or images. Next.js generates `/sitemap.xml` at build time from a public catalogue query; scheduled deployments may refresh it when meals change. Per-recipe SSR, rich metadata, and pretty web-only URLs remain deferred. See [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
+Detail and Cook use client-hydrated static shells: catalogue content uses `/recipes/view?slug=…` and `/recipes/cook?slug=…&servings=…`; owner-scoped personal content uses the same routes with `recipeId`. Cook session schema version 3 invalidates the retired method-variant session shape. `/recipes/edit?recipeId=…` provides the imported-recipe correction surface. A catalogue slug is distinct from the stable identity used by plans and saved snapshots. Convex is the sole runtime recipe source, so neither web nor Capacitor bundles embed meals or images. The native build generates `/sitemap.xml` at build time from a public catalogue query. The web sitemap combines that query with the blog and revalidates every 60 seconds on demand. Per-recipe SSR, rich metadata, and pretty web-only URLs remain deferred. See [recipes-and-ingredients.md](../knowledge/architecture/recipes-and-ingredients.md).
 
 Meal-plan hydration treats plan/slot identity as durable even if a recipe reference is unexpectedly unavailable: the affected slot is returned as unavailable and the rest of the plan remains usable. Future recipe deletion must preserve referential integrity transactionally.
 
@@ -119,7 +122,9 @@ Do not touch `/Users/jackwakeham/Documents/Projects/foodedo` (V1), `foodedo-cms`
 ## 9. Folder conventions
 
 ```
-src/app/                 App Router routes (`/`, `/recipes`, `/recipes/import`, `/recipes/view`, `/recipes/cook`, `/shop`)
+src/app/                 Shared root fonts, metadata and platform sitemap handlers
+src/app/(product)/       Existing app routes and Clerk/Convex/AppShell layout
+src/app/(editorial)/     Web-only blog routes and independent reading layout
 src/components/          Shared UI later
 src/features/            Job modules later
 src/lib/domain/          Platform-independent logic

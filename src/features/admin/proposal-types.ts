@@ -27,7 +27,7 @@ export function getReviewGuidance(proposal: Proposal, editing: boolean) {
     return {
       heading: "Edit recipe",
       description:
-        "Saving changes requires a new culinary review and a new photograph before publication.",
+        "Title, description and classification edits keep an existing culinary review. Changes to ingredients, method, cooking notes, servings, timings or oven settings need a new review. Saving clears any photograph approval.",
     };
   if (
     proposal.maintenanceMode === "image" &&

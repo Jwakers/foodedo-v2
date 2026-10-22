@@ -210,19 +210,41 @@ export function validateGeneratedRecipe(
     );
   return { content, findings };
 }
+const canonical = (value: unknown): unknown =>
+  Array.isArray(value)
+    ? value.map(canonical)
+    : value && typeof value === "object"
+      ? Object.fromEntries(
+          Object.entries(value)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, item]) => [key, canonical(item)]),
+        )
+      : value;
+
+// Cosmetic/editorial fields do not change how a recipe is cooked. Keep the
+// remaining content in this comparison so new cooking fields default to review.
+export function culinaryContentChanged(
+  previous: RecipeContent,
+  next: RecipeContent,
+) {
+  const cookingContent = (input: RecipeContent) => {
+    return JSON.stringify(
+      canonical({
+        ...input,
+        title: undefined,
+        description: undefined,
+        proteinCategory: undefined,
+        costBand: undefined,
+        servingScaling: undefined,
+      }),
+    );
+  };
+  return cookingContent(previous) !== cookingContent(next);
+}
+
 export async function recipeFingerprint(content: RecipeContent) {
   // Fixed preparation and explicit ordering make fingerprints independent of object key order.
   const prepared = prepareRecipeContent(content);
-  const canonical = (value: unknown): unknown =>
-    Array.isArray(value)
-      ? value.map(canonical)
-      : value && typeof value === "object"
-        ? Object.fromEntries(
-            Object.entries(value)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([key, item]) => [key, canonical(item)]),
-          )
-        : value;
   const hash = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(JSON.stringify(canonical(prepared))),

@@ -3,9 +3,25 @@
 import { useHomeEntryState } from "@/components/use-home-entry-state";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Welcome } from "@/features/welcome/welcome";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { enterGuestExperience } from "@/components/use-welcome-session";
 
 export function HomeEntry() {
   const state = useHomeEntryState();
+  const guestEntry = useSearchParams().get("try") === "1";
+
+  useEffect(() => {
+    if (!guestEntry) return;
+    enterGuestExperience();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("try");
+    window.history.replaceState(
+      null,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [guestEntry]);
 
   if (state === "loading") {
     return (
@@ -17,7 +33,7 @@ export function HomeEntry() {
     );
   }
 
-  if (state === "welcome") {
+  if (state === "welcome" && !guestEntry) {
     return <Welcome />;
   }
 

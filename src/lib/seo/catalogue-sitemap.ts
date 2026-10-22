@@ -1,14 +1,11 @@
 import { ConvexHttpClient } from "convex/browser";
 import type { MetadataRoute } from "next";
 
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
+import { siteUrl as canonicalSiteUrl } from "./site-url";
 
-const defaultSiteUrl = "https://foodedo.com";
-
-export const dynamic = "force-static";
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = new URL(process.env.SITE_URL?.trim() || defaultSiteUrl);
+export async function catalogueSitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteUrl = new URL(canonicalSiteUrl());
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.trim();
   if (!convexUrl) {
     throw new Error("NEXT_PUBLIC_CONVEX_URL is required to build the sitemap.");

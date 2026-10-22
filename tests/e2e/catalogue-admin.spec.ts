@@ -71,6 +71,7 @@ test("editorial UI supports generation, editing, culinary review and both approv
   await page
     .getByLabel("Title", { exact: true })
     .fill("Lemon chickpea rice bowl");
+  await page.getByLabel("Cook minutes", { exact: true }).fill("25");
   await expect(
     page.getByRole("button", { name: "Approve recipe and generate image" }),
   ).toHaveCount(0);
@@ -281,6 +282,42 @@ for (const width of [320, 390, 1280]) {
     });
   });
 }
+
+test("title and description edits preserve review and leave photography available", async ({
+  page,
+}) => {
+  await page.goto("https://editorial.fixture/");
+  await page.getByRole("button", { name: "Trigger new recipe" }).click();
+  await page.getByRole("button", { name: /^Lemon chickpea rice/ }).click();
+  await page.getByRole("button", { name: "Edit recipe", exact: true }).click();
+  await page
+    .getByLabel("Title", { exact: true })
+    .fill("Rustic lemon chickpea rice");
+  await page
+    .getByRole("textbox", { name: "Description", exact: true })
+    .fill("A comforting rice dish.");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "Culinary review retained.",
+  );
+  await expect(
+    page.getByRole("button", { name: "Run culinary review" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Approve recipe and generate image" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Edit recipe", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Title", exact: true })
+    .fill("Rustic lemon rice");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "Culinary review retained.",
+  );
+  await expect(
+    page.getByRole("button", { name: "Approve recipe and generate image" }),
+  ).toBeEnabled();
+});
 
 test("failed saves retain edits and allow a safe retry", async ({ page }) => {
   await page.goto("https://editorial.fixture/?fail=update");

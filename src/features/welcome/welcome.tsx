@@ -3,6 +3,7 @@
 import { SignInButton } from "@clerk/react";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,14 @@ export function Welcome() {
         <p className="text-center text-12 leading-4 text-graphite">
           Try Foodedo now. Save everything later.
         </p>
+        {process.env.NEXT_PUBLIC_CAPACITOR_BUILD !== "true" ? (
+          <Link
+            href="/blog"
+            className="inline-flex min-h-11 items-center justify-center text-14 text-graphite underline underline-offset-4 focus-visible:outline-cadmium"
+          >
+            Blog
+          </Link>
+        ) : null}
       </div>
     </main>
   );
