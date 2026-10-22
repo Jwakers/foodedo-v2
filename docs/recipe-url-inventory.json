@@ -493,7 +493,7 @@
       "path": "/discover/recipe/cottage-pie",
       "legacyV1RecipeId": "j57awyx0r26fyj7jnepfn48g6h8dz0q4",
       "reason": "Explicitly removed in the reviewed V1-to-V2 catalogue migration because of its missing image. No confirmed replacement provenance for classic-cottage-pie-with-peas.",
-      "evidence": "docs/catalogue-migration.md; local migration decisions.json records decision=remove for this V1 ID."
+      "evidence": "Completed catalogue review recorded decision=remove for this V1 ID because its image was missing."
     }
   ]
 }

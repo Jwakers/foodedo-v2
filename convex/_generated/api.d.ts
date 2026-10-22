@@ -12,7 +12,6 @@ import type * as catalogue from "../catalogue.js";
 import type * as catalogueAdmin from "../catalogueAdmin.js";
 import type * as catalogueGenerationActions from "../catalogueGenerationActions.js";
 import type * as catalogueMaintenance from "../catalogueMaintenance.js";
-import type * as catalogueMigration from "../catalogueMigration.js";
 import type * as crons from "../crons.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
@@ -63,7 +62,6 @@ declare const fullApi: ApiFromModules<{
   catalogueAdmin: typeof catalogueAdmin;
   catalogueGenerationActions: typeof catalogueGenerationActions;
   catalogueMaintenance: typeof catalogueMaintenance;
-  catalogueMigration: typeof catalogueMigration;
   crons: typeof crons;
   households: typeof households;
   http: typeof http;
