@@ -1,6 +1,6 @@
 # Household MVP
 
-Household and Private are independent plan-and-shopping spaces. Members default to Household when joining or creating, then their deliberate selection is remembered per Clerk account, household and device. It follows Home, Week, Shop, plan generation, adjustments and history. Personal recipe libraries and planning preferences always belong to the acting account.
+Household and Private are independent plan-and-shopping spaces. Members default to Household when joining or creating, then their deliberate selection is remembered per Clerk account, household and device. It follows Home, Week, Shop, plan generation, adjustments and history. Personal recipe libraries and usual planning settings remain account-owned. Household planning aggregates every current member’s saved catalogue favourites, while the initiating account controls plan length, servings and the use-favourites switch. See [meal selection](../knowledge/architecture/meal-selection.md).
 
 Reviewed designs: [Foodedo V2 — Household](https://app.paper.design/file/01M0FD2K4HNTJZ5MET5T0CNYP7/p-2-0).
 
@@ -14,7 +14,7 @@ Week and Shopping use the same responsive header layout and fixed 120×44px cont
 
 Existing `ownerId` fields on plans, slots, lists, items and recipe snapshots now accept a typed `users` **or** `households` ID. This preserves existing personal data and indexes without backfilling rows or conflating a creator with shared ownership. `requireSpace` derives the private user from Convex authentication, or validates current membership and an open household for the supplied household ID. List/item/slot/recipe checks retain the same owner throughout. Personal recipe writes still require that account's user ID. Shared recipe reads validate membership independently of the selected UI context.
 
-Creating a household copies the active private plan, referenced recipe snapshots and linked shopping state, including manual extras, checks and removals. Private history and original content are untouched. Household recipe snapshots have no private-library membership and are independently retained. Generation can copy recipes from the acting member's library but never references those private originals from a shared plan.
+Creating a household copies the active private plan, referenced recipe snapshots and linked shopping state, including manual extras, checks and removals. Private history and original content are untouched. Household recipe snapshots have no private-library membership and are independently retained. Automatic Household selection uses current catalogue meals and already-shared recipe snapshots. It does not automatically expose members’ private imports. Explicit recipe sharing copies snapshots rather than referencing mutable private originals. Individual meal rejections and accepted-plan outcomes are recorded in their own space; whole-week changes are not inferred dislikes.
 
 The copied shopping list is reconciled against the copied recipes so obsolete source references cannot break creation or leave stale ingredients in the shared list. This reconciliation does not mutate the private list. Saved-recipe links work in both contexts; signed-out recipe and Cook links offer sign-in recovery before accessing account data.
 

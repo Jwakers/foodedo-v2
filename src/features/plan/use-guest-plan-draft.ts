@@ -1,5 +1,11 @@
 "use client";
 
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { useHouseholdSpace } from "@/features/household/household-context";
+import { fallbackPrePlanSetup, usePrePlanSetup } from "./use-pre-plan-setup";
+import type { MealPreferenceSignals } from "@/lib/domain/meal-selection-signals";
 import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -44,7 +50,8 @@ export type GuestPlanDraftState =
     };
 
 type GuestDraftCatalogueSelection = {
-  meals: CatalogueMealSummary[];
+  meals: (CatalogueMealSummary &
+    MealPreferenceSignals & { isSaved?: boolean })[];
   readableMeals: CatalogueMealSummary[];
 };
 
@@ -56,6 +63,9 @@ export function toGuestCatalogueContract(
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
       proteinCategory: meal.proteinCategory,
+      isSaved: meal.isSaved,
+      savedByMemberKeys: meal.savedByMemberKeys,
+      dismissalCount: meal.dismissalCount,
     })),
     readableMeals: selection.readableMeals.map((meal) => ({
       catalogueMealId: meal.id,
@@ -222,6 +232,18 @@ export function useGuestDraftCatalogue(storeKey?: string): {
   refreshStoredReferences: () => Promise<void>;
 } {
   const currentCatalogue = useCurrentCatalogue();
+  const { isAuthenticated } = useFoodedoAuth();
+  const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
+  const selectionSignals = useQuery(
+    api.mealPlans.getCatalogueSelectionSignals,
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
+  );
+  const preferences = useQuery(
+    api.planningPreferences.getCurrent,
+    isAuthenticated ? {} : "skip",
+  );
+  const { setup } = usePrePlanSetup(fallbackPrePlanSetup(preferences));
+
   const [storedReferences, setStoredReferences] = useState<
     | Awaited<ReturnType<typeof readStoredGuestPlanDraftMealReferences>>
     | undefined
@@ -260,15 +282,38 @@ export function useGuestDraftCatalogue(storeKey?: string): {
   const pinnedMeals = useCatalogueMeals(storedReferences ?? null);
 
   const catalogue = useMemo(() => {
-    if (storedReferences === undefined || currentCatalogue === undefined) {
+    if (
+      storedReferences === undefined ||
+      currentCatalogue === undefined ||
+      (isAuthenticated &&
+        (!spaceReady ||
+          selectionSignals === undefined ||
+          preferences === undefined))
+    ) {
       return undefined;
     }
     if (storedReferences !== null && pinnedMeals === undefined)
       return undefined;
     if (currentCatalogue === null && storedReferences === null) return null;
 
-    const currentMeals = currentCatalogue?.meals ?? [];
-    const readableByReference = new Map(
+    const signalsById = new Map(
+      (selectionSignals ?? []).map((signal) => [
+        signal.catalogueMealId,
+        signal,
+      ]),
+    );
+    const currentMeals = (currentCatalogue?.meals ?? []).map((meal) => {
+      const signal = signalsById.get(meal.id);
+      return {
+        ...meal,
+        isSaved: setup.prioritiseSavedRecipes && (signal?.isSaved ?? false),
+        savedByMemberKeys: setup.prioritiseSavedRecipes
+          ? signal?.savedByMemberKeys
+          : [],
+        dismissalCount: signal?.dismissalCount,
+      };
+    });
+    const readableByReference = new Map<string, CatalogueMealSummary>(
       currentMeals.map((meal) => [`${meal.id}:${meal.version}`, meal] as const),
     );
     for (const meal of pinnedMeals ?? []) {
@@ -278,7 +323,16 @@ export function useGuestDraftCatalogue(storeKey?: string): {
       meals: currentMeals,
       readableMeals: [...readableByReference.values()],
     };
-  }, [currentCatalogue, pinnedMeals, storedReferences]);
+  }, [
+    currentCatalogue,
+    pinnedMeals,
+    storedReferences,
+    selectionSignals,
+    preferences,
+    isAuthenticated,
+    spaceReady,
+    setup.prioritiseSavedRecipes,
+  ]);
 
   return { catalogue, refreshStoredReferences };
 }

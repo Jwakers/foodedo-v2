@@ -80,8 +80,8 @@ export function usePlanThisMeal({
     isAuthenticated ? {} : "skip",
   );
   const savedCatalogueMeals = useQuery(
-    api.recipes.listSavedCatalogueMeals,
-    isAuthenticated ? {} : "skip",
+    api.mealPlans.getCatalogueSelectionSignals,
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const planSavedMeal = useMutation(api.mealPlans.planMeal);
   const addSavedPlanDay = useMutation(api.mealPlans.addPlanDay);
@@ -181,8 +181,11 @@ export function usePlanThisMeal({
       planStartDate: setup.startDate,
       planDays: setup.planDays,
       servings: setup.servings,
+      selectionSignals: savedCatalogueMeals ?? [],
       preferredCatalogueMealIds: setup.prioritiseSavedRecipes
-        ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
+        ? (savedCatalogueMeals ?? [])
+            .filter((meal) => meal.isSaved)
+            .map((meal) => meal.catalogueMealId)
         : [],
     });
     await refreshStoredReferences();

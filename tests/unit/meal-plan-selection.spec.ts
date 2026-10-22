@@ -170,3 +170,158 @@ test("ignores history older than the bounded four-plan memory", () => {
     ]),
   );
 });
+
+test("shared favourites beat individual favourites and duplicate member keys are not extra votes", () => {
+  const pool: MealSelectionCandidate[] = [
+    {
+      key: "shared",
+      proteinCategory: "chicken",
+      isSaved: true,
+      savedByMemberKeys: ["a", "b"],
+    },
+    {
+      key: "solo",
+      proteinCategory: "chicken",
+      isSaved: true,
+      savedByMemberKeys: ["a", "a", "a"],
+    },
+  ];
+  const [first, second] = select(
+    { numberOfMeals: 2, prioritiseSavedRecipes: true },
+    pool,
+  );
+  expect(first!.candidateKey).toBe("shared");
+  expect(first!.contributions).toContainEqual({
+    ruleId: "household-consensus",
+    score: 10,
+    reasonCode: "shared_household_favourite",
+  });
+  expect(
+    second!.contributions.some((rule) => rule.ruleId === "household-consensus"),
+  ).toBe(false);
+});
+
+test("a large saved library does not crowd out another member's favourites", () => {
+  const pool: MealSelectionCandidate[] = Array.from({ length: 30 }, (_, i) => ({
+    key: `a-${i}`,
+    proteinCategory: "chicken",
+    isSaved: true,
+    savedByMemberKeys: ["a"],
+  }));
+  pool.push({
+    key: "b-only",
+    proteinCategory: "chicken",
+    isSaved: true,
+    savedByMemberKeys: ["b"],
+  });
+  for (let i = 0; i < 20; i++) {
+    const decisions = select(
+      {
+        numberOfMeals: 7,
+        prioritiseSavedRecipes: true,
+        variationKey: `balanced-${i}`,
+      },
+      pool,
+    );
+    expect(decisions.slice(0, 2).map((d) => d.candidateKey)).toContain(
+      "b-only",
+    );
+  }
+});
+
+test("dismissal is a small capped penalty and never excludes a meal", () => {
+  const pool: MealSelectionCandidate[] = [
+    {
+      key: "dismissed",
+      proteinCategory: "chicken",
+      isSaved: false,
+      dismissalCount: 100,
+    },
+    { key: "fresh", proteinCategory: "chicken", isSaved: false },
+  ];
+  const decisions = select({ numberOfMeals: 3 }, pool);
+  expect(decisions[0]!.candidateKey).toBe("fresh");
+  const dismissed = decisions.find((d) => d.candidateKey === "dismissed")!;
+  expect(dismissed.contributions).toContainEqual({
+    ruleId: "dismissal-feedback",
+    score: -18,
+    reasonCode: "previously_dismissed",
+  });
+  expect(decisions).toHaveLength(3);
+});
+
+test("switching saved preference off disables both household rules, but keeps rejection feedback", () => {
+  const [decision] = select({ numberOfMeals: 1 }, [
+    {
+      key: "only",
+      proteinCategory: "chicken",
+      isSaved: true,
+      savedByMemberKeys: ["a", "b"],
+      dismissalCount: 1,
+    },
+  ]);
+  expect(decision!.contributions.map((c) => c.ruleId)).toEqual([
+    "dismissal-feedback",
+    "new-protein-category",
+  ]);
+});
+
+test("recent-meal memory can outweigh a shared favourite", () => {
+  const [decision] = select(
+    {
+      numberOfMeals: 1,
+      prioritiseSavedRecipes: true,
+      recentPlans: [
+        { candidateKeys: ["shared"], proteinCategories: ["chicken"] },
+      ],
+    },
+    [
+      {
+        key: "shared",
+        proteinCategory: "chicken",
+        isSaved: true,
+        savedByMemberKeys: ["a", "b"],
+      },
+      { key: "fresh", proteinCategory: "chicken", isSaved: false },
+    ],
+  );
+  expect(decision!.candidateKey).toBe("fresh");
+});
+
+test("single-meal choices balance the meals already staying in the plan", () => {
+  const retained: MealSelectionCandidate = {
+    key: "retained-a",
+    proteinCategory: "chicken",
+    isSaved: true,
+    savedByMemberKeys: ["a"],
+  };
+  const decisions = select(
+    {
+      numberOfMeals: 1,
+      prioritiseSavedRecipes: true,
+      retainedCandidates: [retained, retained],
+    },
+    [
+      {
+        key: "another-a",
+        proteinCategory: "chicken",
+        isSaved: true,
+        savedByMemberKeys: ["a"],
+      },
+      {
+        key: "first-b",
+        proteinCategory: "chicken",
+        isSaved: true,
+        savedByMemberKeys: ["b"],
+      },
+    ],
+  );
+  expect(decisions.map((decision) => decision.candidateKey)).toEqual([
+    "first-b",
+  ]);
+  expect(
+    decisions[0]!.contributions.some(
+      (rule) => rule.ruleId === "new-protein-category",
+    ),
+  ).toBe(false);
+});

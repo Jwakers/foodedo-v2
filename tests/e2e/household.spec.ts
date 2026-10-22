@@ -99,6 +99,38 @@ test("joining survives the membership remount, opens Our week and lets the logo 
   ).toHaveCount(0);
 });
 
+test("starting next week uses household favourites before usual settings have been saved", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2030-11-01T12:00:00.001Z"));
+  await page.addInitScript(() =>
+    sessionStorage.setItem("fixture:selection-signals", "enabled"),
+  );
+  await page.goto("https://household.fixture/week?screen=week-page");
+  await page.getByRole("button", { name: /Start next plan/ }).click();
+  await expect(page).toHaveURL("https://household.fixture/week/new");
+  const firstMeal = await page.evaluate(
+    () =>
+      new Promise<string | null>((resolve, reject) => {
+        const open = indexedDB.open("foodedo");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const database = open.result;
+          const request = database
+            .transaction("guest-drafts", "readonly")
+            .objectStore("guest-drafts")
+            .getAll();
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            database.close();
+            resolve(request.result[0]?.mealChoices[0]?.catalogueMealId ?? null);
+          };
+        };
+      }),
+  );
+  expect(firstMeal).toBe("family-meal");
+});
+
 test("an existing member can leave an old invite through the logo without getting redirected back", async ({
   page,
 }) => {

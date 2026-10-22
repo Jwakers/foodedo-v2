@@ -192,6 +192,7 @@ export default defineSchema({
     .index("by_status_and_slug", ["status", "slug"]),
   recipes: defineTable({
     ownerId: spaceOwner,
+    selectionKey: v.optional(v.string()),
     ...recipeContentFields,
     imageStorageId: v.optional(v.id("_storage")),
     source: recipeSourceValidator,
@@ -259,6 +260,18 @@ export default defineSchema({
       "status",
       "updatedAt",
     ]),
+  mealSelectionFeedback: defineTable({
+    ownerId: spaceOwner,
+    actorId: v.id("users"),
+    mealPlanId: v.id("mealPlans"),
+    date: v.string(),
+    candidateKey: v.string(),
+    outcome: v.union(v.literal("kept"), v.literal("dismissed")),
+    updatedAt: v.number(),
+  })
+    .index("by_plan_date_candidate", ["mealPlanId", "date", "candidateKey"])
+    .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
+    .index("by_actor", ["actorId"]),
   mealSlots: defineTable({
     mealPlanId: v.id("mealPlans"),
     ownerId: spaceOwner,

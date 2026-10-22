@@ -1,6 +1,11 @@
 import type { ProteinCategory } from "./recipes";
+import {
+  dismissalPenalty,
+  uniqueSavingMembers,
+  type MealPreferenceSignals,
+} from "./meal-selection-signals";
 
-export type MealSelectionCandidate = {
+export type MealSelectionCandidate = MealPreferenceSignals & {
   key: string;
   proteinCategory: ProteinCategory;
   isSaved: boolean;
@@ -16,6 +21,8 @@ export const MAXIMUM_MEAL_SELECTION_HISTORY_PLANS = 4;
 
 export type MealSelectionRequest = {
   numberOfMeals: number;
+  /** Meals staying in this plan: context for scoring, not new selections. */
+  retainedCandidates?: readonly MealSelectionCandidate[];
   excludedCandidateKeys?: readonly string[];
   recentPlans?: readonly RecentMealSelectionPlan[];
   prioritiseSavedRecipes: boolean;
@@ -65,6 +72,42 @@ export const firstPassMealSelectionRules: readonly MealSelectionRule[] = [
             reasonCode: "saved_recipe_preferred",
           }
         : null,
+  },
+  {
+    id: "household-consensus",
+    evaluate: ({ candidate, request }) => {
+      const count = uniqueSavingMembers(candidate).length;
+      return request.prioritiseSavedRecipes && count > 1
+        ? {
+            score: Math.min(count - 1, 2) * 10,
+            reasonCode: "shared_household_favourite",
+          }
+        : null;
+    },
+  },
+  {
+    id: "household-balance",
+    evaluate: ({ candidate, selected, request }) => {
+      const members = uniqueSavingMembers(candidate);
+      if (!request.prioritiseSavedRecipes || members.length === 0) return null;
+      const represented = selected.map(uniqueSavingMembers);
+      const score =
+        members.reduce(
+          (sum, member) =>
+            sum +
+            12 /
+              (1 + represented.filter((keys) => keys.includes(member)).length),
+          0,
+        ) / members.length;
+      return { score, reasonCode: "balances_member_favourites" };
+    },
+  },
+  {
+    id: "dismissal-feedback",
+    evaluate: ({ candidate }) => {
+      const score = dismissalPenalty(candidate.dismissalCount);
+      return score === 0 ? null : { score, reasonCode: "previously_dismissed" };
+    },
   },
   {
     id: "new-protein-category",
@@ -165,11 +208,15 @@ export function selectMealPlanCandidates(
     const pool = available.length > 0 ? available : unselected;
     const repeatRequired = pool.length === 0;
     const rankedPool = repeatRequired ? candidates : pool;
+    const scoringSelection = [
+      ...(request.retainedCandidates ?? []),
+      ...selected,
+    ];
     const ranked = rankedPool.map((candidate) => {
       const contributions = rules.flatMap((rule) => {
         const contribution = rule.evaluate({
           candidate,
-          selected,
+          selected: scoringSelection,
           request: normalizedRequest,
           repeatRequired,
         });

@@ -420,7 +420,15 @@ test("serves the published catalogue sitemap", async ({ request }) => {
   expect(xml.match(/<url>/g)?.length).toBeGreaterThan(0);
   expect(xml).toContain("<urlset");
   expect(xml).toContain("/recipes/");
-  expect(xml).toContain("/recipes/chicken-fajitas");
+  const recipeUrl = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
+    .map((match) => new URL(match[1]!))
+    .find((url) => url.pathname.startsWith("/recipes/"));
+  expect(
+    recipeUrl,
+    "The sitemap should include a published recipe",
+  ).toBeDefined();
+  const recipe = await request.get(recipeUrl!.pathname);
+  expect(recipe.ok()).toBeTruthy();
   expect(xml).not.toContain("/recipes/cook");
 });
 

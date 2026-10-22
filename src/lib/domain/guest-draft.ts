@@ -4,6 +4,7 @@ import {
   type CatalogueMealReference,
   type ProteinCategory,
 } from "./recipes";
+import type { MealPreferenceSignals } from "./meal-selection-signals";
 import { selectMealPlanCandidates } from "./meal-plan-selection";
 
 export const GUEST_DRAFT_SCHEMA_VERSION = 3 as const;
@@ -25,10 +26,11 @@ export type GuestMealChoice = {
   catalogueVersion: number | null;
 };
 
-export type GuestSelectionMeal = CatalogueMealReference & {
-  proteinCategory?: ProteinCategory;
-  isSaved?: boolean;
-};
+export type GuestSelectionMeal = CatalogueMealReference &
+  MealPreferenceSignals & {
+    proteinCategory?: ProteinCategory;
+    isSaved?: boolean;
+  };
 
 export type GuestPlanClaim = {
   key: string;
@@ -48,6 +50,7 @@ export type GuestDraft = {
   planDays: PlanDays;
   servings: number;
   mealChoices: GuestMealChoice[];
+  dismissedMeals?: Array<{ date: string; catalogueMealId: string }>;
   acceptedAt?: number;
   claim?: GuestPlanClaim;
   createdAt: number;
@@ -95,22 +98,25 @@ export function createGuestDraft({
   ) {
     throw new Error("That meal is not in this catalogue.");
   }
+  const generatedMealCount =
+    planDays - emptySlots.size - (firstCatalogueMealId === undefined ? 0 : 1);
   const generatedMealIds =
-    planDays === emptySlots.size
+    generatedMealCount <= 0
       ? []
       : selectGuestMeals({
           catalogueMeals,
-          numberOfMeals: planDays - emptySlots.size,
+          numberOfMeals: generatedMealCount,
+          retainedMealIds:
+            firstCatalogueMealId === undefined ? [] : [firstCatalogueMealId],
+          excludedMealIds:
+            firstCatalogueMealId === undefined ? [] : [firstCatalogueMealId],
           variationKey: `initial:${planStartDate}:${planDays}:${servings}:${now}`,
           recentPlanMealIds,
         });
   const selectedMealIds =
     firstCatalogueMealId === undefined
       ? generatedMealIds
-      : [
-          firstCatalogueMealId,
-          ...generatedMealIds.filter((id) => id !== firstCatalogueMealId),
-        ].slice(0, planDays - emptySlots.size);
+      : [firstCatalogueMealId, ...generatedMealIds];
   let mealCursor = 0;
   return {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
@@ -200,6 +206,9 @@ export function extendGuestPlanByOneDay(
         catalogueMeals,
         numberOfMeals: 1,
         excludedMealIds: [...plannedMealIds],
+        retainedMealIds: draft.mealChoices.flatMap((choice) =>
+          choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+        ),
         variationKey: `extend:${draft.updatedAt}:${draft.planDays}`,
       })[0]!;
     })();
@@ -210,6 +219,7 @@ export function extendGuestPlanByOneDay(
     planStartDate: draft.planStartDate,
     planDays,
     servings: draft.servings,
+    ...(draft.dismissedMeals ? { dismissedMeals: draft.dismissedMeals } : {}),
     mealChoices: [
       ...draft.mealChoices,
       {
@@ -239,6 +249,19 @@ export function rebaseGuestPlanStartDate(
     planStartDate,
     planDays: draft.planDays,
     servings: draft.servings,
+    ...(draft.dismissedMeals
+      ? {
+          dismissedMeals: draft.dismissedMeals.map((entry) => ({
+            ...entry,
+            date: addDaysToPlanDate(
+              planStartDate,
+              draft.mealChoices.findIndex(
+                (choice) => choice.date === entry.date,
+              ),
+            ),
+          })),
+        }
+      : {}),
     mealChoices: draft.mealChoices.map((choice, index) => ({
       date: addDaysToPlanDate(planStartDate, index),
       catalogueMealId: choice.catalogueMealId,
@@ -275,6 +298,37 @@ export function readGuestDraft(
       : undefined,
   );
   if (mealChoices === null) return null;
+  let dismissedMeals: GuestDraft["dismissedMeals"];
+  if (input.dismissedMeals !== undefined) {
+    if (
+      !Array.isArray(input.dismissedMeals) ||
+      input.dismissedMeals.length > 100
+    )
+      return null;
+    dismissedMeals = [];
+    for (const entry of input.dismissedMeals) {
+      if (
+        !isRecord(entry) ||
+        typeof entry.date !== "string" ||
+        !mealChoices.some((choice) => choice.date === entry.date) ||
+        typeof entry.catalogueMealId !== "string" ||
+        entry.catalogueMealId.length < 1 ||
+        entry.catalogueMealId.length > 200
+      )
+        return null;
+      if (
+        !dismissedMeals.some(
+          (existing) =>
+            existing.date === entry.date &&
+            existing.catalogueMealId === entry.catalogueMealId,
+        )
+      )
+        dismissedMeals.push({
+          date: entry.date,
+          catalogueMealId: entry.catalogueMealId,
+        });
+    }
+  }
 
   if (
     !isTimestamp(input.createdAt) ||
@@ -317,6 +371,7 @@ export function readGuestDraft(
     planDays: input.planDays,
     servings: input.servings,
     mealChoices,
+    ...(dismissedMeals ? { dismissedMeals } : {}),
     ...(acceptedAt === undefined ? {} : { acceptedAt }),
     ...(claim === undefined ? {} : { claim }),
     createdAt: input.createdAt,
@@ -354,6 +409,11 @@ export function swapGuestPlanMeal(
     excludedMealIds: draft.mealChoices.flatMap((choice) =>
       choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
     ),
+    retainedMealIds: draft.mealChoices.flatMap((choice) =>
+      choice.date === date || choice.catalogueMealId === null
+        ? []
+        : [choice.catalogueMealId],
+    ),
     variationKey: `swap:${draft.updatedAt}:${date}:${currentMealId}`,
   })[0]!;
   const mealChoices = draft.mealChoices.map((choice, index) =>
@@ -366,7 +426,7 @@ export function swapGuestPlanMeal(
       : choice,
   );
 
-  return editableDraft(draft, mealChoices, now);
+  return withDismissedMeal(draft, editableDraft(draft, mealChoices, now), date);
 }
 
 /**
@@ -397,6 +457,11 @@ export function chooseGuestPlanMeal(
     numberOfMeals: 1,
     excludedMealIds: draft.mealChoices.flatMap((choice) =>
       choice.catalogueMealId === null ? [] : [choice.catalogueMealId],
+    ),
+    retainedMealIds: draft.mealChoices.flatMap((choice) =>
+      choice.date === date || choice.catalogueMealId === null
+        ? []
+        : [choice.catalogueMealId],
     ),
     variationKey: `choose:${draft.updatedAt}:${date}`,
   })[0]!;
@@ -449,7 +514,7 @@ export function setGuestPlanMeal(
       : choice,
   );
 
-  return editableDraft(draft, mealChoices, now);
+  return withDismissedMeal(draft, editableDraft(draft, mealChoices, now), date);
 }
 
 /** Clears one planned day. Editing clears acceptance/claim like other plan edits. */
@@ -469,7 +534,11 @@ export function clearGuestPlanMeal(
     throw new Error("That day has no meal to remove.");
   }
 
-  return applyGuestPlanEmptySlots(draft, [choiceIndex], now);
+  return withDismissedMeal(
+    draft,
+    applyGuestPlanEmptySlots(draft, [choiceIndex], now),
+    date,
+  );
 }
 
 export function shuffleGuestPlan(
@@ -701,6 +770,18 @@ function editableDraft(
     planDays: draft.planDays,
     servings: draft.servings,
     mealChoices,
+    ...(draft.dismissedMeals
+      ? {
+          dismissedMeals: draft.dismissedMeals.filter(
+            (entry) =>
+              !mealChoices.some(
+                (choice) =>
+                  choice.date === entry.date &&
+                  choice.catalogueMealId === entry.catalogueMealId,
+              ),
+          ),
+        }
+      : {}),
     ...(draft.reviewSource ? { reviewSource: draft.reviewSource } : {}),
     createdAt: draft.createdAt,
     updatedAt: now,
@@ -789,12 +870,14 @@ function selectGuestMeals({
   catalogueMeals,
   numberOfMeals,
   excludedMealIds = [],
+  retainedMealIds = [],
   variationKey,
   recentPlanMealIds = [],
 }: {
   catalogueMeals: readonly GuestSelectionMeal[];
   numberOfMeals: number;
   excludedMealIds?: readonly string[];
+  retainedMealIds?: readonly string[];
   variationKey: string;
   recentPlanMealIds?: readonly (readonly string[])[];
 }): string[] {
@@ -802,12 +885,21 @@ function selectGuestMeals({
     key: meal.catalogueMealId,
     proteinCategory: meal.proteinCategory ?? "meat-free",
     isSaved: meal.isSaved ?? false,
+    savedByMemberKeys: meal.savedByMemberKeys,
+    dismissalCount: meal.dismissalCount,
   }));
+  const candidatesByKey = new Map(
+    candidates.map((candidate) => [candidate.key, candidate]),
+  );
   const proteinCategoriesByKey = new Map(
     candidates.map((candidate) => [candidate.key, candidate.proteinCategory]),
   );
   return selectMealPlanCandidates(candidates, {
     numberOfMeals,
+    retainedCandidates: retainedMealIds.flatMap((id) => {
+      const candidate = candidatesByKey.get(id);
+      return candidate ? [candidate] : [];
+    }),
     excludedCandidateKeys: excludedMealIds,
     recentPlans: recentPlanMealIds.map((candidateKeys) => ({
       candidateKeys,
@@ -945,4 +1037,29 @@ function isTimestamp(value: unknown): value is number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Record individual rejection only; bulk alternatives and free-day setup are not dislikes. */
+function withDismissedMeal(
+  previous: GuestDraft,
+  next: GuestDraft,
+  date: string,
+): GuestDraft {
+  const oldMeal = previous.mealChoices.find(
+    (choice) => choice.date === date,
+  )?.catalogueMealId;
+  const nextMeal = next.mealChoices.find(
+    (choice) => choice.date === date,
+  )?.catalogueMealId;
+  if (!oldMeal || oldMeal === nextMeal) return next;
+  const entries = next.dismissedMeals ?? [];
+  return {
+    ...next,
+    dismissedMeals: [
+      ...entries.filter(
+        (entry) => entry.date !== date || entry.catalogueMealId !== oldMeal,
+      ),
+      { date, catalogueMealId: oldMeal },
+    ].slice(-100),
+  };
 }

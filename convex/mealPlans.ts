@@ -14,6 +14,12 @@ import {
   selectMealPlanCandidates,
   type RecentMealSelectionPlan,
 } from "../src/lib/domain/meal-plan-selection";
+import type { MealPreferenceSignals } from "../src/lib/domain/meal-selection-signals";
+import {
+  getMealSelectionSignals,
+  recordMealSelectionOutcome,
+  recipeSelectionKey,
+} from "./lib/mealSelection";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -55,7 +61,7 @@ type PlanRecipeChoice = {
   status: Doc<"mealSlots">["status"];
 };
 
-type PlanCandidate = {
+type PlanCandidate = MealPreferenceSignals & {
   key: string;
   recipe: PlanRecipeReference;
   catalogueMealId: string | null;
@@ -272,6 +278,29 @@ export const getRecentCatalogueSelectionHistory = query({
   },
 });
 
+/** Aggregate public-meal facts for the local generator; never returns private recipes. */
+export const getCatalogueSelectionSignals = query({
+  args: { ...spaceArgs },
+  returns: v.array(
+    v.object({
+      catalogueMealId: v.string(),
+      isSaved: v.boolean(),
+      savedByMemberKeys: v.array(v.string()),
+      dismissalCount: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const ownerId = await readSpace(ctx, args.householdId);
+    if (ownerId === null) return [];
+    const signals = await getMealSelectionSignals(ctx, ownerId);
+    return [...signals].flatMap(([key, signal]) =>
+      key.startsWith("catalogue:")
+        ? [{ catalogueMealId: key.slice("catalogue:".length), ...signal }]
+        : [],
+    );
+  },
+});
+
 /** Hydrate one archived week only after the user selects it. */
 export const getArchived = query({
   args: { ...spaceArgs, mealPlanId: v.id("mealPlans") },
@@ -366,7 +395,7 @@ export const swapMeal = mutation({
       return { status: "plan_unavailable" } as const;
     }
 
-    const candidatePool = await getPlanningCandidates(ctx);
+    const candidatePool = await getPlanningCandidates(ctx, ownerId);
     const currentCandidateKey = candidateKeyForRecipe(currentRecipe);
     const [replacementKey] = await selectPlanCandidateKeys({
       ctx,
@@ -375,6 +404,9 @@ export const swapMeal = mutation({
       excludedCandidateKeys: [...recipesBySlot.values()].map(
         candidateKeyForRecipe,
       ),
+      retainedRecipes: mealSlots
+        .filter((slot) => slot._id !== mealSlot._id)
+        .map((slot) => recipesBySlot.get(slot._id)!),
       numberOfMeals: 1,
       variationKey: `swap:${mealPlan._id}:${mealPlan.updatedAt}:${mealSlot._id}:${currentCandidateKey}`,
     });
@@ -388,6 +420,24 @@ export const swapMeal = mutation({
       replacement.recipe,
     );
     const updatedAt = nextMealPlanUpdatedAt(mealPlan);
+    if (replacement.key !== currentCandidateKey) {
+      await recordMealSelectionOutcome(ctx, {
+        ownerId,
+        mealPlanId: mealPlan._id,
+        date: mealSlot.date,
+        candidateKey: currentCandidateKey,
+        outcome: "dismissed",
+        updatedAt,
+      });
+      await recordMealSelectionOutcome(ctx, {
+        ownerId,
+        mealPlanId: mealPlan._id,
+        date: mealSlot.date,
+        candidateKey: replacement.key,
+        outcome: "kept",
+        updatedAt,
+      });
+    }
 
     await ctx.db.patch(mealSlot._id, {
       recipeId: replacementRecipeId,
@@ -473,6 +523,31 @@ export const planMeal = mutation({
         updatedAt,
       });
     }
+    if (existingSlot) {
+      const oldRecipe = await ctx.db.get(existingSlot.recipeId);
+      if (
+        oldRecipe &&
+        oldRecipe.ownerId === ownerId &&
+        recipeSelectionKey(oldRecipe) !== `catalogue:${args.catalogueMealId}`
+      ) {
+        await recordMealSelectionOutcome(ctx, {
+          ownerId,
+          mealPlanId: mealPlan._id,
+          date: args.date,
+          candidateKey: recipeSelectionKey(oldRecipe),
+          outcome: "dismissed",
+          updatedAt,
+        });
+      }
+    }
+    await recordMealSelectionOutcome(ctx, {
+      ownerId,
+      mealPlanId: mealPlan._id,
+      date: args.date,
+      candidateKey: `catalogue:${args.catalogueMealId}`,
+      outcome: "kept",
+      updatedAt,
+    });
     await ctx.db.patch(mealPlan._id, { updatedAt });
     await syncShoppingListForPlan(ctx, ownerId, mealPlan._id);
 
@@ -528,6 +603,14 @@ export const addPlanDay = mutation({
       recipeId,
       status: "planned",
       createdAt: updatedAt,
+      updatedAt,
+    });
+    await recordMealSelectionOutcome(ctx, {
+      ownerId,
+      mealPlanId: mealPlan._id,
+      date,
+      candidateKey: `catalogue:${args.catalogueMealId}`,
+      outcome: "kept",
       updatedAt,
     });
     await ctx.db.patch(mealPlan._id, { endDate: date, updatedAt });
@@ -806,6 +889,7 @@ export const adjustActivePlan = mutation({
       );
     }
 
+    await recordKeptPlanMeals(ctx, ownerId, mealPlan._id, updatedAt);
     await syncShoppingListForPlan(ctx, ownerId, mealPlan._id);
 
     return { status: "adjusted", addedDays, removedDates } as const;
@@ -822,6 +906,9 @@ export const claimGuestDraft = mutation({
     planStartDate: v.string(),
     servings: v.number(),
     mealChoices: v.array(mealChoiceValidator),
+    dismissedMeals: v.optional(
+      v.array(v.object({ date: v.string(), catalogueMealId: v.string() })),
+    ),
   },
   returns: claimResultValidator,
   handler: async (
@@ -831,6 +918,7 @@ export const claimGuestDraft = mutation({
       planStartDate,
       servings,
       mealChoices,
+      dismissedMeals = [],
       householdId,
       expectedPlanId,
       expectedUpdatedAt,
@@ -862,6 +950,18 @@ export const claimGuestDraft = mutation({
     }
     if (validation === "catalogue_unsupported") {
       return { status: "catalogue_unsupported" } as const;
+    }
+
+    if (
+      dismissedMeals.length > 100 ||
+      dismissedMeals.some(
+        (entry) =>
+          !mealChoices.some((choice) => choice.date === entry.date) ||
+          entry.catalogueMealId.length < 1 ||
+          entry.catalogueMealId.length > 200,
+      )
+    ) {
+      throwInvalidPlan("The meal feedback is invalid.");
     }
 
     const activePlan = await getSingleActivePlan(ctx, ownerId);
@@ -896,6 +996,25 @@ export const claimGuestDraft = mutation({
       mealChoices,
       createdAt: claimedAt,
     });
+
+    for (const entry of dismissedMeals) {
+      if (
+        mealChoices.some(
+          (choice) =>
+            choice.date === entry.date &&
+            choice.catalogueMealId === entry.catalogueMealId,
+        )
+      )
+        continue;
+      await recordMealSelectionOutcome(ctx, {
+        ownerId,
+        mealPlanId,
+        date: entry.date,
+        candidateKey: `catalogue:${entry.catalogueMealId}`,
+        outcome: "dismissed",
+        updatedAt: claimedAt,
+      });
+    }
 
     if (activePlan) await carryShoppingState(ctx, activePlan._id, mealPlanId);
 
@@ -1094,7 +1213,7 @@ async function buildRegenerationProposal(
     return { status: "no_future_meals" };
   }
 
-  const candidatePool = await getPlanningCandidates(ctx);
+  const candidatePool = await getPlanningCandidates(ctx, ownerId);
   const currentCandidateKeys = mealSlots.map((slot) =>
     candidateKeyForRecipe(recipesBySlot.get(slot._id)!),
   );
@@ -1103,6 +1222,9 @@ async function buildRegenerationProposal(
     ownerId,
     candidatePool,
     excludedCandidateKeys: currentCandidateKeys,
+    retainedRecipes: mealSlots
+      .filter((slot) => slot.date < fromDate)
+      .map((slot) => recipesBySlot.get(slot._id)!),
     numberOfMeals: replaceableSlots.length,
     variationKey: `replan:${mealPlan._id}:${mealPlan.updatedAt}:${fromDate}:${variant}`,
   });
@@ -1178,32 +1300,42 @@ async function resolvePlanRecipes(
   return recipesBySlot;
 }
 
-async function getPlanningCandidates(ctx: QueryCtx | MutationCtx) {
+async function getPlanningCandidates(
+  ctx: QueryCtx | MutationCtx,
+  ownerId: SpaceId,
+) {
   const actorId = await requireUserId(ctx);
-  const savedRecipes = await ctx.db
-    .query("recipes")
-    .withIndex("by_owner_and_saved_at", (q) =>
-      q.eq("ownerId", actorId).gt("savedAt", 0),
-    )
-    .order("desc")
-    .take(maximumPersonalPlanCandidates);
+  const signals = await getMealSelectionSignals(ctx, ownerId);
   const byKey = new Map<string, PlanCandidate>();
-
-  for (const recipe of savedRecipes) {
+  // Private imports stay private. Household imports become eligible only after
+  // somebody has explicitly put a snapshot into the shared space.
+  const recipes =
+    ownerId === actorId
+      ? await ctx.db
+          .query("recipes")
+          .withIndex("by_owner_and_saved_at", (q) =>
+            q.eq("ownerId", actorId).gt("savedAt", 0),
+          )
+          .order("desc")
+          .take(maximumPersonalPlanCandidates)
+      : await ctx.db
+          .query("recipes")
+          .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
+          .order("desc")
+          .take(maximumPersonalPlanCandidates);
+  for (const recipe of recipes) {
+    // Use the current public revision for catalogue meals, not a member's edited copy.
+    if (ownerId !== actorId && recipe.source.type === "catalogue") continue;
     const candidate = await planCandidateFromRecipe(ctx, recipe);
-    if (!byKey.has(candidate.key)) {
-      byKey.set(candidate.key, candidate);
-    }
+    if (!byKey.has(candidate.key)) byKey.set(candidate.key, candidate);
   }
-
-  const currentCatalogue = await getCurrentCatalogueMeals(ctx);
-  for (const catalogueMeal of currentCatalogue) {
+  for (const catalogueMeal of await getCurrentCatalogueMeals(ctx)) {
     const candidate = planCandidateFromCatalogue(catalogueMeal);
-    if (!byKey.has(candidate.key)) {
-      byKey.set(candidate.key, candidate);
-    }
+    if (!byKey.has(candidate.key)) byKey.set(candidate.key, candidate);
   }
-
+  for (const [key, candidate] of byKey) {
+    byKey.set(key, { ...candidate, ...signals.get(key) });
+  }
   return { byKey };
 }
 
@@ -1218,7 +1350,7 @@ async function selectAdditionalPlanCandidates(
   const recipesBySlot = await resolvePlanRecipes(ctx, mealSlots, ownerId);
   if (recipesBySlot.size !== mealSlots.length) return null;
 
-  const candidatePool = await getPlanningCandidates(ctx);
+  const candidatePool = await getPlanningCandidates(ctx, ownerId);
   const selectedKeys = await selectPlanCandidateKeys({
     ctx,
     ownerId,
@@ -1226,6 +1358,7 @@ async function selectAdditionalPlanCandidates(
     excludedCandidateKeys: [...recipesBySlot.values()].map(
       candidateKeyForRecipe,
     ),
+    retainedRecipes: [...recipesBySlot.values()],
     numberOfMeals,
     variationKey: `extend:${mealPlan._id}:${mealPlan.updatedAt}:${targetPlanDays}`,
   });
@@ -1244,10 +1377,12 @@ async function selectPlanCandidateKeys({
   excludedCandidateKeys,
   numberOfMeals,
   variationKey,
+  retainedRecipes = [],
 }: {
   ctx: QueryCtx | MutationCtx;
   ownerId: SpaceId;
   candidatePool: Awaited<ReturnType<typeof getPlanningCandidates>>;
+  retainedRecipes?: readonly Doc<"recipes">[];
   excludedCandidateKeys: readonly string[];
   numberOfMeals: number;
   variationKey: string;
@@ -1265,9 +1400,19 @@ async function selectPlanCandidateKeys({
       key: candidate.key,
       proteinCategory: candidate.proteinCategory,
       isSaved: candidate.isSaved,
+      savedByMemberKeys: candidate.savedByMemberKeys,
+      dismissalCount: candidate.dismissalCount,
     })),
     {
       numberOfMeals,
+      retainedCandidates: retainedRecipes.map(
+        (recipe) =>
+          candidatePool.byKey.get(recipeSelectionKey(recipe)) ?? {
+            key: recipeSelectionKey(recipe),
+            proteinCategory: recipe.proteinCategory,
+            isSaved: false,
+          },
+      ),
       excludedCandidateKeys,
       recentPlans,
       prioritiseSavedRecipes: preferences?.prioritiseSavedRecipes ?? true,
@@ -1377,12 +1522,7 @@ function planCandidateFromCatalogue(
   };
 }
 
-function candidateKeyForRecipe(recipe: Doc<"recipes">) {
-  if (recipe.source.type === "catalogue") {
-    return `catalogue:${recipe.source.catalogueMealId}`;
-  }
-  return `recipe:${recipe._id}`;
-}
+const candidateKeyForRecipe = recipeSelectionKey;
 
 async function resolveRecipeReference(
   ctx: MutationCtx,
@@ -1489,6 +1629,7 @@ async function createPlanFromGuestMealChoices(
     });
   }
 
+  await recordKeptPlanMeals(ctx, ownerId, mealPlanId, createdAt);
   await syncShoppingListForPlan(ctx, ownerId, mealPlanId);
 
   return mealPlanId;
@@ -1537,6 +1678,7 @@ async function createPlanFromRecipeChoices(
     });
   }
 
+  await recordKeptPlanMeals(ctx, ownerId, mealPlanId, createdAt);
   await syncShoppingListForPlan(ctx, ownerId, mealPlanId);
 
   return mealPlanId;
@@ -1688,6 +1830,17 @@ export const removeMeal = mutation({
     const slot = slots.find((slot) => slot.date === args.date);
     if (!slot) return { status: "plan_unavailable" } as const;
     if (slots.length <= 1) return { status: "last_meal" } as const;
+    const recipe = await ctx.db.get(slot.recipeId);
+    if (!recipe || recipe.ownerId !== ownerId)
+      return { status: "plan_unavailable" } as const;
+    await recordMealSelectionOutcome(ctx, {
+      ownerId,
+      mealPlanId: active.mealPlan._id,
+      date: slot.date,
+      candidateKey: recipeSelectionKey(recipe),
+      outcome: "dismissed",
+      updatedAt: nextMealPlanUpdatedAt(active.mealPlan),
+    });
     await ctx.db.delete(slot._id);
     await ctx.db.patch(active.mealPlan._id, {
       updatedAt: nextMealPlanUpdatedAt(active.mealPlan),
@@ -1696,3 +1849,23 @@ export const removeMeal = mutation({
     return { status: "removed" } as const;
   },
 });
+
+async function recordKeptPlanMeals(
+  ctx: MutationCtx,
+  ownerId: SpaceId,
+  mealPlanId: Id<"mealPlans">,
+  updatedAt: number,
+) {
+  for (const slot of await getPlanSlots(ctx, mealPlanId)) {
+    const recipe = await ctx.db.get(slot.recipeId);
+    if (recipe && recipe.ownerId === ownerId)
+      await recordMealSelectionOutcome(ctx, {
+        ownerId,
+        mealPlanId,
+        date: slot.date,
+        candidateKey: recipeSelectionKey(recipe),
+        outcome: "kept",
+        updatedAt,
+      });
+  }
+}

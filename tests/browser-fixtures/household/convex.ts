@@ -134,6 +134,17 @@ export function useQuery(
       return new URLSearchParams(location.search).get("plan") === "empty"
         ? null
         : plan(shared);
+    case "mealPlans:getCatalogueSelectionSignals":
+      if (sessionStorage.getItem("fixture:selection-signals") === "enabled")
+        return [
+          {
+            catalogueMealId: "family-meal",
+            isSaved: true,
+            savedByMemberKeys: ["member-0", "member-1"],
+            dismissalCount: 0,
+          },
+        ];
+      return [];
     case "catalogue:getCurrent":
       return { meals: [meal(true), meal(false)] };
     case "catalogue:getMeals":

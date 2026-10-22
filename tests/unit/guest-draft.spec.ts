@@ -13,6 +13,7 @@ import {
   guestDraftMatchesSavedPlan,
   readGuestDraftV1,
   requestGuestPlanClaim,
+  rebaseGuestPlanStartDate,
   setGuestPlanMeal,
   shuffleGuestPlan,
   swapGuestPlanMeal,
@@ -23,6 +24,104 @@ const catalogueMeals = catalogueMealIds.map((catalogueMealId) => ({
   catalogueMealId,
   catalogueVersion: 1,
 }));
+
+test("individual draft rejection survives storage and rebasing; choosing it again reverses it", () => {
+  const original = createGuestDraft({
+    planStartDate: "2026-11-01",
+    catalogueMeals,
+    planDays: 3,
+    now: 1,
+  });
+  const date = original.mealChoices[0]!.date;
+  const oldMeal = original.mealChoices[0]!.catalogueMealId!;
+  const removed = clearGuestPlanMeal(original, date, 2);
+  expect(removed.dismissedMeals).toEqual([{ date, catalogueMealId: oldMeal }]);
+  const restored = readGuestDraftV1(removed, { catalogueMeals });
+  expect(restored?.dismissedMeals).toEqual(removed.dismissedMeals);
+  expect(
+    extendGuestPlanByOneDay(restored!, catalogueMeals, 3).dismissedMeals,
+  ).toEqual(removed.dismissedMeals);
+  const rebased = rebaseGuestPlanStartDate(restored!, "2026-12-01", 3);
+  expect(rebased.dismissedMeals).toEqual([
+    { date: "2026-12-01", catalogueMealId: oldMeal },
+  ]);
+  expect(
+    setGuestPlanMeal(rebased, "2026-12-01", oldMeal, catalogueMeals, 4)
+      .dismissedMeals,
+  ).toEqual([]);
+  expect(
+    shuffleGuestPlan(original, catalogueMeals, 2).dismissedMeals,
+  ).toBeUndefined();
+});
+
+test("draft generation receives household consensus and rejection facts", () => {
+  const draft = createGuestDraft({
+    planStartDate: "2026-11-01",
+    planDays: 3,
+    now: 1,
+    catalogueMeals: [
+      {
+        catalogueMealId: "a",
+        catalogueVersion: 1,
+        isSaved: true,
+        savedByMemberKeys: ["a"],
+      },
+      {
+        catalogueMealId: "shared",
+        catalogueVersion: 1,
+        isSaved: true,
+        savedByMemberKeys: ["a", "b"],
+      },
+      { catalogueMealId: "rejected", catalogueVersion: 1, dismissalCount: 1 },
+    ],
+  });
+  expect(draft.mealChoices[0]!.catalogueMealId).toBe("shared");
+  expect(draft.mealChoices[2]!.catalogueMealId).toBe("rejected");
+});
+
+test("draft swaps, extensions and pinned first meals account for retained household favourites", () => {
+  const meals = ["a0", "a1", "a2", "a3", "b0"].map((catalogueMealId) => ({
+    catalogueMealId,
+    catalogueVersion: 1,
+    isSaved: true,
+    savedByMemberKeys: [catalogueMealId.startsWith("a") ? "a" : "b"],
+  }));
+  const generated = createGuestDraft({
+    planStartDate: "2026-11-01",
+    planDays: 3,
+    catalogueMeals: meals,
+    now: 1,
+  });
+  const draft = {
+    ...generated,
+    mealChoices: generated.mealChoices.map((choice, i) => ({
+      ...choice,
+      catalogueMealId: `a${i}`,
+    })),
+  };
+  expect(
+    swapGuestPlanMeal(draft, draft.mealChoices[0]!.date, meals, 2)
+      .mealChoices[0]!.catalogueMealId,
+  ).toBe("b0");
+  expect(
+    extendGuestPlanByOneDay(draft, meals, 2).mealChoices[3]!.catalogueMealId,
+  ).toBe("b0");
+  const withFreeDay = clearGuestPlanMeal(draft, draft.mealChoices[0]!.date, 2);
+  expect(
+    chooseGuestPlanMeal(withFreeDay, draft.mealChoices[0]!.date, meals, 3)
+      .mealChoices[0]!.catalogueMealId,
+  ).toBe("b0");
+  const pinned = createGuestDraft({
+    planStartDate: "2026-11-01",
+    planDays: 3,
+    catalogueMeals: meals,
+    firstCatalogueMealId: "a0",
+    now: 1,
+  });
+  expect(
+    pinned.mealChoices.map((choice) => choice.catalogueMealId).slice(0, 2),
+  ).toEqual(["a0", "b0"]);
+});
 
 test("creates seven consecutive dated meal choices", () => {
   const draft = createGuestDraft({

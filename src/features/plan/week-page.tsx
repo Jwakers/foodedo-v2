@@ -44,8 +44,8 @@ export function WeekPage() {
     isAuthenticated ? {} : "skip",
   );
   const savedCatalogueMeals = useQuery(
-    api.recipes.listSavedCatalogueMeals,
-    isAuthenticated ? {} : "skip",
+    api.mealPlans.getCatalogueSelectionSignals,
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const recentSelectionHistory = useQuery(
     api.mealPlans.getRecentCatalogueSelectionHistory,
@@ -165,9 +165,13 @@ export function WeekPage() {
           catalogue: catalogueContract,
           planDays: planningPreferences?.usualPlanDays ?? 7,
           servings: planningPreferences?.usualServings ?? 4,
-          preferredCatalogueMealIds: planningPreferences?.prioritiseSavedRecipes
-            ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
-            : [],
+          selectionSignals: savedCatalogueMeals ?? [],
+          preferredCatalogueMealIds:
+            (planningPreferences?.prioritiseSavedRecipes ?? true)
+              ? (savedCatalogueMeals ?? [])
+                  .filter((meal) => meal.isSaved)
+                  .map((meal) => meal.catalogueMealId)
+              : [],
           recentPlanMealIds: recentSelectionHistory ?? [],
         });
         if (getDraftSpaceKey() !== generationKey) return;

@@ -92,8 +92,8 @@ export function PlanAction({
     isAuthenticated ? {} : "skip",
   );
   const savedCatalogueMeals = useQuery(
-    api.recipes.listSavedCatalogueMeals,
-    isAuthenticated ? {} : "skip",
+    api.mealPlans.getCatalogueSelectionSignals,
+    isAuthenticated && spaceReady ? spaceArgs : "skip",
   );
   const recentSelectionHistory = useQuery(
     api.mealPlans.getRecentCatalogueSelectionHistory,
@@ -193,8 +193,11 @@ export function PlanAction({
         planStartDate: setup.startDate,
         planDays: setup.planDays,
         servings: setup.servings,
+        selectionSignals: savedCatalogueMeals ?? [],
         preferredCatalogueMealIds: setup.prioritiseSavedRecipes
-          ? (savedCatalogueMeals ?? []).map((meal) => meal.catalogueMealId)
+          ? (savedCatalogueMeals ?? [])
+              .filter((meal) => meal.isSaved)
+              .map((meal) => meal.catalogueMealId)
           : [],
         recentPlanMealIds: recentSelectionHistory ?? [],
       });
@@ -324,6 +327,7 @@ function SignedInDrawerContent({
   initialSetup: PrePlanSetup;
   onApply: (setup: PrePlanSetup) => void;
 }) {
+  const { isHousehold } = useHouseholdSpace();
   const updateUsual = useMutation(api.planningPreferences.updateUsual);
   const [planDays, setPlanDays] = useState(initialSetup.planDays);
   const [startDate, setStartDate] = useState(initialSetup.startDate);
@@ -511,10 +515,14 @@ function SignedInDrawerContent({
         <label className="flex min-h-21.5 cursor-pointer items-center justify-between gap-3 border-b border-border">
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-14 font-semibold text-ink">
-              Use my saved recipes
+              {isHousehold
+                ? "Use household favourites"
+                : "Use my saved recipes"}
             </span>
             <span className="text-12 text-graphite">
-              Prioritise recipes you already like where they fit
+              {isHousehold
+                ? "Prioritise meals saved by your household"
+                : "Prioritise recipes you already like where they fit"}
             </span>
           </span>
           <input

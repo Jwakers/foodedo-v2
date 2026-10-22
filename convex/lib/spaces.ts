@@ -51,7 +51,11 @@ export async function copyRecipeToSpace(
   void _id;
   void _creationTime;
   void savedAt;
-  return await ctx.db.insert("recipes", { ...content, ownerId });
+  return await ctx.db.insert("recipes", {
+    ...content,
+    ownerId,
+    selectionKey: recipe.selectionKey ?? recipe._id,
+  });
 }
 export async function leaveMembership(ctx: MutationCtx, userId: Id<"users">) {
   const member = await membership(ctx, userId);

@@ -26,6 +26,7 @@ import type * as lib_catalogueGeneration_prompts from "../lib/catalogueGeneratio
 import type * as lib_catalogueGeneration_revisions from "../lib/catalogueGeneration/revisions.js";
 import type * as lib_catalogueGeneration_validators from "../lib/catalogueGeneration/validators.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
+import type * as lib_mealSelection from "../lib/mealSelection.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
 import type * as lib_recipeImport_contracts from "../lib/recipeImport/contracts.js";
 import type * as lib_recipeImport_corrections from "../lib/recipeImport/corrections.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogueGeneration/revisions": typeof lib_catalogueGeneration_revisions;
   "lib/catalogueGeneration/validators": typeof lib_catalogueGeneration_validators;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
+  "lib/mealSelection": typeof lib_mealSelection;
   "lib/planningPreferences": typeof lib_planningPreferences;
   "lib/recipeImport/contracts": typeof lib_recipeImport_contracts;
   "lib/recipeImport/corrections": typeof lib_recipeImport_corrections;

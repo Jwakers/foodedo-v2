@@ -58,6 +58,12 @@ export const deleteFromClerk = internalMutation({
     const ownerId = existing._id;
     await leaveMembership(ctx, ownerId);
 
+    const feedback = await ctx.db
+      .query("mealSelectionFeedback")
+      .withIndex("by_actor", (q) => q.eq("actorId", ownerId))
+      .collect();
+    for (const entry of feedback) await ctx.db.delete(entry._id);
+
     const planningPreferences = await ctx.db
       .query("planningPreferences")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

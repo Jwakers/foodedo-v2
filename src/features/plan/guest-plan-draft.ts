@@ -1,3 +1,4 @@
+import type { MealPreferenceSignals } from "@/lib/domain/meal-selection-signals";
 import type { SavedPlanMealChoice } from "@/features/plan/saved-plan-meal-choices";
 import { clearPendingPrePlanSetup } from "@/features/plan/pre-plan-setup-store";
 import {
@@ -28,13 +29,18 @@ import {
   type GuestDraftStore,
 } from "@/lib/platform/guest-draft-store";
 
+export type CatalogueSelectionSignal = MealPreferenceSignals & {
+  catalogueMealId: string;
+  isSaved: boolean;
+};
+
 export type GuestCatalogueContract = {
-  currentMeals: readonly {
+  currentMeals: readonly (MealPreferenceSignals & {
     catalogueMealId: string;
     catalogueVersion: number;
     proteinCategory?: ProteinCategory;
     isSaved?: boolean;
-  }[];
+  })[];
   readableMeals: readonly {
     catalogueMealId: string;
     catalogueVersion: number;
@@ -209,6 +215,7 @@ export async function beginConfiguredGuestPlanDraft({
   planStartDate,
   planDays,
   servings,
+  selectionSignals = [],
   preferredCatalogueMealIds = [],
   recentPlanMealIds = [],
   firstCatalogueMealId,
@@ -220,17 +227,17 @@ export async function beginConfiguredGuestPlanDraft({
   planStartDate: string;
   planDays: PlanDays;
   servings: number;
+  selectionSignals?: readonly CatalogueSelectionSignal[];
   preferredCatalogueMealIds?: readonly string[];
   recentPlanMealIds?: readonly (readonly string[])[];
   firstCatalogueMealId?: string;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const catalogueMeals = catalogue.currentMeals;
-  const catalogueMealIds = catalogueMeals.map((meal) => meal.catalogueMealId);
-  const validMealIds = new Set(catalogueMealIds);
-  const preferredIds = preferredCatalogueMealIds.filter((mealId) =>
-    validMealIds.has(mealId),
+  const catalogueMeals = applySelectionSignals(
+    catalogue.currentMeals,
+    selectionSignals,
+    preferredCatalogueMealIds,
   );
   return store.runMutation(() => {
     return {
@@ -239,10 +246,7 @@ export async function beginConfiguredGuestPlanDraft({
           planStartDate,
           planDays,
           servings,
-          catalogueMeals: catalogueMeals.map((meal) => ({
-            ...meal,
-            isSaved: preferredIds.includes(meal.catalogueMealId),
-          })),
+          catalogueMeals,
           recentPlanMealIds,
           firstCatalogueMealId,
           now,
@@ -258,6 +262,7 @@ export async function beginConfiguredGuestPlanDraft({
 export async function beginGuestPlanDraftWithMeal({
   catalogueMealId,
   catalogueVersion,
+  selectionSignals = [],
   preferredCatalogueMealIds = [],
   ...options
 }: Parameters<typeof beginConfiguredGuestPlanDraft>[0] & {
@@ -272,6 +277,7 @@ export async function beginGuestPlanDraftWithMeal({
   return beginConfiguredGuestPlanDraft({
     ...options,
     catalogue: selectedCatalogue,
+    selectionSignals,
     preferredCatalogueMealIds: [catalogueMealId, ...preferredCatalogueMealIds],
     firstCatalogueMealId: catalogueMealId,
   });
@@ -286,6 +292,7 @@ export async function beginGuestPlanDraftWithMeal({
 export async function beginNextGuestPlanDraft({
   reviewSource,
   catalogue,
+  selectionSignals = [],
   preferredCatalogueMealIds = [],
   recentPlanMealIds = [],
   now = Date.now(),
@@ -296,6 +303,7 @@ export async function beginNextGuestPlanDraft({
 }: {
   reviewSource?: GuestDraftV1["reviewSource"];
   catalogue: GuestCatalogueContract;
+  selectionSignals?: readonly CatalogueSelectionSignal[];
   preferredCatalogueMealIds?: readonly string[];
   recentPlanMealIds?: readonly (readonly string[])[];
   now?: number;
@@ -304,11 +312,11 @@ export async function beginNextGuestPlanDraft({
   servings?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const preferredMealIds = new Set(preferredCatalogueMealIds);
-  const catalogueMeals = catalogue.currentMeals.map((meal) => ({
-    ...meal,
-    isSaved: preferredMealIds.has(meal.catalogueMealId),
-  }));
+  const catalogueMeals = applySelectionSignals(
+    catalogue.currentMeals,
+    selectionSignals,
+    preferredCatalogueMealIds,
+  );
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
     if (
@@ -375,6 +383,7 @@ export async function beginReplannedGuestPlanDraft({
   currentMealChoices,
   occupiedDates,
   servings,
+  selectionSignals = [],
   preferredCatalogueMealIds = [],
   recentPlanMealIds = [],
   now = Date.now(),
@@ -385,16 +394,17 @@ export async function beginReplannedGuestPlanDraft({
   currentMealChoices: ReadonlyArray<SavedPlanMealChoice>;
   occupiedDates: readonly string[];
   servings: number;
+  selectionSignals?: readonly CatalogueSelectionSignal[];
   preferredCatalogueMealIds?: readonly string[];
   recentPlanMealIds?: readonly (readonly string[])[];
   now?: number;
   store?: GuestDraftStore;
 }): Promise<GuestDraftV1> {
-  const preferredMealIds = new Set(preferredCatalogueMealIds);
-  const catalogueMeals = catalogue.currentMeals.map((meal) => ({
-    ...meal,
-    isSaved: preferredMealIds.has(meal.catalogueMealId),
-  }));
+  const catalogueMeals = applySelectionSignals(
+    catalogue.currentMeals,
+    selectionSignals,
+    preferredCatalogueMealIds,
+  );
   const catalogueMealIds = catalogueMeals.map((meal) => meal.catalogueMealId);
   const planDays = isPlanDays(currentMealChoices.length)
     ? currentMealChoices.length
@@ -661,6 +671,9 @@ export function guestPlanClaimMutationArgs(draft: GuestDraftV1) {
     schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
     planStartDate: draft.planStartDate,
     servings: draft.servings,
+    ...(draft.dismissedMeals?.length
+      ? { dismissedMeals: draft.dismissedMeals }
+      : {}),
     mealChoices: draft.mealChoices.map((choice) => ({
       date: choice.date,
       catalogueMealId: choice.catalogueMealId,
@@ -747,4 +760,26 @@ function isSameDraftRevision(
 
 export function createGuestClaimKey() {
   return crypto.randomUUID();
+}
+
+function applySelectionSignals(
+  meals: GuestCatalogueContract["currentMeals"],
+  signals: readonly CatalogueSelectionSignal[],
+  preferredIds: readonly string[],
+): GuestCatalogueContract["currentMeals"] {
+  const byId = new Map(
+    signals.map((signal) => [signal.catalogueMealId, signal]),
+  );
+  const preferred = new Set(preferredIds);
+  return meals.map((meal) => {
+    const signal = byId.get(meal.catalogueMealId);
+    return {
+      ...meal,
+      ...signal,
+      isSaved: preferred.has(meal.catalogueMealId),
+      savedByMemberKeys: preferred.has(meal.catalogueMealId)
+        ? signal?.savedByMemberKeys
+        : [],
+    };
+  });
 }

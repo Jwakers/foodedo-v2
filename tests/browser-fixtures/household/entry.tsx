@@ -15,6 +15,7 @@ import { InviteLinkPage } from "../../../src/features/household/invite-link-page
 import { HouseholdPage } from "../../../src/features/household/household-page";
 import { JoinHouseholdPage } from "../../../src/features/household/join-household-page";
 import { ReplanReview } from "../../../src/features/plan/replan-review";
+import { WeekPage } from "../../../src/features/plan/week-page";
 import { InviteContinuation } from "../../../src/features/household/invite-continuation";
 import { BrandLogo } from "../../../src/components/brand-logo";
 import { usePathname } from "./navigation";
@@ -65,6 +66,8 @@ function Screen() {
           </main>
         ) : currentScreen === "invite" ? (
           <InviteLinkPage />
+        ) : currentScreen === "week-page" ? (
+          <WeekPage />
         ) : currentScreen === "week" ? (
           <ActiveWeek
             plan={plan}
