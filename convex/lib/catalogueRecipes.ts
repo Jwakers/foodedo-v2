@@ -71,6 +71,7 @@ export async function getOrCreateCatalogueRecipe(
       ...(catalogueMeal.description === undefined
         ? {}
         : { description: catalogueMeal.description }),
+      minimumServings: catalogueMeal.minimumServings,
       ingredients: catalogueMeal.ingredients,
       steps: catalogueMeal.steps,
       ...(catalogueMeal.servings === undefined

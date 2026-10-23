@@ -19,7 +19,11 @@ import {
   type CookRecipeContext,
   type CookSessionAction,
 } from "@/lib/domain/cook-session";
-import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
+import {
+  recipeServingModel,
+  resolveRecipeServings,
+  minimumServingsNotice,
+} from "@/lib/domain/ingredient-scaling";
 import type { CatalogueMeal, RecipeTimerCue } from "@/lib/domain/recipes";
 import { setCookScreenAwake } from "@/lib/platform/capacitor/cook-screen";
 import {
@@ -51,7 +55,8 @@ export function CookModePage({
     () => ({
       catalogueVersion,
       meal,
-      servings,
+      servings:
+        resolveRecipeServings(meal, servings).cookingServings ?? servings,
     }),
     [catalogueVersion, meal, servings],
   );
@@ -60,11 +65,8 @@ export function CookModePage({
   const [timerMenuId, setTimerMenuId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const ingredients = useMemo(
-    () =>
-      meal.servingScaling === "source_only"
-        ? meal.ingredients
-        : scaleIngredients(meal.ingredients, meal.servings, session.servings),
-    [meal.ingredients, meal.servingScaling, meal.servings, session.servings],
+    () => recipeServingModel(meal, session.servings).ingredients,
+    [meal, session.servings],
   );
   const hasRunningTimer = session.timers.some(
     (timer) =>
@@ -159,6 +161,11 @@ export function CookModePage({
     return (
       <PreparationScreen
         meal={meal}
+        servingNotice={minimumServingsNotice(
+          meal,
+          planServings ?? servings,
+          session.servings,
+        )}
         ingredients={ingredients}
         session={session}
         persistenceAvailable={persistenceAvailable}

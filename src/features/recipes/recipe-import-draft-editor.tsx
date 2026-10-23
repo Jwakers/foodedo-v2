@@ -165,6 +165,21 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
               setRecipe({ ...recipe, description: description || undefined })
             }
           />
+          <div>
+            <NumberField
+              label="Minimum servings"
+              min={1}
+              max={recipe.servings ?? 1000}
+              value={recipe.minimumServings}
+              onChange={(minimumServings) =>
+                setRecipe({ ...recipe, minimumServings })
+              }
+            />
+            <p className="mt-1 text-12 text-graphite">
+              Smallest practical recipe size. Leave blank to allow ordinary
+              scaling.
+            </p>
+          </div>
           <div className="grid grid-cols-3 gap-3">
             <NumberField
               label="Serves"

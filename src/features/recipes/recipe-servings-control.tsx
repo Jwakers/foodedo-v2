@@ -8,12 +8,14 @@ import { cn } from "@/lib/utils/cn";
 
 export function RecipeServingsControl({
   servings,
+  minimumServings = 1,
   onServingsChange,
   durationLabel,
   className,
   cookOnly = false,
 }: {
   servings: number;
+  minimumServings?: number;
   onServingsChange: (servings: number) => void;
   durationLabel?: string | null;
   className?: string;
@@ -63,9 +65,9 @@ export function RecipeServingsControl({
               variant="counter"
               className="rounded-surface"
               aria-label="Decrease servings"
-              disabled={servings <= 1}
+              disabled={servings <= minimumServings}
               onClick={() => {
-                onServingsChange(Math.max(1, servings - 1));
+                onServingsChange(Math.max(minimumServings, servings - 1));
               }}
             >
               <Minus aria-hidden="true" className="size-4" strokeWidth={2} />

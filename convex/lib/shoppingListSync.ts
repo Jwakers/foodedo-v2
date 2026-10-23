@@ -3,7 +3,7 @@ import {
   shoppingItemIdentityKey,
   SHOPPING_LIST_LIMITS,
 } from "../../src/lib/domain/shopping-list";
-import { scaleIngredients } from "../../src/lib/domain/ingredient-scaling";
+import { recipeServingModel } from "../../src/lib/domain/ingredient-scaling";
 import type { RecipeIngredientLine } from "../../src/lib/domain/recipes";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
@@ -11,6 +11,28 @@ import type { SpaceId } from "./spaces";
 
 const maximumPlanSlots = 31;
 const maximumListsForOnePlan = 10;
+
+/** Recipe edits must refresh the same derived lists as plan edits. */
+export async function syncShoppingListsForRecipe(
+  ctx: MutationCtx,
+  ownerId: SpaceId,
+  recipeId: Id<"recipes">,
+) {
+  const slots = await ctx.db
+    .query("mealSlots")
+    .withIndex("by_recipe", (q) => q.eq("recipeId", recipeId))
+    .collect();
+  const planIds = new Set(
+    slots
+      .filter((slot) => slot.ownerId === ownerId)
+      .map((slot) => slot.mealPlanId),
+  );
+  for (const planId of planIds) {
+    const plan = await ctx.db.get(planId);
+    if (plan?.ownerId === ownerId)
+      await syncShoppingListForPlan(ctx, ownerId, planId);
+  }
+}
 
 /**
  * Marks an existing linked list archived without re-deriving its items.
@@ -63,6 +85,7 @@ export async function syncShoppingListForPlan(
   const recipes: Array<{
     recipeId: Id<"recipes">;
     title: string;
+    requestedServings: number;
     date: string;
     ingredients: RecipeIngredientLine[];
   }> = [];
@@ -74,15 +97,18 @@ export async function syncShoppingListForPlan(
     recipes.push({
       recipeId: recipe._id,
       title: recipe.title,
+      requestedServings: mealPlan.servings ?? 2,
       date: mealSlot.date,
-      ingredients: scaleIngredients(
-        recipe.ingredients.map((ingredient) => ({
-          ...ingredient,
-          shoppingCategory: ingredient.shoppingCategory ?? "other",
-        })),
-        recipe.servings,
+      ingredients: recipeServingModel(
+        {
+          ...recipe,
+          ingredients: recipe.ingredients.map((ingredient) => ({
+            ...ingredient,
+            shoppingCategory: ingredient.shoppingCategory ?? "other",
+          })),
+        },
         mealPlan.servings ?? 2,
-      ),
+      ).ingredients,
     });
   }
 

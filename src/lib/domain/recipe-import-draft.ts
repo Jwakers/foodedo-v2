@@ -63,6 +63,9 @@ export function draftRecipeText(
     recipe.servings === undefined
       ? ""
       : `Serves ${recipe.servings}${origin("servings")}`,
+    recipe.minimumServings === undefined
+      ? ""
+      : `Minimum servings: ${recipe.minimumServings}${origin("minimumServings")}`,
     recipe.prepMinutes === undefined
       ? ""
       : `Preparation: ${recipe.prepMinutes} minutes${origin("prepMinutes")}`,
@@ -104,7 +107,12 @@ export function preserveDraftMetadataProvenance(
   nextProvenance: RecipeMetadataProvenance,
 ): RecipeMetadataProvenance {
   const result = { ...nextProvenance };
-  for (const field of ["servings", "prepMinutes", "cookMinutes"] as const) {
+  for (const field of [
+    "servings",
+    "minimumServings",
+    "prepMinutes",
+    "cookMinutes",
+  ] as const) {
     if (previous[field] !== undefined && previous[field] === next[field]) {
       if (provenance?.[field]) result[field] = provenance[field];
       else delete result[field];

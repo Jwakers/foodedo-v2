@@ -13,7 +13,10 @@ import {
   formatImportedMetadataNotice,
 } from "@/lib/domain/recipe-display";
 import { formatMealDurationLabel } from "@/lib/domain/plan-display";
-import { scaleIngredients } from "@/lib/domain/ingredient-scaling";
+import {
+  recipeServingModel,
+  minimumServingsNotice,
+} from "@/lib/domain/ingredient-scaling";
 import type {
   CatalogueMeal,
   RecipeReviewIssue,
@@ -80,13 +83,16 @@ export function RecipeDetailContent({
       ? servingSelection.servings
       : defaultServings;
   const methodSteps = meal.steps;
-  const scalingSafe = meal.servingScaling !== "source_only";
-  const ingredients = useMemo(
-    () =>
-      scalingSafe
-        ? scaleIngredients(meal.ingredients, meal.servings, selectedServings)
-        : meal.ingredients,
-    [meal.ingredients, meal.servings, scalingSafe, selectedServings],
+  const servingModel = useMemo(
+    () => recipeServingModel(meal, selectedServings),
+    [meal, selectedServings],
+  );
+  const { ingredients, canScale: scalingSafe } = servingModel;
+  const cookingServings = servingModel.cookingServings ?? selectedServings;
+  const servingNotice = minimumServingsNotice(
+    meal,
+    planServings ?? selectedServings,
+    cookingServings,
   );
   const durationLabel =
     source?.type === "import"
@@ -151,13 +157,17 @@ export function RecipeDetailContent({
           {meal.title}
         </h1>
 
+        {servingNotice ? (
+          <p className="text-12 text-graphite">{servingNotice}</p>
+        ) : null}
         {householdSnapshot && planServings ? (
           <p className="text-14 text-graphite">Plan serves {planServings}</p>
         ) : null}
         {meal.servings != null && scalingSafe ? (
           <RecipeServingsControl
-            servings={selectedServings}
-            cookOnly={householdSnapshot}
+            servings={cookingServings}
+            minimumServings={meal.minimumServings}
+            cookOnly={householdSnapshot || planServings !== undefined}
             onServingsChange={(servings) =>
               setServingSelection({
                 recipeSlug: meal.slug,

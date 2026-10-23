@@ -7,6 +7,7 @@ import {
 
 export type GuestPlanMealRow = {
   date: string;
+  requestedServings?: number;
   weekday: string;
   dayOfMonth: string;
 } & (
@@ -229,6 +230,7 @@ export function resolveGuestPlanMealRows({
     if (choice.catalogueMealId === null) {
       return {
         kind: "empty" as const,
+        requestedServings: draft.servings,
         date: choice.date,
         weekday: day.weekday,
         dayOfMonth: day.dayOfMonth,
@@ -256,6 +258,7 @@ export function resolveGuestPlanMealRows({
       weekday: day.weekday,
       dayOfMonth: day.dayOfMonth,
       meal,
+      requestedServings: draft.servings,
       durationLabel: formatMealDurationLabel(
         meal.prepMinutes,
         meal.cookMinutes,
@@ -273,6 +276,9 @@ export function summarizeGuestPlanDraft(draft: GuestDraft) {
 }
 
 export type ActivePlanWeekSlot = {
+  servings?: number;
+  minimumServings?: number;
+  servingScaling?: "safe" | "source_only";
   date: string;
   status: "planned" | "cooked" | "skipped";
   title: string;
@@ -295,12 +301,14 @@ export function resolveActivePlanWeekRows({
   mealSlots,
   mealsByReference,
   mealsById,
+  servings,
 }: {
   startDate: string;
   endDate: string;
   mealSlots: ReadonlyArray<ActivePlanWeekSlot>;
   mealsByReference: ReadonlyMap<string, CatalogueMealSummary>;
   mealsById?: ReadonlyMap<string, CatalogueMealSummary>;
+  servings?: number;
 }): GuestPlanMealRow[] {
   const byDate = new Map(mealSlots.map((slot) => [slot.date, slot] as const));
   const planDays = countPlanDays({ startDate, endDate });
@@ -316,6 +324,7 @@ export function resolveActivePlanWeekRows({
     if (!slot || slot.status === "skipped") {
       return {
         kind: "empty" as const,
+        requestedServings: servings,
         date,
         weekday: day.weekday,
         dayOfMonth: day.dayOfMonth,
@@ -333,7 +342,7 @@ export function resolveActivePlanWeekRows({
               }),
             )
           : mealsById?.get(slot.catalogueMealId);
-    const meal: CatalogueMealSummary = catalogueMeal ?? {
+    const fallbackMeal: CatalogueMealSummary = catalogueMeal ?? {
       id: slot.catalogueMealId ?? `slot:${date}`,
       version: slot.catalogueVersion ?? 1,
       slug: slot.catalogueMealSlug ?? `slot-${date}`,
@@ -346,12 +355,19 @@ export function resolveActivePlanWeekRows({
       cookMinutes: slot.cookMinutes ?? undefined,
     };
 
+    const meal = {
+      ...fallbackMeal,
+      servings: slot.servings,
+      minimumServings: slot.minimumServings,
+      servingScaling: slot.servingScaling,
+    };
     return {
       kind: "planned" as const,
       date,
       weekday: day.weekday,
       dayOfMonth: day.dayOfMonth,
       meal,
+      requestedServings: servings,
       durationLabel: formatMealDurationLabel(
         meal.prepMinutes,
         meal.cookMinutes,

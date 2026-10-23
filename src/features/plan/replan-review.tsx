@@ -166,6 +166,9 @@ export function ReplanReview() {
             <p className="font-display text-22 font-semibold text-ink">
               {slot.title}
             </p>
+            {slot.servingNotice ? (
+              <p className="text-12 text-graphite">{slot.servingNotice}</p>
+            ) : null}
             {slot.isChanged ? (
               <p className="text-14 text-graphite">Was: {slot.previousTitle}</p>
             ) : (

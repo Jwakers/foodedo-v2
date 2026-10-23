@@ -1,3 +1,4 @@
+import { recipeServingModel } from "../src/lib/domain/ingredient-scaling";
 import { ConvexError, v } from "convex/values";
 import {
   formatShoppingItemDisplayName,
@@ -32,6 +33,7 @@ const shoppingListItemViewValidator = v.object({
     v.object({
       recipeId: v.id("recipes"),
       recipeTitle: v.string(),
+      requestedServings: v.optional(v.number()),
       date: v.union(v.string(), v.null()),
       amount: v.string(),
     }),
@@ -168,7 +170,9 @@ export const getCurrent = query({
         needsSync:
           planLists.length > 1 || list.mealPlanUpdatedAt !== mealPlan.updatedAt,
         items: await Promise.all(
-          items.map((item) => shoppingItemView(ctx, item, mealSlots)),
+          items.map((item) =>
+            shoppingItemView(ctx, item, mealSlots, mealPlan.servings ?? 2),
+          ),
         ),
       },
     } as const;
@@ -285,7 +289,9 @@ export const getById = query({
       mealCount: mealSlots.length,
       status: mealPlan.status,
       items: await Promise.all(
-        items.map((item) => shoppingItemView(ctx, item, mealSlots)),
+        items.map((item) =>
+          shoppingItemView(ctx, item, mealSlots, mealPlan.servings ?? 2),
+        ),
       ),
     };
   },
@@ -529,9 +535,15 @@ async function shoppingItemView(
   ctx: QueryCtx,
   item: Doc<"shoppingListItems">,
   mealSlots: Doc<"mealSlots">[],
+  requestedServings: number,
 ) {
-  const sources =
-    item.sources ?? (await reconstructLegacySources(ctx, item, mealSlots));
+  const sources = (
+    item.sources ??
+    (await reconstructLegacySources(ctx, item, mealSlots, requestedServings))
+  ).map((source) => ({
+    ...source,
+    requestedServings: source.requestedServings ?? requestedServings,
+  }));
   return {
     _id: item._id,
     name: item.name,
@@ -574,6 +586,7 @@ async function reconstructLegacySources(
   ctx: QueryCtx,
   item: Doc<"shoppingListItems">,
   mealSlots: Doc<"mealSlots">[],
+  requestedServings: number,
 ) {
   if (item.origin === "manual" || item.sourceRecipeIds.length === 0) {
     return [];
@@ -584,6 +597,7 @@ async function reconstructLegacySources(
   const sources: Array<{
     recipeId: Id<"recipes">;
     recipeTitle: string;
+    requestedServings?: number;
     date: string | null;
     amount: string;
   }> = [];
@@ -591,12 +605,15 @@ async function reconstructLegacySources(
   for (const mealSlot of mealSlots) {
     const recipe = await ctx.db.get(mealSlot.recipeId);
     if (recipe === null) continue;
-    for (const ingredient of recipe.ingredients) {
+    if (recipe.ownerId !== item.ownerId) continue;
+    const model = recipeServingModel(recipe, requestedServings);
+    for (const ingredient of model.ingredients) {
       if (normaliseIngredientName(ingredient.name) !== itemName) continue;
       if ((ingredient.shoppingCategory ?? "other") !== itemCategory) continue;
       sources.push({
         recipeId: recipe._id,
         recipeTitle: recipe.title,
+        requestedServings,
         date: mealSlot.date,
         amount: normaliseImportedDisplayAmount(ingredient) ?? "",
       });
@@ -620,6 +637,7 @@ async function reconstructLegacySources(
       return {
         recipeId,
         recipeTitle,
+        requestedServings,
         date: null as string | null,
         amount,
       };

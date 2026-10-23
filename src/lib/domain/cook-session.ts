@@ -1,3 +1,4 @@
+import { resolveRecipeServings } from "./ingredient-scaling";
 import type { CatalogueMeal, RecipeTimerCue } from "./recipes";
 
 export const COOK_SESSION_SCHEMA_VERSION = 3;
@@ -78,7 +79,7 @@ export function emptyCookSession({
     schemaVersion: COOK_SESSION_SCHEMA_VERSION,
     catalogueVersion,
     recipeSlug: meal.slug,
-    servings,
+    servings: resolveRecipeServings(meal, servings).cookingServings ?? servings,
     phase: { name: "preparation" },
     preparedIngredientIds: [],
     scrollPositions: { preparation: 0, step: 0, ingredients: 0 },
@@ -96,7 +97,7 @@ export function restoreCookSession(
     value.schemaVersion !== COOK_SESSION_SCHEMA_VERSION ||
     value.catalogueVersion !== context.catalogueVersion ||
     value.recipeSlug !== context.meal.slug ||
-    value.servings !== context.servings
+    value.servings !== fallback.servings
   ) {
     return fallback;
   }

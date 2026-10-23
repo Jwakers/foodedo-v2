@@ -105,6 +105,21 @@ function ImportedRecipeEditorForm({
             setDraft({ ...draft, description: description || undefined })
           }
         />
+        <div>
+          <NumberField
+            label="Minimum servings"
+            min={1}
+            max={draft.servings ?? 1000}
+            value={draft.minimumServings}
+            onChange={(minimumServings) =>
+              setDraft({ ...draft, minimumServings })
+            }
+          />
+          <p className="mt-1 text-12 text-graphite">
+            Smallest practical recipe size. Leave blank to allow ordinary
+            scaling.
+          </p>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <NumberField
             label="Serves"
@@ -373,6 +388,9 @@ function createDraft(meal: PersonalRecipeMeal): RecipeContent {
     ingredients: structuredClone(meal.ingredients),
     steps: structuredClone(meal.steps),
     ...(meal.servings === undefined ? {} : { servings: meal.servings }),
+    ...(meal.minimumServings === undefined
+      ? {}
+      : { minimumServings: meal.minimumServings }),
     ...(meal.prepMinutes === undefined
       ? {}
       : { prepMinutes: meal.prepMinutes }),

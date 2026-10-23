@@ -297,7 +297,12 @@ export const updateDraft = mutation({
     const revision = job.draft!.revision + 1;
     // Corrections are user-authored; do not retain AI provenance for edited metadata.
     const metadataProvenance = { ...job.draft!.metadataProvenance };
-    for (const field of ["servings", "prepMinutes", "cookMinutes"] as const) {
+    for (const field of [
+      "servings",
+      "minimumServings",
+      "prepMinutes",
+      "cookMinutes",
+    ] as const) {
       if (recipe[field] !== job.draft!.recipe[field])
         delete metadataProvenance[field];
     }

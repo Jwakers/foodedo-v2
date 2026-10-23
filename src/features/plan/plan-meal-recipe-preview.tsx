@@ -10,10 +10,12 @@ import type { CatalogueMeal } from "@/lib/domain/recipes";
 
 export function PlanMealRecipePreview({
   meal,
+  requestedServings,
   isSwapping = false,
   onSwap,
 }: {
   meal: CatalogueMeal;
+  requestedServings?: number;
   isSwapping?: boolean;
   onSwap: () => void;
 }) {
@@ -25,7 +27,12 @@ export function PlanMealRecipePreview({
       />
 
       <DrawerBody className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-0 pb-0">
-        <RecipeDetailContent meal={meal} presentation="swapPreview" />
+        <RecipeDetailContent
+          meal={meal}
+          initialServings={requestedServings}
+          planServings={requestedServings}
+          presentation="swapPreview"
+        />
       </DrawerBody>
 
       <DrawerFooter>

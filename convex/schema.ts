@@ -320,6 +320,7 @@ export default defineSchema({
         v.object({
           recipeId: v.id("recipes"),
           recipeTitle: v.string(),
+          requestedServings: v.optional(v.number()),
           date: v.union(v.string(), v.null()),
           amount: v.string(),
         }),

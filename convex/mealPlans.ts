@@ -1,3 +1,7 @@
+import {
+  recipeServingScaling,
+  minimumServingsNotice,
+} from "../src/lib/domain/ingredient-scaling";
 import { recordSavedPlanIntroduction } from "./lib/onboarding";
 import { ConvexError, v } from "convex/values";
 import {
@@ -63,6 +67,9 @@ type PlanRecipeChoice = {
 };
 
 type PlanCandidate = MealPreferenceSignals & {
+  servings?: number;
+  minimumServings?: number;
+  servingScaling?: "safe" | "source_only";
   key: string;
   recipe: PlanRecipeReference;
   catalogueMealId: string | null;
@@ -75,6 +82,11 @@ type PlanCandidate = MealPreferenceSignals & {
 };
 
 const mealSlotViewValidator = v.object({
+  servings: v.optional(v.number()),
+  minimumServings: v.optional(v.number()),
+  servingScaling: v.optional(
+    v.union(v.literal("safe"), v.literal("source_only")),
+  ),
   _id: v.id("mealSlots"),
   date: v.string(),
   recipeId: v.id("recipes"),
@@ -155,6 +167,7 @@ const addPlanDayResultValidator = v.union(
 );
 
 const proposalMealSlotValidator = v.object({
+  servingNotice: v.optional(v.string()),
   previousTitle: v.string(),
   date: v.string(),
   catalogueMealId: v.union(v.string(), v.null()),
@@ -1094,6 +1107,9 @@ async function buildMealPlanView(
           recipe.imageStorageId === undefined
             ? null
             : await ctx.storage.getUrl(recipe.imageStorageId),
+        servings: recipe.servings,
+        minimumServings: recipe.minimumServings,
+        servingScaling: recipeServingScaling(recipe),
         prepMinutes: recipe.prepMinutes ?? null,
         cookMinutes: recipe.cookMinutes ?? null,
         status: mealSlot.status,
@@ -1201,6 +1217,7 @@ async function buildRegenerationProposal(
         cookMinutes: number | null;
         isChanged: boolean;
         previousTitle: string;
+        servingNotice?: string;
       }>;
       mealChoices: PlanRecipeChoice[];
     }
@@ -1260,6 +1277,7 @@ async function buildRegenerationProposal(
     cookMinutes: number | null;
     isChanged: boolean;
     previousTitle: string;
+    servingNotice?: string;
   }> = [];
   for (let index = 0; index < mealChoices.length; index += 1) {
     const mealSlot = mealSlots[index]!;
@@ -1278,6 +1296,11 @@ async function buildRegenerationProposal(
       cookMinutes: candidate.cookMinutes,
       isChanged: candidate.key !== currentCandidateKeys[index],
       previousTitle: currentRecipe.title,
+      servingNotice:
+        minimumServingsNotice(
+          candidate,
+          mealPlan.servings ?? defaultPlanServings,
+        ) ?? undefined,
     });
   }
 
@@ -1498,6 +1521,9 @@ async function planCandidateFromRecipe(
     catalogueMealId: catalogueMeal?.catalogueMealId ?? null,
     catalogueMealSlug: catalogueMeal?.slug ?? null,
     title: recipe.title,
+    servings: recipe.servings,
+    minimumServings: recipe.minimumServings,
+    servingScaling: recipeServingScaling(recipe),
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
     proteinCategory: recipe.proteinCategory,
@@ -1518,6 +1544,9 @@ function planCandidateFromCatalogue(
     catalogueMealId: catalogueMeal.catalogueMealId,
     catalogueMealSlug: catalogueMeal.slug,
     title: catalogueMeal.title,
+    servings: catalogueMeal.servings,
+    minimumServings: catalogueMeal.minimumServings,
+    servingScaling: catalogueMeal.servingScaling,
     prepMinutes: catalogueMeal.prepMinutes ?? null,
     cookMinutes: catalogueMeal.cookMinutes ?? null,
     proteinCategory: catalogueMeal.proteinCategory,

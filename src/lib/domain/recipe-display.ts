@@ -92,6 +92,7 @@ function metadataLabels(
 ) {
   return [
     provenance.servings === origin ? "servings" : null,
+    provenance.minimumServings === origin ? "minimum servings" : null,
     provenance.prepMinutes === origin ? "prep time" : null,
     provenance.cookMinutes === origin ? "cook time" : null,
   ].filter((label): label is string => label !== null);

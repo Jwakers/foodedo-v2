@@ -646,3 +646,51 @@ test("provider failures and timeouts are counted even when token usage is unavai
     });
   }
 });
+
+test("minimum servings survive import correction, normalization and draft recovery", async () => {
+  const { applyRecipeCorrections } =
+    await import("../../convex/lib/recipeImport/corrections");
+  const { toRecipeContent } =
+    await import("../../convex/lib/recipeImport/validation");
+  const { extractTextCandidate } =
+    await import("../../convex/lib/recipeImport/source");
+  const proposed = {
+    ...normalized,
+    servings: { value: 6, origin: "published" as const, sourceIds: [] },
+  };
+  const corrected = applyRecipeCorrections(proposed, {
+    changes: [
+      {
+        field: "minimumServings",
+        value: { value: 4, origin: "estimated", sourceIds: [] },
+      },
+    ],
+    issues: [],
+  });
+  const result = toRecipeContent(
+    corrected,
+    extractTextCandidate("Carrot soup. Simmer carrots."),
+  );
+  expect(result.recipe.minimumServings).toBe(4);
+  expect(result.metadataProvenance.minimumServings).toBe("estimated");
+  expect(draftRecipeText(result.recipe, result.metadataProvenance)).toContain(
+    "Minimum servings: 4 (previous draft: estimated)",
+  );
+  expect(
+    preserveDraftMetadataProvenance(
+      result.recipe,
+      result.metadataProvenance,
+      result.recipe,
+      { minimumServings: "published" },
+    ).minimumServings,
+  ).toBe("estimated");
+  const invalid = toRecipeContent(
+    {
+      ...corrected,
+      minimumServings: { value: 8, origin: "estimated", sourceIds: [] },
+    },
+    extractTextCandidate("Soup"),
+  );
+  expect(invalid.recipe.minimumServings).toBeUndefined();
+  expect(invalid.metadataProvenance.minimumServings).toBeUndefined();
+});

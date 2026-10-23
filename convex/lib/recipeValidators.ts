@@ -97,6 +97,7 @@ export const recipeContentFields = {
   ingredients: v.array(recipeIngredientValidator),
   steps: v.array(recipeStepValidator),
   servings: v.optional(v.number()),
+  minimumServings: v.optional(v.number()),
   prepMinutes: v.optional(v.number()),
   cookMinutes: v.optional(v.number()),
   proteinCategory: proteinCategoryValidator,
@@ -136,6 +137,7 @@ export const recipeMetadataOriginValidator = v.union(
 
 export const recipeMetadataProvenanceValidator = v.object({
   servings: v.optional(recipeMetadataOriginValidator),
+  minimumServings: v.optional(recipeMetadataOriginValidator),
   prepMinutes: v.optional(recipeMetadataOriginValidator),
   cookMinutes: v.optional(recipeMetadataOriginValidator),
 });
@@ -223,6 +225,10 @@ export const catalogueMealSummaryValidator = v.object({
   title: v.string(),
   description: v.optional(v.string()),
   servings: v.optional(v.number()),
+  minimumServings: v.optional(v.number()),
+  servingScaling: v.optional(
+    v.union(v.literal("safe"), v.literal("source_only")),
+  ),
   prepMinutes: v.optional(v.number()),
   cookMinutes: v.optional(v.number()),
   proteinCategory: proteinCategoryValidator,

@@ -478,3 +478,86 @@ test("publication refuses a reviewed image if its source was replaced in the mea
     )?.version,
   ).toBe(2);
 });
+
+test("serving backfill publishes immutable revisions, reuses images and replays safely", async () => {
+  const { t, mealId } = await setup();
+  const [row] = await t.query(
+    internal.catalogueMaintenance.exportServingMinimums,
+    {},
+  );
+  const input = {
+    reviewedBy: "editor",
+    rows: [
+      {
+        catalogueMealId: row.catalogueMealId,
+        version: row.version,
+        fingerprint: row.fingerprint,
+        minimumServings: 3,
+        reason: "Keep a practical assembled dish size.",
+      },
+    ],
+  };
+  const first = await t.mutation(
+    internal.catalogueMaintenance.applyServingMinimums,
+    input,
+  );
+  expect(first[0]).toMatchObject({ version: 2, status: "published" });
+  const old = await t.run((ctx) => ctx.db.get(mealId));
+  expect(old).toMatchObject({ status: "retired", servings: 4 });
+  expect(old?.minimumServings).toBeUndefined();
+  const rows = await t.run((ctx) => ctx.db.query("catalogueMeals").collect());
+  expect(rows.find((r) => r.status === "published")).toMatchObject({
+    minimumServings: 3,
+    imageStorageId: old?.imageStorageId,
+    slug: old?.slug,
+    position: old?.position,
+  });
+  expect(
+    (
+      await t.mutation(
+        internal.catalogueMaintenance.applyServingMinimums,
+        input,
+      )
+    )[0].status,
+  ).toBe("unchanged");
+  expect(
+    await t.run((ctx) => ctx.db.query("catalogueMeals").collect()),
+  ).toHaveLength(2);
+  await expect(
+    t.mutation(internal.catalogueMaintenance.applyServingMinimums, {
+      ...input,
+      rows: [{ ...input.rows[0], fingerprint: "stale" }],
+    }),
+  ).rejects.toThrow("changed");
+  await expect(
+    t.mutation(internal.catalogueMaintenance.applyServingMinimums, {
+      ...input,
+      rows: [{ ...input.rows[0], minimumServings: 2 }],
+    }),
+  ).rejects.toThrow("newer");
+});
+
+test("backfill rejects impossible minimums and leaves catalogue untouched", async () => {
+  const { t } = await setup();
+  const [row] = await t.query(
+    internal.catalogueMaintenance.exportServingMinimums,
+    {},
+  );
+  await expect(
+    t.mutation(internal.catalogueMaintenance.applyServingMinimums, {
+      reviewedBy: "editor",
+      rows: [
+        {
+          catalogueMealId: row.catalogueMealId,
+          version: row.version,
+          fingerprint: row.fingerprint,
+          minimumServings: 5,
+          reason: "Invalid.",
+        },
+      ],
+    }),
+  ).rejects.toThrow("Minimum servings");
+  expect(
+    await t.run((ctx) => ctx.db.query("catalogueMeals").collect()),
+  ).toHaveLength(1);
+});

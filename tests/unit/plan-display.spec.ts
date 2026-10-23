@@ -113,6 +113,7 @@ test("resolves draft rows with duration labels when times exist", () => {
   }
   expect(rows[2]).toEqual({
     kind: "empty",
+    requestedServings: draft.servings,
     date: "2026-08-31",
     weekday: "MON",
     dayOfMonth: "31",

@@ -9,6 +9,7 @@ export const SHOPPING_LIST_LIMITS = {
 export type ShoppingListRecipe<TRecipeId extends string = string> = {
   recipeId: TRecipeId;
   title: string;
+  requestedServings?: number;
   date?: string;
   ingredients: readonly RecipeIngredientLine[];
 };
@@ -55,6 +56,7 @@ const STAPLE_INGREDIENT_NAMES = new Set([
 export type ShoppingListSource<TRecipeId extends string = string> = {
   recipeId: TRecipeId;
   recipeTitle: string;
+  requestedServings?: number;
   date: string | null;
   amount: string;
 };
@@ -101,6 +103,9 @@ export function deriveShoppingListItems<TRecipeId extends string>(
       const source = {
         recipeId: recipe.recipeId,
         recipeTitle: recipe.title,
+        ...(recipe.requestedServings === undefined
+          ? {}
+          : { requestedServings: recipe.requestedServings }),
         date: recipe.date ?? null,
         amount: ingredientAmount(ingredient),
       };

@@ -150,3 +150,13 @@ MVP additions still required by the approved designs:
 - the approved Cook Mode interface.
 
 Defer canonical ingredients, automated method-step ingredient mapping, dietary/allergen profiles, a calculated regional cost estimator, photo/camera/share-sheet capture, general recipe editing, publishing, social relationships, and feeds until their product slices need them.
+
+## Minimum practical servings
+
+`RecipeContent.minimumServings?: number` describes the smallest practical version of the recipe, separately from authored `servings`. It is a positive integer no greater than known authored servings; incomplete import drafts may retain a minimum while yield is being recovered. Blank means ordinary serving adjustment. Do not infer a minimum from authored yield or baking alone.
+
+For scalable recipes, cooking servings are `max(requestedServings, minimumServings ?? 1)`. The shared recipe serving model resolves this before scaling ingredients. `source_only` retains authored quantities; missing yield never invents a scaled quantity or leftover count. Imported display amounts must agree with scaled structured amounts while original source text remains intact.
+
+Plan servings remain the number eating. Each pinned recipe snapshot independently resolves cooking servings. Plan review, Week, Detail and Cook explain minimum adjustments with “Makes 4 portions for 2 people — 2 portions left over.” Shopping derives ingredients with exactly the same model before grouping, including repeated meals and legacy source reconstruction. Temporary Cook adjustments do not update the plan or Shopping. Owner edits to a stored imported recipe reconcile its linked shopping lists in the same transaction, including archived lists kept for delayed shopping. Leftovers are informational and are not automatically scheduled.
+
+Catalogue revisions and private snapshots preserve this field. Backfill only published catalogue content through reviewed immutable revisions; existing personal copies, plans and pinned guest revisions retain their content. Public Recipe structured data continues to describe authored yield.

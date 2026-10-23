@@ -93,6 +93,12 @@ export async function catalogueMealSummary(
       ? {}
       : { description: meal.description }),
     ...(meal.servings === undefined ? {} : { servings: meal.servings }),
+    ...(meal.servingScaling === undefined
+      ? {}
+      : { servingScaling: meal.servingScaling }),
+    ...(meal.minimumServings === undefined
+      ? {}
+      : { minimumServings: meal.minimumServings }),
     ...(meal.prepMinutes === undefined
       ? {}
       : { prepMinutes: meal.prepMinutes }),

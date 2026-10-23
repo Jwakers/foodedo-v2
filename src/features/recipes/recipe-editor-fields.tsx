@@ -37,10 +37,14 @@ export function EditorField({
 export function NumberField({
   label,
   value,
+  min = 0,
+  max,
   onChange,
 }: {
   label: string;
   value?: number;
+  min?: number;
+  max?: number;
   onChange: (value: number | undefined) => void;
 }) {
   return (
@@ -48,7 +52,8 @@ export function NumberField({
       {label}
       <input
         type="number"
-        min={0}
+        min={min}
+        max={max}
         className={`${fieldClass} mt-1`}
         value={value ?? ""}
         onChange={(event) =>

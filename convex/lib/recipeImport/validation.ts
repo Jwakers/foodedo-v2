@@ -143,6 +143,11 @@ export function toRecipeContent(
         }
       : {}),
     ...(output.servings ? { servings: output.servings.value } : {}),
+    ...(output.minimumServings &&
+    output.servings &&
+    output.minimumServings.value <= output.servings.value
+      ? { minimumServings: output.minimumServings.value }
+      : {}),
     ...(output.prepMinutes ? { prepMinutes: output.prepMinutes.value } : {}),
     ...(output.cookMinutes ? { cookMinutes: output.cookMinutes.value } : {}),
     servingScaling: output.ingredients.every((ingredient) =>
@@ -155,6 +160,9 @@ export function toRecipeContent(
     recipe,
     metadataProvenance: {
       ...(output.servings ? { servings: output.servings.origin } : {}),
+      ...(recipe.minimumServings !== undefined && output.minimumServings
+        ? { minimumServings: output.minimumServings.origin }
+        : {}),
       ...(output.prepMinutes ? { prepMinutes: output.prepMinutes.origin } : {}),
       ...(output.cookMinutes ? { cookMinutes: output.cookMinutes.origin } : {}),
     },

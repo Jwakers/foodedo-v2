@@ -98,6 +98,7 @@ export type RecipeMetadataOrigin = "published" | "derived" | "estimated";
 
 export type RecipeMetadataProvenance = {
   servings?: RecipeMetadataOrigin;
+  minimumServings?: RecipeMetadataOrigin;
   prepMinutes?: RecipeMetadataOrigin;
   cookMinutes?: RecipeMetadataOrigin;
 };
@@ -134,6 +135,7 @@ export type RecipeContent = {
   ingredients: RecipeIngredientLine[];
   steps: RecipeStep[];
   servings?: number;
+  minimumServings?: number;
   prepMinutes?: number;
   cookMinutes?: number;
   proteinCategory: ProteinCategory;
@@ -256,6 +258,21 @@ function prepareContent(
     1,
     RECIPE_LIMITS.servings,
   );
+  const minimumServings = optionalWholeNumber(
+    input.minimumServings,
+    "Minimum servings",
+    1,
+    RECIPE_LIMITS.servings,
+  );
+  if (
+    minimumServings !== undefined &&
+    ((servings === undefined && !incomplete) ||
+      (servings !== undefined && minimumServings > servings))
+  ) {
+    throw new RecipeValidationError(
+      "Minimum servings must not exceed known authored servings.",
+    );
+  }
   const prepMinutes = optionalWholeNumber(
     input.prepMinutes,
     "Preparation time",
@@ -281,6 +298,7 @@ function prepareContent(
     ingredients,
     steps,
     ...(servings === undefined ? {} : { servings }),
+    ...(minimumServings === undefined ? {} : { minimumServings }),
     ...(prepMinutes === undefined ? {} : { prepMinutes }),
     ...(cookMinutes === undefined ? {} : { cookMinutes }),
     proteinCategory: requiredProteinCategory(input.proteinCategory),

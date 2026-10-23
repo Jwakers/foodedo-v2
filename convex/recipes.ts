@@ -1,3 +1,5 @@
+import { syncShoppingListsForRecipe } from "./lib/shoppingListSync";
+import { recipeServingScaling } from "../src/lib/domain/ingredient-scaling";
 import { retireIntroductions } from "./lib/onboarding";
 import {
   paginationOptsValidator,
@@ -185,6 +187,7 @@ export const repairImport = mutation({
       contentEditedAt: now,
       updatedAt: now,
     });
+    await syncShoppingListsForRecipe(ctx, ownerId, recipe._id);
     const updated = await ctx.db.get(recipe._id);
     return updated === null ? null : await toRecipeView(ctx, updated);
   },
@@ -215,6 +218,9 @@ export const updateImported = mutation({
     const source = clearNormalizationWarnings(
       removeEditedMetadataProvenance(recipe.source, [
         ...(recipe.servings === content.servings ? [] : ["servings" as const]),
+        ...(recipe.minimumServings === content.minimumServings
+          ? []
+          : ["minimumServings" as const]),
         ...(recipe.prepMinutes === content.prepMinutes
           ? []
           : ["prepMinutes" as const]),
@@ -226,6 +232,7 @@ export const updateImported = mutation({
     await ctx.db.patch(recipeId, {
       description: undefined,
       servings: undefined,
+      minimumServings: undefined,
       prepMinutes: undefined,
       cookMinutes: undefined,
       costBand: undefined,
@@ -237,6 +244,7 @@ export const updateImported = mutation({
       contentEditedAt: now,
       updatedAt: now,
     });
+    await syncShoppingListsForRecipe(ctx, ownerId, recipeId);
     const updated = await ctx.db.get(recipeId);
     return updated === null ? null : await toRecipeView(ctx, updated);
   },
@@ -339,6 +347,9 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
     ingredients: recipe.ingredients,
     steps: recipe.steps,
     ...(recipe.servings === undefined ? {} : { servings: recipe.servings }),
+    ...(recipe.minimumServings === undefined
+      ? {}
+      : { minimumServings: recipe.minimumServings }),
     ...(recipe.prepMinutes === undefined
       ? {}
       : { prepMinutes: recipe.prepMinutes }),
@@ -349,9 +360,7 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
     ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
     ...(recipe.preheat === undefined ? {} : { preheat: recipe.preheat }),
     ...(recipe.notes === undefined ? {} : { notes: recipe.notes }),
-    servingScaling:
-      recipe.servingScaling ??
-      (recipe.source.type === "import" ? "source_only" : "safe"),
+    servingScaling: recipeServingScaling(recipe),
     ...(imageSrc === undefined ? {} : { imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),

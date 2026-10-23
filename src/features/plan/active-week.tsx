@@ -144,6 +144,7 @@ export function ActiveWeek({
   }, [catalogue, pinnedMeals]);
   const isArchived = plan.status === "archived";
   const rows = resolveActivePlanWeekRows({
+    servings: plan.servings,
     startDate: plan.startDate,
     endDate: plan.endDate,
     mealSlots: plan.mealSlots,

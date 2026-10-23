@@ -64,3 +64,9 @@ barcode scanning, or manual category management.
 A linked list follows its meal plan's lifetime; it is deleted with the owning account or a future explicit plan-deletion flow, not by an independent inactivity timer.
 
 Any expansion of this boundary requires a new product and architecture decision. It must not be inferred from the current implementation or older Foodedo versions.
+
+## Serving minimums
+
+Keep the plan's household count separate from each recipe's cooking quantity. A two-person plan with a minimum-four lasagna buys four portions of lasagna ingredients, while ordinary meals still buy two. Resolve through the shared recipe serving model before grouping; do not independently multiply by household servings. Respect `source_only` and missing-yield recipes. Repeated meal occurrences remain separate sources. “Used for” quantities and links carry the plan's requested servings so Detail/Cook explain the same quantities. Existing reconciliation preserves checks, removals, staples and extras. Leftovers are not credited against another meal automatically.
+
+Owner corrections to imported recipes reconcile every linked shopping list transactionally, including archived lists retained for delayed shopping. Temporary changes to servings in Detail/Cook do not mutate the stored recipe or its lists.

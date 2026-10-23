@@ -29,6 +29,7 @@ export const recipeSchema = z.object({
   title: z.string().min(1).max(160),
   description: z.string().min(1).max(1000),
   servings: z.number().int().min(1).max(12),
+  minimumServings: z.number().int().min(1).max(12).nullable().optional(),
   prepMinutes: z.number().int().min(0).max(10080),
   cookMinutes: z.number().int().min(0).max(10080),
   proteinCategory: z.enum(PROTEIN_CATEGORIES),
@@ -106,6 +107,7 @@ export function recipeContent(
       ...(note ? { note } : {}),
     })),
     preheat: recipe.preheat ?? undefined,
+    minimumServings: recipe.minimumServings ?? undefined,
     servingScaling: recipe.ingredients.every((line) =>
       canScaleIngredientQuantity(line.quantity),
     )

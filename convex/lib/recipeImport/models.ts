@@ -55,6 +55,14 @@ export const importedRecipeSchema = z.object({
       sourceIds: refs,
     })
     .nullable(),
+  minimumServings: z
+    .object({
+      value: z.number().int().min(1).max(1000),
+      origin,
+      sourceIds: refs,
+    })
+    .nullable()
+    .optional(),
   prepMinutes: metadata,
   cookMinutes: metadata,
   proteinCategory: z.enum([
@@ -168,6 +176,10 @@ export const correctionOutputSchema = z.object({
           value: fields.description,
         }),
         z.object({ field: z.literal("servings"), value: fields.servings }),
+        z.object({
+          field: z.literal("minimumServings"),
+          value: fields.minimumServings,
+        }),
         z.object({
           field: z.literal("prepMinutes"),
           value: fields.prepMinutes,

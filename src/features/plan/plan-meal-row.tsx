@@ -1,5 +1,7 @@
 "use client";
 
+import { minimumServingsNotice } from "@/lib/domain/ingredient-scaling";
+
 import { ChevronRight, Ellipsis, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -116,6 +118,10 @@ function PlannedMealRow({
   readOnly: boolean;
   recipeHref?: string;
 }) {
+  const servingNotice =
+    row.requestedServings === undefined
+      ? null
+      : minimumServingsNotice(row.meal, row.requestedServings);
   const summary = (
     <>
       <div className="relative h-16.5 w-20.5 shrink-0 overflow-hidden rounded-sm bg-mist">
@@ -134,6 +140,9 @@ function PlannedMealRow({
         <p className="truncate font-display text-18 font-semibold tracking-card text-ink">
           {row.meal.title}
         </p>
+        {servingNotice ? (
+          <p className="text-12 text-graphite">{servingNotice}</p>
+        ) : null}
         {row.durationLabel ? (
           <p className="flex items-center gap-1 text-12 text-graphite">
             {row.durationLabel}
@@ -182,6 +191,7 @@ function PlannedMealRow({
           date={row.date}
           mealTitle={row.meal.title}
           currentMeal={row.meal}
+          requestedServings={row.requestedServings}
           onRemoveMeal={onRemoveMeal}
           onReplaceMeal={onReplaceMeal}
           onChooseMeal={onChooseMeal}
@@ -202,6 +212,7 @@ function PlannedMealRow({
 }
 
 function PlanMealActionsDrawer({
+  requestedServings,
   date,
   mealTitle,
   currentMeal,
@@ -213,6 +224,7 @@ function PlanMealActionsDrawer({
   date: string;
   mealTitle: string;
   currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
+  requestedServings?: number;
   onRemoveMeal?: (date: string) => Promise<unknown> | void;
   onReplaceMeal?: (
     date: string,
@@ -365,6 +377,7 @@ function PlanMealActionsDrawer({
           <DrawerStackView id={planMealDrawerViews.preview} layout="fill">
             {previewMeal ? (
               <PlanMealRecipePreview
+                requestedServings={requestedServings}
                 meal={previewMeal}
                 isSwapping={isSwapping}
                 onSwap={() => runSwap(previewMeal.id)}
@@ -416,6 +429,7 @@ function SwapPane({
 }: {
   date: string;
   currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
+  requestedServings?: number;
   isSwapping: boolean;
   filters: RecipeFilters;
   sort: RecipeSort;

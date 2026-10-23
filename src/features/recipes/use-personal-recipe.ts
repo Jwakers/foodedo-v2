@@ -51,6 +51,9 @@ export function toPersonalRecipeMeal(
     ingredients: recipe.ingredients,
     steps: recipe.steps,
     ...(recipe.servings === undefined ? {} : { servings: recipe.servings }),
+    ...(recipe.minimumServings === undefined
+      ? {}
+      : { minimumServings: recipe.minimumServings }),
     ...(recipe.prepMinutes === undefined
       ? {}
       : { prepMinutes: recipe.prepMinutes }),

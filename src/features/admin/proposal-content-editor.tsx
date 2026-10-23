@@ -43,6 +43,20 @@ export function ProposalContentEditor({
           setContent((current) => ({ ...current, description }))
         }
       />
+      <div>
+        <NumberField
+          label="Minimum servings"
+          min={1}
+          max={content.servings ?? 1000}
+          value={content.minimumServings}
+          onChange={(minimumServings) =>
+            setContent((current) => ({ ...current, minimumServings }))
+          }
+        />
+        <p className="mt-1 text-12 text-graphite">
+          Smallest practical recipe size. Leave blank to allow ordinary scaling.
+        </p>
+      </div>
       <div className="grid grid-cols-3 gap-3">
         <NumberField
           label="Servings"

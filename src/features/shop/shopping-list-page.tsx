@@ -1089,7 +1089,11 @@ function IngredientSourcesDrawer({
                     className="border-b border-border"
                   >
                     <Link
-                      href={personalRecipeDetailPath(source.recipeId)}
+                      href={personalRecipeDetailPath(
+                        source.recipeId,
+                        source.requestedServings,
+                        source.requestedServings,
+                      )}
                       className="flex min-h-17 items-center gap-3 px-page-inline py-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cadmium"
                     >
                       <span className="min-w-0 flex-1">

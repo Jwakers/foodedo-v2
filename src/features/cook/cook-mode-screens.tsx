@@ -91,6 +91,7 @@ export function CookHeader({
 
 export function PreparationScreen({
   meal,
+  servingNotice,
   ingredients,
   session,
   persistenceAvailable,
@@ -99,6 +100,7 @@ export function PreparationScreen({
   onExit,
 }: {
   meal: CatalogueMeal;
+  servingNotice?: string | null;
   ingredients: ScaledIngredientLine[];
   session: CookSession;
   persistenceAvailable: boolean;
@@ -112,7 +114,8 @@ export function PreparationScreen({
       <section className="flex flex-1 flex-col px-page-inline pt-6">
         <PersistenceWarning visible={!persistenceAvailable} />
         <p className="text-12 font-bold tracking-overline text-cadmium uppercase">
-          Mise en place · serves {session.servings}
+          Mise en place
+          {meal.servings !== undefined ? ` · serves ${session.servings}` : ""}
         </p>
         <h1 className="mt-2 font-display text-34 font-semibold tracking-heading text-ink">
           Get everything ready
@@ -120,6 +123,9 @@ export function PreparationScreen({
         <p className="mt-1 text-15 text-graphite">
           Prep these ingredients before you start cooking.
         </p>
+        {servingNotice ? (
+          <p className="mt-2 text-12 text-graphite">{servingNotice}</p>
+        ) : null}
         {meal.preheat ? (
           <div className="mt-5 flex items-center gap-3 rounded-compact bg-mist p-3">
             <Timer className="size-5 text-leaf" />
@@ -333,9 +339,11 @@ export function IngredientsScreen({
             {meal.title}
           </p>
           <p className="text-13 text-graphite">
-            {meal.servingScaling === "source_only"
-              ? `As written · serves ${session.servings}`
-              : `Scaled for ${session.servings}`}
+            {meal.servings === undefined
+              ? "As written"
+              : meal.servingScaling === "source_only"
+                ? `As written · serves ${session.servings}`
+                : `Scaled for ${session.servings}`}
           </p>
         </div>
         <TimerList timers={session.timers} {...timerActions} />
