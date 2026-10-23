@@ -87,18 +87,12 @@ On 23 October 2026, a one-off deterministic backfill added 146 timer cues to 24 
 
 The scoped published-catalogue backup, production preview, apply receipt and verification summary remain locally under ignored `.catalogue-migration/timers/`. Future one-off enrichments should follow **preview → review → apply to the target environment's current data → verify**, with source revision/fingerprint guards, rather than copying development records over live production data.
 
-### Minimum servings and catalogue backfill
+### Minimum servings
 
-Generation, review, repair and maintenance assess `minimumServings` independently of authored servings. Fixed assembled dishes or tins may justify a minimum; oven cooking alone does not. Uncertain cases remain unrestricted. Minimums are cooking content: edits change fingerprints and require renewed culinary review.
+Generation, review, repair and maintenance assess `minimumServings` independently of authored servings. Fixed assembled dishes or tins may justify a minimum; oven cooking alone does not. Uncertain cases remain unrestricted. Minimums are cooking content: edits change fingerprints and require renewed culinary review. The catalogue editor exposes **Minimum servings**.
 
-The catalogue editor exposes **Minimum servings**. The operator-only `catalogueMaintenance:exportServingMinimums` export provides current revisions, prepared content and fingerprints for review. `catalogueMaintenance:applyServingMinimums` accepts 1–25 reviewed changes, guards source fingerprints/current revisions, preserves identity/slug/position/image, publishes immutable revisions, and supports harmless retries. It never modifies personal snapshots or saved plans.
+### Completed minimum-servings migration
 
-The initial audit is `docs/reviews/minimum-servings-2026-10-23.json`: 136 recipes, 16 reviewed restrictions with culinary reasons, applied to V2 development and verified in the adjacent `.applied.json` record. This is a development-catalogue audit; a production backfill needs a fresh export and review against production fingerprints.
+On 23 October 2026, all 136 published recipes were reviewed and 16 received practical serving minimums in both V2 development and production. Production changes were applied against its current recipe revisions and fingerprints, rather than copying development records. Verification confirmed 136 published recipes, with the other 120 unchanged, and preserved every image, recipe text, ingredient, timer, note, stable identity, slug and position. Personal copies and existing plans were not backfilled.
 
-After deploying the backend changes with `pnpm exec convex dev --once` to the configured V2 development project, preview using:
-
-```sh
-node --import tsx scripts/catalogue-generation/serving-minimums.mts --review=docs/reviews/minimum-servings-2026-10-23.json
-```
-
-After reviewing values, set `reviewStatus` to `approved` and record `reviewedBy` in the review file. Add `--apply` to publish those changes on the configured development deployment and verify every audited minimum. Preflight validates the complete review, unique recipe IDs and expected result fingerprints before any publication batch. The script never deploys backend code or selects production. It writes an `.applied.json` verification record beside the review file and preserves the original publication receipt on no-op reruns. Re-export changed recipes before retrying stale reviews.
+The temporary export query, publishing mutation, runner, review helper and dedicated migration tests have been removed. Permanent validation, AI authoring/import, editing, Plan, Cook and Shopping support remain. The review, scoped backups, apply receipts and production verification record are retained locally under ignored `.catalogue-migration/minimum-servings/`.
