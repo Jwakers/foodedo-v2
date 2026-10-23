@@ -1,9 +1,10 @@
 "use client";
 
+import { useOnboarding } from "@/features/onboarding/use-onboarding";
 import { useHouseholdSpace } from "@/features/household/household-context";
 import { Show, useAuth } from "@clerk/react";
 import { ArrowRight, Clock, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,10 @@ export function PlanReviewReady({
   onAddDay: () => Promise<void>;
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { retire } = useOnboarding();
+  useEffect(() => {
+    retire("home");
+  }, [retire]);
   const { household, isHousehold } = useHouseholdSpace();
   const [saveDrawerOpen, setSaveDrawerOpen] = useState(false);
   const [isPreparingSignIn, setIsPreparingSignIn] = useState(false);

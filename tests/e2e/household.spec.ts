@@ -465,20 +465,30 @@ for (const width of [320, 390, 1280])
     }
   });
 
-for (const plan of ["active", "empty"])
-  test(`Home offers household creation without a household (${plan} plan)`, async ({
-    page,
-  }) => {
-    await page.goto(
-      `https://household.fixture/?screen=dashboard&members=none&plan=${plan}`,
-    );
-    await expect(
-      page.getByRole("heading", { name: "Share your week", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Create a household", exact: true }),
-    ).toHaveAttribute("href", "/household");
-  });
+test("Home offers household creation once there is an active plan", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://household.fixture/?screen=dashboard&members=none&plan=active",
+  );
+  await expect(
+    page.getByRole("link", { name: "Create a household", exact: true }),
+  ).toHaveAttribute("href", "/household");
+});
+
+test("Home prioritises the planning introduction before a first plan", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://household.fixture/?screen=dashboard&members=none&plan=empty",
+  );
+  await expect(
+    page.getByRole("complementary", { name: "Planning introduction" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Create a household", exact: true }),
+  ).toHaveCount(0);
+});
 
 for (const condition of ["members=present", "members=loading", "role=guest"])
   test(`Home hides household discovery for ${condition}`, async ({ page }) => {
@@ -518,4 +528,145 @@ test("local web invitations retain localhost and its port when displayed and cop
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe(url);
+});
+
+test("the shopping introduction stays readable and does not repeat on reload", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("https://household.fixture/?screen=saved&introduction=first");
+  const introduction = page.getByRole("region", {
+    name: "Your shopping list is ready",
+  });
+  await expect(introduction).toBeVisible();
+  await expect(page.getByText(/1 planned dinner/)).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(
+          sessionStorage.getItem("fixture:retired:fixture-alice") ?? "[]",
+        ).includes("shopping"),
+      ),
+    )
+    .toBe(true);
+  await expect(introduction).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open shopping list" }),
+  ).toHaveAttribute("href", "/shop");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Your plan is saved" }),
+  ).toBeVisible();
+  await expect(introduction).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Go to my week" }),
+  ).toHaveAttribute("href", "/week");
+});
+
+test("a solo household can keep planning in its own space", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("https://household.fixture/?screen=household&members=solo");
+  await expect(
+    page.getByRole("heading", { name: "Ready to share.", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("You can keep planning on your own until someone joins."),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "View my week" }).click();
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("foodedo:space:fixture-alice:household-one"),
+    ),
+  ).toBe("household");
+});
+
+test("an offline dismissal stays hidden and syncs when the connection returns", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://household.fixture/?screen=dashboard&members=none&plan=empty",
+  );
+  const hint = page.getByRole("complementary", {
+    name: "Planning introduction",
+  });
+  await expect(hint).toBeVisible();
+  await page.evaluate(() =>
+    sessionStorage.setItem("fixture:fail-onboarding-once", "true"),
+  );
+  await page
+    .getByRole("button", { name: "Dismiss planning introduction" })
+    .click();
+  await expect(hint).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("fixture:onboarding-syncs")),
+    )
+    .toBe("1");
+  expect(
+    await page.evaluate(() =>
+      sessionStorage.getItem("fixture:retired:fixture-alice"),
+    ),
+  ).toBeNull();
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(
+          sessionStorage.getItem("fixture:retired:fixture-alice") ?? "[]",
+        ),
+      ),
+    )
+    .toContain("home");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(hint).toHaveCount(0);
+});
+
+test("guest dismissals transfer once and do not leak into the next account", async ({
+  page,
+}) => {
+  await page.goto(
+    "https://household.fixture/?screen=dashboard&members=none&plan=empty&role=guest",
+  );
+  const hint = page.getByRole("complementary", {
+    name: "Planning introduction",
+  });
+  await expect(hint).toBeVisible();
+  await page
+    .getByRole("button", { name: "Dismiss planning introduction" })
+    .click();
+  await page.evaluate(() => {
+    sessionStorage.setItem("fixture:identity", "fixture-alice");
+    window.dispatchEvent(new Event("fixture:auth-change"));
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(
+          sessionStorage.getItem("fixture:retired:fixture-alice") ?? "[]",
+        ),
+      ),
+    )
+    .toContain("home");
+  await expect(hint).toHaveCount(0);
+  await page.evaluate(() => {
+    sessionStorage.setItem("fixture:identity", "guest");
+    window.dispatchEvent(new Event("fixture:auth-change"));
+  });
+  await expect(hint).toHaveCount(0);
+  await page.evaluate(() => {
+    sessionStorage.setItem("fixture:identity", "fixture-bob");
+    window.dispatchEvent(new Event("fixture:auth-change"));
+  });
+  await expect(hint).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      sessionStorage.getItem("fixture:retired:fixture-bob"),
+    ),
+  ).toBeNull();
 });

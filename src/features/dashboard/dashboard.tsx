@@ -1,17 +1,11 @@
 "use client";
 
+import { HomeIntroduction } from "@/features/onboarding/contextual-introductions";
 import { HouseholdDiscovery } from "@/features/household/household-discovery";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
-import {
-  ClerkFailed,
-  ClerkLoaded,
-  ClerkLoading,
-  Show,
-  SignInButton,
-} from "@clerk/react";
 import { useQuery } from "convex/react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -76,8 +70,7 @@ export function Dashboard() {
       <DashboardIntroduction />
       <DashboardImage />
       <PlanAction />
-      <AccountNotice />
-      {isAuthenticated && household === null ? <HouseholdDiscovery /> : null}
+      <HomeIntroduction />
       <IdeasForYourWeek catalogue={catalogue} />
     </section>
   );
@@ -114,49 +107,6 @@ function DashboardImage() {
         className="object-cover"
       />
     </div>
-  );
-}
-
-function AccountNotice() {
-  return (
-    <>
-      <ClerkLoading>
-        <div
-          className="mt-4 h-19 rounded-surface bg-mist"
-          aria-label="Checking account status"
-        />
-      </ClerkLoading>
-
-      <ClerkFailed>
-        <p className="mt-4 rounded-surface bg-cadmium-soft p-4 text-13 text-danger">
-          Account status is temporarily unavailable.
-        </p>
-      </ClerkFailed>
-
-      <ClerkLoaded>
-        <Show when="signed-out">
-          <div className="mt-4 flex items-start gap-3 rounded-surface bg-leaf-soft p-4">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-leaf text-leaf-soft">
-              <Check aria-hidden="true" className="size-4.5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-14 font-bold text-ink">
-                Try it first, save it later
-              </p>
-              <p className="mt-1 text-13 text-graphite">
-                Plan your week now. Sign in when you want to keep it.
-              </p>
-              <SignInButton mode="modal">
-                <Button variant="inline" className="mt-1 text-leaf">
-                  Sign in
-                  <ArrowRight aria-hidden="true" className="size-3.5" />
-                </Button>
-              </SignInButton>
-            </div>
-          </div>
-        </Show>
-      </ClerkLoaded>
-    </>
   );
 }
 

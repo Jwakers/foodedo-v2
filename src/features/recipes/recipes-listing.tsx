@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
+import { RecipesIntroduction } from "@/features/onboarding/contextual-introductions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import {
@@ -230,7 +231,7 @@ export function RecipesListing({
         </div>
       ) : null}
 
-      {activeScope === "All" ? <RecipeImportDiscoveryLink /> : null}
+      {activeScope === "All" ? <RecipesIntroduction /> : null}
 
       {activeScope === "All" ? (
         <CatalogueGrid
@@ -278,6 +279,8 @@ export function RecipesListing({
           searchQuery={searchQuery}
         />
       ) : null}
+
+      {activeScope === "All" ? <RecipeImportDiscoveryLink /> : null}
 
       <Drawer
         open={filtersOpen}

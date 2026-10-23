@@ -17,6 +17,8 @@ import {
   telemetryValidator,
 } from "./lib/catalogueGeneration/validators";
 
+import { onboardingValidator } from "./lib/onboarding";
+
 const spaceOwner = v.union(v.id("users"), v.id("households"));
 
 export default defineSchema({
@@ -155,6 +157,7 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_meal_revision", ["catalogueMealId", "catalogueVersion"]),
   users: defineTable({
+    onboarding: v.optional(onboardingValidator),
     authSubject: v.string(),
     email: v.union(v.string(), v.null()),
     name: v.union(v.string(), v.null()),

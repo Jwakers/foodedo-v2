@@ -836,3 +836,76 @@ test("returns typed unavailability for conflicts and duplicate dates", async () 
     }),
   ).toEqual({ status: "plan_unavailable" });
 });
+
+test("only the first successful save qualifies for the shopping introduction", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  const args = {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  };
+  const first = await asUser.mutation(api.mealPlans.claimGuestDraft, args);
+  if (first.status !== "claimed") throw new Error("Expected a saved plan");
+  expect(
+    await asUser.query(api.onboarding.getState, { authSubject }),
+  ).toMatchObject({
+    retired: ["home"],
+    firstSavedPlanId: first.mealPlanId,
+  });
+  await asUser.mutation(api.onboarding.retire, {
+    authSubject,
+    introductions: ["shopping"],
+  });
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    ...args,
+    claimKey: "another_claim_key_123456789",
+  });
+  expect(
+    await asUser.query(api.onboarding.getState, { authSubject }),
+  ).toMatchObject({
+    retired: ["home", "shopping"],
+    firstSavedPlanId: first.mealPlanId,
+  });
+  const other = await authenticateTestUser(t, "another-account");
+  expect(
+    await other.asUser.query(api.onboarding.getState, {
+      authSubject: "another-account",
+    }),
+  ).toMatchObject({
+    retired: [],
+  });
+});
+
+test("existing plans suppress the first-save shopping introduction", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+  await t.run((ctx) =>
+    ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: "2026-09-01",
+      endDate: "2026-09-07",
+      status: "archived",
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+  expect(
+    await asUser.query(api.onboarding.getState, { authSubject }),
+  ).toMatchObject({
+    retired: ["home", "shopping"],
+  });
+  expect(
+    (await asUser.query(api.onboarding.getState, { authSubject }))
+      ?.firstSavedPlanId,
+  ).toBeUndefined();
+});

@@ -8,10 +8,11 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/react";
-import { UsersRound, ChevronLeft } from "lucide-react";
+import { UsersRound, ChevronLeft, CircleHelp } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { useFoodedoHelp } from "@/features/onboarding/foodedo-help";
 import { adminContainerClass } from "@/features/admin/admin-layout";
 import { AdminNavigationLink } from "@/features/admin/admin-navigation-link";
 import { BrandLogo } from "@/components/brand-logo";
@@ -115,6 +116,7 @@ export function AppHeader() {
 }
 
 function DefaultAccountControls() {
+  const openHelp = useFoodedoHelp();
   return (
     <>
       <ClerkLoading>
@@ -129,6 +131,13 @@ function DefaultAccountControls() {
 
       <ClerkLoaded>
         <Show when="signed-out">
+          <Button
+            variant="inline"
+            className="min-h-11 min-w-11 px-1"
+            onClick={openHelp}
+          >
+            Help
+          </Button>
           <SignInButton mode="modal">
             <Button
               variant="inline"
@@ -149,6 +158,7 @@ function DefaultAccountControls() {
 }
 
 function AccountButton() {
+  const openHelp = useFoodedoHelp();
   return (
     <div className="-mr-1 flex size-11 shrink-0 items-center justify-center">
       <UserButton
@@ -166,6 +176,11 @@ function AccountButton() {
             label="Household"
             labelIcon={<UsersRound className="size-4" />}
             href="/household"
+          />
+          <UserButton.Action
+            label="How Foodedo works"
+            labelIcon={<CircleHelp className="size-4" />}
+            onClick={openHelp}
           />
           <UserButton.Action label="manageAccount" />
           <UserButton.Action label="signOut" />

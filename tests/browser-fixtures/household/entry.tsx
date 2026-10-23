@@ -1,3 +1,4 @@
+import { OnboardingProvider } from "../../../src/features/onboarding/use-onboarding";
 import { createRoot } from "react-dom/client";
 import { useState } from "react";
 import { Toaster } from "sonner";
@@ -12,6 +13,7 @@ import {
 import { ShoppingListPage } from "../../../src/features/shop/shopping-list-page";
 import { Dashboard } from "../../../src/features/dashboard/dashboard";
 import { InviteLinkPage } from "../../../src/features/household/invite-link-page";
+import { SavedWeekPage } from "../../../src/features/plan/saved-week-page";
 import { HouseholdPage } from "../../../src/features/household/household-page";
 import { JoinHouseholdPage } from "../../../src/features/household/join-household-page";
 import { ReplanReview } from "../../../src/features/plan/replan-review";
@@ -78,6 +80,8 @@ function Screen() {
             onStartNextPlan={() => {}}
             isStartingNextPlan={false}
           />
+        ) : currentScreen === "saved" ? (
+          <SavedWeekPage />
         ) : currentScreen === "shop" ? (
           <ShoppingListPage />
         ) : (
@@ -89,7 +93,9 @@ function Screen() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <HouseholdProvider>
-    <Screen />
-  </HouseholdProvider>,
+  <OnboardingProvider>
+    <HouseholdProvider>
+      <Screen />
+    </HouseholdProvider>
+  </OnboardingProvider>,
 );

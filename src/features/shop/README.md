@@ -52,8 +52,8 @@ active meal plan
 
 ## Discovery contract
 
-- A successful save may use the dedicated `Your week is sorted` route to confirm that the plan is durable.
-- Home and successful plan-save surfaces describe Shopping as ready and use the permanent `View list` action.
+- A successful save uses the existing confirmation route to confirm that the plan is durable. The first successful save introduces the generated shopping list with “Open shopping list”; later saves use a brief confirmation and ordinary Week/Shopping actions.
+- Home describes Shopping as ready and uses the permanent `View list` action.
 - Use `View list` consistently after that action is available.
 
 ## MVP boundary

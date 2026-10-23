@@ -1,3 +1,4 @@
+import { recordSavedPlanIntroduction } from "./lib/onboarding";
 import { ConvexError, v } from "convex/values";
 import {
   addDaysToPlanDate,
@@ -1015,6 +1016,8 @@ export const claimGuestDraft = mutation({
         updatedAt: claimedAt,
       });
     }
+
+    await recordSavedPlanIntroduction(ctx, actorId, ownerId, mealPlanId);
 
     if (activePlan) await carryShoppingState(ctx, activePlan._id, mealPlanId);
 

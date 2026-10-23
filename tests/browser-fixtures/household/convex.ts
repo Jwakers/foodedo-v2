@@ -1,3 +1,4 @@
+import { getFixtureIdentity } from "./auth";
 import { useSyncExternalStore } from "react";
 import { getFunctionName, type FunctionReference } from "convex/server";
 const listeners = new Set<() => void>();
@@ -101,9 +102,29 @@ export function useQuery(
 ) {
   useSyncExternalStore(subscribe, () => revision);
   if (args === "skip") return undefined;
-  const data = args as { householdId?: string; meals?: unknown[] } | undefined;
+  const data = args as
+    | { householdId?: string; meals?: unknown[]; authSubject?: string }
+    | undefined;
   const shared = !!data?.householdId;
   switch (getFunctionName(reference)) {
+    case "onboarding:getState":
+      return {
+        retired: [
+          ...new Set([
+            ...(new URLSearchParams(location.search).get("plan") !== "empty"
+              ? ["home"]
+              : []),
+            ...JSON.parse(
+              sessionStorage.getItem(`fixture:retired:${data?.authSubject}`) ??
+                "[]",
+            ),
+          ]),
+        ],
+        firstSavedPlanId:
+          new URLSearchParams(location.search).get("introduction") === "first"
+            ? "shared-plan"
+            : undefined,
+      };
     case "households:current":
       if (
         sessionStorage.getItem("fixture:join-journey") === "true" &&
@@ -118,7 +139,9 @@ export function useQuery(
         _id: "household-one",
         members: [
           { userId: "alice", name: "Alice" },
-          { userId: "bob", name: "Bob" },
+          ...(new URLSearchParams(location.search).get("members") === "solo"
+            ? []
+            : [{ userId: "bob", name: "Bob" }]),
         ],
       };
     case "households:previewInvite":
@@ -129,7 +152,7 @@ export function useQuery(
         inviterName: "Bob",
       };
     case "mealPlans:getCurrent":
-      if (new URLSearchParams(location.search).get("role") === "guest")
+      if (getFixtureIdentity() === "guest")
         throw new Error("An unauthenticated plan query must be skipped.");
       return new URLSearchParams(location.search).get("plan") === "empty"
         ? null
@@ -182,6 +205,30 @@ export function useQuery(
 export function useMutation(reference: FunctionReference<"mutation">) {
   const mutate = async (args: Record<string, unknown>) => {
     const name = getFunctionName(reference);
+    if (name === "onboarding:retire") {
+      sessionStorage.setItem(
+        "fixture:onboarding-syncs",
+        String(
+          Number(sessionStorage.getItem("fixture:onboarding-syncs") ?? 0) + 1,
+        ),
+      );
+      if (sessionStorage.getItem("fixture:fail-onboarding-once") === "true") {
+        sessionStorage.removeItem("fixture:fail-onboarding-once");
+        throw new Error("Simulated unavailable connection");
+      }
+      const key = `fixture:retired:${args.authSubject}`;
+      const previous = JSON.parse(
+        sessionStorage.getItem(key) ?? "[]",
+      ) as string[];
+      sessionStorage.setItem(
+        key,
+        JSON.stringify([
+          ...new Set([...previous, ...(args.introductions as string[])]),
+        ]),
+      );
+      change();
+      return null;
+    }
     if (name === "households:acceptInvite") {
       sessionStorage.setItem("fixture:joined", "true");
       change();

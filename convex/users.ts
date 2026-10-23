@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "./_generated/server";
 import { leaveMembership } from "./lib/spaces";
+import { onboardingValidator } from "./lib/onboarding";
 import { getCurrentUser } from "./lib/auth";
 
 const syncedUserFields = {
@@ -15,6 +16,7 @@ const userDocument = v.object({
   _id: v.id("users"),
   _creationTime: v.number(),
   ...syncedUserFields,
+  onboarding: v.optional(onboardingValidator),
 });
 
 export const current = query({

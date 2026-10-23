@@ -1,5 +1,6 @@
 "use client";
 
+import { useOnboarding } from "@/features/onboarding/use-onboarding";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
 import { useQuery } from "convex/react";
@@ -13,6 +14,7 @@ import { formatGuestPlanSummary } from "@/lib/domain/plan-display";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 export function SavedWeekPage() {
+  const onboarding = useOnboarding();
   const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
@@ -25,7 +27,8 @@ export function SavedWeekPage() {
     !spaceReady ||
     (isAuthenticated && currentPlan === undefined);
 
-  if (isCheckingPlan) return <PlanReviewLoading />;
+  if (isCheckingPlan || (isAuthenticated && !onboarding.ready))
+    return <PlanReviewLoading />;
 
   if (status === "connection_error") {
     return <AccountConnectionError />;
@@ -53,6 +56,11 @@ export function SavedWeekPage() {
 
   return (
     <PlanSavedSuccess
+      key={currentPlan._id}
+      firstSave={
+        onboarding.firstSavedPlanId === currentPlan._id &&
+        !onboarding.isRetired("shopping")
+      }
       summary={formatGuestPlanSummary({
         planStartDate: currentPlan.startDate,
         planEndDate: currentPlan.endDate,

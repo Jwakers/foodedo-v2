@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, UsersRound } from "lucide-react";
+import { CalendarDays, UsersRound, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
@@ -101,26 +101,59 @@ export function HouseholdPage() {
         Household
       </p>
       <h1 className="font-display text-34 font-semibold tracking-title text-ink">
-        {household ? "Your household" : "Share your week."}
+        {household
+          ? last
+            ? "Ready to share."
+            : "Better together."
+          : "Share your week."}
       </h1>
       {household ? (
         <>
           <p className="text-16 leading-relaxed text-graphite">
-            One shared week. Everyone can plan, shop and cook.
+            {last
+              ? "Invite someone to plan and shop together."
+              : "One shared week. One shopping list. Everyone can plan, shop and cook."}
           </p>
-          <ul className="border-t border-border">
+          <p className="flex items-start gap-3 border-b border-border pb-6 text-14 leading-5.5 text-graphite">
+            <Heart
+              aria-hidden="true"
+              className="mt-0.5 size-5 shrink-0 text-leaf"
+              strokeWidth={1.6}
+            />
+            Household plans consider everyone’s saved favourites.
+          </p>
+          <p className="text-12 font-bold tracking-label text-graphite uppercase">
+            {household.members.length} {last ? "member" : "members"}
+          </p>
+          <ul>
             {household.members.map((member) => (
               <li
                 key={member.userId}
                 className="flex min-h-20 items-center gap-3 border-b border-border"
               >
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-leaf-soft font-bold text-leaf">
-                  {member.name.charAt(0)}
+                  {member.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((part) => part.charAt(0))
+                    .join("")
+                    .toUpperCase()}
                 </span>
                 <span className="text-16 font-semibold">{member.name}</span>
               </li>
             ))}
           </ul>
+          {last ? (
+            <div className="py-5">
+              <h2 className="text-18 font-bold">
+                Your week is ready to share.
+              </h2>
+              <p className="mt-2 text-15 leading-relaxed text-graphite">
+                You can keep planning on your own until someone joins.
+              </p>
+            </div>
+          ) : null}
           <ButtonLink href="/household/invite">Invite someone</ButtonLink>
           <ButtonLink
             href="/week"
@@ -130,7 +163,7 @@ export function HouseholdPage() {
               select("household");
             }}
           >
-            See our week
+            {last ? "View my week" : "View shared week"}
           </ButtonLink>
           <p className="text-14 leading-relaxed text-graphite">
             Switch between Household and Private anytime. Your saved recipes

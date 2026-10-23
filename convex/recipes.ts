@@ -1,3 +1,4 @@
+import { retireIntroductions } from "./lib/onboarding";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -77,6 +78,7 @@ export const saveCatalogueMeal = mutation({
       catalogueVersion,
       saveToLibrary: true,
     });
+    await retireIntroductions(ctx, ownerId, ["recipes"]);
     return { status: "saved", ...savedRecipe } as const;
   },
 });
@@ -108,6 +110,12 @@ export const removeMineFromLibrary = mutation({
       recipe.savedAt === undefined
     ) {
       return { status: "not_found" } as const;
+    }
+
+    // Un-saving also proves this was a favourite, including records created
+    // before onboarding flags existed. Do not reintroduce the hint afterward.
+    if (recipe.source.type === "catalogue") {
+      await retireIntroductions(ctx, ownerId, ["recipes"]);
     }
 
     const referencedSlot = await ctx.db

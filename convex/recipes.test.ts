@@ -216,3 +216,42 @@ test("catalogue detail and personal snapshots preserve cooking notes and scaling
   expect(snapshot?.notes).toEqual(notes);
   expect(snapshot?.servingScaling).toBe("source_only");
 });
+
+test("the first favourite retires its hint even after it is removed", async () => {
+  const t = createTestContext();
+  const { asUser } = await seedUserAndRelease(t);
+  const saved = await asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  if (saved.status !== "saved") throw new Error("Expected saved favourite");
+  await asUser.mutation(api.recipes.removeMineFromLibrary, {
+    recipeId: saved.recipeId,
+  });
+  expect(
+    (await asUser.query(api.onboarding.getState, { authSubject }))?.retired,
+  ).toContain("recipes");
+  await expect(
+    t.mutation(api.onboarding.retire, { authSubject, introductions: ["home"] }),
+  ).rejects.toThrow();
+});
+
+test("removing a pre-onboarding favourite does not bring its hint back", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  const saved = await asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  if (saved.status !== "saved") throw new Error("Expected a saved favourite");
+  await t.run((ctx) => ctx.db.patch(ownerId, { onboarding: undefined }));
+  expect(
+    (await asUser.query(api.onboarding.getState, { authSubject }))?.retired,
+  ).toContain("recipes");
+  await asUser.mutation(api.recipes.removeMineFromLibrary, {
+    recipeId: saved.recipeId,
+  });
+  expect(
+    (await asUser.query(api.onboarding.getState, { authSubject }))?.retired,
+  ).toContain("recipes");
+});

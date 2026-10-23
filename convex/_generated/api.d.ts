@@ -27,6 +27,7 @@ import type * as lib_catalogueGeneration_revisions from "../lib/catalogueGenerat
 import type * as lib_catalogueGeneration_validators from "../lib/catalogueGeneration/validators.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
 import type * as lib_mealSelection from "../lib/mealSelection.js";
+import type * as lib_onboarding from "../lib/onboarding.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
 import type * as lib_recipeImport_contracts from "../lib/recipeImport/contracts.js";
 import type * as lib_recipeImport_corrections from "../lib/recipeImport/corrections.js";
@@ -45,6 +46,7 @@ import type * as lib_recipeValidators from "../lib/recipeValidators.js";
 import type * as lib_shoppingListSync from "../lib/shoppingListSync.js";
 import type * as lib_spaces from "../lib/spaces.js";
 import type * as mealPlans from "../mealPlans.js";
+import type * as onboarding from "../onboarding.js";
 import type * as planningPreferences from "../planningPreferences.js";
 import type * as recipeImportActions from "../recipeImportActions.js";
 import type * as recipeImports from "../recipeImports.js";
@@ -78,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogueGeneration/validators": typeof lib_catalogueGeneration_validators;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
   "lib/mealSelection": typeof lib_mealSelection;
+  "lib/onboarding": typeof lib_onboarding;
   "lib/planningPreferences": typeof lib_planningPreferences;
   "lib/recipeImport/contracts": typeof lib_recipeImport_contracts;
   "lib/recipeImport/corrections": typeof lib_recipeImport_corrections;
@@ -96,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   "lib/shoppingListSync": typeof lib_shoppingListSync;
   "lib/spaces": typeof lib_spaces;
   mealPlans: typeof mealPlans;
+  onboarding: typeof onboarding;
   planningPreferences: typeof planningPreferences;
   recipeImportActions: typeof recipeImportActions;
   recipeImports: typeof recipeImports;

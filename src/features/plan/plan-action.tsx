@@ -1,5 +1,6 @@
 "use client";
 
+import { useOnboarding } from "@/features/onboarding/use-onboarding";
 import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import { bindReviewSource } from "./review-source";
 import { useHouseholdSpace } from "@/features/household/household-context";
@@ -78,6 +79,7 @@ export function PlanAction({
 } = {}) {
   const { spaceArgs, isHousehold, ready: spaceReady } = useHouseholdSpace();
   const router = useRouter();
+  const { retire } = useOnboarding();
   const [open, setOpen] = useState(false);
   const [isPlanning, setIsPlanning] = useState(false);
   const { status, isSignedIn, isAuthenticated } = useFoodedoAuth();
@@ -201,6 +203,7 @@ export function PlanAction({
           : [],
         recentPlanMealIds: recentSelectionHistory ?? [],
       });
+      retire("home");
       if (getDraftSpaceKey() !== generationKey) return;
       if (onPlanCreated) {
         await onPlanCreated();

@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { useHouseholdSpace } from "@/features/household/household-context";
 import { NativeInviteLinks } from "@/features/household/native-invite-links";
 import { InviteContinuation } from "@/features/household/invite-continuation";
+import { FoodedoHelpProvider } from "@/features/onboarding/foodedo-help";
 import { AppHeader } from "@/components/app-header";
 import { AppNavigation } from "@/components/app-navigation";
 import { AppToaster } from "@/components/app-toaster";
@@ -24,9 +25,11 @@ import { usePathname } from "next/navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <GuestPlanReviewChromeProvider>
-      <AppShellChrome>{children}</AppShellChrome>
-    </GuestPlanReviewChromeProvider>
+    <FoodedoHelpProvider>
+      <GuestPlanReviewChromeProvider>
+        <AppShellChrome>{children}</AppShellChrome>
+      </GuestPlanReviewChromeProvider>
+    </FoodedoHelpProvider>
   );
 }
 
