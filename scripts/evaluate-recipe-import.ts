@@ -48,6 +48,12 @@ export type CorpusItem = {
   minimumSteps?: number;
   minimumNotes?: number;
   expectedMethodPatterns?: string[];
+  expectedTimers?: Array<{
+    stepPattern: string;
+    labelPattern: string;
+    durationSeconds: number;
+  }>;
+  expectedNoTimers?: boolean;
   expectedNotePatterns?: string[];
   expectedIngredientPatterns?: Array<{
     name: string;
@@ -283,6 +289,7 @@ export async function main() {
       metadataAccuracy: rate(results, "metadataAccuracy"),
       formattingDefectRate: rate(results, "formattingDefect"),
       methodCoverage: rate(results, "methodCoverage"),
+      timerCoverage: rate(results, "timerCoverage"),
       noteResolution: rate(results, "noteResolution"),
       reviewRate: rate(results, "reviewRequired"),
       hardFailureRate: rate(results, "hardFailure"),
@@ -372,6 +379,31 @@ export function score(
   const methodCoverage =
     Boolean(item.expectedMethodPatterns?.length) &&
     item.expectedMethodPatterns!.every((pattern) => matches(pattern, method));
+  const missingTimers = (item.expectedTimers ?? []).filter(
+    (expected) =>
+      !recipe.steps.some(
+        (step) =>
+          matches(
+            expected.stepPattern,
+            [
+              step.text,
+              ...(step.noteRefs ?? []).map(
+                (id) =>
+                  recipe.notes?.find((note) => note.id === id)?.text ?? "",
+              ),
+            ].join("\n"),
+          ) &&
+          step.timerCues?.some(
+            (cue) =>
+              cue.durationSeconds === expected.durationSeconds &&
+              matches(expected.labelPattern, cue.label),
+          ),
+      ),
+  );
+  const timerCoverage =
+    !missingTimers.length &&
+    (!item.expectedNoTimers ||
+      recipe.steps.every((step) => !step.timerCues?.length));
   const ingredientCoverage =
     Boolean(
       item.expectedIngredients?.length ||
@@ -439,7 +471,7 @@ export function score(
     core,
     // Independent fixture checks, not the production verifier judging itself.
     semanticPreservation:
-      methodCoverage && ingredientCoverage && noteResolution,
+      methodCoverage && ingredientCoverage && noteResolution && timerCoverage,
     measurementAccuracy: ingredientCoverage,
     metadataAccuracy:
       (item.expectedProtein === undefined ||
@@ -472,6 +504,8 @@ export function score(
       ),
     ),
     methodCoverage,
+    timerCoverage,
+    missingTimers,
     missingMethodPatterns: (item.expectedMethodPatterns ?? []).filter(
       (pattern) => !matches(pattern, method),
     ),

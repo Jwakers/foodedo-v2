@@ -40,7 +40,23 @@ export function ProposalPreview({ content }: { content: Proposal["content"] }) {
         </summary>
         <ol className="list-decimal space-y-4 pb-4 pl-6 text-sm leading-relaxed">
           {content.steps.map((step) => (
-            <li key={step.id}>{step.text}</li>
+            <li key={step.id}>
+              {step.text}
+              {step.timerCues?.length ? (
+                <ul
+                  className="mt-2 space-y-1 text-graphite"
+                  aria-label="Cook timers"
+                >
+                  {step.timerCues.map((cue) => (
+                    <li key={cue.id}>
+                      Timer: {cue.label} ·{" "}
+                      {Math.floor(cue.durationSeconds / 60)} min{" "}
+                      {cue.durationSeconds % 60} sec
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
           ))}
         </ol>
       </details>

@@ -57,6 +57,7 @@ const normalized = importedRecipeSchema.parse({
     {
       sourceIds: [],
       text: "Simmer for 20 minutes.",
+      timerCues: [],
       group: null,
       noteRefs: [],
     },

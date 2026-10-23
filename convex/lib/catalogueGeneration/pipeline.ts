@@ -106,7 +106,7 @@ export async function generateProposal(
           }),
     },
   );
-  let content = recipeContent(authored.recipe);
+  let content = recipeContent(authored.recipe, replacement?.content.steps);
   let tags = authored.tags;
   const validation = validateGeneratedRecipe(content, meals);
   const review = await client.text(
@@ -134,7 +134,7 @@ export async function generateProposal(
         nearest: nearestRecipes(content, meals),
       },
     );
-    content = recipeContent(repaired.recipe);
+    content = recipeContent(repaired.recipe, content.steps);
     tags = repaired.tags;
     findings = [
       ...validateGeneratedRecipe(content, meals).findings,
@@ -240,7 +240,7 @@ export async function improveProposal(
       findings: originalFindings,
     },
   );
-  let content = revisedRecipeContent(revised.recipe);
+  let content = revisedRecipeContent(revised.recipe, original.steps);
   let tags = revised.tags;
   let validation = validateGeneratedRecipe(content, meals);
   await onProgress?.({
@@ -288,7 +288,7 @@ export async function improveProposal(
       },
     );
     revised = repaired;
-    content = revisedRecipeContent(repaired.recipe);
+    content = revisedRecipeContent(repaired.recipe, content.steps);
     tags = repaired.tags;
     validation = validateGeneratedRecipe(content, meals);
     findings = [...validation.findings, ...repaired.findings];

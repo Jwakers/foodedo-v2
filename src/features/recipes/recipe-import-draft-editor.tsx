@@ -1,5 +1,6 @@
 "use client";
 
+import { RecipeTimerEditor } from "@/features/recipes/recipe-timer-editor";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { useRef, useState } from "react";
@@ -296,6 +297,18 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
                     ...recipe,
                     steps: recipe.steps.map((item, position) =>
                       position === index ? { ...item, text } : item,
+                    ),
+                  })
+                }
+              />
+              <RecipeTimerEditor
+                stepNumber={index + 1}
+                cues={step.timerCues}
+                onChange={(timerCues) =>
+                  setRecipe({
+                    ...recipe,
+                    steps: recipe.steps.map((item, position) =>
+                      position === index ? { ...item, timerCues } : item,
                     ),
                   })
                 }

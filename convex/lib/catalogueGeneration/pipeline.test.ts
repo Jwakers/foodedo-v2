@@ -40,8 +40,16 @@ const recipe = {
     },
   ],
   steps: [
-    { id: "one", text: "Boil the pasta for 10 minutes." },
-    { id: "two", text: "Simmer the lentils and serve with the pasta." },
+    {
+      id: "one",
+      text: "Boil the pasta for 10 minutes.",
+      timerCues: [{ id: "pasta-timer", label: "Pasta", durationSeconds: 600 }],
+    },
+    {
+      id: "two",
+      text: "Simmer the lentils and serve with the pasta.",
+      timerCues: [],
+    },
   ],
   preheat: null,
   notes: [],
@@ -512,4 +520,261 @@ test("four pending recipes reach gap selection, authoring and culinary duplicate
       ),
     ),
   });
+});
+
+test("new authoring and targeted repair retain authored timers", async () => {
+  const roles: string[] = [];
+  const missing = {
+    ...recipe,
+    steps: recipe.steps.map((step) => ({ ...step, timerCues: [] })),
+  };
+  const result = await generateProposal(
+    fakeClient(
+      [
+        { recipe: missing, tags },
+        {
+          findings: [
+            {
+              area: "timers",
+              message: "The timed pasta step needs a Cook timer.",
+              blocking: true,
+            },
+          ],
+        },
+        { recipe, tags, findings: [] },
+      ],
+      roles,
+    ),
+    [],
+    undefined,
+    "Pasta",
+  );
+  expect(roles).toEqual(["authoring", "culinary_review", "targeted_repair"]);
+  expect(result.content.steps[0].timerCues).toEqual(recipe.steps[0].timerCues);
+});
+
+test("a missing timer finding enriches an existing recipe instead of taking the unchanged shortcut", async () => {
+  const roles: string[] = [];
+  const revised = {
+    ...recipe,
+    ingredients: recipe.ingredients.map((line) => ({
+      ...line,
+      group: null,
+      noteRefs: [],
+    })),
+    steps: recipe.steps.map((step) => ({ ...step, group: null, noteRefs: [] })),
+  };
+  const original = {
+    ...core,
+    steps: core.steps.map((step) => ({ id: step.id, text: step.text })),
+  };
+  const result = await improveProposal(
+    fakeClient(
+      [
+        {
+          findings: [
+            {
+              area: "timers",
+              message: "Add a 10-minute pasta timer.",
+              blocking: true,
+            },
+          ],
+        },
+        { recipe: revised, tags, changeSummary: ["Added a pasta timer."] },
+        { findings: [] },
+      ],
+      roles,
+    ),
+    original,
+    tags,
+    [],
+  );
+  expect(roles).toEqual(["culinary_review", "authoring", "culinary_review"]);
+  expect(result.content.steps[0].timerCues).toEqual(recipe.steps[0].timerCues);
+  expect(result.content.steps.map((step) => step.text)).toEqual(
+    original.steps.map((step) => step.text),
+  );
+});
+
+test("AI authoring requires timer arrays and recipe validation rejects duplicate cue IDs", () => {
+  const missing = {
+    ...recipe,
+    steps: recipe.steps.map((step) => ({ id: step.id, text: step.text })),
+  };
+  expect(recipeSchema.safeParse(missing).success).toBe(false);
+  expect(() =>
+    validateGeneratedRecipe({
+      ...core,
+      steps: core.steps.map((step) => ({
+        ...step,
+        timerCues: recipe.steps[0].timerCues,
+      })),
+    }),
+  ).toThrow("Recipe timer cue IDs must be unique.");
+});
+
+const duplicateTimers = {
+  ...recipe,
+  steps: recipe.steps.map((step, index) => ({
+    ...step,
+    timerCues: [
+      {
+        id: "cook",
+        label: index === 0 ? "Pasta" : "Lentils",
+        durationSeconds: index === 0 ? 600 : 900,
+      },
+    ],
+  })),
+};
+for (const stage of ["authoring", "targeted_repair"] as const) {
+  test(`duplicate timer IDs from ${stage} are normalized without an extra model call`, async () => {
+    const roles: string[] = [];
+    const result = await generateProposal(
+      fakeClient(
+        [
+          { recipe: stage === "authoring" ? duplicateTimers : recipe, tags },
+          {
+            findings:
+              stage === "authoring"
+                ? []
+                : [
+                    {
+                      area: "method",
+                      message: "Fix the sauce method.",
+                      blocking: true,
+                    },
+                  ],
+          },
+          ...(stage === "targeted_repair"
+            ? [{ recipe: duplicateTimers, tags, findings: [] }]
+            : []),
+        ],
+        roles,
+      ),
+      [],
+      undefined,
+      "Pasta",
+    );
+    expect(roles).toEqual(
+      stage === "authoring"
+        ? ["authoring", "culinary_review"]
+        : ["authoring", "culinary_review", "targeted_repair"],
+    );
+    expect(result.content.steps.flatMap((step) => step.timerCues)).toEqual([
+      { id: "cook", label: "Pasta", durationSeconds: 600 },
+      { id: "cook-2", label: "Lentils", durationSeconds: 900 },
+    ]);
+    expect(result.content.steps.map((step) => step.text)).toEqual(
+      duplicateTimers.steps.map((step) => step.text),
+    );
+  });
+}
+
+for (const repair of [false, true]) {
+  test(`catalogue revision${repair ? " repair" : ""} retains the existing timer owner's ID`, async () => {
+    const original = {
+      ...core,
+      steps: core.steps.map((step, index) => ({
+        ...step,
+        timerCues: index === 1 ? duplicateTimers.steps[1].timerCues : [],
+      })),
+    };
+    const revised = {
+      ...duplicateTimers,
+      ingredients: duplicateTimers.ingredients.map((line) => ({
+        ...line,
+        group: null,
+        noteRefs: [],
+      })),
+      steps: duplicateTimers.steps.map((step) => ({
+        ...step,
+        group: null,
+        noteRefs: [],
+      })),
+    };
+    const initial = {
+      ...revised,
+      steps: revised.steps.map((step, index) => ({
+        ...step,
+        timerCues: index === 1 ? step.timerCues : [],
+      })),
+    };
+    const roles: string[] = [];
+    const result = await improveProposal(
+      fakeClient(
+        [
+          { findings: [] },
+          {
+            recipe: repair ? initial : revised,
+            tags,
+            changeSummary: ["Updated timers."],
+          },
+          {
+            findings: repair
+              ? [
+                  {
+                    area: "timers",
+                    message: "Add the pasta timer.",
+                    blocking: true,
+                  },
+                ]
+              : [],
+          },
+          ...(repair
+            ? [
+                {
+                  recipe: revised,
+                  tags,
+                  changeSummary: ["Added pasta timer."],
+                  findings: [],
+                },
+              ]
+            : []),
+        ],
+        roles,
+      ),
+      original,
+      tags,
+      [],
+      "Add the missing pasta timer",
+    );
+    expect(roles).toEqual([
+      "culinary_review",
+      "authoring",
+      "culinary_review",
+      ...(repair ? ["targeted_repair"] : []),
+    ]);
+    expect(result.content.steps[0].timerCues?.[0]).toEqual({
+      id: "cook-2",
+      label: "Pasta",
+      durationSeconds: 600,
+    });
+    expect(result.content.steps[1].timerCues?.[0]).toEqual(
+      original.steps[1].timerCues[0],
+    );
+    expect(result.content.steps.map((step) => step.text)).toEqual(
+      original.steps.map((step) => step.text),
+    );
+  });
+}
+
+test("regeneration preserves the existing timer owner when the model reuses its ID", async () => {
+  const roles: string[] = [];
+  const previous = {
+    ...core,
+    steps: core.steps.map((step, index) => ({
+      ...step,
+      timerCues: index === 1 ? duplicateTimers.steps[1].timerCues : [],
+    })),
+  };
+  const result = await generateProposal(
+    fakeClient([{ recipe: duplicateTimers, tags }, { findings: [] }], roles),
+    [],
+    { concept: "Pasta", rationale: "Existing concept", content: previous },
+  );
+  expect(roles).toEqual(["authoring", "culinary_review"]);
+  expect(result.content.steps[0].timerCues?.[0].id).toBe("cook-2");
+  expect(result.content.steps[1].timerCues).toEqual(
+    previous.steps[1].timerCues,
+  );
 });

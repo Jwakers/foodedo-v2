@@ -527,3 +527,87 @@ test("a final-review timeout keeps the written candidate and allows review witho
     page.getByRole("button", { name: "Retry improvement", exact: true }),
   ).toHaveCount(0);
 });
+
+test("timer metadata can be edited and remains usable across Cook steps and Ingredients", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("https://editorial.fixture/?screen=timers");
+  await page.getByLabel("Step 1 timer 1 seconds", { exact: true }).fill("45");
+  await page
+    .getByRole("button", { name: "Add timer to step 1", exact: true })
+    .click();
+  await page
+    .getByLabel("Step 1 timer 3 label", { exact: true })
+    .fill("Extra rest");
+  await page
+    .getByRole("button", { name: "Remove step 1 timer 3", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Cook recipe", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /Fry per side · Start/ }),
+  ).toContainText("45");
+  await expect(
+    page.getByRole("button", { name: /Rest · Start/ }),
+  ).toBeVisible();
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+  await page.screenshot({
+    path: testInfo.outputPath("cook-timers-mobile.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: /Fry per side · Start/ }).click();
+  await page
+    .getByRole("button", { name: "Advance ten seconds", exact: true })
+    .click();
+  await expect(page.getByText(/Fry per side ·/)).toContainText("0:35");
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Advance ten seconds", exact: true })
+    .click();
+  await expect(page.getByText(/Fry per side ·/)).toContainText("0:35");
+  await page.getByRole("button", { name: "Next step", exact: true }).click();
+  await expect(page.getByText(/Fry per side ·/)).toContainText("0:35");
+  await page
+    .getByRole("button", { name: "Show ingredients", exact: true })
+    .click();
+  await expect(page.getByText(/Fry per side ·/)).toContainText("0:35");
+  await page
+    .getByRole("button", { name: "Back to cooking", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Timer options for Fry per side",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Restart timer", exact: true })
+    .click();
+  await expect(page.getByText(/Fry per side ·/)).toContainText("0:45");
+});
+
+test("editorial preview shows saved timer metadata", async ({ page }) => {
+  await page.goto("https://editorial.fixture/");
+  await page.getByRole("button", { name: "Trigger new recipe" }).click();
+  await page.getByRole("button", { name: /^Lemon chickpea rice/ }).click();
+  await page.getByRole("button", { name: "Edit recipe", exact: true }).click();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Method/ })
+    .click();
+  await page
+    .getByRole("button", { name: "Add timer to step 1", exact: true })
+    .click();
+  await page
+    .getByLabel("Step 1 timer 1 label", { exact: true })
+    .fill("Check rice");
+  await page.getByLabel("Step 1 timer 1 minutes", { exact: true }).fill("15");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Method/ })
+    .click();
+  await expect(
+    page.getByText("Timer: Check rice · 15 min 0 sec", { exact: true }),
+  ).toBeVisible();
+});

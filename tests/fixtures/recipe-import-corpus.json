@@ -133,6 +133,23 @@
       "Reduce.*heat",
       "black pepper",
       "breadcrumbs"
+    ],
+    "expectedTimers": [
+      {
+        "stepPattern": "breadcrumb",
+        "labelPattern": "breadcrumb",
+        "durationSeconds": 300
+      },
+      {
+        "stepPattern": "linguine|pasta",
+        "labelPattern": "linguine|pasta",
+        "durationSeconds": 660
+      },
+      {
+        "stepPattern": "leek",
+        "labelPattern": "leek",
+        "durationSeconds": 600
+      }
     ]
   },
   {
@@ -568,7 +585,8 @@
     "kind": "html",
     "description": "Complete schema.org Recipe with image, timings and servings",
     "fixture": "complete-json-ld.html",
-    "expect": "succeeded"
+    "expect": "succeeded",
+    "expectedNoTimers": true
   },
   {
     "id": "fragmented-json-ld",
@@ -1062,5 +1080,95 @@
       }
     ],
     "expectedMethodPatterns": ["200.*C", "25 min", "roast"]
+  },
+  {
+    "id": "timers-readable",
+    "kind": "html",
+    "fixture": "timers-readable.html",
+    "expect": "succeeded",
+    "minimumIngredients": 3,
+    "minimumSteps": 3,
+    "expectedMethodPatterns": [
+      "1 min",
+      "30 seconds",
+      "per side",
+      "10.{1,5}15 minutes",
+      "2 min"
+    ],
+    "expectedIngredientPatterns": [
+      {
+        "name": "tofu"
+      },
+      {
+        "name": "tomato"
+      }
+    ],
+    "expectedTimers": [
+      {
+        "stepPattern": "dry",
+        "labelPattern": "dry|pat",
+        "durationSeconds": 60
+      },
+      {
+        "stepPattern": "fry",
+        "labelPattern": "side",
+        "durationSeconds": 30
+      },
+      {
+        "stepPattern": "simmer",
+        "labelPattern": "simmer|tomato|sauce",
+        "durationSeconds": 600
+      },
+      {
+        "stepPattern": "rest",
+        "labelPattern": "rest",
+        "durationSeconds": 120
+      }
+    ]
+  },
+  {
+    "id": "timers-structured",
+    "kind": "html",
+    "fixture": "timers-structured.html",
+    "expect": "succeeded",
+    "minimumIngredients": 3,
+    "minimumSteps": 3,
+    "expectedMethodPatterns": [
+      "1 min",
+      "30 seconds",
+      "per side",
+      "10.{1,5}15 minutes",
+      "2 min"
+    ],
+    "expectedIngredientPatterns": [
+      {
+        "name": "tofu"
+      },
+      {
+        "name": "tomato"
+      }
+    ],
+    "expectedTimers": [
+      {
+        "stepPattern": "dry",
+        "labelPattern": "dry|pat",
+        "durationSeconds": 60
+      },
+      {
+        "stepPattern": "fry",
+        "labelPattern": "side",
+        "durationSeconds": 30
+      },
+      {
+        "stepPattern": "simmer",
+        "labelPattern": "simmer|tomato|sauce",
+        "durationSeconds": 600
+      },
+      {
+        "stepPattern": "rest",
+        "labelPattern": "rest",
+        "durationSeconds": 120
+      }
+    ]
   }
 ]

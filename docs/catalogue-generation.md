@@ -74,3 +74,15 @@ pnpm eval:catalogue-generation --live --references=/absolute/path/reviewed-v2-re
 ```
 
 Supply a JSON array of at least three reviewed V2 recipe-content objects representing strong migrated V1 recipes. The evaluator checks 12 varied briefs through the production text pipeline and optionally generates one sample image. The 12 briefs exercise the directed-request path; unit tests also cover unprompted gap selection. It writes local JSON artifacts under ignored `.catalogue-generation-evaluation/`, never Convex. Review every sample against reference quality on cookability, flavour/coherence, portions, timing, clarity, variety and safety. Complete cook-throughs for three representative recipes. Provider availability, image quality and those human checks must be verified before release; automated green tests do not satisfy that gate.
+
+## Cook timers
+
+New generation, regeneration, repairs and catalogue improvements use the shared method-step `timerCues` contract. Explicit timed phases receive stable, recipe-wide unique IDs, concise labels and integer seconds (1 second to 24 hours). Ranges use the earliest check time; per-side/per-batch cues time one side/batch and say so. Instructions retain the full range and doneness/safety guidance. Untimed instructions, summary times and probe hold times do not become cooking-completion timers. Longer waits remain in prose.
+
+Culinary review checks missing, inconsistent and stale cues, including referenced method notes. Clear omissions block approval and use the existing bounded repair allowance. Existing recipes can be enriched through **Review and improve recipe** without a bulk rewrite or automatic publication. The preview displays timers; **Edit recipe** can add, edit or remove them beside their step. Timer edits require renewed culinary review and clear approvals through the normal workflow. Stable cues retain their IDs across edits. Duplicate cue IDs in AI-authored output are made unique deterministically before validation, preserving existing timer owners and all labels/durations without an extra model call.
+
+### Completed timer migration
+
+On 23 October 2026, a one-off deterministic backfill added 146 timer cues to 24 generated catalogue recipes in both V2 development and production. Verification preserved recipe text, ingredients, notes and photographs; production retained all 136 published recipes, with the other 112 recipes unchanged. A repeat preview proposed zero additions. The temporary migration function, parser, runner and dedicated tests have been removed; permanent timer authoring, import normalization, editing and Cook support remain.
+
+The scoped published-catalogue backup, production preview, apply receipt and verification summary remain locally under ignored `.catalogue-migration/timers/`. Future one-off enrichments should follow **preview → review → apply to the target environment's current data → verify**, with source revision/fingerprint guards, rather than copying development records over live production data.

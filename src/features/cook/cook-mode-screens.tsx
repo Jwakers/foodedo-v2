@@ -269,7 +269,7 @@ export function StepScreen({
             >
               <span className="flex items-center gap-2">
                 <Timer className="size-4" />
-                Start {formatDuration(cue.durationSeconds)} timer
+                {cue.label} · Start {formatDuration(cue.durationSeconds)} timer
               </span>
               <ArrowRight className="size-4" />
             </Button>

@@ -1,4 +1,4 @@
-export const RECIPE_NORMALIZATION_VERSION = 12;
+export const RECIPE_NORMALIZATION_VERSION = 13;
 
 export const RECIPE_IMPORT_LIMITS = {
   htmlBytes: 2_000_000,

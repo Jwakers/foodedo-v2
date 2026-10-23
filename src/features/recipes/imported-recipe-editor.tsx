@@ -1,5 +1,6 @@
 "use client";
 
+import { RecipeTimerEditor } from "@/features/recipes/recipe-timer-editor";
 import { useMutation } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useReducer, useState } from "react";
@@ -244,6 +245,18 @@ function ImportedRecipeEditorForm({
                   ...draft,
                   steps: draft.steps.map((item, itemIndex) =>
                     itemIndex === index ? { ...item, text } : item,
+                  ),
+                })
+              }
+            />
+            <RecipeTimerEditor
+              stepNumber={index + 1}
+              cues={step.timerCues}
+              onChange={(timerCues) =>
+                setDraft({
+                  ...draft,
+                  steps: draft.steps.map((item, position) =>
+                    position === index ? { ...item, timerCues } : item,
                   ),
                 })
               }

@@ -125,6 +125,7 @@ export function toRecipeContent(
     steps: output.steps.map((step, index) => ({
       id: `step-${index + 1}`,
       text: step.text.trim(),
+      timerCues: step.timerCues,
       sourceText: sourceText(step.sourceIds, source, 2000),
       ...(optionalText(step.group) ? { group: step.group!.trim() } : {}),
       ...(step.noteRefs.length

@@ -1,4 +1,5 @@
 "use client";
+import { RecipeTimerEditor } from "@/features/recipes/recipe-timer-editor";
 import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -250,6 +251,18 @@ export function ProposalContentEditor({
                     ...current,
                     steps: current.steps.map((v, i) =>
                       i === index ? { ...v, text } : v,
+                    ),
+                  }))
+                }
+              />
+              <RecipeTimerEditor
+                stepNumber={index + 1}
+                cues={step.timerCues}
+                onChange={(timerCues) =>
+                  setContent((current) => ({
+                    ...current,
+                    steps: current.steps.map((item, position) =>
+                      position === index ? { ...item, timerCues } : item,
                     ),
                   }))
                 }

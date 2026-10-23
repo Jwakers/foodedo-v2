@@ -93,6 +93,7 @@ function recipeFor(source: RecipeSourceCandidate): ImportedRecipe {
       {
         sourceIds: [id("Dice and serve")],
         text: "Dice and serve.",
+        timerCues: [],
         group: null,
         noteRefs: [],
       },

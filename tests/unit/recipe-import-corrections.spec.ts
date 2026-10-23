@@ -40,6 +40,7 @@ const recipe = importedRecipeSchema.parse({
     {
       sourceIds: [],
       text: "Simmer for 20 minutes.",
+      timerCues: [],
       group: "Soup",
       noteRefs: [],
     },

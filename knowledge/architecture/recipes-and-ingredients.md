@@ -82,7 +82,7 @@ type RecipeTimerCue = {
 
 For the initial contract, preheat is oven-specific and stores a Celsius temperature. Show **Before you start — Preheat oven to …** only when that explicit value exists. Do not infer preheating merely because a later step contains a cooking temperature.
 
-Timer cues are authored recipe content. Starting one creates local Cook-session state that can persist while the user moves to later steps or opens Ingredients. Cook progress, preparation checks, and timers are not recipe mutations or backend entities. Automatic extraction of timer cues from imported prose is later enrichment.
+Timer cues are authored recipe content. Starting one creates local Cook-session state that can persist while the user moves to later steps or opens Ingredients. Cook progress, preparation checks, and timers are not recipe mutations or backend entities. Generation and import normalization author timer cues from explicit actionable method durations and directly referenced notes. Ranges use the earliest check time; preserve the full range, per-side/per-batch qualifiers and doneness guidance in prose. Never invent step timers from summary times or untimed instructions. Imported cues pass through correction, recovery and draft completion. Older personal imports are not automatically migrated.
 
 Every Cook surface must consume the same serving-scaled ingredient model. Mise en place, contextual **You'll need** quantities, All Ingredients, and Shop must not calculate or hard-code divergent values. Human expressions such as `to taste`, packets, handfuls, and whole items require cooking-friendly rules rather than naive decimal multiplication.
 
@@ -149,4 +149,4 @@ MVP additions still required by the approved designs:
 - one canonical serving-scaling path shared by Cook and Shop; and
 - the approved Cook Mode interface.
 
-Defer canonical ingredients, automated method-step ingredient mapping, dietary/allergen profiles, automatic timer extraction, a calculated regional cost estimator, photo/camera/share-sheet capture, general recipe editing, publishing, social relationships, and feeds until their product slices need them.
+Defer canonical ingredients, automated method-step ingredient mapping, dietary/allergen profiles, a calculated regional cost estimator, photo/camera/share-sheet capture, general recipe editing, publishing, social relationships, and feeds until their product slices need them.

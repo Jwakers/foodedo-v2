@@ -1,12 +1,14 @@
 "use node";
 import { generateText, generateImage, Output } from "ai";
 import { z } from "zod";
+import { timerCuesSchema, uniqueGeneratedTimerIds } from "../recipeTimers";
 import { isGenerationTimeout, generationTimeoutMessage } from "./errors";
 import {
   PROTEIN_CATEGORIES,
   COST_BANDS,
   SHOPPING_CATEGORIES,
   type RecipeContent,
+  type RecipeStep,
 } from "../../../src/lib/domain/recipes";
 import { canScaleIngredientQuantity } from "../../../src/lib/domain/ingredient-scaling";
 import type { EditorialTags } from "../../../src/lib/domain/catalogue-generation";
@@ -49,6 +51,7 @@ export const recipeSchema = z.object({
       z.object({
         id: z.string().min(1).max(64),
         text: z.string().min(1).max(2000),
+        timerCues: timerCuesSchema,
       }),
     )
     .min(2)
@@ -92,9 +95,11 @@ export const enrichmentSchema = z.object({
 });
 export function recipeContent(
   recipe: z.infer<typeof recipeSchema>,
+  previousSteps?: readonly RecipeStep[],
 ): RecipeContent {
   return {
     ...recipe,
+    steps: uniqueGeneratedTimerIds(recipe.steps, previousSteps),
     ingredients: recipe.ingredients.map(({ unit, note, ...line }) => ({
       ...line,
       ...(unit ? { unit } : {}),
@@ -304,8 +309,7 @@ export type Authored = {
   tags: EditorialTags;
 };
 
-// Catalogue edits must retain authored Cook timers, note links and section
-// grouping. The new-recipe schema stays small; revisions use this richer form.
+// Revisions additionally retain note links and section grouping.
 const revisionIngredient = recipeSchema.shape.ingredients.element.extend({
   group: z.string().max(160).nullable(),
   noteRefs: z.array(z.string().max(64)).max(10),
@@ -313,15 +317,6 @@ const revisionIngredient = recipeSchema.shape.ingredients.element.extend({
 const revisionStep = recipeSchema.shape.steps.element.extend({
   group: z.string().max(160).nullable(),
   noteRefs: z.array(z.string().max(64)).max(10),
-  timerCues: z
-    .array(
-      z.object({
-        id: z.string().min(1).max(64),
-        label: z.string().min(1).max(120),
-        durationSeconds: z.number().int().min(1).max(604800),
-      }),
-    )
-    .max(10),
 });
 export const revisionRecipeSchema = recipeSchema.extend({
   ingredients: z.array(revisionIngredient).min(2).max(40),
@@ -345,8 +340,9 @@ export const revisionRepairSchema = revisionSchema.extend({
 
 export function revisedRecipeContent(
   recipe: z.infer<typeof revisionRecipeSchema>,
+  previousSteps?: readonly RecipeStep[],
 ): RecipeContent {
-  const content = recipeContent(recipe);
+  const content = recipeContent(recipe, previousSteps);
   return {
     ...content,
     ingredients: recipe.ingredients.map(
@@ -358,11 +354,11 @@ export function revisedRecipeContent(
         ...(note ? { note } : {}),
       }),
     ),
-    steps: recipe.steps.map(({ group, noteRefs, timerCues, ...step }) => ({
+    steps: content.steps.map(({ group, noteRefs, timerCues, ...step }) => ({
       ...step,
       ...(group ? { group } : {}),
-      ...(noteRefs.length ? { noteRefs } : {}),
-      ...(timerCues.length ? { timerCues } : {}),
+      ...(noteRefs?.length ? { noteRefs } : {}),
+      ...(timerCues?.length ? { timerCues } : {}),
     })),
     notes: recipe.notes.map(({ label, ...note }) => ({
       ...note,

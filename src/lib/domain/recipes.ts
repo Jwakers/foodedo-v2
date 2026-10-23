@@ -22,6 +22,7 @@ export const RECIPE_LIMITS = {
   noteText: 2_000,
   timerCueId: 64,
   timerCueLabel: 160,
+  timerDurationSeconds: 86_400,
   servings: 1_000,
   minutes: 10_080,
 } as const;
@@ -509,7 +510,7 @@ function prepareTimerCues(timerCues: RecipeTimerCue[]) {
     durationSeconds: requiredPositiveWholeNumber(
       cue.durationSeconds,
       "Timer duration",
-      86_400,
+      RECIPE_LIMITS.timerDurationSeconds,
     ),
   }));
 }

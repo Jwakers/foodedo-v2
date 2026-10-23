@@ -39,7 +39,13 @@ const recipeCore = {
       unit: "g",
     },
   ],
-  steps: [{ id: "step-1", text: "Simmer the tomatoes." }],
+  steps: [
+    {
+      id: "step-1",
+      text: "Simmer the tomatoes for 10 minutes.",
+      timerCues: [{ id: "simmer", label: "Simmer", durationSeconds: 600 }],
+    },
+  ],
   proteinCategory: "meat-free" as const,
 };
 
@@ -195,9 +201,22 @@ test("draft editing and finalization are revision-guarded, atomic and idempotent
   const recipe = await owner.query(api.recipes.getMine, { recipeId });
   expect(recipe).toMatchObject({
     title: recipeCore.title,
+    steps: recipeCore.steps,
     source: { normalizationVersion: RECIPE_NORMALIZATION_VERSION },
     servingScaling: "source_only",
   });
+  const editedSteps = recipeCore.steps.map((step) => ({
+    ...step,
+    text: "Simmer for 12 minutes.",
+    timerCues: [{ id: "simmer", label: "Simmer", durationSeconds: 720 }],
+  }));
+  await owner.mutation(api.recipes.updateImported, {
+    recipeId,
+    recipe: { ...recipeCore, steps: editedSteps },
+  });
+  expect((await owner.query(api.recipes.getMine, { recipeId }))?.steps).toEqual(
+    editedSteps,
+  );
   await t.run(async (ctx) => {
     expect(await ctx.db.query("recipes").collect()).toHaveLength(1);
   });

@@ -45,7 +45,11 @@ const content: RecipeContent = {
     },
   ],
   steps: [
-    { id: "one", text: "Cook the rice in simmering water for 15 minutes." },
+    {
+      id: "one",
+      text: "Cook the rice in simmering water for 15 minutes.",
+      timerCues: [{ id: "rice", label: "Rice", durationSeconds: 900 }],
+    },
     { id: "two", text: "Warm the chickpeas and fold into the rice." },
   ],
 };
@@ -251,6 +255,9 @@ test("only two explicit approvals publish once, preserving current catalogue ord
   expect((await t.query(api.catalogue.getCurrent, {}))?.meals[0].title).toBe(
     content.title,
   );
+  expect(
+    (await t.run((ctx) => ctx.db.query("catalogueMeals").first()))?.steps,
+  ).toEqual(content.steps);
   await t.mutation(internal.catalogueAdmin.completeImage, {
     runId,
     token: run.attemptToken,
@@ -411,6 +418,19 @@ test.each([
   [
     "method",
     { steps: [...content.steps, { id: "serve", text: "Serve hot." }] },
+  ],
+  [
+    "timers",
+    {
+      steps: content.steps.map((step, index) =>
+        index === 0
+          ? {
+              ...step,
+              timerCues: [{ id: "rice", label: "Rice", durationSeconds: 1200 }],
+            }
+          : step,
+      ),
+    },
   ],
   ["servings", { servings: 2 }],
   ["timing", { cookMinutes: 25 }],

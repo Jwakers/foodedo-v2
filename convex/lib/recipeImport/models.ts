@@ -10,6 +10,7 @@ import {
   type LanguageModelUsage,
 } from "ai";
 import { z } from "zod";
+import { timerCuesSchema } from "../recipeTimers";
 import { ImportFailure, invalidModelOutput } from "./contracts";
 import { amountSchema } from "./measurements";
 
@@ -90,6 +91,7 @@ export const importedRecipeSchema = z.object({
       z.object({
         sourceIds: refs,
         text: z.string().min(1).max(2000),
+        timerCues: timerCuesSchema,
         group: z.string().max(120).nullable(),
         noteRefs: z.array(z.string().regex(/^note-\d+$/)).max(12),
       }),
