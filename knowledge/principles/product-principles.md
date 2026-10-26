@@ -14,6 +14,8 @@ It exists to reduce thinking, organising, and repetitive decision-making around:
 
 **Philosophy:** Foodedo should think so the user doesn't have to.
 
+For the current iteration, meal planning and catalogue development focus on evening meals. Lighter and lunch-style dishes can make suitable dinners; suitability for the evening meal matters more than the dish's usual occasion label. Dedicated lunch planning is a later expansion, so a lack of lunches is not a gap to fill in the current catalogue.
+
 **Feature test:** Does this reduce thinking, effort, or friction required to decide what to eat and make it happen? If not, it probably does not belong.
 
 These principles are durable. They outrank existing code, V1 habits, and feature enthusiasm.

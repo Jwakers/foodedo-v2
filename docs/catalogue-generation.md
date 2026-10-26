@@ -13,6 +13,8 @@ Administrator checks run on all editorial reads and mutations. The access predic
 
 ## Editorial workflow
 
+Automatic opportunity selection focuses on evening meals. Meal-occasion counts remain descriptive editorial metadata, not coverage targets: a low lunch count is not a gap to fill. Lighter and lunch-style dishes remain welcome when they work as satisfying dinners. Dedicated lunch planning is a later product expansion.
+
 - **Optional: improve catalogue suggestions → Suggest tags for 5 recipes** offers editorial tagging of the existing catalogue. It is not a prerequisite for generation. Five currently unclassified meals receive proposed tags per run. Review/edit and accept rows in batches of up to 100. Repeat to continue. Pending classifications never contribute to category distributions; unknown values are retained. Existing cost bands remain editorial bands, not currency estimates.
 - **Trigger new recipe** with an empty request selects an opportunity, authors a recipe, independently reviews its cooking quality, and performs at most one targeted repair. For a specific dish, type a brief in **Recipe request (optional)**: this skips gap selection entirely and goes straight to authoring. Duplicate detection, culinary review, text/image approvals and publication checks still apply. The request stays with the proposal and its replacements. Success creates one private `pending_review` proposal.
 - Inspect rationale, nearest matches and culinary findings. Review portions, sides, technique, flavour, sequencing, timings and food safety yourself. Automated review is a quality aid, not a substitute for this approval.
