@@ -453,7 +453,7 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
   await page.goto("/");
   await page.getByRole("button", { name: "Try Foodedo" }).click();
   const firstIdea = page
-    .locator('section[aria-labelledby="week-ideas-heading"] li a')
+    .locator('section[aria-labelledby="discovery-heading"] li a')
     .first();
   const recipeTitle = await firstIdea.locator("p").innerText();
   await firstIdea.click();
@@ -485,17 +485,15 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
   await expect(page.getByRole("button", { name: "Share" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Report/i })).toHaveCount(0);
 
-  await page.getByRole("button", { name: /Serves / }).click();
-  await expect(
-    page.getByText("Ingredient quantities update automatically"),
-  ).toBeVisible();
+  // Discovery may surface recipes whose authored quantities cannot be scaled.
+  // The fixed-recipe Cook Mode test below covers the servings control.
 });
 
 test("plans a recipe from its detail page as a guest", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try Foodedo" }).click();
   const firstIdea = page
-    .locator('section[aria-labelledby="week-ideas-heading"] li a')
+    .locator('section[aria-labelledby="discovery-heading"] li a')
     .first();
   const recipeTitle = await firstIdea.locator("p").innerText();
   await firstIdea.click();

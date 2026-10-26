@@ -520,3 +520,186 @@ test("catalogue storage and paginated protein filters distinguish turkey from ot
   });
   expect(other.page.map((meal) => meal.id)).toEqual(["other-dinner"]);
 });
+
+const discoveryArgs = {
+  day: "2030-11-01",
+  localPlannedMealIds: [] as string[],
+};
+async function seedDiscoveryCatalogue(t: ReturnType<typeof createTestContext>) {
+  for (let index = 0; index < 10; index++) {
+    await seedMeal(t, {
+      version: 1,
+      status: "published",
+      mealId: `discovery-${index}`,
+      slug: `discovery-${index}`,
+      position: index,
+    });
+  }
+}
+async function discoveryUser(
+  t: ReturnType<typeof createTestContext>,
+  subject: string,
+) {
+  const userId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      authSubject: subject,
+      email: null,
+      name: subject,
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  return { userId, asUser: t.withIdentity({ subject }) };
+}
+
+test("public discovery returns at most six published summaries, excluding local draft IDs", async () => {
+  const t = createTestContext();
+  await seedDiscoveryCatalogue(t);
+  await seedMeal(t, {
+    version: 1,
+    status: "staging",
+    mealId: "hidden",
+    slug: "hidden",
+    position: 20,
+  });
+  const args = {
+    ...discoveryArgs,
+    localPlannedMealIds: ["discovery-0", "discovery-1"],
+  };
+  const result = await t.query(api.catalogue.getDiscovery, args);
+  expect(result).toHaveLength(6);
+  for (const id of args.localPlannedMealIds) {
+    expect(result.map((meal) => meal.id)).not.toContain(id);
+  }
+  expect(result.every((meal) => meal.id !== "hidden" && meal.imageSrc)).toBe(
+    true,
+  );
+  expect(result[0]).not.toHaveProperty("ingredients");
+  expect(await t.query(api.catalogue.getDiscovery, args)).toEqual(result);
+  expect(
+    await t.query(api.catalogue.getDiscovery, { ...args, day: "2030-11-02" }),
+  ).not.toEqual(result);
+  expect(
+    await t.query(api.catalogue.getDiscovery, {
+      ...args,
+      localPlannedMealIds: Array.from(
+        { length: 10 },
+        (_, i) => `discovery-${i}`,
+      ),
+    }),
+  ).toEqual([]);
+});
+
+test("discovery reads only the viewer's favourites, and authorises the selected household", async () => {
+  const t = createTestContext();
+  await seedDiscoveryCatalogue(t);
+  const alice = await discoveryUser(t, "discovery-alice");
+  const bob = await discoveryUser(t, "discovery-bob");
+  const householdId = await t.run(async (ctx) => {
+    const householdId = await ctx.db.insert("households", {
+      creatorId: alice.userId,
+      createdAt: 1,
+    });
+    await ctx.db.insert("householdMembers", {
+      householdId,
+      userId: alice.userId,
+      joinedAt: 1,
+    });
+    await ctx.db.insert("householdMembers", {
+      householdId,
+      userId: bob.userId,
+      joinedAt: 1,
+    });
+    return householdId;
+  });
+  await alice.asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId: "discovery-0",
+    catalogueVersion: 1,
+  });
+  await bob.asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId: "discovery-1",
+    catalogueVersion: 1,
+  });
+  // Leave exactly Bob's saved recipe eligible: his saves are not Alice's saves.
+  const localPlannedMealIds = Array.from(
+    { length: 8 },
+    (_, i) => `discovery-${i + 2}`,
+  );
+  const result = await alice.asUser.query(api.catalogue.getDiscovery, {
+    ...discoveryArgs,
+    householdId,
+    localPlannedMealIds,
+  });
+  expect(result.map((meal) => meal.id)).toEqual(["discovery-1"]);
+  await expect(
+    t.query(api.catalogue.getDiscovery, { ...discoveryArgs, householdId }),
+  ).rejects.toThrow("Sign in");
+  const outsider = await discoveryUser(t, "discovery-outsider");
+  await expect(
+    outsider.asUser.query(api.catalogue.getDiscovery, {
+      ...discoveryArgs,
+      householdId,
+    }),
+  ).rejects.toThrow("no longer have access");
+});
+
+test("the saved plan in the selected space takes precedence over local exclusions", async () => {
+  const t = createTestContext();
+  await seedDiscoveryCatalogue(t);
+  const alice = await discoveryUser(t, "discovery-alice");
+  await t.run(async (ctx) => {
+    const recipeId = await ctx.db.insert("recipes", {
+      ownerId: alice.userId,
+      title: "Planned dinner",
+      proteinCategory: "meat-free",
+      ingredients: [{ id: "i", name: "rice", shoppingCategory: "pantry" }],
+      steps: [{ id: "s", text: "Cook" }],
+      source: {
+        type: "catalogue",
+        catalogueMealId: "discovery-0",
+        catalogueVersion: 1,
+      },
+      updatedAt: 1,
+    });
+    const planId = await ctx.db.insert("mealPlans", {
+      ownerId: alice.userId,
+      startDate: discoveryArgs.day,
+      endDate: discoveryArgs.day,
+      status: "active",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await ctx.db.insert("mealSlots", {
+      ownerId: alice.userId,
+      mealPlanId: planId,
+      date: discoveryArgs.day,
+      recipeId,
+      status: "planned",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+  });
+  // Even excluding every catalogue ID locally must not override a saved week.
+  const result = await alice.asUser.query(api.catalogue.getDiscovery, {
+    ...discoveryArgs,
+    localPlannedMealIds: Array.from({ length: 10 }, (_, i) => `discovery-${i}`),
+  });
+  expect(result).toHaveLength(6);
+  expect(result.map((meal) => meal.id)).not.toContain("discovery-0");
+});
+
+test("discovery validates its client context without trusting an owner identifier", async () => {
+  const t = createTestContext();
+  await expect(
+    t.query(api.catalogue.getDiscovery, {
+      ...discoveryArgs,
+      day: "2030-02-31",
+    }),
+  ).rejects.toThrow("calendar day");
+  await expect(
+    t.query(api.catalogue.getDiscovery, {
+      ...discoveryArgs,
+      localPlannedMealIds: Array(32).fill("meal"),
+    }),
+  ).rejects.toThrow("local plan exclusions");
+});

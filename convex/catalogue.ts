@@ -12,6 +12,16 @@ import {
   paginationOptsValidator,
   paginationResultValidator,
 } from "convex/server";
+import { selectDiscoveryMeals } from "../src/lib/domain/recipe-discovery";
+import { RECIPE_LIMITS } from "../src/lib/domain/recipes";
+import { isPlanDate } from "../src/lib/domain/guest-draft";
+import { getSavedCatalogueRecipes } from "./lib/catalogueRecipes";
+import {
+  getActivePlanState,
+  getPlanSlots,
+  maximumPlanSlots,
+} from "./lib/activePlan";
+import { requireSpace, spaceArgs } from "./lib/spaces";
 import { requireUserId } from "./lib/auth";
 import { internalMutation, query } from "./_generated/server";
 import {
@@ -44,6 +54,80 @@ export const getCurrent = query({
         meals.map((meal) => catalogueMealSummary(ctx, meal)),
       ),
     };
+  },
+});
+
+/** Rank on the server and resolve images only for the six selected recipes. */
+export const getDiscovery = query({
+  args: {
+    ...spaceArgs,
+    day: v.string(),
+    localPlannedMealIds: v.array(v.string()),
+  },
+  returns: v.array(catalogueMealSummaryValidator),
+  handler: async (ctx, { householdId, day, localPlannedMealIds }) => {
+    if (!isPlanDate(day))
+      throw new Error("A valid local calendar day is required.");
+    if (
+      localPlannedMealIds.length > maximumPlanSlots ||
+      localPlannedMealIds.some(
+        (id) =>
+          id.trim().length === 0 || id.length > RECIPE_LIMITS.catalogueMealId,
+      )
+    ) {
+      throw new Error("Invalid local plan exclusions.");
+    }
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity ? await requireUserId(ctx) : null;
+    // Guests may supply local exclusions, but cannot read household data.
+    const ownerId = householdId ? await requireSpace(ctx, householdId) : userId;
+    const [meals, saved, active] = await Promise.all([
+      getCurrentCatalogueMeals(ctx),
+      userId ? getSavedCatalogueRecipes(ctx, userId) : [],
+      ownerId ? getActivePlanState(ctx, ownerId) : null,
+    ]);
+    const savedMealIds = new Set(
+      saved.flatMap((recipe) =>
+        recipe.source.type === "catalogue"
+          ? [recipe.source.catalogueMealId]
+          : [],
+      ),
+    );
+    let plannedMealIds = new Set(localPlannedMealIds);
+    if (active?.mealPlan && ownerId) {
+      const slots = await getPlanSlots(ctx, active.mealPlan._id);
+      const recipes = await Promise.all(
+        slots.map((slot) => ctx.db.get(slot.recipeId)),
+      );
+      // The saved plan is authoritative, matching the Week tab. Local draft
+      // exclusions are used only when this space has no active saved plan.
+      plannedMealIds = new Set(
+        recipes.flatMap((recipe) =>
+          recipe?.ownerId === ownerId && recipe.source.type === "catalogue"
+            ? [recipe.source.catalogueMealId]
+            : [],
+        ),
+      );
+    }
+    const selected = selectDiscoveryMeals(
+      meals.map((meal) => ({
+        id: meal.catalogueMealId,
+        proteinCategory: meal.proteinCategory,
+        prepMinutes: meal.prepMinutes,
+        cookMinutes: meal.cookMinutes,
+        costBand: meal.costBand,
+        document: meal,
+      })),
+      {
+        savedMealIds,
+        plannedMealIds,
+        day,
+        viewerKey: identity?.subject ?? "guest",
+      },
+    );
+    return await Promise.all(
+      selected.map(({ document }) => catalogueMealSummary(ctx, document)),
+    );
   },
 });
 

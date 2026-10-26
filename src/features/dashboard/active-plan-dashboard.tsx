@@ -15,6 +15,7 @@ import {
   DashboardCarouselList,
   DashboardCarouselItem,
 } from "@/features/dashboard/dashboard-carousel";
+import { MealsYouMightLike } from "@/features/dashboard/meals-you-might-like";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import {
   formatPlanWeekdayUpper,
@@ -61,6 +62,7 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
       <LatestRecipesCarousel />
+      <MealsYouMightLike hasSavedPlan />
       <ImportRecipeNudge />
     </section>
   );

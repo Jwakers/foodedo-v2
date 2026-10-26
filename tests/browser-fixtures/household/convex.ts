@@ -101,6 +101,10 @@ export function useQuery(
   args?: unknown,
 ) {
   useSyncExternalStore(subscribe, () => revision);
+  return queryResult(reference, args);
+}
+
+function queryResult(reference: FunctionReference<"query">, args?: unknown) {
   if (args === "skip") return undefined;
   const data = args as
     | { householdId?: string; meals?: unknown[]; authSubject?: string }
@@ -167,6 +171,16 @@ export function useQuery(
             dismissalCount: 0,
           },
         ];
+      return [];
+    case "recipes:listSavedCatalogueMeals":
+      return [];
+    case "catalogue:list":
+      return {
+        page: [meal(true), meal(false)],
+        isDone: true,
+        continueCursor: "",
+      };
+    case "catalogue:getDiscovery":
       return [];
     case "catalogue:getCurrent":
       return { meals: [meal(true), meal(false)] };
@@ -253,4 +267,13 @@ export function useMutation(reference: FunctionReference<"mutation">) {
   };
   mutate.withOptimisticUpdate = () => mutate;
   return mutate;
+}
+
+const client = {
+  async query(reference: FunctionReference<"query">, args: unknown) {
+    return queryResult(reference, args);
+  },
+};
+export function useConvex() {
+  return client;
 }

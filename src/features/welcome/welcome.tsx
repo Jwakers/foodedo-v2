@@ -11,21 +11,21 @@ import { useWelcomeSession } from "@/components/use-welcome-session";
 
 const collageImages = [
   {
-    src: "/images/welcome/pasta-bowl.jpg",
-    alt: "Pasta bowl with creamy beef and mushrooms",
+    src: "/images/welcome/pasta-primavera.webp",
+    alt: "Pasta primavera with colourful vegetables and grated cheese",
     className:
       "relative h-full min-h-39.5 w-[60.5%] shrink-0 overflow-hidden rounded-media",
     sizes: "212px",
   },
   {
-    src: "/images/welcome/fish-tacos.jpg",
-    alt: "Fish tacos with cabbage slaw and lime",
+    src: "/images/welcome/chicken-shawarma.webp",
+    alt: "Chicken shawarma pittas with salad and yogurt sauce",
     className: "relative h-[75px] w-full overflow-hidden rounded-md",
     sizes: "130px",
   },
   {
-    src: "/images/welcome/grilled-fish.jpg",
-    alt: "Grilled fish with lemon and dill",
+    src: "/images/welcome/chickpea-curry.webp",
+    alt: "Creamy coconut chickpea curry with spinach and rice",
     className: "relative h-[75px] w-full overflow-hidden rounded-md",
     sizes: "130px",
   },

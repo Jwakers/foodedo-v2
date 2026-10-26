@@ -11,6 +11,7 @@ import {
   clearClaimedGuestPlanDraft,
   guestPlanClaimMutationArgs,
   removeGuestPlanMeal,
+  readStoredGuestPlanDraft,
   replaceGuestPlanMeal,
   shuffleCurrentGuestPlanDraft,
 } from "../../src/features/plan/guest-plan-draft";
@@ -820,4 +821,51 @@ test("binds reviewed saves to their original context/version through draft edits
     now: 1005,
   });
   expect(extended.reviewSource).toEqual(reviewSource);
+});
+
+test("local discovery validates one stored snapshot without rereading or writing it", async () => {
+  const draft = createGuestDraft({
+    planStartDate: "2030-11-01",
+    catalogueMeals,
+    now: 1,
+  });
+  const store = createMemoryStore(draft);
+  let reads = 0;
+  store.read = async () => {
+    reads++;
+    // A second read could observe a different draft from another tab.
+    return reads === 1 ? draft : null;
+  };
+  expect(await readStoredGuestPlanDraft(store)).toEqual(draft);
+  expect(reads).toBe(1);
+  expect(store.writes).toBe(0);
+});
+
+test("local discovery ignores absent, malformed and fully empty drafts", async () => {
+  const store = createMemoryStore();
+  expect(await readStoredGuestPlanDraft(store)).toBeNull();
+  store.read = async () => ({
+    schemaVersion: 3,
+    mealChoices: [{ catalogueMealId: "meal-1", catalogueVersion: 2 }],
+  });
+  expect(await readStoredGuestPlanDraft(store)).toBeNull();
+  const empty = createGuestDraft({
+    planStartDate: "2030-11-01",
+    catalogueMeals,
+    now: 1,
+    emptySlotIndexes: [0, 1, 2, 3, 4, 5, 6],
+  });
+  store.read = async () => empty;
+  expect(await readStoredGuestPlanDraft(store)).toBeNull();
+  expect(store.writes).toBe(0);
+});
+
+test("discovery ignores corrupt stored reference IDs instead of throwing", async () => {
+  const store = createMemoryStore();
+  for (const id of ["", "   ", "x".repeat(65)]) {
+    store.read = async () => ({
+      mealChoices: [{ catalogueMealId: id, catalogueVersion: 1 }],
+    });
+    expect(await readStoredGuestPlanDraft(store)).toBeNull();
+  }
 });

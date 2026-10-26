@@ -1,12 +1,11 @@
 "use client";
 
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
-import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/utils/cn";
+import { RecipeSaveButton } from "@/features/recipes/recipe-save-button";
 
 /**
  * Listing card: media + title + meta, with a separate 44px save target so
@@ -86,32 +85,12 @@ export function RecipeCard({
       )}
 
       {showSave ? (
-        <button
-          type="button"
-          aria-label={
-            saved
-              ? `Unsave ${formatRecipeHeading(title)}`
-              : `Save ${formatRecipeHeading(title)}`
-          }
-          aria-pressed={saved}
-          aria-busy={isSavePending || undefined}
-          disabled={isSavePending}
-          className={cn(
-            "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-70",
-            saved
-              ? "bg-cadmium-soft text-cadmium"
-              : "border border-paper bg-mist text-ink",
-          )}
-          onClick={() => {
-            void onToggleSave();
-          }}
-        >
-          <Heart
-            aria-hidden="true"
-            className={cn("size-4.5", saved && "fill-current")}
-            strokeWidth={1.8}
-          />
-        </button>
+        <RecipeSaveButton
+          title={title}
+          saved={saved}
+          isSavePending={isSavePending}
+          onToggleSave={onToggleSave}
+        />
       ) : null}
     </div>
   );

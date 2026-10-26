@@ -21,7 +21,7 @@ import {
   shuffleGuestPlan,
   type GuestDraftV1,
 } from "@/lib/domain/guest-draft";
-import { catalogueMealReferenceKey } from "@/lib/domain/recipes";
+import { RECIPE_LIMITS, catalogueMealReferenceKey } from "@/lib/domain/recipes";
 import type { ProteinCategory } from "@/lib/domain/recipes";
 import { tomorrowPlanDate } from "@/lib/domain/plan-display";
 import {
@@ -123,11 +123,14 @@ export async function readStoredGuestPlanDraftMealReferences(
   catalogueMealId: string;
   catalogueVersion: number;
 }> | null> {
-  const raw = await store.read();
+  return storedGuestPlanDraftMealReferences(await store.read());
+}
+
+function storedGuestPlanDraftMealReferences(raw: unknown) {
   if (typeof raw !== "object" || raw === null) return null;
   const legacyVersion = Reflect.get(raw, "catalogueVersion");
   const choices = Reflect.get(raw, "mealChoices");
-  if (!Array.isArray(choices)) return null;
+  if (!Array.isArray(choices) || choices.length > GUEST_PLAN_DAYS) return null;
 
   const references = new Map<
     string,
@@ -142,6 +145,8 @@ export async function readStoredGuestPlanDraftMealReferences(
       typeof ownVersion === "number" ? ownVersion : legacyVersion;
     if (
       typeof catalogueMealId !== "string" ||
+      catalogueMealId.trim().length === 0 ||
+      catalogueMealId.length > RECIPE_LIMITS.catalogueMealId ||
       typeof catalogueVersion !== "number" ||
       !Number.isInteger(catalogueVersion) ||
       catalogueVersion < 1
@@ -154,6 +159,16 @@ export async function readStoredGuestPlanDraftMealReferences(
     );
   }
   return [...references.values()];
+}
+
+/** Validate one stored snapshot without hydrating its historical recipe images. */
+export async function readStoredGuestPlanDraft(
+  store: GuestDraftStore = guestDraftStore(),
+): Promise<GuestDraftV1 | null> {
+  const raw = await store.read();
+  const references = storedGuestPlanDraftMealReferences(raw);
+  if (!references?.length) return null;
+  return readGuestDraft(raw, { catalogueMeals: references });
 }
 
 export async function readCurrentGuestPlanDraft(

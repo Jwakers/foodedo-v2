@@ -51,7 +51,7 @@ globalThis.fetch = async function (input, init) {
         servings: 2,
         prepMinutes: 0,
         cookMinutes: 5,
-        imageSrc: "/images/recipes/fish-tacos.jpg",
+        imageSrc: "/images/recipes/fish-tacos.webp",
         ingredients: [
           {
             id: "beans",

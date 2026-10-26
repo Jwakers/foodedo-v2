@@ -9,23 +9,33 @@ import Image from "next/image";
 
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
-import { Button } from "@/components/ui/button";
-import {
-  DashboardCarousel,
-  DashboardCarouselCard,
-  DashboardCarouselItem,
-  DashboardCarouselList,
-} from "@/features/dashboard/dashboard-carousel";
+import { MealsYouMightLike } from "@/features/dashboard/meals-you-might-like";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
-import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { PlanAction } from "@/features/plan/plan-action";
-import { recipeDetailPath } from "@/lib/routing/recipes";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+
+const dashboardImages = [
+  {
+    src: "/images/recipes/fish-tacos.webp",
+    alt: "Fish tacos with cabbage slaw, avocado and lime",
+  },
+  {
+    src: "/images/welcome/pasta-primavera.webp",
+    alt: "Pasta primavera with colourful vegetables and grated cheese",
+  },
+  {
+    src: "/images/welcome/chicken-shawarma.webp",
+    alt: "Chicken shawarma pittas with salad and yogurt sauce",
+  },
+  {
+    src: "/images/welcome/chickpea-curry.webp",
+    alt: "Creamy coconut chickpea curry with spinach and rice",
+  },
+] as const;
 
 export function Dashboard() {
   const { household, spaceArgs, ready: spaceReady } = useHouseholdSpace();
-  const catalogue = useCurrentCatalogue();
   const { status, isAuthenticated } = useFoodedoAuth();
   const currentPlan = useQuery(
     api.mealPlans.getCurrent,
@@ -48,7 +58,11 @@ export function Dashboard() {
       >
         <div className="h-8 w-28 rounded-sm bg-mist" />
         <div className="mt-3 h-12 w-56 rounded-sm bg-mist" />
-        <div className="mt-6 h-52 rounded-hero bg-mist sm:h-72" />
+        <div className="mt-6 grid h-52 grid-cols-2 grid-rows-2 gap-2 overflow-hidden rounded-hero sm:h-72">
+          {dashboardImages.map(({ src }) => (
+            <div key={src} className="bg-mist" />
+          ))}
+        </div>
       </section>
     );
   }
@@ -72,10 +86,10 @@ export function Dashboard() {
       className="mx-auto w-full max-w-175"
     >
       <DashboardIntroduction />
-      <DashboardImage />
+      <DashboardMealCollage />
       <PlanAction />
       <HomeIntroduction />
-      <IdeasForYourWeek catalogue={catalogue} />
+      <MealsYouMightLike className="mt-5 border-t border-border pt-4.5" />
       <div className="mt-6">
         <LatestRecipesCarousel />
       </div>
@@ -102,69 +116,24 @@ function DashboardIntroduction() {
   );
 }
 
-function DashboardImage() {
+function DashboardMealCollage() {
   return (
-    <div className="relative mt-6 h-52 overflow-hidden rounded-hero sm:h-72">
-      <Image
-        src="/images/recipes/fish-tacos.jpg"
-        alt="Crisp fish tacos with cabbage, lime and fresh herbs"
-        fill
-        priority
-        sizes="(min-width: 640px) 700px, calc(100vw - 36px)"
-        className="object-cover"
-      />
-    </div>
-  );
-}
-
-function IdeasForYourWeek({
-  catalogue,
-}: {
-  catalogue: ReturnType<typeof useCurrentCatalogue>;
-}) {
-  const ideas = catalogue?.meals.slice(0, 6) ?? [];
-
-  return (
-    <DashboardCarousel
-      headingId="week-ideas-heading"
-      title="Ideas for your week"
-      href="/recipes"
-      action="Browse recipes"
-      className="mt-5 border-t border-border pt-4.5"
-    >
-      {catalogue === undefined ? (
-        <p className="px-page-inline text-13 text-graphite sm:px-8">
-          Loading ideas…
-        </p>
-      ) : null}
-      {catalogue === null ? (
-        <div className="px-page-inline text-13 text-graphite sm:px-8">
-          <p>Recipe ideas are unavailable right now.</p>
-          <Button
-            variant="inline"
-            className="mt-1 h-auto p-0 text-13"
-            onClick={() => window.location.reload()}
-          >
-            Try again
-          </Button>
+    <figure className="mt-6 grid h-52 grid-cols-2 grid-rows-2 gap-2 overflow-hidden rounded-hero sm:h-72">
+      <figcaption className="sr-only">
+        A taste of the meals you could plan this week
+      </figcaption>
+      {dashboardImages.map(({ src, alt }) => (
+        <div key={src} className="relative min-h-0 min-w-0 bg-mist">
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            preload
+            sizes="(min-width: 736px) 346px, calc((100vw - 44px) / 2)"
+            className="object-cover"
+          />
         </div>
-      ) : null}
-      {catalogue?.meals.length === 0 ? (
-        <p className="px-page-inline text-13 text-graphite sm:px-8">
-          No recipe ideas are available yet.
-        </p>
-      ) : null}
-      <DashboardCarouselList>
-        {ideas.map((meal) => (
-          <DashboardCarouselItem key={meal.id}>
-            <DashboardCarouselCard
-              title={meal.title}
-              imageSrc={meal.imageSrc}
-              href={recipeDetailPath(meal.slug)}
-            />
-          </DashboardCarouselItem>
-        ))}
-      </DashboardCarouselList>
-    </DashboardCarousel>
+      ))}
+    </figure>
   );
 }

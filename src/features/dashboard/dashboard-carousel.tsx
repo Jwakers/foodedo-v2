@@ -3,6 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import {
+  RecipeSaveButton,
+  type RecipeSaveControl,
+} from "@/features/recipes/recipe-save-button";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
@@ -39,7 +43,7 @@ export function DashboardCarousel({
           <ArrowRight aria-hidden="true" className="size-3.5" />
         </ButtonLink>
       </div>
-      <div className="-mx-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8">
+      <div className="-mx-page-inline snap-x snap-mandatory scroll-px-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8 sm:scroll-px-8">
         {children}
       </div>
     </section>
@@ -48,9 +52,7 @@ export function DashboardCarousel({
 
 export function DashboardCarouselList({ children }: { children: ReactNode }) {
   return (
-    <ul className="flex w-max snap-x snap-mandatory gap-2 px-page-inline sm:px-8">
-      {children}
-    </ul>
+    <ul className="flex w-max gap-2 px-page-inline sm:px-8">{children}</ul>
   );
 }
 
@@ -63,11 +65,13 @@ export function DashboardCarouselCard({
   imageSrc,
   href,
   meta,
+  saveControl,
 }: {
   title: string;
   imageSrc?: string | null;
   href: string | null;
   meta?: ReactNode;
+  saveControl?: RecipeSaveControl;
 }) {
   const content = (
     <>
@@ -93,7 +97,7 @@ export function DashboardCarouselCard({
     </>
   );
 
-  return href ? (
+  const card = href ? (
     <Link
       href={href}
       className="flex flex-col gap-1.75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
@@ -102,5 +106,14 @@ export function DashboardCarouselCard({
     </Link>
   ) : (
     <div className="flex flex-col gap-1.75">{content}</div>
+  );
+
+  return saveControl ? (
+    <div className="relative">
+      {card}
+      <RecipeSaveButton title={title} {...saveControl} />
+    </div>
+  ) : (
+    card
   );
 }

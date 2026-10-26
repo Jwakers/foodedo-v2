@@ -15,6 +15,7 @@ import type * as catalogueMaintenance from "../catalogueMaintenance.js";
 import type * as crons from "../crons.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
+import type * as lib_activePlan from "../lib/activePlan.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
 import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   households: typeof households;
   http: typeof http;
+  "lib/activePlan": typeof lib_activePlan;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
   "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;

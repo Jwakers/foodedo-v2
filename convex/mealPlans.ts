@@ -45,7 +45,11 @@ import {
   archiveShoppingListForPlan,
 } from "./lib/shoppingListSync";
 
-const maximumPlanSlots = 31;
+import {
+  getActivePlanState,
+  getPlanSlots,
+  maximumPlanSlots,
+} from "./lib/activePlan";
 const maximumActivePlanRecovery = 10;
 const maximumPersonalPlanCandidates = 50;
 const maximumRecentArchivedPlans = 11;
@@ -1162,39 +1166,6 @@ async function resolveExpectedActivePlan(
     return { status: "plan_changed" as const };
   }
   return { status: "ready" as const, mealPlan: state.mealPlan };
-}
-
-async function getActivePlanState(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: SpaceId,
-) {
-  const activePlans = await ctx.db
-    .query("mealPlans")
-    .withIndex("by_owner_and_status_and_updated_at", (q) =>
-      q.eq("ownerId", ownerId).eq("status", "active"),
-    )
-    .order("desc")
-    .take(2);
-
-  return {
-    mealPlan: activePlans[0] ?? null,
-    hasConflict: activePlans.length > 1,
-  };
-}
-
-async function getPlanSlots(
-  ctx: QueryCtx | MutationCtx,
-  mealPlanId: Id<"mealPlans">,
-) {
-  const mealSlots = await ctx.db
-    .query("mealSlots")
-    .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", mealPlanId))
-    .take(maximumPlanSlots + 1);
-
-  if (mealSlots.length > maximumPlanSlots) {
-    throw new Error("A meal plan exceeds the supported number of meals.");
-  }
-  return mealSlots;
 }
 
 async function buildRegenerationProposal(
