@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ButtonLink } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 
 export function DashboardCarousel({
@@ -12,7 +13,9 @@ export function DashboardCarousel({
   href,
   action,
   children,
+  className,
 }: {
+  className?: string;
   headingId: string;
   title: string;
   href: string;
@@ -20,7 +23,10 @@ export function DashboardCarousel({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3">
+    <section
+      aria-labelledby={headingId}
+      className={cn("flex flex-col gap-3", className)}
+    >
       <div className="flex items-center justify-between gap-3">
         <h2
           id={headingId}
@@ -48,6 +54,10 @@ export function DashboardCarouselList({ children }: { children: ReactNode }) {
   );
 }
 
+export function DashboardCarouselItem({ children }: { children: ReactNode }) {
+  return <li className="w-37 shrink-0 snap-start">{children}</li>;
+}
+
 export function DashboardCarouselCard({
   title,
   imageSrc,
@@ -61,13 +71,13 @@ export function DashboardCarouselCard({
 }) {
   const content = (
     <>
-      <div className="relative aspect-111/70 overflow-hidden rounded-sm bg-mist">
+      <div className="relative aspect-37/24 overflow-hidden rounded-compact bg-mist">
         {imageSrc ? (
           <Image
             src={imageSrc}
             alt=""
             fill
-            sizes="111px"
+            sizes="148px"
             className="object-cover"
           />
         ) : null}
@@ -77,7 +87,7 @@ export function DashboardCarouselCard({
           {meta}
         </p>
       ) : null}
-      <p className="line-clamp-2 font-display text-16 font-semibold leading-4.5 text-ink">
+      <p className="line-clamp-3 font-display text-16 font-semibold leading-4.5 text-ink">
         {formatRecipeHeading(title)}
       </p>
     </>
@@ -86,11 +96,11 @@ export function DashboardCarouselCard({
   return href ? (
     <Link
       href={href}
-      className="flex flex-col gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+      className="flex flex-col gap-1.75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
     >
       {content}
     </Link>
   ) : (
-    <div className="flex flex-col gap-1.5">{content}</div>
+    <div className="flex flex-col gap-1.75">{content}</div>
   );
 }

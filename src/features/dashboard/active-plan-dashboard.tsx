@@ -13,6 +13,7 @@ import {
   DashboardCarousel,
   DashboardCarouselCard,
   DashboardCarouselList,
+  DashboardCarouselItem,
 } from "@/features/dashboard/dashboard-carousel";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import {
@@ -193,9 +194,9 @@ function RestOfWeekCarousel({
     >
       <DashboardCarouselList>
         {meals.map((meal) => (
-          <li key={meal.date} className="w-[111px] shrink-0 snap-start">
+          <DashboardCarouselItem key={meal.date}>
             <RestOfWeekCard meal={meal} servings={servings} />
-          </li>
+          </DashboardCarouselItem>
         ))}
       </DashboardCarouselList>
     </DashboardCarousel>

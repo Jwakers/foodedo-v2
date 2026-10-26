@@ -5,18 +5,21 @@ import { HouseholdDiscovery } from "@/features/household/household-discovery";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
 import { useQuery } from "convex/react";
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  DashboardCarousel,
+  DashboardCarouselCard,
+  DashboardCarouselItem,
+  DashboardCarouselList,
+} from "@/features/dashboard/dashboard-carousel";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { PlanAction } from "@/features/plan/plan-action";
-import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
@@ -122,82 +125,46 @@ function IdeasForYourWeek({
   const ideas = catalogue?.meals.slice(0, 6) ?? [];
 
   return (
-    <section
-      aria-labelledby="week-ideas-heading"
-      className="mt-5 flex flex-col gap-3 border-t border-border pt-4.5"
+    <DashboardCarousel
+      headingId="week-ideas-heading"
+      title="Ideas for your week"
+      href="/recipes"
+      action="Browse recipes"
+      className="mt-5 border-t border-border pt-4.5"
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2
-          id="week-ideas-heading"
-          className="font-display text-22 font-semibold leading-6.5 text-ink"
-        >
-          Ideas for your week
-        </h2>
-        <ButtonLink
-          href="/recipes"
-          variant="inline"
-          className="shrink-0 text-ink"
-        >
-          Browse recipes
-          <ArrowRight aria-hidden="true" className="size-3.5" />
-        </ButtonLink>
-      </div>
-
-      <div className="-mx-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8">
-        {catalogue === undefined ? (
-          <p className="px-page-inline text-13 text-graphite sm:px-8">
-            Loading ideas…
-          </p>
-        ) : null}
-        {catalogue === null ? (
-          <div className="px-page-inline text-13 text-graphite sm:px-8">
-            <p>Recipe ideas are unavailable right now.</p>
-            <Button
-              variant="inline"
-              className="mt-1 h-auto p-0 text-13"
-              onClick={() => window.location.reload()}
-            >
-              Try again
-            </Button>
-          </div>
-        ) : null}
-        {catalogue?.meals.length === 0 ? (
-          <p className="px-page-inline text-13 text-graphite sm:px-8">
-            No recipe ideas are available yet.
-          </p>
-        ) : null}
-        <ul className="flex w-max snap-x snap-mandatory gap-2 px-page-inline sm:px-8">
-          {ideas.map((meal) => (
-            <li key={meal.id} className="w-37 shrink-0 snap-start">
-              <WeekIdeaCard meal={meal} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function WeekIdeaCard({ meal }: { meal: CatalogueMealSummary }) {
-  return (
-    <Link
-      href={recipeDetailPath(meal.slug)}
-      className="flex flex-col gap-1.75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-    >
-      <div className="relative aspect-37/24 overflow-hidden rounded-compact bg-mist">
-        {meal.imageSrc ? (
-          <Image
-            src={meal.imageSrc}
-            alt=""
-            fill
-            sizes="148px"
-            className="object-cover"
-          />
-        ) : null}
-      </div>
-      <p className="line-clamp-3 font-display text-16 font-semibold leading-4.5 text-ink">
-        {meal.title}
-      </p>
-    </Link>
+      {catalogue === undefined ? (
+        <p className="px-page-inline text-13 text-graphite sm:px-8">
+          Loading ideas…
+        </p>
+      ) : null}
+      {catalogue === null ? (
+        <div className="px-page-inline text-13 text-graphite sm:px-8">
+          <p>Recipe ideas are unavailable right now.</p>
+          <Button
+            variant="inline"
+            className="mt-1 h-auto p-0 text-13"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : null}
+      {catalogue?.meals.length === 0 ? (
+        <p className="px-page-inline text-13 text-graphite sm:px-8">
+          No recipe ideas are available yet.
+        </p>
+      ) : null}
+      <DashboardCarouselList>
+        {ideas.map((meal) => (
+          <DashboardCarouselItem key={meal.id}>
+            <DashboardCarouselCard
+              title={meal.title}
+              imageSrc={meal.imageSrc}
+              href={recipeDetailPath(meal.slug)}
+            />
+          </DashboardCarouselItem>
+        ))}
+      </DashboardCarouselList>
+    </DashboardCarousel>
   );
 }

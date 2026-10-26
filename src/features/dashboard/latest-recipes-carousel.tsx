@@ -7,6 +7,7 @@ import {
   DashboardCarousel,
   DashboardCarouselCard,
   DashboardCarouselList,
+  DashboardCarouselItem,
 } from "@/features/dashboard/dashboard-carousel";
 import { recipeDetailPath } from "@/lib/routing/recipes";
 
@@ -38,13 +39,13 @@ export function LatestRecipesCarousel() {
       ) : (
         <DashboardCarouselList>
           {recipes.page.map((meal) => (
-            <li key={meal.id} className="w-[111px] shrink-0 snap-start">
+            <DashboardCarouselItem key={meal.id}>
               <DashboardCarouselCard
                 title={meal.title}
                 imageSrc={meal.imageSrc}
                 href={recipeDetailPath(meal.slug)}
               />
-            </li>
+            </DashboardCarouselItem>
           ))}
         </DashboardCarouselList>
       )}

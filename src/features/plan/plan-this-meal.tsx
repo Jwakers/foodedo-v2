@@ -1,12 +1,13 @@
 "use client";
 
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
-import { CalendarPlus, Plus } from "lucide-react";
+import { CalendarPlus, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerBody,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -34,7 +35,6 @@ export function PlanThisMeal({
   return (
     <Drawer
       open={planner.isOpen}
-      handleOnly
       onOpenChange={(open) => {
         if (!open) planner.closePlanner();
       }}
@@ -58,11 +58,18 @@ export function PlanThisMeal({
       </DrawerTrigger>
 
       <DrawerContent>
-        <DrawerHeader className="flex-col items-stretch gap-0.5">
-          <DrawerTitle>Plan this meal</DrawerTitle>
-          <DrawerDescription>
-            Choose a day for {formatRecipeHeading(meal.title)}.
-          </DrawerDescription>
+        <DrawerHeader>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <DrawerTitle>Plan this meal</DrawerTitle>
+            <DrawerDescription>
+              Choose a day for {formatRecipeHeading(meal.title)}.
+            </DrawerDescription>
+          </div>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="headerIcon" aria-label="Close">
+              <X aria-hidden="true" className="size-5" />
+            </Button>
+          </DrawerClose>
         </DrawerHeader>
         <DrawerBody>
           <ul>
