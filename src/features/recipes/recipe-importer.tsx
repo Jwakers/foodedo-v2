@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -547,7 +548,7 @@ function ImportSuccess({
             {needsReview ? "Imported recipe" : "Recipe imported"}
           </p>
           <h2 className="mt-2 font-display text-24 font-semibold tracking-title text-ink">
-            {recipe.title}
+            {formatRecipeHeading(recipe.title)}
           </h2>
           <p className="mt-2 text-14 text-graphite">
             {duration} ·{" "}

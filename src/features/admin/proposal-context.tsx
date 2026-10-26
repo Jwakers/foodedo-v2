@@ -1,3 +1,4 @@
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import Image from "next/image";
 import { ProposalPreview } from "./proposal-preview";
 import type { Proposal } from "./proposal-types";
@@ -85,7 +86,7 @@ export function ProposalHistory({ proposal: p }: { proposal: Proposal }) {
           {p.sourceImageUrl ? (
             <Image
               src={p.sourceImageUrl}
-              alt={`Original photograph of ${p.sourceMeal.title}`}
+              alt={`Original photograph of ${formatRecipeHeading(p.sourceMeal.title)}`}
               width={1536}
               height={864}
               unoptimized
@@ -107,8 +108,9 @@ export function ProposalHistory({ proposal: p }: { proposal: Proposal }) {
           <ul className="space-y-2 pb-4 text-sm">
             {p.nearest.map((match) => (
               <li key={match.key}>
-                {match.title} · {Math.round(match.overlap * 100)}% ingredient
-                overlap{match.exact ? " · same title" : ""}
+                {formatRecipeHeading(match.title)} ·{" "}
+                {Math.round(match.overlap * 100)}% ingredient overlap
+                {match.exact ? " · same title" : ""}
               </li>
             ))}
           </ul>

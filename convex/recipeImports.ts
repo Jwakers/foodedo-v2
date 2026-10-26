@@ -1,3 +1,4 @@
+import { personalRecipeBrowseKeys } from "./lib/recipeListing";
 import { ConvexError, v } from "convex/values";
 
 import { internal } from "./_generated/api";
@@ -368,6 +369,7 @@ export const finalizeDraft = mutation({
     const recipeId = await ctx.db.insert("recipes", {
       ownerId,
       ...recipe,
+      ...personalRecipeBrowseKeys(recipe),
       source,
       savedAt: now,
       contentEditedAt: now,
@@ -614,6 +616,7 @@ export const completeImport = internalMutation({
     const recipeId: Id<"recipes"> = await ctx.db.insert("recipes", {
       ownerId: job.ownerId,
       ...content,
+      ...personalRecipeBrowseKeys(content),
       source,
       savedAt: now,
       updatedAt: now,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/react";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery } from "convex-helpers/react";
 import type { FunctionReturnType } from "convex/server";
 import {
   ArrowRight,
@@ -25,7 +25,6 @@ import {
 import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
 import { RecipeCard } from "@/features/recipes/recipe-card";
-import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { RecipeFilterPanel } from "@/features/recipes/recipe-filter-panel";
 import { RecipeSortStackPane } from "@/features/recipes/recipe-sort-stack-pane";
 import {
@@ -39,17 +38,17 @@ import {
 import { formatPersonalRecipeSourceLabel } from "@/lib/domain/recipe-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import {
-  filterRecipes,
-  sortRecipes,
   type RecipeFilters,
   type RecipeSort,
 } from "@/lib/domain/recipe-filtering";
-import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { catalogueBrowsePath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
+
+const pageSize = 20;
+type CataloguePage = FunctionReturnType<typeof api.catalogue.list>;
 
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
@@ -57,22 +56,12 @@ type RecipeScope = (typeof scopes)[number];
 const recipeDrawerViews = { filters: "filters", sort: "sort" } as const;
 
 export function RecipesListing({
-  initialMeals,
+  initialPage,
 }: {
-  initialMeals?: CatalogueMealSummary[];
+  initialPage?: CataloguePage;
 }) {
-  const liveCatalogue = useCurrentCatalogue();
-  const catalogue =
-    liveCatalogue === undefined && initialMeals !== undefined
-      ? { meals: initialMeals }
-      : liveCatalogue;
   const { isLoaded, isSignedIn } = useAuth();
   const { isAuthenticated } = useFoodedoAuth();
-  const personalRecipeQuery = usePaginatedQuery(
-    api.recipes.listMine,
-    isAuthenticated ? {} : "skip",
-    { initialNumItems: 50 },
-  );
   const {
     isLibraryLoading,
     isSaved,
@@ -93,47 +82,54 @@ export function RecipesListing({
     toggleQuickFilter,
   } = useRecipeFilters();
 
-  if (catalogue === undefined) {
-    return (
-      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
-        Loading recipes…
-      </main>
-    );
-  }
-  if (catalogue === null || catalogue.meals.length === 0) {
-    return (
-      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
-        <h1 className="font-display text-28 font-semibold text-ink">
-          Recipes are unavailable
-        </h1>
-        <p className="mt-2 text-14 text-graphite">Please try again shortly.</p>
-        <Button className="mt-5" onClick={() => window.location.reload()}>
-          Try again
-        </Button>
-      </main>
-    );
-  }
-  const meals = catalogue.meals;
-  const ownRecipes = personalRecipeQuery.results.filter(
-    (recipe) => recipe.source.type !== "catalogue",
-  );
-
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
   const activeScope: RecipeScope = showScopes ? scope : "All";
-  const savedMeals = meals.filter((meal) => savedRecipeIdByMealId.has(meal.id));
-  const filteredMeals = filterRecipes(meals, recipeFilters);
-  const filteredSavedMeals = filterRecipes(savedMeals, recipeFilters);
-  const matchingMeals = sortRecipes(
-    filterCatalogueMealsBySearch(filteredMeals, searchQuery),
-    recipeSort,
+  const catalogueQuery = usePaginatedQuery(
+    api.catalogue.list,
+    activeScope === "Yours" || (activeScope === "Saved" && !isAuthenticated)
+      ? "skip"
+      : {
+          ...recipeFilters,
+          proteinCategories: [...recipeFilters.proteinCategories],
+          sort: recipeSort,
+          searchQuery,
+          savedOnly: activeScope === "Saved",
+        },
+    { initialNumItems: pageSize },
   );
-  const matchingSavedMeals = sortRecipes(
-    filterCatalogueMealsBySearch(filteredSavedMeals, searchQuery),
-    recipeSort,
+  const personalRecipeQuery = usePaginatedQuery(
+    api.recipes.listMine,
+    isAuthenticated && activeScope === "Yours"
+      ? {
+          excludeCatalogue: true,
+          ...recipeFilters,
+          proteinCategories: [...recipeFilters.proteinCategories],
+          sort: recipeSort,
+          searchQuery,
+        }
+      : "skip",
+    { initialNumItems: pageSize },
   );
+  const useInitialPage =
+    catalogueQuery.status === "LoadingFirstPage" &&
+    activeScope === "All" &&
+    !searchQuery &&
+    !hasActiveRecipeFilters(recipeFilters) &&
+    recipeSort === "recommended" &&
+    initialPage !== undefined;
+  const meals = useInitialPage ? initialPage.page : catalogueQuery.results;
+  const catalogueIsLoading =
+    catalogueQuery.status === "LoadingFirstPage" && !useInitialPage;
+  const catalogueCanLoadMore = useInitialPage
+    ? !initialPage.isDone
+    : catalogueQuery.status === "CanLoadMore" ||
+      catalogueQuery.status === "LoadingMore";
+  const ownRecipes = personalRecipeQuery.results;
   const savedIsEmpty =
-    activeScope === "Saved" && !isLibraryLoading && savedMeals.length === 0;
+    activeScope === "Saved" &&
+    !isLibraryLoading &&
+    savedRecipeIdByMealId.size === 0;
 
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-6 pb-8">
@@ -231,13 +227,23 @@ export function RecipesListing({
         </div>
       ) : null}
 
+      {activeScope === "All" ? <RecipeImportDiscoveryLink /> : null}
+
       {activeScope === "All" ? <RecipesIntroduction /> : null}
 
       {activeScope === "All" ? (
         <CatalogueGrid
           heading="Ideas for you"
-          countLabel={recipeCountLabel(matchingMeals.length)}
-          meals={matchingMeals}
+          countLabel={
+            catalogueCanLoadMore
+              ? `${recipeCountLabel(meals.length)} loaded`
+              : recipeCountLabel(meals.length)
+          }
+          meals={meals}
+          isLoading={catalogueIsLoading}
+          canLoadMore={catalogueQuery.status === "CanLoadMore"}
+          isLoadingMore={catalogueQuery.status === "LoadingMore"}
+          onLoadMore={() => catalogueQuery.loadMore(pageSize)}
           hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
           isSavePending={isSavePending}
@@ -258,8 +264,16 @@ export function RecipesListing({
       {activeScope === "Saved" && !isLibraryLoading && !savedIsEmpty ? (
         <CatalogueGrid
           heading="Saved favourites"
-          countLabel={`${matchingSavedMeals.length} saved`}
-          meals={matchingSavedMeals}
+          countLabel={
+            catalogueCanLoadMore
+              ? `${recipeCountLabel(meals.length)} loaded`
+              : recipeCountLabel(meals.length)
+          }
+          meals={meals}
+          isLoading={catalogueIsLoading}
+          canLoadMore={catalogueQuery.status === "CanLoadMore"}
+          isLoadingMore={catalogueQuery.status === "LoadingMore"}
+          onLoadMore={() => catalogueQuery.loadMore(pageSize)}
           hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
           isSavePending={isSavePending}
@@ -273,14 +287,11 @@ export function RecipesListing({
           isLoading={personalRecipeQuery.status === "LoadingFirstPage"}
           canLoadMore={personalRecipeQuery.status === "CanLoadMore"}
           isLoadingMore={personalRecipeQuery.status === "LoadingMore"}
-          onLoadMore={() => personalRecipeQuery.loadMore(50)}
+          onLoadMore={() => personalRecipeQuery.loadMore(pageSize)}
           filters={recipeFilters}
-          sort={recipeSort}
           searchQuery={searchQuery}
         />
       ) : null}
-
-      {activeScope === "All" ? <RecipeImportDiscoveryLink /> : null}
 
       <Drawer
         open={filtersOpen}
@@ -295,11 +306,6 @@ export function RecipesListing({
               <RecipesFilterPane
                 filters={recipeFilters}
                 sort={recipeSort}
-                meals={meals}
-                savedMeals={savedMeals}
-                ownRecipes={ownRecipes}
-                activeScope={activeScope}
-                searchQuery={searchQuery}
                 onApply={setRecipeFilters}
                 onClose={() => setFiltersOpen(false)}
               />
@@ -341,21 +347,11 @@ function RecipeImportDiscoveryLink() {
 function RecipesFilterPane({
   filters,
   sort,
-  meals,
-  savedMeals,
-  ownRecipes,
-  activeScope,
-  searchQuery,
   onApply,
   onClose,
 }: {
   filters: RecipeFilters;
   sort: RecipeSort;
-  meals: ReadonlyArray<RecipeFilterSearchable>;
-  savedMeals: ReadonlyArray<RecipeFilterSearchable>;
-  ownRecipes: ReadonlyArray<PersonalRecipeView>;
-  activeScope: RecipeScope;
-  searchQuery: string;
   onApply: (filters: RecipeFilters) => void;
   onClose: () => void;
 }) {
@@ -371,17 +367,6 @@ function RecipesFilterPane({
         filters={filters}
         sort={sort}
         onOpenSort={() => push(recipeDrawerViews.sort)}
-        getMatchCount={(draftFilters) => {
-          const matchingScopeMeals: ReadonlyArray<RecipeFilterSearchable> =
-            activeScope === "Saved"
-              ? filterRecipes(savedMeals, draftFilters)
-              : activeScope === "Yours"
-                ? filterRecipes(ownRecipes, draftFilters)
-                : filterRecipes(meals, draftFilters);
-
-          return filterCatalogueMealsBySearch(matchingScopeMeals, searchQuery)
-            .length;
-        }}
         description="Narrow recipes to what you want to cook."
         onApply={(nextFilters) => {
           onApply(nextFilters);
@@ -392,15 +377,6 @@ function RecipesFilterPane({
   );
 }
 
-type RecipeFilterSearchable = {
-  title: string;
-  description?: string;
-  prepMinutes?: number;
-  cookMinutes?: number;
-  proteinCategory: RecipeFilters["proteinCategories"][number];
-  costBand?: "budget" | "standard" | "premium";
-};
-
 function CatalogueGrid({
   heading,
   countLabel,
@@ -409,7 +385,15 @@ function CatalogueGrid({
   isSaved,
   isSavePending,
   onToggleSave,
+  isLoading,
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
 }: {
+  isLoading: boolean;
+  canLoadMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
   heading: string;
   countLabel: string;
   meals: ReadonlyArray<CatalogueMealSummary>;
@@ -426,8 +410,15 @@ function CatalogueGrid({
     <section className="pt-2">
       <CollectionHeading heading={heading} trailing={countLabel} />
 
-      {meals.length === 0 ? (
-        <SearchEmptyState hasActiveFilters={hasActiveFilters} />
+      {isLoading ? (
+        <p className="py-16 text-center text-14 text-graphite" role="status">
+          Loading recipes…
+        </p>
+      ) : meals.length === 0 ? (
+        <SearchEmptyState
+          hasActiveFilters={hasActiveFilters}
+          hasMore={canLoadMore || isLoadingMore}
+        />
       ) : (
         <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
           {meals.map((meal) => (
@@ -451,6 +442,11 @@ function CatalogueGrid({
           ))}
         </ul>
       )}
+      <LoadMoreButton
+        canLoadMore={canLoadMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={onLoadMore}
+      />
     </section>
   );
 }
@@ -462,7 +458,6 @@ function YoursGrid({
   isLoadingMore,
   onLoadMore,
   filters,
-  sort,
   searchQuery,
 }: {
   recipes: ReadonlyArray<PersonalRecipeView>;
@@ -471,14 +466,8 @@ function YoursGrid({
   isLoadingMore: boolean;
   onLoadMore: () => void;
   filters: RecipeFilters;
-  sort: RecipeSort;
   searchQuery: string;
 }) {
-  const matchingRecipes = sortRecipes(
-    filterCatalogueMealsBySearch(filterRecipes(recipes, filters), searchQuery),
-    sort,
-  );
-
   return (
     <section className="pt-2">
       <CollectionHeading
@@ -498,14 +487,21 @@ function YoursGrid({
         <p className="py-16 text-center text-14 text-graphite" role="status">
           Loading your recipes…
         </p>
-      ) : recipes.length === 0 && !searchQuery ? (
+      ) : recipes.length === 0 &&
+        !searchQuery &&
+        !hasActiveRecipeFilters(filters) &&
+        !canLoadMore &&
+        !isLoadingMore ? (
         <EmptyYoursState />
-      ) : matchingRecipes.length === 0 ? (
-        <SearchEmptyState hasActiveFilters={hasActiveRecipeFilters(filters)} />
+      ) : recipes.length === 0 ? (
+        <SearchEmptyState
+          hasActiveFilters={hasActiveRecipeFilters(filters)}
+          hasMore={canLoadMore || isLoadingMore}
+        />
       ) : (
         <>
           <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
-            {matchingRecipes.map((recipe) => (
+            {recipes.map((recipe) => (
               <li key={recipe._id}>
                 <RecipeCard
                   title={recipe.title}
@@ -519,19 +515,37 @@ function YoursGrid({
               </li>
             ))}
           </ul>
-          {canLoadMore || isLoadingMore ? (
-            <Button
-              variant="secondary"
-              className="mt-7 w-full"
-              disabled={isLoadingMore}
-              onClick={onLoadMore}
-            >
-              {isLoadingMore ? "Loading more…" : "Load more"}
-            </Button>
-          ) : null}
         </>
       )}
+      <LoadMoreButton
+        canLoadMore={canLoadMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={onLoadMore}
+      />
     </section>
+  );
+}
+
+function LoadMoreButton({
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
+}: {
+  canLoadMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+}) {
+  if (!canLoadMore && !isLoadingMore) return null;
+  return (
+    <Button
+      variant="secondary"
+      className="mt-7 w-full"
+      disabled={isLoadingMore}
+      aria-busy={isLoadingMore}
+      onClick={onLoadMore}
+    >
+      {isLoadingMore ? "Loading more…" : "Load more"}
+    </Button>
   );
 }
 
@@ -552,12 +566,20 @@ function EmptyYoursState() {
   );
 }
 
-function SearchEmptyState({ hasActiveFilters }: { hasActiveFilters: boolean }) {
+function SearchEmptyState({
+  hasActiveFilters,
+  hasMore = false,
+}: {
+  hasActiveFilters: boolean;
+  hasMore?: boolean;
+}) {
   return (
     <p className="py-12 text-center text-14 text-graphite" role="status">
-      {hasActiveFilters
-        ? "No recipes match your search or filters."
-        : "No recipes match your search."}
+      {hasMore
+        ? "No matches in this batch. Load more to keep looking."
+        : hasActiveFilters
+          ? "No recipes match your search or filters."
+          : "No recipes match your search."}
     </p>
   );
 }

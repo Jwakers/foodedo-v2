@@ -358,3 +358,33 @@ test("missing optional metadata can be filled without regenerating ingredients o
   expect(result.recipe.cookMinutes).toBe(21);
   expect(result.metadataProvenance.prepMinutes).toBe("estimated");
 });
+
+test("normalization and category correction both retain turkey as its own category", () => {
+  const turkey = {
+    ...recipe,
+    title: "Turkey soup",
+    ingredients: [
+      {
+        ...recipe.ingredients[0],
+        name: "turkey breast",
+        shoppingCategory: "meat_and_fish" as const,
+      },
+    ],
+  };
+  expect(
+    importedRecipeSchema.parse({ ...turkey, proteinCategory: "turkey" })
+      .proteinCategory,
+  ).toBe("turkey");
+  const correction = correctionOutputSchema.parse({
+    sourceStatus: "recipe",
+    changes: [{ field: "proteinCategory", value: "turkey" }],
+    issues: [],
+  });
+  const updated = applyRecipeCorrections(
+    { ...turkey, proteinCategory: "other" },
+    correction,
+  );
+  expect(updated.proteinCategory).toBe("turkey");
+  expect(updated.ingredients).toEqual(turkey.ingredients);
+  expect(updated.steps).toEqual(turkey.steps);
+});

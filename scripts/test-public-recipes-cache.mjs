@@ -136,10 +136,15 @@ try {
   assert.equal(
     (await state()).requests.listing,
     1,
-    "Directory and sitemap must share one listing read",
+    "Sitemap should read the complete published directory once",
+  );
+  assert.equal(
+    (await state()).requests.listingPage,
+    1,
+    "Recipe directory should read only the first page once",
   );
   console.log(
-    "PASS: unbuilt slug MISS → HIT; 30-minute listing refresh shared by directory/sitemap; recipe still cached.",
+    "PASS: unbuilt slug MISS → HIT; 30-minute first-page and sitemap refresh; recipe still cached.",
   );
 
   assert.equal((await request(recipePath(missingSlug))).status, 404);

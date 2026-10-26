@@ -1,6 +1,7 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vitest";
 
+import { personalRecipeBrowseKeys } from "./lib/recipeListing";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
@@ -254,4 +255,138 @@ test("removing a pre-onboarding favourite does not bring its hint back", async (
   expect(
     (await asUser.query(api.onboarding.getState, { authSubject }))?.retired,
   ).toContain("recipes");
+});
+
+test("personal pagination excludes saved catalogue snapshots before filling a page", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 43; i++) {
+      await ctx.db.insert("recipes", {
+        ownerId,
+        title: `Recipe ${i}`,
+        ingredients: [],
+        steps: [],
+        proteinCategory: "meat-free",
+        source:
+          i < 23
+            ? { type: "manual" }
+            : {
+                type: "catalogue",
+                catalogueMealId: `catalogue-${i}`,
+                catalogueVersion: 1,
+              },
+        savedAt: i + 1,
+        updatedAt: i + 1,
+      });
+    }
+  });
+  const first = await asUser.query(api.recipes.listMine, {
+    paginationOpts: { numItems: 20, cursor: null },
+    excludeCatalogue: true,
+  });
+  expect(first.page).toHaveLength(20);
+  expect(first.page.every((recipe) => recipe.source.type === "manual")).toBe(
+    true,
+  );
+  const second = await asUser.query(api.recipes.listMine, {
+    paginationOpts: { numItems: 20, cursor: first.continueCursor },
+    excludeCatalogue: true,
+  });
+  expect(second.page).toHaveLength(3);
+  expect(second.isDone).toBe(true);
+});
+
+test("personal search, filters and sort operate before pagination across the whole library", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 45; i++) {
+      const content = {
+        title: i === 0 ? "Distant lemon dinner" : `Dinner ${i}`,
+        cookMinutes: i + 1,
+        costBand: i % 2 ? ("premium" as const) : ("budget" as const),
+      };
+      await ctx.db.insert("recipes", {
+        ownerId,
+        ...content,
+        ...personalRecipeBrowseKeys(content),
+        ingredients: [],
+        steps: [],
+        proteinCategory: "meat-free",
+        source: { type: "manual" },
+        savedAt: i + 1,
+        updatedAt: i + 1,
+      });
+    }
+  });
+  const paginationOpts = { numItems: 20, cursor: null };
+  const search = await asUser.query(api.recipes.listMine, {
+    paginationOpts,
+    excludeCatalogue: true,
+    searchQuery: " LEMON ",
+  });
+  expect(search.page.map((recipe) => recipe.title)).toEqual([
+    "Distant lemon dinner",
+  ]);
+  const quickest = await asUser.query(api.recipes.listMine, {
+    paginationOpts,
+    excludeCatalogue: true,
+    sort: "quickest",
+  });
+  expect(quickest.page.map((recipe) => recipe.cookMinutes)).toEqual(
+    Array.from({ length: 20 }, (_, i) => i + 1),
+  );
+  const filtered = await asUser.query(api.recipes.listMine, {
+    paginationOpts,
+    excludeCatalogue: true,
+    budgetFriendly: true,
+    under30Minutes: true,
+    proteinCategories: ["meat-free"],
+    sort: "quickest",
+  });
+  expect(filtered.page.map((recipe) => recipe.cookMinutes)).toEqual(
+    Array.from({ length: 15 }, (_, i) => i * 2 + 1),
+  );
+  const cheapest = await asUser.query(api.recipes.listMine, {
+    paginationOpts,
+    excludeCatalogue: true,
+    sort: "lowest-cost",
+  });
+  expect(cheapest.page.every((recipe) => recipe.costBand === "budget")).toBe(
+    true,
+  );
+  expect(cheapest.page[0].cookMinutes).toBe(45);
+});
+
+test("large personal libraries do not consume the saved catalogue limit", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  await asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 1001; i++) {
+      await ctx.db.insert("recipes", {
+        ownerId,
+        title: `Personal recipe ${i}`,
+        ingredients: [],
+        steps: [],
+        proteinCategory: "meat-free",
+        source: { type: "manual" },
+        savedAt: 1,
+        updatedAt: 1,
+      });
+    }
+  });
+  const saved = await asUser.query(api.recipes.listSavedCatalogueMeals, {});
+  expect(saved.map((recipe) => recipe.catalogueMealId)).toEqual([
+    catalogueMealId,
+  ]);
+  const catalogue = await asUser.query(api.catalogue.list, {
+    savedOnly: true,
+    paginationOpts: { numItems: 20, cursor: null },
+  });
+  expect(catalogue.page.map((meal) => meal.id)).toEqual([catalogueMealId]);
 });

@@ -1,3 +1,4 @@
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import type { Metadata } from "next";
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import {
@@ -10,12 +11,12 @@ import { publicRecipePath } from "@/lib/routing/recipes";
 export function recipeDescription(recipe: CatalogueMeal) {
   return (
     recipe.description?.trim() ||
-    `Ingredients and step-by-step instructions for ${recipe.title}.`
+    `Ingredients and step-by-step instructions for ${formatRecipeHeading(recipe.title)}.`
   );
 }
 
 export function recipeMetadata(recipe: CatalogueMeal): Metadata {
-  const title = `${recipe.title} | Foodedo`;
+  const title = `${formatRecipeHeading(recipe.title)} | Foodedo`;
   const description = recipeDescription(recipe);
   const url = siteUrl(publicRecipePath(recipe.slug));
   return {
@@ -30,7 +31,12 @@ export function recipeMetadata(recipe: CatalogueMeal): Metadata {
       locale: "en_GB",
       type: "article",
       images: recipe.imageSrc
-        ? [{ url: new URL(recipe.imageSrc, url).toString(), alt: recipe.title }]
+        ? [
+            {
+              url: new URL(recipe.imageSrc, url).toString(),
+              alt: formatRecipeHeading(recipe.title),
+            },
+          ]
         : undefined,
     },
     twitter: {
@@ -57,7 +63,7 @@ export function recipeStructuredData(
   return {
     "@context": "https://schema.org",
     "@type": "Recipe",
-    name: recipe.title,
+    name: formatRecipeHeading(recipe.title),
     identifier: recipe.id,
     version: recipe.version,
     description: recipeDescription(recipe),

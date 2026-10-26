@@ -73,7 +73,7 @@ test("requires a valid protein category", () => {
       proteinCategory: "duck",
     }),
   ).toThrow(
-    "Protein category must be chicken, beef, pork, lamb, fish, meat-free, or other.",
+    "Protein category must be chicken, turkey, beef, pork, lamb, fish, meat-free, or other.",
   );
 });
 
@@ -229,4 +229,9 @@ test("rejects duplicate catalogue positions", () => {
       ],
     }),
   ).toThrow("Catalogue meal positions must be unique.");
+});
+
+test("accepts turkey as a distinct protein category without changing recipe content", () => {
+  const turkey = { ...validRecipe, proteinCategory: "turkey" as const };
+  expect(prepareRecipeContent(turkey).proteinCategory).toBe("turkey");
 });

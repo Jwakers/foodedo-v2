@@ -399,7 +399,13 @@ test("catalogue photograph replacement retains text, requires image approval and
 }) => {
   await page.goto("https://editorial.fixture/?screen=catalogue");
   await page.getByRole("button", { name: /^Lemon chickpea rice/ }).click();
+  await page
+    .getByLabel("Recipe improvement request (optional)")
+    .fill("Change the recipe sauce.");
   await page.getByText("Replace the photograph only", { exact: true }).click();
+  await page
+    .getByLabel("Photo guidance (optional)")
+    .fill("  Show the chickpeas clearly, without decorative herbs.  ");
   await page
     .getByRole("button", {
       name: "Generate replacement photograph",
@@ -414,6 +420,47 @@ test("catalogue photograph replacement retains text, requires image approval and
       name: "Generated photograph of Lemon chickpea rice",
     }),
   ).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-photo-guidance",
+    "Show the chickpeas clearly, without decorative herbs.",
+  );
+  await expect(page.getByLabel("Photo guidance (optional)")).toHaveValue(
+    "Show the chickpeas clearly, without decorative herbs.",
+  );
+  await page
+    .getByLabel("Photo guidance (optional)")
+    .fill("Use a closer overhead composition.");
+  await page
+    .getByRole("button", { name: "Regenerate image", exact: true })
+    .click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-photo-guidance",
+    "Use a closer overhead composition.",
+  );
+  await expect(
+    page.getByText("A filling lemon rice dish.", { exact: true }).first(),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to published recipe", exact: true })
+    .click();
+  await page.getByText("Replace the photograph only", { exact: true }).click();
+  await page.getByLabel("Photo guidance (optional)").fill("");
+  await page
+    .getByRole("button", {
+      name: "Generate replacement photograph",
+      exact: true,
+    })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "An existing maintenance draft was opened.",
+  );
+  await expect(page.getByLabel("Photo guidance (optional)")).toHaveValue(
+    "Use a closer overhead composition.",
+  );
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-photo-guidance",
+    "Use a closer overhead composition.",
+  );
   await page.getByRole("button", { name: "Approve image and publish" }).click();
   await expect(page.getByRole("status")).toContainText(
     "Recipe published to the catalogue.",

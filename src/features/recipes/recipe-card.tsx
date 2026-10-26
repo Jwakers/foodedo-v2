@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -55,7 +56,7 @@ export function RecipeCard({
   const copy = (
     <div className="pt-2">
       <p className="font-display text-18 font-semibold tracking-card text-ink">
-        {title}
+        {formatRecipeHeading(title)}
       </p>
       {meta ? (
         <p className="mt-0.5 text-13 leading-4.5 text-graphite">{meta}</p>
@@ -87,7 +88,11 @@ export function RecipeCard({
       {showSave ? (
         <button
           type="button"
-          aria-label={saved ? `Unsave ${title}` : `Save ${title}`}
+          aria-label={
+            saved
+              ? `Unsave ${formatRecipeHeading(title)}`
+              : `Save ${formatRecipeHeading(title)}`
+          }
           aria-pressed={saved}
           aria-busy={isSavePending || undefined}
           disabled={isSavePending}

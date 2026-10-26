@@ -184,18 +184,24 @@ export default defineSchema({
     status: catalogueMealStatusValidator,
     slug: v.string(),
     position: v.number(),
+    browseDuration: v.optional(v.number()),
+    browseCostRank: v.optional(v.number()),
     ...recipeContentFields,
     imageStorageId: v.optional(v.id("_storage")),
     createdAt: v.number(),
     publishedAt: v.optional(v.number()),
   })
     .index("by_status_and_position", ["status", "position"])
+    .index("by_status_and_duration", ["status", "browseDuration", "position"])
+    .index("by_status_and_cost", ["status", "browseCostRank", "position"])
     .index("by_meal_id_and_version", ["catalogueMealId", "version"])
     .index("by_meal_id_and_status", ["catalogueMealId", "status"])
     .index("by_status_and_slug", ["status", "slug"]),
   recipes: defineTable({
     ownerId: spaceOwner,
     selectionKey: v.optional(v.string()),
+    browseDuration: v.optional(v.number()),
+    browseCostRank: v.optional(v.number()),
     ...recipeContentFields,
     imageStorageId: v.optional(v.id("_storage")),
     source: recipeSourceValidator,
@@ -205,6 +211,18 @@ export default defineSchema({
   })
     .index("by_owner_and_updated_at", ["ownerId", "updatedAt"])
     .index("by_owner_and_saved_at", ["ownerId", "savedAt"])
+    .index("by_owner_and_source_and_saved_at", [
+      "ownerId",
+      "source.type",
+      "savedAt",
+    ])
+    .index("by_owner_and_catalogue_meal_and_saved_at", [
+      "ownerId",
+      "source.catalogueMealId",
+      "savedAt",
+    ])
+    .index("by_owner_and_duration", ["ownerId", "browseDuration", "savedAt"])
+    .index("by_owner_and_cost", ["ownerId", "browseCostRank", "savedAt"])
     .index("by_owner_and_catalogue_source", [
       "ownerId",
       "source.catalogueMealId",

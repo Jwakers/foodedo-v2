@@ -38,7 +38,14 @@ The approved Swap Meal flow needs a small set of recipe selection facets. Time a
 
 ```ts
 type ProteinCategory =
-  "chicken" | "beef" | "pork" | "lamb" | "fish" | "meat-free" | "other";
+  | "chicken"
+  | "turkey"
+  | "beef"
+  | "pork"
+  | "lamb"
+  | "fish"
+  | "meat-free"
+  | "other";
 
 type RecipeSelectionMetadata = {
   proteinCategory: ProteinCategory;
@@ -49,7 +56,7 @@ type RecipeSelectionMetadata = {
 ```
 
 - **Time:** display and compare the sum of the trustworthy time components that are present. A recipe may legitimately supply only preparation or cooking time; zero is valid when explicitly stated. If neither component is known, the total is unknown and does not satisfy an active time constraint.
-- **Protein choice:** `proteinCategory` is required on every catalogue meal and every personal recipe. Allowed values are `chicken`, `beef`, `pork`, `lamb`, `fish`, `meat-free`, and `other`. It names the primary consumer-facing protein choice used by the approved filter—not every ingredient in the dish and not a nutritional claim. Prefer one clear primary (for example a chicken and vegetable traybake is `chicken`). Use `fish` for fish and seafood mains. Use `meat-free` when the primary protein is not animal flesh (beans, lentils, tofu, eggs, cheese, vegetable-forward mains). `other` keeps game and unfamiliar primaries honest instead of forcing them into an incorrect category.
+- **Protein choice:** `proteinCategory` is required on every catalogue meal and every personal recipe. Allowed values are `chicken`, `turkey`, `beef`, `pork`, `lamb`, `fish`, `meat-free`, and `other`. It names the primary consumer-facing protein choice used by the approved filter—not every ingredient in the dish and not a nutritional claim. Prefer one clear primary (for example a chicken and vegetable traybake is `chicken`). Use `turkey` when turkey is the primary protein, including breast, thigh, mince and leftover turkey; do not classify it as chicken or other. Use `fish` for fish and seafood mains. Use `meat-free` when the primary protein is not animal flesh (beans, lentils, tofu, eggs, cheese, vegetable-forward mains). `other` keeps game and unfamiliar primaries honest instead of forcing them into an incorrect category.
 - **Approximate cost:** `costBand` is optional for MVP and remains one of `budget`, `standard`, or `premium`. Keep this simple three-band model for now rather than a finer 0–10 index; revisit only if editorial banding proves too coarse. For the MVP catalogue it is assigned and reviewed editorially. The product does not expose a currency amount or imply live supermarket pricing.
 
 The approved **Budget friendly** filter matches the `budget` band. **Lowest cost first** orders known bands from budget to premium and retains the normal recommendation rank within a band. Recipes with unknown cost remain valid but are excluded by a cost filter and ordered after known bands when the user explicitly requests cost ordering.

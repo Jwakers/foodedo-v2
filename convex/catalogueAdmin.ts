@@ -1,3 +1,4 @@
+import { catalogueBrowseKeys } from "./lib/catalogue";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -119,10 +120,22 @@ export const getProposal = query({
     const sourceMeal = proposal?.sourceMealId
       ? await ctx.db.get(proposal.sourceMealId)
       : null;
+    // A later culinary review must not hide the most recent photograph request.
+    const latestImageRun = proposal
+      ? await ctx.db
+          .query("catalogueGenerationRuns")
+          .withIndex("by_proposal_and_created_at", (q) =>
+            q.eq("proposalId", proposalId),
+          )
+          .order("desc")
+          .filter((q) => q.eq(q.field("operation"), "image"))
+          .first()
+      : null;
     return proposal
       ? {
           ...proposal,
           sourceMeal,
+          photoGuidance: latestImageRun?.feedback ?? "",
           sourceImageUrl: sourceMeal?.imageStorageId
             ? await ctx.storage.getUrl(sourceMeal.imageStorageId)
             : null,
@@ -533,6 +546,7 @@ export const publish = mutation({
     if (source) await ctx.db.patch(source._id, { status: "retired" });
     const id = await ctx.db.insert("catalogueMeals", {
       ...content,
+      ...catalogueBrowseKeys(content),
       catalogueMealId,
       version,
       status: "published",

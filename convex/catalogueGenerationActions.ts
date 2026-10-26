@@ -109,7 +109,11 @@ export const process = internalAction({
         )
           throw new Error("Approved proposal changed.");
         const image = await client.image(
-          photographyPrompt(proposal.content, run.config.imageStyleVersion),
+          photographyPrompt(
+            proposal.content,
+            run.config.imageStyleVersion,
+            run.feedback,
+          ),
         );
         if (
           image.bytes.byteLength > run.config.imageBytes ||

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { minimumServingsNotice } from "@/lib/domain/ingredient-scaling";
 
 import { ChevronRight, Ellipsis, Minus, Plus } from "lucide-react";
@@ -138,7 +139,7 @@ function PlannedMealRow({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="truncate font-display text-18 font-semibold tracking-card text-ink">
-          {row.meal.title}
+          {formatRecipeHeading(row.meal.title)}
         </p>
         {servingNotice ? (
           <p className="text-12 text-graphite">{servingNotice}</p>
@@ -175,7 +176,7 @@ function PlannedMealRow({
       {recipeHref ? (
         <Link
           href={recipeHref}
-          aria-label={`View ${row.meal.title} recipe`}
+          aria-label={`View ${formatRecipeHeading(row.meal.title)} recipe`}
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
         >
           {summary}
@@ -189,7 +190,7 @@ function PlannedMealRow({
       {readOnly ? null : (
         <PlanMealActionsDrawer
           date={row.date}
-          mealTitle={row.meal.title}
+          mealTitle={formatRecipeHeading(row.meal.title)}
           currentMeal={row.meal}
           requestedServings={row.requestedServings}
           onRemoveMeal={onRemoveMeal}
@@ -200,7 +201,7 @@ function PlannedMealRow({
               type="button"
               variant="quiet"
               size="icon"
-              aria-label={`Actions for ${row.meal.title}`}
+              aria-label={`Actions for ${formatRecipeHeading(row.meal.title)}`}
             >
               <Ellipsis aria-hidden="true" className="size-4" strokeWidth={2} />
             </Button>

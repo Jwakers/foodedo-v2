@@ -108,6 +108,7 @@ test("sorts known cost bands from lowest to highest and leaves unknown cost last
 
 for (const proteinCategory of [
   "chicken",
+  "turkey",
   "beef",
   "pork",
   "lamb",

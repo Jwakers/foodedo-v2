@@ -13,6 +13,7 @@ vi.mock("convex/browser", () => ({
 }));
 vi.mock("next/cache", () => ({ unstable_cache: cached }));
 import {
+  getPublishedRecipePage,
   getPublicRecipe,
   getPublishedRecipes,
 } from "../../src/features/public-recipes/catalogue.server";
@@ -44,7 +45,7 @@ test("new slugs bypass the listing and use the 24-hour cache keyed by deployment
   });
 });
 
-test("directory and sitemap share one 30-minute published listing", async () => {
+test("the complete published directory remains cached for sitemap and static paths", async () => {
   query.mockResolvedValue({ meals: [{ slug: "published-meal" }] });
   expect(await getPublishedRecipes()).toEqual([{ slug: "published-meal" }]);
   expect(cached).toHaveBeenCalledWith(
@@ -66,4 +67,17 @@ test("only a successful null means missing; backend errors propagate", async () 
   );
   expect(await getPublicRecipe("invalid/slug")).toBeNull();
   expect(query).toHaveBeenCalledTimes(2);
+});
+
+test("the public directory embeds only the first 20-item page", async () => {
+  const result = {
+    page: [{ slug: "first-page-meal" }],
+    isDone: false,
+    continueCursor: "next",
+  };
+  query.mockResolvedValue(result);
+  expect(await getPublishedRecipePage()).toEqual(result);
+  expect(query).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+    paginationOpts: { numItems: 20, cursor: null },
+  });
 });

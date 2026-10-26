@@ -1,4 +1,4 @@
-import type { CostBand, ProteinCategory } from "@/lib/domain/recipes";
+import type { CostBand, ProteinCategory } from "./recipes";
 
 export type RecipeFilters = {
   under30Minutes: boolean;

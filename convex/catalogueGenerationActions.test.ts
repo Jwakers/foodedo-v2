@@ -5,7 +5,10 @@ import sharp from "sharp";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 import { recipeFingerprint } from "../src/lib/domain/catalogue-generation";
-import type { RecipeContent } from "../src/lib/domain/recipes";
+import {
+  prepareRecipeContent,
+  type RecipeContent,
+} from "../src/lib/domain/recipes";
 const provider = vi.hoisted(() => ({ text: vi.fn(), image: vi.fn() }));
 vi.mock("./lib/catalogueGeneration/models", async (original) => ({
   ...(await original<typeof import("./lib/catalogueGeneration/models")>()),
@@ -138,6 +141,7 @@ test("catalogue image replacement uses the same image client without a text call
     mealId,
     mode: "image",
     requestKey: "catalogue-photo",
+    feedback: "  Show the chickpeas clearly; no decorative herbs.  ",
   });
   const bytes = await sharp({
     create: { width: 1200, height: 675, channels: 3, background: "#ece6da" },
@@ -152,6 +156,37 @@ test("catalogue image replacement uses the same image client without a text call
     runId: started.runId!,
   });
   expect(provider.image).toHaveBeenCalledOnce();
+  expect(provider.image.mock.calls[0][0]).toContain(
+    "Show the chickpeas clearly; no decorative herbs.",
+  );
+  const draft = (await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId: started.proposalId,
+  }))!;
+  expect(draft.content).toEqual(prepareRecipeContent(content));
+  expect(draft.initialPrompt).toBeUndefined();
+  expect(draft.latestRun?.feedback).toBe(
+    "Show the chickpeas clearly; no decorative herbs.",
+  );
+  const retry = await admin.mutation(api.catalogueAdmin.begin, {
+    operation: "image",
+    requestKey: "catalogue-photo-retry",
+    proposalId: started.proposalId,
+    expectedRevision: draft.revision,
+    feedback: "Use a closer overhead composition.",
+  });
+  await t.action(internal.catalogueGenerationActions.process, { runId: retry });
+  expect(provider.image).toHaveBeenCalledTimes(2);
+  expect(provider.image.mock.calls[1][0]).toContain(
+    "Use a closer overhead composition.",
+  );
+  expect(provider.image.mock.calls[1][0]).not.toContain("no decorative herbs");
+  expect(
+    (
+      await admin.query(api.catalogueAdmin.getProposal, {
+        proposalId: started.proposalId,
+      })
+    )?.content,
+  ).toEqual(draft.content);
   expect(provider.text).not.toHaveBeenCalled();
   expect(
     (

@@ -39,6 +39,7 @@ test("formats day parts and week summary for plan review", () => {
     countPlanDays({ startDate: "2026-08-29", endDate: "2026-09-02" }),
   ).toBe(5);
   expect(formatProteinCategoryLabel("chicken")).toBe("Chicken");
+  expect(formatProteinCategoryLabel("turkey")).toBe("Turkey");
   expect(formatProteinCategoryLabel("meat-free")).toBe("Meat-free");
   expect(
     formatPlanDateRange({

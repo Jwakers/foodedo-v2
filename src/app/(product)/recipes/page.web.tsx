@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { RecipesListing } from "@/features/recipes/recipes-listing";
-import { getPublishedRecipes } from "@/features/public-recipes/catalogue.server";
+import { getPublishedRecipePage } from "@/features/public-recipes/catalogue.server";
 import { siteUrl } from "@/lib/seo/site-url";
 
 export const dynamic = "force-static";
@@ -13,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default async function RecipesPage() {
-  return <RecipesListing initialMeals={await getPublishedRecipes()} />;
+  return <RecipesListing initialPage={await getPublishedRecipePage()} />;
 }

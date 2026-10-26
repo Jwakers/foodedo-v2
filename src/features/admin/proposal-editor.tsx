@@ -1,4 +1,5 @@
 "use client";
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import Image from "next/image";
@@ -14,6 +15,7 @@ import {
 import { ProposalRunFeedback } from "./proposal-run-feedback";
 import { ProposalContentEditor } from "./proposal-content-editor";
 import { ProposalPreview } from "./proposal-preview";
+import { PhotographGuidanceField } from "./photograph-guidance-field";
 import {
   getReviewGuidance,
   proposalStatusLabels,
@@ -25,11 +27,13 @@ export function ProposalEditor({
   busy,
   perform,
   onDirtyChange,
+  initialPhotoGuidance,
 }: {
   proposal: Proposal;
   busy: boolean;
   perform: (job: () => Promise<unknown>, success: string) => Promise<void>;
   onDirtyChange: (dirty: boolean) => void;
+  initialPhotoGuidance?: string;
 }) {
   // Keep the editing baseline separate from reactive server data so another
   // administrator's save never silently replaces an unsaved local draft.
@@ -38,6 +42,11 @@ export function ProposalEditor({
   const [tags, setTags] = useState(p.tags);
   const [editing, setEditing] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [photoGuidance, setPhotoGuidance] = useState(
+    initialPhotoGuidance ??
+      p.photoGuidance ??
+      (p.latestRun?.operation === "image" ? (p.latestRun.feedback ?? "") : ""),
+  );
   const [reason, setReason] = useState("");
   const update = useMutation(api.catalogueAdmin.updateProposal);
   const begin = useMutation(api.catalogueAdmin.begin);
@@ -113,20 +122,21 @@ export function ProposalEditor({
   const blocked = p.findings.some((finding) => finding.blocking);
   const ready = reviewed && !blocked;
   const guidance = getReviewGuidance(p, editing);
-  const operation = (
-    operation: "regenerate" | "review" | "image" | "improve",
-  ) =>
-    perform(
+  function operation(operation: "regenerate" | "review" | "image" | "improve") {
+    const request =
+      operation === "image"
+        ? photoGuidance.trim()
+        : operation === "regenerate" || operation === "improve"
+          ? feedback.trim()
+          : "";
+    return perform(
       () =>
         begin({
           operation,
           requestKey: crypto.randomUUID(),
           proposalId: p._id,
           expectedRevision: p.revision,
-          ...((operation === "regenerate" || operation === "improve") &&
-          feedback.trim()
-            ? { feedback: feedback.trim() }
-            : {}),
+          ...(request ? { feedback: request } : {}),
         }),
       operation === "image"
         ? "Photography started. The image will need your approval before publication."
@@ -136,6 +146,7 @@ export function ProposalEditor({
             ? "Recipe improvement started. The published recipe remains unchanged."
             : "Replacement started. This proposal is kept until its replacement succeeds.",
     );
+  }
   function discard() {
     if (dirty && !window.confirm("Discard your unsaved recipe changes?"))
       return;
@@ -153,7 +164,9 @@ export function ProposalEditor({
       <p className="text-xs font-bold tracking-widest text-cadmium uppercase">
         {proposalStatusLabels[p.status]} · Revision {p.revision}
       </p>
-      <h2 className="mt-2 font-display text-3xl">{p.content.title}</h2>
+      <h2 className="mt-2 font-display text-3xl">
+        {formatRecipeHeading(p.content.title)}
+      </h2>
       <ProposalRunFeedback
         proposal={p}
         busy={busy || dirty || sourceStale}
@@ -213,6 +226,13 @@ export function ProposalEditor({
           className="mb-6 scroll-mt-20 space-y-3 rounded-compact border border-border bg-mist p-4"
         >
           <h3 className="font-semibold">{guidance.heading}</h3>
+          {!editing && !p.imageUrl && ready ? (
+            <PhotographGuidanceField
+              value={photoGuidance}
+              onChange={setPhotoGuidance}
+              disabled={busy || dirty || sourceStale}
+            />
+          ) : null}
           <p className="text-sm text-graphite">{guidance.description}</p>
           {conflict ? (
             <p role="alert" className="text-sm text-cadmium">
@@ -370,7 +390,7 @@ export function ProposalEditor({
         <figure className="mb-6">
           <Image
             src={p.imageUrl}
-            alt={`Generated photograph of ${p.content.title}`}
+            alt={`Generated photograph of ${formatRecipeHeading(p.content.title)}`}
             width={1536}
             height={864}
             unoptimized
@@ -381,17 +401,24 @@ export function ProposalEditor({
             the approved recipe.
           </figcaption>
           {editable && !editing ? (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button
-                variant="secondary"
+            <div className="mt-3 space-y-3">
+              <PhotographGuidanceField
+                value={photoGuidance}
+                onChange={setPhotoGuidance}
                 disabled={busy || dirty || !ready || sourceStale}
-                onClick={() => operation("image")}
-              >
-                Regenerate image
-              </Button>
-              <p className="text-sm text-graphite">
-                Creates a new paid photograph for this recipe only.
-              </p>
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="secondary"
+                  disabled={busy || dirty || !ready || sourceStale}
+                  onClick={() => operation("image")}
+                >
+                  Regenerate image
+                </Button>
+                <p className="text-sm text-graphite">
+                  Creates a new paid photograph for this recipe only.
+                </p>
+              </div>
             </div>
           ) : null}
         </figure>

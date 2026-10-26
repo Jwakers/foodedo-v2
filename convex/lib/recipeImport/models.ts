@@ -10,6 +10,7 @@ import {
   type LanguageModelUsage,
 } from "ai";
 import { z } from "zod";
+import { PROTEIN_CATEGORIES } from "../../../src/lib/domain/recipes";
 import { timerCuesSchema } from "../recipeTimers";
 import { ImportFailure, invalidModelOutput } from "./contracts";
 import { amountSchema } from "./measurements";
@@ -65,15 +66,7 @@ export const importedRecipeSchema = z.object({
     .optional(),
   prepMinutes: metadata,
   cookMinutes: metadata,
-  proteinCategory: z.enum([
-    "chicken",
-    "beef",
-    "pork",
-    "lamb",
-    "fish",
-    "meat-free",
-    "other",
-  ]),
+  proteinCategory: z.enum(PROTEIN_CATEGORIES),
   ingredients: z
     .array(
       z.object({

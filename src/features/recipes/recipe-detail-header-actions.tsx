@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,11 @@ export function RecipeDetailHeaderActions({
         type="button"
         variant="ghost"
         size="headerIcon"
-        aria-label={saved ? `Unsave ${recipe.title}` : `Save ${recipe.title}`}
+        aria-label={
+          saved
+            ? `Unsave ${formatRecipeHeading(recipe.title)}`
+            : `Save ${formatRecipeHeading(recipe.title)}`
+        }
         aria-pressed={saved}
         aria-busy={pending || undefined}
         disabled={pending}
@@ -44,7 +49,10 @@ export function RecipeDetailHeaderActions({
           strokeWidth={1.8}
         />
       </Button>
-      <RecipeOverflowMenu recipeTitle={recipe.title} recipeSlug={recipe.slug} />
+      <RecipeOverflowMenu
+        recipeTitle={formatRecipeHeading(recipe.title)}
+        recipeSlug={recipe.slug}
+      />
     </>
   );
 }

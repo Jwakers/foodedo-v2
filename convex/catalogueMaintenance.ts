@@ -132,7 +132,8 @@ export const start = mutation({
           : unknownTags,
       sourceMealId: meal._id,
       maintenanceMode: args.mode,
-      initialPrompt: args.feedback?.trim() || undefined,
+      initialPrompt:
+        args.mode === "recipe" ? args.feedback?.trim() || undefined : undefined,
       concept: meal.title,
       rationale:
         args.mode === "image"

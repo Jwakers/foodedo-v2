@@ -63,3 +63,16 @@ export const getPublicRecipe = cache(
     )(slug);
   },
 );
+
+/** Only the first page is embedded in the public directory's HTML/RSC payload. */
+export const getPublishedRecipePage = cache(async () => {
+  const url = deploymentUrl();
+  return unstable_cache(
+    () =>
+      client(url).query(api.catalogue.list, {
+        paginationOpts: { numItems: 20, cursor: null },
+      }),
+    ["public-recipes-page-v1", url],
+    { revalidate: directoryRevalidateSeconds },
+  )();
+});

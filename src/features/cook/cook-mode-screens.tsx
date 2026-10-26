@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import {
   ArrowLeft,
   ArrowRight,
@@ -70,7 +71,7 @@ export function CookHeader({
       <div className="min-w-0 px-3 text-center">
         <p className="font-display text-20 font-semibold text-ink">Cook mode</p>
         <p className="truncate text-10 font-bold tracking-overline text-graphite uppercase">
-          {title}
+          {formatRecipeHeading(title)}
         </p>
       </div>
       {onIngredients ? (
@@ -146,7 +147,7 @@ export function PreparationScreen({
               <Fragment key={line.id}>
                 {line.group && line.group !== ingredients[index - 1]?.group ? (
                   <li className="pt-4 pb-1 text-11 font-bold tracking-label text-graphite uppercase">
-                    {line.group}
+                    {formatRecipeHeading(line.group)}
                   </li>
                 ) : null}
                 <li className="flex min-h-17 items-center gap-3 border-b border-border">
@@ -233,7 +234,7 @@ export function StepScreen({
         </p>
         {step.group ? (
           <p className="mt-2 text-11 font-bold tracking-label text-cadmium uppercase">
-            {step.group}
+            {formatRecipeHeading(step.group)}
           </p>
         ) : null}
         <div className="mt-3 h-0.75 rounded-full bg-mist">
@@ -258,7 +259,7 @@ export function StepScreen({
               className="mt-4 rounded-compact bg-mist px-4 py-2 text-14 text-graphite"
             >
               <summary className="min-h-11 cursor-pointer py-3 font-semibold text-cadmium">
-                {note.label ?? "Recipe note"}
+                {formatRecipeHeading(note.label ?? "Recipe note")}
               </summary>
               <p className="pb-3 leading-5.5">{note.text}</p>
             </details>
@@ -336,7 +337,7 @@ export function IngredientsScreen({
         <PersistenceWarning visible={!persistenceAvailable} />
         <div className="flex justify-between gap-3">
           <p className="text-12 font-bold tracking-overline text-cadmium uppercase">
-            {meal.title}
+            {formatRecipeHeading(meal.title)}
           </p>
           <p className="text-13 text-graphite">
             {meal.servings === undefined
@@ -352,7 +353,7 @@ export function IngredientsScreen({
             <Fragment key={line.id}>
               {line.group && line.group !== ingredients[index - 1]?.group ? (
                 <li className="pt-4 pb-1 text-11 font-bold tracking-label text-graphite uppercase">
-                  {line.group}
+                  {formatRecipeHeading(line.group)}
                 </li>
               ) : null}
               <li className="flex min-h-13 gap-3 border-b border-border py-2">
@@ -417,7 +418,7 @@ export function CompleteScreen({
           Dinner’s ready
         </p>
         <h1 className="mt-2 font-display text-24 font-semibold text-ink">
-          {meal.title}
+          {formatRecipeHeading(meal.title)}
         </h1>
         <p className="mt-1 text-14 text-graphite">Time to serve.</p>
         <div className="mt-8 w-full">

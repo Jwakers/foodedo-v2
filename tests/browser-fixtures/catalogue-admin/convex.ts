@@ -76,6 +76,7 @@ type FixtureProposal = Doc<"catalogueProposals"> & {
   nearest: unknown[];
   sourceMeal?: Doc<"catalogueMeals">;
   latestRun?: Doc<"catalogueGenerationRuns">;
+  photoGuidance?: string;
 };
 let proposal: FixtureProposal | null = null;
 const proposals = new Map<string, FixtureProposal>();
@@ -154,6 +155,24 @@ export function useMutation(reference: FunctionReference<"mutation">) {
       new URLSearchParams(location.search).get("fail") === "update"
     )
       throw new Error("Could not save recipe. Please retry.");
+    if (name === "start") {
+      const existing = [...proposals.values()].find(
+        (p) =>
+          p.sourceMealId === args.mealId &&
+          ["pending_review", "generating_image", "image_review"].includes(
+            p.status,
+          ),
+      );
+      if (existing) {
+        proposal = existing;
+        return { proposalId: existing._id, runId: null, reused: true };
+      }
+    }
+    if (
+      (name === "start" && args.mode === "image") ||
+      (name === "begin" && args.operation === "image")
+    )
+      document.body.dataset.photoGuidance = String(args.feedback ?? "");
     if (args.proposalId)
       proposal = proposals.get(String(args.proposalId)) ?? null;
     if ((name === "begin" && args.operation === "generate") || name === "start")
@@ -163,8 +182,9 @@ export function useMutation(reference: FunctionReference<"mutation">) {
         content: args.initialPrompt
           ? { ...content, title: "Rustic shepherd’s pie" }
           : content,
-        initialPrompt: (args.feedback ?? args.initialPrompt) as
-          string | undefined,
+        initialPrompt: (name === "start" && args.mode === "image"
+          ? undefined
+          : (args.feedback ?? args.initialPrompt)) as string | undefined,
         sourceMealId: name === "start" ? published._id : undefined,
         sourceMeal: name === "start" ? { ...published } : undefined,
         maintenanceMode:
@@ -198,7 +218,12 @@ export function useMutation(reference: FunctionReference<"mutation">) {
         nearest: [],
       };
     if (name === "start" && proposal && args.mode === "image")
-      proposal = { ...proposal, status: "image_review", imageUrl };
+      proposal = {
+        ...proposal,
+        status: "image_review",
+        imageUrl,
+        photoGuidance: String(args.feedback ?? ""),
+      };
     const failedStage = new URLSearchParams(location.search).get("fail");
     if (
       name === "start" &&
@@ -320,6 +345,7 @@ export function useMutation(reference: FunctionReference<"mutation">) {
       proposal = {
         ...proposal,
         status: "image_review",
+        photoGuidance: String(args.feedback ?? ""),
         imageUrl:
           "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII=",
       };

@@ -1,0 +1,4 @@
+import { PROTEIN_CATEGORIES } from "../../src/lib/domain/recipes";
+
+/** Shared policy for generation, review and source-based import/correction. */
+export const PROTEIN_CATEGORY_POLICY = `Assign proteinCategory from exactly: ${PROTEIN_CATEGORIES.join(", ")}. Choose the primary protein of the finished meal rather than a garnish or minor ingredient. Turkey is its own category: turkey breast, thigh, mince, fillets and leftover turkey must use turkey, not chicken or other. Chicken remains chicken; fish includes seafood; meat-free covers non-flesh primaries such as beans, lentils, tofu, eggs, cheese and vegetables. Use other for genuinely unlisted primaries such as duck, venison or unfamiliar game. When the primary protein is genuinely uncertain, use other rather than guessing. This is a selection category, not a nutritional or allergen claim.`;

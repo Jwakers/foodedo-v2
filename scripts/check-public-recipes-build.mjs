@@ -50,7 +50,7 @@ if (mode === "native") {
       else if (/\.(?:html|js|json)$/.test(file)) {
         assert.doesNotMatch(
           await readFile(file, "utf8"),
-          /public-recipe-detail-v1|public-recipes-list-v1/,
+          /public-recipe-detail-v1|public-recipes-list-v1|public-recipes-page-v1/,
           `Server-only recipe fetching leaked into ${file}`,
         );
       }

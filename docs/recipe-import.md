@@ -71,3 +71,7 @@ The corpus includes readable-only and structured-only timing fixtures and indepe
 Normalization and correction assess optional `minimumServings`, independently of authored yield. Infer it only when the method/equipment establishes a practical lower size; use null for ordinary recipes or uncertainty. It must be a positive whole number no greater than known servings. Inconsistent optional model enrichment is discarded rather than preventing a usable import. Published/derived/estimated provenance is preserved through correction, draft editing and recovery; culinary estimates are labelled as estimated. Owner changes clear that field's inference provenance.
 
 Imported-recipe and draft editors expose **Minimum servings**, with blank allowing ordinary scaling. Detail, Cook and Shopping use one shared serving model; quantity interpretation safety (`source_only`) takes precedence over minimum adjustment.
+
+## Protein classification
+
+Import normalization, correction and recovery share the same protein category list as catalogue generation and persistence: chicken, turkey, beef, pork, lamb, fish, meat-free and other. Turkey has its own category, including mince and leftover turkey, rather than falling back to chicken or other. Classification corrections can return `turkey` without rewriting ingredients or method. This applies to future imports and corrections; existing personal recipes are not backfilled.

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { CalendarPlus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,9 @@ export function PlanThisMeal({
       <DrawerContent>
         <DrawerHeader className="flex-col items-stretch gap-0.5">
           <DrawerTitle>Plan this meal</DrawerTitle>
-          <DrawerDescription>Choose a day for {meal.title}.</DrawerDescription>
+          <DrawerDescription>
+            Choose a day for {formatRecipeHeading(meal.title)}.
+          </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
           <ul>
@@ -98,7 +101,7 @@ export function PlanThisMeal({
               </Button>
               <p className="max-w-80 text-center text-11 leading-4 text-graphite">
                 Adds {formatPlanDateWithWeekday(planner.nextPlanDate)} with{" "}
-                {meal.title}.
+                {formatRecipeHeading(meal.title)}.
               </p>
             </div>
           ) : null}
@@ -136,7 +139,7 @@ function PlanDayOption({
         isThisMeal
           ? `Already planned for ${dateLabel}`
           : day.planned
-            ? `Replace ${day.planned.title} on ${dateLabel}`
+            ? `Replace ${formatRecipeHeading(day.planned.title)} on ${dateLabel}`
             : `Add to ${dateLabel}`
       }
       className="h-auto min-h-16 w-full justify-start gap-3 rounded-none border-b border-border px-0 py-2.5 text-left font-normal hover:bg-transparent disabled:cursor-default disabled:opacity-100"
@@ -152,7 +155,9 @@ function PlanDayOption({
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-display text-16 font-semibold tracking-card text-ink">
-          {day.planned?.title ?? "No meal planned"}
+          {day.planned
+            ? formatRecipeHeading(day.planned.title)
+            : "No meal planned"}
         </span>
         <span className="text-12 text-graphite">
           {isThisMeal

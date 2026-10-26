@@ -1,9 +1,11 @@
+import { RECIPE_LIMITS } from "../../src/lib/domain/recipes";
+import { personalRecipeBrowseKeys } from "./recipeListing";
 import {
   prepareRecipeContent,
   RecipeValidationError,
 } from "../../src/lib/domain/recipes";
 import type { Id } from "../_generated/dataModel";
-import type { MutationCtx } from "../_generated/server";
+import type { QueryCtx, MutationCtx } from "../_generated/server";
 import { getCatalogueMeal } from "./catalogue";
 
 export async function getOrCreateCatalogueRecipe(
@@ -110,6 +112,7 @@ export async function getOrCreateCatalogueRecipe(
   const recipeId = await ctx.db.insert("recipes", {
     ownerId,
     ...content,
+    ...personalRecipeBrowseKeys(content),
     ...(catalogueMeal.imageStorageId === undefined
       ? {}
       : { imageStorageId: catalogueMeal.imageStorageId }),
@@ -123,4 +126,22 @@ export async function getOrCreateCatalogueRecipe(
   });
 
   return { recipeId, created: true } as const;
+}
+
+/** Imported/manual recipes must not consume the catalogue-membership read budget. */
+export async function getSavedCatalogueRecipes(
+  ctx: QueryCtx,
+  ownerId: Id<"users">,
+) {
+  const recipes = await ctx.db
+    .query("recipes")
+    .withIndex("by_owner_and_source_and_saved_at", (q) =>
+      q.eq("ownerId", ownerId).eq("source.type", "catalogue").gt("savedAt", 0),
+    )
+    .take(RECIPE_LIMITS.catalogueMeals + 1);
+  if (recipes.length > RECIPE_LIMITS.catalogueMeals)
+    throw new Error(
+      "Saved catalogue state exceeds the supported catalogue size.",
+    );
+  return recipes;
 }

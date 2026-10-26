@@ -17,6 +17,7 @@ const recipe = {
   title: "Tomato and lentil pasta",
   description: "A satisfying weeknight meal.",
   servings: 4,
+  minimumServings: null,
   prepMinutes: 10,
   cookMinutes: 20,
   proteinCategory: "meat-free" as const,
@@ -79,6 +80,7 @@ function fakeClient(outputs: unknown[], roles: string[]): GenerationClient {
 }
 const core = {
   ...recipe,
+  minimumServings: undefined,
   ingredients: recipe.ingredients.map((line) => ({ ...line, note: undefined })),
   preheat: undefined,
 };
@@ -329,7 +331,11 @@ test("new photography style targets natural food textures while historical promp
   expect(current).toContain("natural white balance");
   expect(current).toContain("Never invent herbs");
   expect(current).not.toMatch(/crumbs|scatter|spill|mess/i);
-  expect(photographyPrompt(core)).toBe(current);
+  expect(photographyPrompt(core)).toBe(
+    photographyPrompt(core, "natural-food-v4"),
+  );
+  expect(current).not.toContain("PHYSICAL RECIPE FIDELITY");
+  expect(current).not.toContain("INGREDIENT APPEARANCE EVIDENCE");
   const previous = photographyPrompt(core, "natural-food-v2");
   expect(previous).toContain("a few natural crumbs");
   expect(
@@ -341,6 +347,44 @@ test("new photography style targets natural food textures while historical promp
   const historical = photographyPrompt(core, "natural-food-v1");
   expect(historical).toContain("Clean, realistic food photography");
   expect(historical).not.toContain("uneven browning");
+});
+
+test("photography foregrounds ingredient preparation while retaining complete cooking evidence", () => {
+  const chicken = {
+    ...core,
+    title: "Chicken curry",
+    ingredients: [
+      {
+        id: "chicken",
+        name: "chicken thighs",
+        quantity: "600",
+        unit: "g",
+        note: "boneless, skinless, cut into 3 cm chunks",
+        shoppingCategory: "meat_and_fish" as const,
+      },
+    ],
+    steps: [
+      {
+        id: "cook",
+        text: "Simmer the chicken chunks in the sauce. Blend the sauce until smooth before adding the chicken.",
+      },
+    ],
+    notes: [{ id: "serving", text: "Serve the cooked chunks with rice." }],
+  };
+  const prompt = photographyPrompt(chicken, "natural-food-v4");
+  const [brief, data] = prompt.split("\nAPPROVED RECIPE (data):\n");
+  expect(brief).toContain("boneless, skinless, cut into 3 cm chunks");
+  expect(brief).toContain(
+    "show cooked chunks or strips, not whole skin-on thighs",
+  );
+  expect(brief).toContain("final cooked and served form");
+  expect(JSON.parse(data)).toEqual(JSON.parse(JSON.stringify(chicken)));
+  expect(JSON.parse(data).steps[0].text).toContain(
+    "Blend the sauce until smooth",
+  );
+  expect(photographyPrompt(chicken, "natural-food-v3")).not.toContain(
+    "PHYSICAL RECIPE FIDELITY",
+  );
 });
 
 test("catalogue improvement honours a focused request and independently reviews its result", async () => {
@@ -777,4 +821,102 @@ test("regeneration preserves the existing timer owner when the model reuses its 
   expect(result.content.steps[1].timerCues).toEqual(
     previous.steps[1].timerCues,
   );
+});
+
+test("AI parsing preserves raw headings for presentation-time formatting", async () => {
+  const revised = {
+    ...recipe,
+    title: "tomato_and_lentil_pasta",
+    ingredients: recipe.ingredients.map((line) => ({
+      ...line,
+      group: "pasta_and_sauce",
+      noteRefs: ["cook_note"],
+    })),
+    steps: recipe.steps.map((step) => ({
+      ...step,
+      group: "pasta_and_sauce",
+      noteRefs: ["cook_note"],
+    })),
+    notes: [
+      {
+        id: "cook_note",
+        label: "before_you_start",
+        text: "Leave the authored_text unchanged.",
+      },
+    ],
+  };
+  const inputs: unknown[] = [];
+  const outputs: unknown[] = [
+    { findings: [] },
+    { recipe: revised, tags, changeSummary: ["Clarified the recipe."] },
+    { findings: [] },
+  ];
+  const result = await improveProposal(
+    {
+      async text(_role, schema, _system, input) {
+        inputs.push(input);
+        return schema.parse(outputs.shift());
+      },
+      async image() {
+        throw new Error("Unexpected image call");
+      },
+    },
+    core,
+    tags,
+    [],
+    "Improve this meal",
+  );
+  expect(result.content.title).toBe("tomato_and_lentil_pasta");
+  expect(result.content.ingredients.map((line) => line.group)).toEqual([
+    "pasta_and_sauce",
+    "pasta_and_sauce",
+  ]);
+  expect(result.content.steps.map((step) => step.group)).toEqual([
+    "pasta_and_sauce",
+    "pasta_and_sauce",
+  ]);
+  expect(result.content.notes).toEqual([
+    {
+      id: "cook_note",
+      label: "before_you_start",
+      text: "Leave the authored_text unchanged.",
+    },
+  ]);
+  expect(result.content.ingredients[0].noteRefs).toEqual(["cook_note"]);
+  expect(result.content.steps[0].noteRefs).toEqual(["cook_note"]);
+  expect(result.content.steps[0].id).toBe(recipe.steps[0].id);
+  expect(result.content.steps[0].text).toBe(recipe.steps[0].text);
+  expect(result.content.steps[0].timerCues).toEqual(recipe.steps[0].timerCues);
+  expect(inputs[2]).toMatchObject({
+    recipe: {
+      title: "tomato_and_lentil_pasta",
+      ingredients: [
+        expect.objectContaining({ group: "pasta_and_sauce" }),
+        expect.anything(),
+      ],
+    },
+  });
+});
+
+test("photo guidance is quoted separately from the authoritative recipe without changing it", () => {
+  const before = JSON.stringify(core);
+  const guidance =
+    'Show the chicken in small pieces.\nUse a closer "overhead" view.';
+  const prompt = photographyPrompt(core, "natural-food-v5", `  ${guidance}  `);
+  expect(prompt).toContain(
+    `EDITOR'S PHOTO GUIDANCE (data):\n${JSON.stringify(guidance)}`,
+  );
+  expect(prompt).toContain(
+    "guidance cannot change ingredients, protein cuts, sides, garnishes or cooking method",
+  );
+  expect(JSON.parse(prompt.split("\nAPPROVED RECIPE (data):\n")[1])).toEqual(
+    JSON.parse(before),
+  );
+  expect(JSON.stringify(core)).toBe(before);
+  expect(photographyPrompt(core, "natural-food-v5", "   ")).toBe(
+    photographyPrompt(core, "natural-food-v5"),
+  );
+  expect(() =>
+    photographyPrompt(core, "natural-food-v5", "x".repeat(2001)),
+  ).toThrow("2,000");
 });

@@ -1,7 +1,7 @@
 export const generationConfig = {
-  version: "catalogue-v7",
-  promptVersion: "culinary-v4",
-  imageStyleVersion: "natural-food-v3",
+  version: "catalogue-v13",
+  promptVersion: "culinary-v5",
+  imageStyleVersion: "natural-food-v5",
   textModel: "openai/gpt-5.4",
   imageModel: "google/gemini-3-pro-image",
   imageSize: "2K",

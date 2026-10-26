@@ -1,4 +1,6 @@
 "use client";
+import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
@@ -12,6 +14,7 @@ import { adminContainerClass } from "./admin-layout";
 import { adminInputClass } from "./editorial-tags-editor";
 import { ProposalPreview } from "./proposal-preview";
 import { ProposalEditor } from "./proposal-editor";
+import { PhotographGuidanceField } from "./photograph-guidance-field";
 
 export function CatalogueMaintenance() {
   return (
@@ -36,6 +39,7 @@ function MaintenanceWorkspace() {
   );
   const [search, setSearch] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [photoGuidance, setPhotoGuidance] = useState("");
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
@@ -73,26 +77,24 @@ function MaintenanceWorkspace() {
     setSelection(id);
     setProposalId(null);
     setFeedback("");
+    setPhotoGuidance("");
     setNotice(null);
     setDirty(false);
   }
   const running = busy || Boolean(catalogue?.activeRun);
-  const matches = catalogue?.meals.filter((row) =>
-    row.title
-      .toLocaleLowerCase("en-GB")
-      .includes(search.trim().toLocaleLowerCase("en-GB")),
-  );
+  const matches = catalogue
+    ? filterCatalogueMealsBySearch(catalogue.meals, search)
+    : undefined;
   async function begin(mode: "recipe" | "image") {
     if (!meal || running) return;
     let reused = false;
+    const request = (mode === "image" ? photoGuidance : feedback).trim();
     await perform(async () => {
       const result = await start({
         mealId: meal.mealId,
         mode,
         requestKey: crypto.randomUUID(),
-        ...(mode === "recipe" && feedback.trim()
-          ? { feedback: feedback.trim() }
-          : {}),
+        ...(request ? { feedback: request } : {}),
       });
       setProposalId(result.proposalId);
       reused = result.reused;
@@ -100,7 +102,10 @@ function MaintenanceWorkspace() {
     if (reused)
       setNotice({
         error: false,
-        text: "An existing maintenance draft was opened. Your new request was not submitted; review the draft or add guidance under More actions.",
+        text:
+          mode === "image"
+            ? "An existing maintenance draft was opened. Your new request was not submitted; use Photo guidance when generating or regenerating its photograph."
+            : "An existing maintenance draft was opened. Your new request was not submitted; review the draft or add guidance under More actions.",
       });
   }
   return (
@@ -165,7 +170,9 @@ function MaintenanceWorkspace() {
                   onClick={() => select(row._id)}
                   aria-pressed={row._id === selection}
                 >
-                  <span className="block font-semibold">{row.title}</span>
+                  <span className="block font-semibold">
+                    {formatRecipeHeading(row.title)}
+                  </span>
                   <span className="mt-1 block text-xs text-graphite">
                     Published · revision {row.version}
                   </span>
@@ -203,6 +210,7 @@ function MaintenanceWorkspace() {
                   busy={running}
                   perform={perform}
                   onDirtyChange={setDirty}
+                  initialPhotoGuidance={photoGuidance.trim() || undefined}
                 />
               ) : (
                 <p role="status">
@@ -221,7 +229,7 @@ function MaintenanceWorkspace() {
                 Published · revision {meal.version}
               </p>
               <h2 className="mt-2 font-display text-3xl">
-                {meal.content.title}
+                {formatRecipeHeading(meal.content.title)}
               </h2>
               <div className="my-5 space-y-3 rounded-compact border border-border bg-mist p-4">
                 <h3 className="font-semibold">
@@ -262,6 +270,13 @@ function MaintenanceWorkspace() {
                   text generation charges. You review the new image before it
                   replaces this one.
                 </p>
+                <div className="mb-4">
+                  <PhotographGuidanceField
+                    value={photoGuidance}
+                    onChange={setPhotoGuidance}
+                    disabled={running}
+                  />
+                </div>
                 <Button
                   variant="secondary"
                   className="mb-4 h-auto min-h-12 max-w-full px-3 py-3"
@@ -274,7 +289,7 @@ function MaintenanceWorkspace() {
               {meal.imageUrl ? (
                 <Image
                   src={meal.imageUrl}
-                  alt={`Current photograph of ${meal.content.title}`}
+                  alt={`Current photograph of ${formatRecipeHeading(meal.content.title)}`}
                   width={1536}
                   height={864}
                   unoptimized

@@ -10,7 +10,14 @@ vi.mock("ai", async (original) => ({
   generateText: provider.generateText,
   generateImage: provider.generateImage,
 }));
-import { gatewayGenerationClient, type ModelEvent } from "./models";
+import {
+  gatewayGenerationClient,
+  authoredSchema,
+  repairSchema,
+  revisionSchema,
+  revisionRepairSchema,
+  type ModelEvent,
+} from "./models";
 import { generationConfig } from "./config";
 afterEach(() => {
   vi.restoreAllMocks();
@@ -257,4 +264,52 @@ test("upstream Gateway timeouts are distinguished from Foodedo's own cutoff", as
   ).rejects.toThrow("AI provider timed out during recipe writing");
   expect(events[0].outcome).toBe("timed_out");
   expect(provider.generateText).toHaveBeenCalledOnce();
+});
+
+test("provider recipe schemas require all properties, including nullable minimum servings", () => {
+  function check(node: unknown) {
+    if (!node || typeof node !== "object") return;
+    const schema = node as Record<string, unknown>;
+    if (schema.properties) {
+      expect([...(schema.required as string[])].sort()).toEqual(
+        Object.keys(schema.properties as object).sort(),
+      );
+      expect(schema.additionalProperties).toBe(false);
+    }
+    for (const value of Object.values(schema)) {
+      if (Array.isArray(value)) value.forEach(check);
+      else check(value);
+    }
+  }
+  for (const schema of [
+    authoredSchema,
+    repairSchema,
+    revisionSchema,
+    revisionRepairSchema,
+  ]) {
+    check(z.toJSONSchema(schema));
+    expect(
+      schema.shape.recipe.shape.minimumServings.safeParse(null).success,
+    ).toBe(true);
+    expect(
+      schema.shape.recipe.shape.minimumServings.safeParse(undefined).success,
+    ).toBe(false);
+  }
+});
+
+test("generation, revision and import classification share the full protein category range", async () => {
+  const { PROTEIN_CATEGORIES } =
+    await import("../../../src/lib/domain/recipes");
+  const { recipeSchema, revisionRecipeSchema } = await import("./models");
+  const { importedRecipeSchema } = await import("../recipeImport/models");
+  expect(recipeSchema.shape.proteinCategory.options).toEqual(
+    PROTEIN_CATEGORIES,
+  );
+  expect(revisionRecipeSchema.shape.proteinCategory.options).toEqual(
+    PROTEIN_CATEGORIES,
+  );
+  expect(importedRecipeSchema.shape.proteinCategory.options).toEqual(
+    PROTEIN_CATEGORIES,
+  );
+  expect(recipeSchema.shape.proteinCategory.parse("turkey")).toBe("turkey");
 });

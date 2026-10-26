@@ -1,4 +1,5 @@
 "use client";
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
@@ -273,7 +274,9 @@ function AdminWorkspace() {
                   onClick={() => selectProposal(p._id)}
                   aria-pressed={selection === p._id}
                 >
-                  <span className="block font-semibold">{p.title}</span>
+                  <span className="block font-semibold">
+                    {formatRecipeHeading(p.title)}
+                  </span>
                   <span className="mt-1 block text-xs text-graphite">
                     {proposalStatusLabels[p.status]}
                   </span>

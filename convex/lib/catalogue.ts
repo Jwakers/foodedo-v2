@@ -127,3 +127,25 @@ export async function catalogueMealView(
       : { servingScaling: meal.servingScaling }),
   };
 }
+
+/** Materialised keys keep global catalogue sorting compatible with cursor pagination. */
+export function catalogueBrowseKeys(meal: {
+  prepMinutes?: number;
+  cookMinutes?: number;
+  costBand?: "budget" | "standard" | "premium";
+}) {
+  return {
+    browseDuration:
+      meal.prepMinutes === undefined && meal.cookMinutes === undefined
+        ? Number.MAX_SAFE_INTEGER
+        : (meal.prepMinutes ?? 0) + (meal.cookMinutes ?? 0),
+    browseCostRank:
+      meal.costBand === "budget"
+        ? 0
+        : meal.costBand === "standard"
+          ? 1
+          : meal.costBand === "premium"
+            ? 2
+            : 3,
+  };
+}

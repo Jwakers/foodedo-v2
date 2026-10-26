@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { CircleAlert, Play } from "lucide-react";
 import Image from "next/image";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
@@ -140,7 +141,7 @@ export function RecipeDetailContent({
         {meal.imageSrc ? (
           <Image
             src={meal.imageSrc}
-            alt={meal.title}
+            alt={formatRecipeHeading(meal.title)}
             fill
             priority={presentation === "page"}
             sizes="(max-width: 700px) 100vw, 700px"
@@ -154,7 +155,7 @@ export function RecipeDetailContent({
           {householdSnapshot ? "From your household week" : "Foodedo recipe"}
         </p>
         <h1 className="font-display text-34 font-semibold tracking-heading text-ink">
-          {meal.title}
+          {formatRecipeHeading(meal.title)}
         </h1>
 
         {servingNotice ? (
@@ -276,7 +277,7 @@ export function RecipeDetailContent({
             <Fragment key={line.id}>
               {line.group && line.group !== ingredients[index - 1]?.group ? (
                 <li className="pt-4 pb-1 text-12 font-bold tracking-label text-graphite uppercase">
-                  {line.group}
+                  {formatRecipeHeading(line.group)}
                 </li>
               ) : null}
               <li className="flex min-h-11 items-start gap-3 border-b border-border py-2">
@@ -315,7 +316,7 @@ export function RecipeDetailContent({
               {meal.notes.map((note) => (
                 <li key={note.id} id={note.id}>
                   <span className="font-semibold text-ink">
-                    {note.label ?? "Note"}:{" "}
+                    {formatRecipeHeading(note.label ?? "Note")}:{" "}
                   </span>
                   {note.text}
                 </li>
@@ -358,7 +359,7 @@ export function RecipeDetailContent({
             <Fragment key={step.id}>
               {step.group && step.group !== methodSteps[index - 1]?.group ? (
                 <li className="pt-2 text-12 font-bold tracking-label text-graphite uppercase">
-                  {step.group}
+                  {formatRecipeHeading(step.group)}
                 </li>
               ) : null}
               <li className="flex gap-3.5">

@@ -1,4 +1,5 @@
 "use client";
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -115,7 +116,7 @@ export function CatalogueAnalysisEditor({
                       setSelected(next);
                     }}
                   />
-                  {row.title}
+                  {formatRecipeHeading(row.title)}
                 </label>
                 <details>
                   <summary className="min-h-11 cursor-pointer py-3 text-sm text-graphite">

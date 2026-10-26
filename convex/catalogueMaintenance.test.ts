@@ -251,6 +251,7 @@ test("image-only maintenance supports legacy metadata and preserves exact text a
     mealId,
     mode: "image",
     requestKey: "photo",
+    feedback: "Show the sauce smoothly blended, as described in the method.",
   });
   const before = (await admin.query(api.catalogueAdmin.getProposal, {
     proposalId: started.proposalId,
@@ -477,4 +478,33 @@ test("publication refuses a reviewed image if its source was replaced in the mea
       })
     )?.version,
   ).toBe(2);
+});
+
+test("reopening a draft retains the latest image guidance after a newer culinary review", async () => {
+  const { t, admin, mealId } = await setup();
+  const started = await admin.mutation(api.catalogueMaintenance.start, {
+    mealId,
+    mode: "image",
+    requestKey: "guided-photo",
+    feedback: "Show the sauce smoothly blended.",
+  });
+  await finishImage(t, started.runId!);
+  await t.run(async (ctx) => {
+    const imageRun = (await ctx.db.get(started.runId!))!;
+    const { _id, _creationTime, ...fields } = imageRun;
+    void _id;
+    void _creationTime;
+    await ctx.db.insert("catalogueGenerationRuns", {
+      ...fields,
+      operation: "review",
+      feedback: "Recipe review only.",
+      requestKey: "subsequent-review",
+      createdAt: imageRun.createdAt + 1,
+    });
+  });
+  const proposal = await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId: started.proposalId,
+  });
+  expect(proposal?.latestRun?.operation).toBe("review");
+  expect(proposal?.photoGuidance).toBe("Show the sauce smoothly blended.");
 });

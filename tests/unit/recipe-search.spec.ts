@@ -31,3 +31,14 @@ test("finds recipes by description and leaves the list unchanged for blank searc
   expect(filterCatalogueMealsBySearch(meals, "weeknight")).toEqual([meals[0]]);
   expect(filterCatalogueMealsBySearch(meals, "   ")).toBe(meals);
 });
+
+test("search matches displayed words and original underscores without changing stored titles", () => {
+  const underscored = [{ ...meals[0], title: "pasta_and_sauce" }];
+  expect(filterCatalogueMealsBySearch(underscored, "pasta and sauce")).toEqual(
+    underscored,
+  );
+  expect(filterCatalogueMealsBySearch(underscored, "PASTA_AND_SAUCE")).toEqual(
+    underscored,
+  );
+  expect(underscored[0].title).toBe("pasta_and_sauce");
+});

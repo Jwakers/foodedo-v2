@@ -22,6 +22,7 @@ const proteinChips: ReadonlyArray<{
   value: ProteinCategory;
 }> = [
   { label: "Chicken", value: "chicken" },
+  { label: "Turkey", value: "turkey" },
   { label: "Beef", value: "beef" },
   { label: "Pork", value: "pork" },
   { label: "Lamb", value: "lamb" },
@@ -45,7 +46,7 @@ export function RecipeFilterPanel({
   filters: RecipeFilters;
   sort: RecipeSort;
   onOpenSort: () => void;
-  getMatchCount: (filters: RecipeFilters) => number;
+  getMatchCount?: (filters: RecipeFilters) => number;
   /** Context-specific lead-in; required so swap vs browse copy stays intentional. */
   description: string;
   onApply: (filters: RecipeFilters) => void;
@@ -57,7 +58,7 @@ export function RecipeFilterPanel({
     setDraftFilters(filters);
   }
 
-  const matchCount = getMatchCount(draftFilters);
+  const matchCount = getMatchCount?.(draftFilters);
 
   return (
     <>
@@ -127,7 +128,9 @@ export function RecipeFilterPanel({
             onApply(draftFilters);
           }}
         >
-          Show {matchCount} {matchCount === 1 ? "recipe" : "recipes"}
+          {matchCount === undefined
+            ? "Show recipes"
+            : `Show ${matchCount} ${matchCount === 1 ? "recipe" : "recipes"}`}
         </Button>
       </DrawerFooter>
     </>

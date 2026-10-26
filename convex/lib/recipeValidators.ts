@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { PROTEIN_CATEGORIES } from "../../src/lib/domain/recipes";
 import {
   RECIPE_IMPORT_FAILURE_CODES,
   RECIPE_IMPORT_FAILURE_DETAILS,
@@ -76,13 +77,7 @@ export const recipePreheatValidator = v.object({
 });
 
 export const proteinCategoryValidator = v.union(
-  v.literal("chicken"),
-  v.literal("beef"),
-  v.literal("pork"),
-  v.literal("lamb"),
-  v.literal("fish"),
-  v.literal("meat-free"),
-  v.literal("other"),
+  ...PROTEIN_CATEGORIES.map((category) => v.literal(category)),
 );
 
 export const costBandValidator = v.union(

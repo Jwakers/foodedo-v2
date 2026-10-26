@@ -26,13 +26,16 @@ globalThis.fetch = async function (input, init) {
   if (url.pathname === "/api/query" && init?.body) {
     const query = JSON.parse(init.body);
     if (
-      ["catalogue:getCurrent", "catalogue:getCurrentMealBySlug"].includes(
-        query.path,
-      )
+      [
+        "catalogue:getCurrent",
+        "catalogue:list",
+        "catalogue:getCurrentMealBySlug",
+      ].includes(query.path)
     ) {
       const state = readState();
       const slug = query.args[0].slug;
-      const key = slug ?? "listing";
+      const key =
+        slug ?? (query.path === "catalogue:list" ? "listingPage" : "listing");
       state.requests[key] = (state.requests[key] ?? 0) + 1;
       writeFileSync(stateFile, JSON.stringify(state));
       if (state.fail)
@@ -63,9 +66,15 @@ globalThis.fetch = async function (input, init) {
       const value =
         query.path === "catalogue:getCurrent"
           ? { meals: state.published.map(recipe) }
-          : state.published.includes(slug)
-            ? recipe(slug)
-            : null;
+          : query.path === "catalogue:list"
+            ? {
+                page: state.published.slice(0, 20).map(recipe),
+                isDone: state.published.length <= 20,
+                continueCursor: "fixture-cursor",
+              }
+            : state.published.includes(slug)
+              ? recipe(slug)
+              : null;
       return Response.json({ status: "success", value, logLines: [] });
     }
   }

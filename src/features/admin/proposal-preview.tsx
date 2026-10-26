@@ -1,3 +1,4 @@
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import type { Proposal } from "./proposal-types";
 
 export function ProposalPreview({ content }: { content: Proposal["content"] }) {
@@ -68,7 +69,9 @@ export function ProposalPreview({ content }: { content: Proposal["content"] }) {
           <ul className="list-disc space-y-2 pb-4 pl-5 text-sm">
             {content.notes.map((note) => (
               <li key={note.id}>
-                {note.label ? <strong>{note.label}: </strong> : null}
+                {note.label ? (
+                  <strong>{formatRecipeHeading(note.label)}: </strong>
+                ) : null}
                 {note.text}
               </li>
             ))}

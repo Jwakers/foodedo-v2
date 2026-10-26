@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { ArrowRight, Check, Download } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -113,7 +114,7 @@ function TonightFocus({
               href={href}
               className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
             >
-              {meal.title}
+              {formatRecipeHeading(meal.title)}
             </Link>
           ) : (
             meal.title
@@ -243,7 +244,7 @@ function RestOfWeekCard({
         {formatPlanWeekdayUpper(meal.date)}
       </p>
       <p className="line-clamp-2 font-display text-16 font-semibold leading-4.5 text-ink">
-        {meal.title}
+        {formatRecipeHeading(meal.title)}
       </p>
     </>
   );

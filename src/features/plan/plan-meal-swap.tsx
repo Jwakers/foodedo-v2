@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import {
   ArrowRight,
   Check,
@@ -123,7 +124,7 @@ export function PlanMealSwap({
                 Replacing
               </p>
               <p className="truncate text-15 font-semibold text-ink">
-                {currentMeal.title}
+                {formatRecipeHeading(currentMeal.title)}
               </p>
             </div>
             <span className="shrink-0 text-13 text-graphite">
@@ -256,7 +257,7 @@ export function PlanMealSwap({
         >
           <span className="truncate">
             {selectedMeal
-              ? `${currentMeal ? "Swap in" : "Add"} ${selectedMeal.title}`
+              ? `${currentMeal ? "Swap in" : "Add"} ${formatRecipeHeading(selectedMeal.title)}`
               : "Choose a recipe"}
           </span>
           <ArrowRight aria-hidden="true" className="size-4.5 shrink-0" />
@@ -291,7 +292,7 @@ function SwapCandidateRow({
     <li className="flex shrink-0 items-center gap-3 border-b border-border py-2.5">
       <button
         type="button"
-        aria-label={`View ${meal.title}`}
+        aria-label={`View ${formatRecipeHeading(meal.title)}`}
         disabled={disabled}
         className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-55"
         onClick={onOpenPreview}
@@ -310,7 +311,7 @@ function SwapCandidateRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.75">
           <p className="truncate text-15 font-semibold text-ink">
-            {meal.title}
+            {formatRecipeHeading(meal.title)}
           </p>
           {meta ? (
             <span className="flex w-fit items-center gap-1 text-12 text-graphite">
@@ -337,7 +338,7 @@ function SwapCandidateRow({
       <button
         type="button"
         aria-pressed={selected}
-        aria-label={`Select ${meal.title}`}
+        aria-label={`Select ${formatRecipeHeading(meal.title)}`}
         disabled={disabled}
         className="flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-55"
         onClick={onSelect}

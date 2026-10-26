@@ -671,3 +671,35 @@ test("an unavailable household invitation preserves its token until dismissed", 
   await page.getByRole("link", { name: "Go to my week" }).click();
   await expect(page).toHaveURL(/\/week$/);
 });
+
+test("loads catalogue recipes in batches and resets pagination when searching", async ({
+  page,
+}) => {
+  await page.goto("/recipes");
+  const cards = page.locator("main ul > li");
+  const loadMore = page.getByRole("button", { name: "Load more", exact: true });
+  await expect(cards.first()).toBeVisible();
+  test.skip(
+    (await cards.count()) < 20,
+    "Requires a catalogue with more than one page",
+  );
+  await expect(cards).toHaveCount(20);
+  await expect(loadMore).toBeVisible();
+  await loadMore.click();
+  await expect(cards).toHaveCount(40);
+  const destinations = await cards
+    .getByRole("link")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  expect(new Set(destinations).size).toBe(40);
+
+  await page
+    .getByRole("textbox", { name: "Search recipes" })
+    .fill("no-recipe-matches-this-pagination-test");
+  await expect(
+    page.getByText("No recipes match your search.", { exact: true }),
+  ).toBeVisible();
+  await expect(cards).toHaveCount(0);
+  await expect(loadMore).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear recipe search" }).click();
+  await expect(cards).toHaveCount(20);
+});

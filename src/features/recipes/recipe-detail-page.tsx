@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -77,7 +78,7 @@ export function RecipeDetailPage() {
   }
 
   useEffect(() => {
-    if (meal) document.title = `${meal.title} · Foodedo`;
+    if (meal) document.title = `${formatRecipeHeading(meal.title)} · Foodedo`;
     return () => {
       document.title = "Foodedo";
     };

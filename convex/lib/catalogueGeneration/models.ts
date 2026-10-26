@@ -29,7 +29,8 @@ export const recipeSchema = z.object({
   title: z.string().min(1).max(160),
   description: z.string().min(1).max(1000),
   servings: z.number().int().min(1).max(12),
-  minimumServings: z.number().int().min(1).max(12).nullable().optional(),
+  // Strict structured output requires every key; null means unrestricted.
+  minimumServings: z.number().int().min(1).max(12).nullable(),
   prepMinutes: z.number().int().min(0).max(10080),
   cookMinutes: z.number().int().min(0).max(10080),
   proteinCategory: z.enum(PROTEIN_CATEGORIES),

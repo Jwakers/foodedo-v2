@@ -1,3 +1,12 @@
+import { stream } from "convex-helpers/server/stream";
+import schema from "./schema";
+import { internal } from "./_generated/api";
+import {
+  listingFilterArgs,
+  listingPaginationOptions,
+  matchesRecipeListing,
+  personalRecipeBrowseKeys,
+} from "./lib/recipeListing";
 import { syncShoppingListsForRecipe } from "./lib/shoppingListSync";
 import { recipeServingScaling } from "../src/lib/domain/ingredient-scaling";
 import { retireIntroductions } from "./lib/onboarding";
@@ -7,7 +16,12 @@ import {
 } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type QueryCtx,
+} from "./_generated/server";
 import { canReadSpace } from "./lib/spaces";
 import { requireUserId } from "./lib/auth";
 import {
@@ -19,15 +33,15 @@ import {
 import {
   getRecipeReviewIssues,
   prepareRecipeContent,
-  RECIPE_LIMITS,
   type RecipeMetadataProvenance,
   type RecipeSource,
   RecipeValidationError,
 } from "../src/lib/domain/recipes";
-import { getOrCreateCatalogueRecipe } from "./lib/catalogueRecipes";
+import {
+  getSavedCatalogueRecipes,
+  getOrCreateCatalogueRecipe,
+} from "./lib/catalogueRecipes";
 import { getCatalogueMeal } from "./lib/catalogue";
-
-const maximumPageSize = 50;
 
 export const create = mutation({
   args: {
@@ -46,6 +60,7 @@ export const create = mutation({
     return await ctx.db.insert("recipes", {
       ownerId,
       ...content,
+      ...personalRecipeBrowseKeys(content),
       source: { type: "manual" },
       savedAt,
       updatedAt: savedAt,
@@ -183,6 +198,7 @@ export const repairImport = mutation({
     ]);
     await ctx.db.patch(recipe._id, {
       ...content,
+      ...personalRecipeBrowseKeys(content),
       source,
       contentEditedAt: now,
       updatedAt: now,
@@ -240,6 +256,7 @@ export const updateImported = mutation({
       notes: undefined,
       servingScaling: undefined,
       ...content,
+      ...personalRecipeBrowseKeys(content),
       source,
       contentEditedAt: now,
       updatedAt: now,
@@ -260,18 +277,7 @@ export const listSavedCatalogueMeals = query({
   ),
   handler: async (ctx) => {
     const ownerId = await requireUserId(ctx);
-    const recipes = await ctx.db
-      .query("recipes")
-      .withIndex("by_owner_and_saved_at", (q) =>
-        q.eq("ownerId", ownerId).gt("savedAt", 0),
-      )
-      .take(RECIPE_LIMITS.catalogueMeals + 1);
-
-    if (recipes.length > RECIPE_LIMITS.catalogueMeals) {
-      throw new Error(
-        "Saved catalogue state exceeds the supported catalogue size.",
-      );
-    }
+    const recipes = await getSavedCatalogueRecipes(ctx, ownerId);
 
     const seen = new Set<string>();
     return recipes.flatMap((recipe) => {
@@ -289,28 +295,60 @@ export const listSavedCatalogueMeals = query({
 });
 
 export const listMine = query({
-  args: { paginationOpts: paginationOptsValidator },
+  args: {
+    paginationOpts: paginationOptsValidator,
+    excludeCatalogue: v.optional(v.boolean()),
+    ...listingFilterArgs,
+  },
   returns: paginationResultValidator(recipeViewValidator),
-  handler: async (ctx, { paginationOpts }) => {
+  handler: async (ctx, args) => {
     const ownerId = await requireUserId(ctx);
-    const boundedPaginationOpts = {
-      ...paginationOpts,
-      numItems: Math.min(Math.max(paginationOpts.numItems, 1), maximumPageSize),
-    };
-    const result = await ctx.db
-      .query("recipes")
-      .withIndex("by_owner_and_saved_at", (q) =>
-        q.eq("ownerId", ownerId).gt("savedAt", 0),
-      )
+    const reader = stream(ctx.db, schema).query("recipes");
+    const recipes = (
+      args.sort === "quickest"
+        ? reader.withIndex("by_owner_and_duration", (q) =>
+            q.eq("ownerId", ownerId),
+          )
+        : args.sort === "lowest-cost"
+          ? reader.withIndex("by_owner_and_cost", (q) =>
+              q.eq("ownerId", ownerId),
+            )
+          : reader.withIndex("by_owner_and_saved_at", (q) =>
+              q.eq("ownerId", ownerId).gt("savedAt", 0),
+            )
+    )
       .order("desc")
-      .paginate(boundedPaginationOpts);
-
+      .filterWith(
+        async (recipe) =>
+          recipe.savedAt !== undefined &&
+          recipe.savedAt > 0 &&
+          (!args.excludeCatalogue || recipe.source.type !== "catalogue") &&
+          matchesRecipeListing(recipe, args),
+      );
+    const result = await recipes.paginate(
+      listingPaginationOptions(args.paginationOpts),
+    );
     return {
       ...result,
       page: await Promise.all(
         result.page.map((recipe) => toRecipeView(ctx, recipe)),
       ),
     };
+  },
+});
+
+export const backfillBrowseKeys = internalMutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({ isDone: v.boolean(), continueCursor: v.string() }),
+  handler: async (ctx, { paginationOpts }) => {
+    const result = await ctx.db.query("recipes").paginate(paginationOpts);
+    for (const recipe of result.page)
+      await ctx.db.patch(recipe._id, personalRecipeBrowseKeys(recipe));
+    if (!result.isDone)
+      await ctx.scheduler.runAfter(0, internal.recipes.backfillBrowseKeys, {
+        paginationOpts: { numItems: 100, cursor: result.continueCursor },
+      });
+    return { isDone: result.isDone, continueCursor: result.continueCursor };
   },
 });
 

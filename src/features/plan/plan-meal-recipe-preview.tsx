@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,9 @@ export function PlanMealRecipePreview({
           aria-busy={isSwapping || undefined}
           onClick={onSwap}
         >
-          <span className="truncate">Swap in {meal.title}</span>
+          <span className="truncate">
+            Swap in {formatRecipeHeading(meal.title)}
+          </span>
           <ArrowRight aria-hidden="true" className="size-4.5 shrink-0" />
         </Button>
       </DrawerFooter>

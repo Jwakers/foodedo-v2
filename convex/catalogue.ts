@@ -1,11 +1,26 @@
+import { stream, type QueryStream } from "convex-helpers/server/stream";
+import schema from "./schema";
+import type { Doc } from "./_generated/dataModel";
+import {
+  listingFilterArgs,
+  listingPaginationOptions,
+  matchesRecipeListing,
+} from "./lib/recipeListing";
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import { requireUserId } from "./lib/auth";
+import { internalMutation, query } from "./_generated/server";
 import {
   catalogueMealSummaryValidator,
   catalogueMealViewValidator,
   catalogueViewValidator,
 } from "./lib/recipeValidators";
 import {
+  catalogueBrowseKeys,
   catalogueMealSummary,
   catalogueMealView,
   getCatalogueMeal,
@@ -95,5 +110,76 @@ export const getSitemapMeals = query({
       slug: meal.slug,
       publishedAt: meal.publishedAt,
     }));
+  },
+});
+
+export const list = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    savedOnly: v.optional(v.boolean()),
+    ...listingFilterArgs,
+  },
+  returns: paginationResultValidator(catalogueMealSummaryValidator),
+  handler: async (ctx, args) => {
+    let meals: QueryStream<Doc<"catalogueMeals">> = stream(ctx.db, schema)
+      .query("catalogueMeals")
+      .withIndex(
+        args.sort === "quickest"
+          ? "by_status_and_duration"
+          : args.sort === "lowest-cost"
+            ? "by_status_and_cost"
+            : "by_status_and_position",
+        (q) => q.eq("status", "published"),
+      )
+      // New additions have the highest stable position; edits retain their place.
+      .order(
+        args.sort === "quickest" || args.sort === "lowest-cost"
+          ? "asc"
+          : "desc",
+      );
+    const ownerId = args.savedOnly ? await requireUserId(ctx) : undefined;
+    meals = meals.filterWith(async (meal) => {
+      if (!matchesRecipeListing(meal, args)) return false;
+      if (ownerId === undefined) return true;
+      return (
+        (await ctx.db
+          .query("recipes")
+          .withIndex("by_owner_and_catalogue_meal_and_saved_at", (q) =>
+            q
+              .eq("ownerId", ownerId)
+              .eq("source.catalogueMealId", meal.catalogueMealId)
+              .gt("savedAt", 0),
+          )
+          .first()) !== null
+      );
+    });
+    const result = await meals.paginate(
+      listingPaginationOptions(args.paginationOpts),
+    );
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map((meal) => catalogueMealSummary(ctx, meal)),
+      ),
+    };
+  },
+});
+
+/** Run once after adding the browse indexes; safe to repeat for existing revisions. */
+export const backfillBrowseKeys = internalMutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({ isDone: v.boolean(), continueCursor: v.string() }),
+  handler: async (ctx, { paginationOpts }) => {
+    const result = await ctx.db
+      .query("catalogueMeals")
+      .paginate(paginationOpts);
+    for (const meal of result.page)
+      await ctx.db.patch(meal._id, catalogueBrowseKeys(meal));
+    if (!result.isDone) {
+      await ctx.scheduler.runAfter(0, internal.catalogue.backfillBrowseKeys, {
+        paginationOpts: { numItems: 100, cursor: result.continueCursor },
+      });
+    }
+    return { isDone: result.isDone, continueCursor: result.continueCursor };
   },
 });

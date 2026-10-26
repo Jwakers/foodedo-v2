@@ -1,7 +1,9 @@
+import type { FunctionReturnType } from "convex/server";
 import { convexTest } from "convex-test";
 import { expect, test } from "vitest";
 
-import { api } from "./_generated/api";
+import { catalogueBrowseKeys } from "./lib/catalogue";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -228,4 +230,293 @@ test("current catalogue rejects incomplete published meals", async () => {
   await expect(
     missingPublicationTime.query(api.catalogue.getCurrent, {}),
   ).rejects.toThrow("must have a publication time");
+});
+
+async function seedBrowseCatalogue(t: ReturnType<typeof createTestContext>) {
+  for (let position = 0; position < 45; position++) {
+    await seedMeal(t, {
+      version: 1,
+      status: "published",
+      mealId: `meal-${position}`,
+      slug: `meal-${position}`,
+      position,
+    });
+  }
+  await t.run(async (ctx) => {
+    for (const meal of await ctx.db.query("catalogueMeals").collect()) {
+      const metadata = {
+        prepMinutes: undefined,
+        cookMinutes: meal.position === 0 ? undefined : 50 - meal.position,
+        costBand:
+          meal.position % 2 ? ("premium" as const) : ("budget" as const),
+        title: `Dinner ${meal.position}`,
+        description: meal.position >= 20 ? "Lemony pasta" : "Roast dinner",
+      };
+      await ctx.db.patch(meal._id, {
+        ...metadata,
+        ...catalogueBrowseKeys(metadata),
+      });
+    }
+  });
+}
+
+test("catalogue browsing shows newest additions first across 20-item pages and hides unpublished revisions", async () => {
+  const t = createTestContext();
+  await seedBrowseCatalogue(t);
+  await seedMeal(t, {
+    version: 2,
+    status: "staging",
+    mealId: "staging",
+    slug: "staging",
+    position: 46,
+  });
+  await seedMeal(t, {
+    version: 1,
+    status: "retired",
+    mealId: "retired",
+    slug: "retired",
+    position: 47,
+  });
+  const ids: string[] = [];
+  let cursor: string | null = null;
+  for (const expectedSize of [20, 20, 5]) {
+    const result: FunctionReturnType<typeof api.catalogue.list> = await t.query(
+      api.catalogue.list,
+      {
+        paginationOpts: { numItems: 20, cursor },
+      },
+    );
+    expect(result.page).toHaveLength(expectedSize);
+    expect(result.isDone).toBe(expectedSize === 5);
+    ids.push(...result.page.map((meal) => meal.id));
+    cursor = result.continueCursor;
+  }
+  expect(ids).toEqual(Array.from({ length: 45 }, (_, i) => `meal-${44 - i}`));
+});
+
+test("search, combined filters and sorting apply across the catalogue before pagination", async () => {
+  const t = createTestContext();
+  await seedBrowseCatalogue(t);
+  const paginationOpts = { numItems: 20, cursor: null };
+  const filtered = await t.query(api.catalogue.list, {
+    paginationOpts,
+    searchQuery: " LEMONY ",
+    under30Minutes: true,
+    budgetFriendly: true,
+    proteinCategories: ["meat-free"],
+    sort: "quickest",
+  });
+  expect(filtered.page.map((meal) => meal.position)).toEqual([
+    44, 42, 40, 38, 36, 34, 32, 30, 28, 26, 24, 22, 20,
+  ]);
+  expect(filtered.isDone).toBe(true);
+  const sorted = await t.query(api.catalogue.list, {
+    paginationOpts,
+    sort: "quickest",
+  });
+  expect(sorted.page.map((meal) => meal.position)).toEqual(
+    Array.from({ length: 20 }, (_, i) => 44 - i),
+  );
+  const cheapest = await t.query(api.catalogue.list, {
+    paginationOpts,
+    sort: "lowest-cost",
+  });
+  expect(cheapest.page.map((meal) => meal.position)).toEqual(
+    Array.from({ length: 20 }, (_, i) => i * 2),
+  );
+  const none = await t.query(api.catalogue.list, {
+    paginationOpts,
+    searchQuery: "absent",
+  });
+  expect(none.page).toEqual([]);
+  expect(none.isDone).toBe(true);
+});
+
+test("saved browsing requires identity and paginates only that user's current catalogue favourites", async () => {
+  const t = createTestContext();
+  await seedBrowseCatalogue(t);
+  const paginationOpts = { numItems: 20, cursor: null };
+  await expect(
+    t.query(api.catalogue.list, { paginationOpts, savedOnly: true }),
+  ).rejects.toThrow();
+  await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      authSubject: "browser",
+      email: "browser@example.com",
+      name: "Browser",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const anotherOwner = await ctx.db.insert("users", {
+      authSubject: "other",
+      email: "other@example.com",
+      name: "Other",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    for (let i = 0; i < 45; i++) {
+      await ctx.db.insert("recipes", {
+        ownerId: i < 23 ? ownerId : anotherOwner,
+        title: `Saved ${i}`,
+        ingredients: [],
+        steps: [],
+        proteinCategory: "meat-free",
+        source: {
+          type: "catalogue",
+          catalogueMealId: `meal-${i}`,
+          catalogueVersion: 1,
+        },
+        savedAt: 1,
+        updatedAt: 1,
+      });
+    }
+  });
+  const asUser = t.withIdentity({ subject: "browser" });
+  const first = await asUser.query(api.catalogue.list, {
+    paginationOpts,
+    savedOnly: true,
+  });
+  expect(first.page).toHaveLength(20);
+  const second = await asUser.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: first.continueCursor },
+    savedOnly: true,
+  });
+  expect(second.page.map((meal) => meal.position)).toEqual([2, 1, 0]);
+  expect(second.isDone).toBe(true);
+  const emptyUser = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      authSubject: "empty",
+      email: "empty@example.com",
+      name: "Empty",
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  expect(emptyUser).toBeTruthy();
+  const empty = await t
+    .withIdentity({ subject: "empty" })
+    .query(api.catalogue.list, { paginationOpts, savedOnly: true });
+  expect(empty.page).toEqual([]);
+});
+
+test("browse-key backfill preserves existing recipes and puts unknown durations last", async () => {
+  const t = createTestContext();
+  await seedMeal(t, {
+    version: 1,
+    status: "published",
+    mealId: "old",
+    slug: "old",
+  });
+  await t.mutation(internal.catalogue.backfillBrowseKeys, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
+  await t.mutation(internal.catalogue.backfillBrowseKeys, {
+    paginationOpts: { numItems: 100, cursor: null },
+  });
+  const meals = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: null },
+    sort: "quickest",
+  });
+  expect(meals.page[0].id).toBe("old");
+  expect(catalogueBrowseKeys({})).toEqual({
+    browseDuration: Number.MAX_SAFE_INTEGER,
+    browseCostRank: 3,
+  });
+});
+
+test("substring search advances bounded scan cursors without losing distant matches", async () => {
+  const t = createTestContext();
+  await seedBrowseCatalogue(t);
+  let cursor: string | null = null;
+  let found = false;
+  let batches = 0;
+  do {
+    const result: FunctionReturnType<typeof api.catalogue.list> = await t.query(
+      api.catalogue.list,
+      {
+        searchQuery: "Dinner 0",
+        paginationOpts: { numItems: 20, cursor, maximumRowsRead: 10 },
+      },
+    );
+    batches++;
+    if (result.page.length) {
+      expect(result.page.map((meal) => meal.position)).toEqual([0]);
+      found = true;
+    }
+    if (result.isDone) break;
+    expect(result.continueCursor).not.toBe(cursor);
+    cursor = result.continueCursor;
+    expect(batches).toBeLessThan(10);
+  } while (true);
+  expect(found).toBe(true);
+  expect(batches).toBeGreaterThan(1);
+});
+
+test("stream end cursors keep loaded pages adjacent after catalogue insertions", async () => {
+  const t = createTestContext();
+  await seedBrowseCatalogue(t);
+  const first = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: null },
+  });
+  const second = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: first.continueCursor },
+  });
+  await seedMeal(t, {
+    version: 1,
+    status: "published",
+    mealId: "inserted",
+    slug: "inserted",
+    position: 43.5,
+  });
+  const refreshed = await t.query(api.catalogue.list, {
+    paginationOpts: {
+      numItems: 20,
+      cursor: null,
+      endCursor: first.continueCursor,
+    },
+  });
+  expect(refreshed.page).toHaveLength(21);
+  expect(refreshed.page.some((meal) => meal.id === "inserted")).toBe(true);
+  expect(refreshed.continueCursor).toBe(first.continueCursor);
+  const reloaded = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: refreshed.continueCursor },
+  });
+  expect(reloaded.page.map((meal) => meal.id)).toEqual(
+    second.page.map((meal) => meal.id),
+  );
+});
+
+test("catalogue storage and paginated protein filters distinguish turkey from other", async () => {
+  const t = createTestContext();
+  await seedMeal(t, {
+    version: 1,
+    status: "published",
+    mealId: "turkey-dinner",
+    slug: "turkey-dinner",
+    position: 0,
+  });
+  await seedMeal(t, {
+    version: 1,
+    status: "published",
+    mealId: "other-dinner",
+    slug: "other-dinner",
+    position: 1,
+  });
+  await t.run(async (ctx) => {
+    for (const meal of await ctx.db.query("catalogueMeals").collect())
+      await ctx.db.patch(meal._id, {
+        proteinCategory:
+          meal.catalogueMealId === "turkey-dinner" ? "turkey" : "other",
+      });
+  });
+  const turkey = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: null },
+    proteinCategories: ["turkey"],
+  });
+  expect(turkey.page.map((meal) => meal.id)).toEqual(["turkey-dinner"]);
+  const other = await t.query(api.catalogue.list, {
+    paginationOpts: { numItems: 20, cursor: null },
+    proteinCategories: ["other"],
+  });
+  expect(other.page.map((meal) => meal.id)).toEqual(["other-dinner"]);
 });
