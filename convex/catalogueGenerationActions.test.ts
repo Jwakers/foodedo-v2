@@ -473,3 +473,25 @@ test("a concurrent administrator edit prevents stale authored progress and stops
   expect(proposal.reviewedRevision).toBeUndefined();
   expect(proposal.latestRun?.status).toBe("failed");
 });
+
+test.each([
+  [undefined, "2026-10-26T12:00:00Z", 0],
+  ["false", "2026-10-26T12:00:00Z", 0],
+  ["true", "2026-10-26T11:00:00Z", 0],
+  ["true", "2026-10-27T12:00:00Z", 0],
+  ["true", "2026-10-26T12:00:00Z", 1],
+  ["true", "2026-07-01T11:00:00Z", 1],
+])(
+  "scheduled action with switch %s at %s enqueues %i run(s)",
+  async (enabled, now, count) => {
+    vi.stubEnv("FOODEDO_CATALOGUE_SCHEDULE_ENABLED", enabled);
+    vi.setSystemTime(new Date(now));
+    const t = convexTest(schema, modules);
+    await t.action(internal.catalogueGenerationActions.runScheduled, {});
+    expect(
+      await t.run((ctx) => ctx.db.query("catalogueGenerationRuns").collect()),
+    ).toHaveLength(count);
+    expect(provider.text).not.toHaveBeenCalled();
+    expect(provider.image).not.toHaveBeenCalled();
+  },
+);

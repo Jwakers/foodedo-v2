@@ -8,17 +8,7 @@ import {
   recipeFingerprint,
   type EditorialTags,
 } from "../src/lib/domain/catalogue-generation";
-import { catalogueSchedule } from "./lib/catalogueGeneration/config";
 
-// Exercise the future scheduling path without enabling it in application config.
-vi.mock("./lib/catalogueGeneration/config", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("./lib/catalogueGeneration/config")>();
-  return {
-    ...actual,
-    catalogueSchedule: { ...actual.catalogueSchedule, enabled: true },
-  };
-});
 const modules = import.meta.glob("./**/*.ts");
 const content: RecipeContent = {
   title: "Lemon chickpea rice",
@@ -101,7 +91,7 @@ async function claimed(
   return (await t.run((ctx) => ctx.db.get(runId)))!;
 }
 beforeEach(() => {
-  Object.assign(catalogueSchedule, { enabled: true });
+  vi.stubEnv("FOODEDO_CATALOGUE_SCHEDULE_ENABLED", "true");
   vi.useFakeTimers();
   vi.stubEnv("FOODEDO_ADMIN_CLERK_USER_IDS", "admin,second-admin");
 });
@@ -791,7 +781,7 @@ test("scheduled generation resumes after review and existing request replays rem
 
 test("disabled scheduling exits without creating work, even when directly invoked", async () => {
   const { t } = setup();
-  Object.assign(catalogueSchedule, { enabled: false });
+  vi.stubEnv("FOODEDO_CATALOGUE_SCHEDULE_ENABLED", "false");
   expect(
     await t.mutation(internal.catalogueAdmin.beginScheduled, {}),
   ).toBeNull();
@@ -808,9 +798,9 @@ test("disabled scheduling exits without creating work, even when directly invoke
   ).toHaveLength(0);
 });
 
-test("cron invocations deduplicate the configured slot and allow the next slot", async () => {
+test("cron invocations deduplicate a date and allow the next scheduled date", async () => {
   const { t } = setup();
-  vi.setSystemTime(new Date("2026-10-21T09:00:00Z"));
+  vi.setSystemTime(new Date("2026-10-21T11:00:00Z"));
   const runId = await t.mutation(internal.catalogueAdmin.beginScheduled, {});
   expect(runId).not.toBeNull();
   const run = await claimed(t, runId!);
@@ -820,10 +810,7 @@ test("cron invocations deduplicate the configured slot and allow the next slot",
     failure: "Test provider failure",
   });
   vi.setSystemTime(
-    new Date(
-      new Date("2026-10-21T09:00:00Z").getTime() +
-        catalogueSchedule.intervalMinutes * 30_000,
-    ),
+    new Date(new Date("2026-10-21T11:00:00Z").getTime() + 60 * 60_000),
   );
   expect(await t.mutation(internal.catalogueAdmin.beginScheduled, {})).toBe(
     runId,
@@ -832,10 +819,7 @@ test("cron invocations deduplicate the configured slot and allow the next slot",
     await t.run((ctx) => ctx.db.query("catalogueGenerationRuns").collect()),
   ).toHaveLength(1);
   vi.setSystemTime(
-    new Date(
-      new Date("2026-10-21T09:00:00Z").getTime() +
-        catalogueSchedule.intervalMinutes * 60_000,
-    ),
+    new Date(new Date("2026-10-21T11:00:00Z").getTime() + 2 * 24 * 60 * 60_000),
   );
   const nextRunId = await t.mutation(
     internal.catalogueAdmin.beginScheduled,

@@ -19,6 +19,22 @@ import {
 } from "./lib/catalogueGeneration/prompts";
 import { validateDownloadedRecipeImage } from "./lib/recipeImport/images";
 
+import {
+  catalogueSchedule,
+  isCatalogueLunchtime,
+} from "./lib/catalogueGeneration/config";
+
+export const runScheduled = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    if (!catalogueSchedule.enabled || !isCatalogueLunchtime(Date.now()))
+      return null;
+    await ctx.runMutation(internal.catalogueAdmin.beginScheduled, {});
+    return null;
+  },
+});
+
 export const process = internalAction({
   args: { runId: v.id("catalogueGenerationRuns") },
   returns: v.null(),

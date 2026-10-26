@@ -10,6 +10,12 @@ import type { FunctionReturnType } from "convex/server";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FeatureDiscovery } from "@/components/feature-discovery";
 import {
+  DashboardCarousel,
+  DashboardCarouselCard,
+  DashboardCarouselList,
+} from "@/features/dashboard/dashboard-carousel";
+import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
+import {
   formatPlanWeekdayUpper,
   resolveActivePlanFocus,
   resolveActivePlanRestOfWeek,
@@ -53,6 +59,7 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
       ) : null}
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
+      <LatestRecipesCarousel />
       <ImportRecipeNudge />
     </section>
   );
@@ -178,33 +185,20 @@ function RestOfWeekCarousel({
   servings: number;
 }) {
   return (
-    <section
-      aria-labelledby="rest-of-week-heading"
-      className="flex flex-col gap-3"
+    <DashboardCarousel
+      headingId="rest-of-week-heading"
+      title="The rest of your week"
+      href="/week"
+      action="Full week"
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2
-          id="rest-of-week-heading"
-          className="font-display text-22 font-semibold leading-6.5 text-ink"
-        >
-          The rest of your week
-        </h2>
-        <ButtonLink href="/week" variant="inline" className="shrink-0 text-ink">
-          Full week
-          <ArrowRight aria-hidden="true" className="size-3.5" />
-        </ButtonLink>
-      </div>
-
-      <div className="-mx-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8">
-        <ul className="flex w-max snap-x snap-mandatory gap-2 px-page-inline sm:px-8">
-          {meals.map((meal) => (
-            <li key={meal.date} className="w-[111px] shrink-0 snap-start">
-              <RestOfWeekCard meal={meal} servings={servings} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
+      <DashboardCarouselList>
+        {meals.map((meal) => (
+          <li key={meal.date} className="w-[111px] shrink-0 snap-start">
+            <RestOfWeekCard meal={meal} servings={servings} />
+          </li>
+        ))}
+      </DashboardCarouselList>
+    </DashboardCarousel>
   );
 }
 
@@ -227,39 +221,13 @@ function RestOfWeekCard({
           servings,
         )
       : null;
-  const content = (
-    <>
-      <div className="relative aspect-111/70 overflow-hidden rounded-sm bg-mist">
-        {meal.imageSrc ? (
-          <Image
-            src={meal.imageSrc}
-            alt=""
-            fill
-            sizes="111px"
-            className="object-cover"
-          />
-        ) : null}
-      </div>
-      <p className="text-11 font-bold tracking-overline text-graphite uppercase">
-        {formatPlanWeekdayUpper(meal.date)}
-      </p>
-      <p className="line-clamp-2 font-display text-16 font-semibold leading-4.5 text-ink">
-        {formatRecipeHeading(meal.title)}
-      </p>
-    </>
-  );
-
-  if (!href) {
-    return <div className="flex flex-col gap-1.5">{content}</div>;
-  }
-
   return (
-    <Link
+    <DashboardCarouselCard
+      title={meal.title}
+      imageSrc={meal.imageSrc}
       href={href}
-      className="flex flex-col gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-    >
-      {content}
-    </Link>
+      meta={formatPlanWeekdayUpper(meal.date)}
+    />
   );
 }
 

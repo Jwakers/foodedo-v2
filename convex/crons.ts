@@ -6,10 +6,10 @@ const crons = cronJobs();
 
 // Registration and the scheduled entry point share the same pause switch.
 if (catalogueSchedule.enabled) {
-  crons.interval(
+  crons.cron(
     "expand-recipe-catalogue",
-    { minutes: catalogueSchedule.intervalMinutes },
-    internal.catalogueAdmin.beginScheduled,
+    catalogueSchedule.cron,
+    internal.catalogueGenerationActions.runScheduled,
     {},
   );
 }

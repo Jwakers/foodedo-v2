@@ -52,7 +52,7 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 `catalogueProposals` holds private generated recipe content, editorial analysis tags, rationale, findings, revision/fingerprint guards, text approval, generated image and publication references. The lifecycle is `pending_review` → `generating_image` → `image_review` → `published`, with rejection and supersession kept outside public reads. Editing invalidates approvals; publication inserts a new immutable catalogue meal without changing personal snapshots.
 
-`catalogueGenerationRuns` stores request idempotency, initiating administrator/trigger, operation, active-run lock, deadline/attempt token, model/prompt configuration, provider usage and bounded failures. Generation, regeneration, review, enrichment and image work share one enqueue path. A one-off timeout check releases stalled runs; no recurring cron is enabled.
+`catalogueGenerationRuns` stores request idempotency, initiating administrator/trigger, operation, active-run lock, deadline/attempt token, model/prompt configuration, provider usage and bounded failures. Generation, regeneration, review, enrichment and image work share one enqueue path. A one-off timeout check releases stalled runs. Production catalogue generation is scheduled Monday, Wednesday and Friday at 12:00 Europe/London with a deployment-specific opt-in; development scheduling remains disabled.
 
 `catalogueAnalysisMetadata` stores inferred/reviewed tags against an exact meal revision and content fingerprint. Only reviewed current tags contribute to statistics. Cuisine, technique, complexity and vegetarian/vegan suitability remain private editorial metadata, not consumer allergy guarantees.
 

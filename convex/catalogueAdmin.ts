@@ -318,11 +318,11 @@ export const beginScheduled = internalMutation({
   handler: async (ctx, args) => {
     // Defence in depth if a previously registered cron fires during a pause.
     if (!catalogueSchedule.enabled) return null;
-    // Match request keys to the configured interval so replays within a slot
-    // are harmless while the next scheduled invocation can create new work.
+    // One proposal per calendar date; both UTC cron candidates and retries
+    // share a key. UK noon is always on the same date as UTC.
     const requestKey =
       args.requestKey ??
-      `catalogue:scheduled:${Math.floor(Date.now() / (catalogueSchedule.intervalMinutes * 60_000))}`;
+      `catalogue:scheduled:${new Date(Date.now()).toISOString().slice(0, 10)}`;
     // Preserve replay semantics even if the original run filled the review queue.
     const existing = await findRunByRequest(ctx, "system", requestKey);
     if (existing) return existing._id;

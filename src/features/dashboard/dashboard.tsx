@@ -12,6 +12,7 @@ import Link from "next/link";
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { PlanAction } from "@/features/plan/plan-action";
@@ -72,6 +73,9 @@ export function Dashboard() {
       <PlanAction />
       <HomeIntroduction />
       <IdeasForYourWeek catalogue={catalogue} />
+      <div className="mt-6">
+        <LatestRecipesCarousel />
+      </div>
     </section>
   );
 }
