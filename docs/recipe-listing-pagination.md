@@ -18,3 +18,17 @@ pnpm exec convex run recipes:backfillBrowseKeys '{"paginationOpts":{"numItems":1
 ```
 
 These internal, idempotent mutations fill sort keys on existing catalogue revisions and personal recipes, scheduling further 100-record batches if needed. Run them on each V2 deployment receiving this change before relying on duration filtering or the new sort indexes. It does not edit recipe content, publication status, ownership or library membership.
+
+### Production rollout order
+
+Deploy the V2 backend before retrying the web deployment when a prerendered page introduces a new Convex query:
+
+```sh
+pnpm exec convex deploy
+pnpm exec convex run --prod catalogue:backfillBrowseKeys '{"paginationOpts":{"numItems":100,"cursor":null}}'
+pnpm exec convex run --prod recipes:backfillBrowseKeys '{"paginationOpts":{"numItems":100,"cursor":null}}'
+```
+
+Wait for the scheduled batches to finish, verify that both tables have no missing browse keys, then retry the Vercel deployment. In Convex CLI 1.45, `convex deploy --cmd 'pnpm build'` executes the frontend build before pushing the backend. A newly added build-time query such as `catalogue:list` therefore needs this initial backend deployment to avoid a circular rollout failure. The backfills use no AI calls and preserve all authored content, images, identities, ownership and saved state.
+
+Production backfills completed on 26 October 2026: all 282 catalogue revisions and 37 personal recipes had both browse keys afterward. Verification confirmed that only those two derived fields changed, editorial metadata stayed unchanged, and all three listing sort queries succeeded. Local scoped backups and the verification receipt remain under ignored `.catalogue-migration/browse-keys-production-2026-10-26/`.
