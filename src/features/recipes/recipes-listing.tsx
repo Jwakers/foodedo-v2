@@ -65,8 +65,8 @@ export function RecipesListing({
   const {
     isLibraryLoading,
     isSaved,
-    isSavePending,
-    savedRecipeIdByMealId,
+    isSaveDisabled,
+    savedMealIds,
     toggleSave,
   } = useCatalogueRecipeLibrary();
   const [scope, setScope] = useState<RecipeScope>("All");
@@ -127,9 +127,7 @@ export function RecipesListing({
       catalogueQuery.status === "LoadingMore";
   const ownRecipes = personalRecipeQuery.results;
   const savedIsEmpty =
-    activeScope === "Saved" &&
-    !isLibraryLoading &&
-    savedRecipeIdByMealId.size === 0;
+    activeScope === "Saved" && !isLibraryLoading && savedMealIds.size === 0;
 
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-6 pb-8">
@@ -246,7 +244,7 @@ export function RecipesListing({
           onLoadMore={() => catalogueQuery.loadMore(pageSize)}
           hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
-          isSavePending={isSavePending}
+          isSaveDisabled={isSaveDisabled}
           onToggleSave={toggleSave}
         />
       ) : null}
@@ -276,7 +274,7 @@ export function RecipesListing({
           onLoadMore={() => catalogueQuery.loadMore(pageSize)}
           hasActiveFilters={hasActiveRecipeFilters(recipeFilters)}
           isSaved={isSaved}
-          isSavePending={isSavePending}
+          isSaveDisabled={isSaveDisabled}
           onToggleSave={toggleSave}
         />
       ) : null}
@@ -383,7 +381,7 @@ function CatalogueGrid({
   meals,
   hasActiveFilters,
   isSaved,
-  isSavePending,
+  isSaveDisabled,
   onToggleSave,
   isLoading,
   canLoadMore,
@@ -399,7 +397,7 @@ function CatalogueGrid({
   meals: ReadonlyArray<CatalogueMealSummary>;
   hasActiveFilters: boolean;
   isSaved: (catalogueMealId: string) => boolean;
-  isSavePending: (catalogueMealId: string) => boolean;
+  isSaveDisabled: boolean;
   onToggleSave: (args: {
     catalogueMealId: string;
     catalogueVersion: number;
@@ -429,7 +427,7 @@ function CatalogueGrid({
                 meta={catalogueMealMeta(meal)}
                 imageSrc={meal.imageSrc}
                 saved={isSaved(meal.id)}
-                isSavePending={isSavePending(meal.id)}
+                isSaveDisabled={isSaveDisabled}
                 onToggleSave={() =>
                   onToggleSave({
                     catalogueMealId: meal.id,

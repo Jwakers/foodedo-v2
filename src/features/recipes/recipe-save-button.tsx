@@ -6,14 +6,14 @@ import { cn } from "@/lib/utils/cn";
 
 export type RecipeSaveControl = {
   saved: boolean;
-  isSavePending?: boolean;
+  isSaveDisabled?: boolean;
   onToggleSave: () => Promise<unknown> | void;
 };
 
 export function RecipeSaveButton({
   title,
   saved,
-  isSavePending = false,
+  isSaveDisabled = false,
   onToggleSave,
 }: RecipeSaveControl & { title: string }) {
   return (
@@ -25,10 +25,9 @@ export function RecipeSaveButton({
           : `Save ${formatRecipeHeading(title)}`
       }
       aria-pressed={saved}
-      aria-busy={isSavePending || undefined}
-      disabled={isSavePending}
+      disabled={isSaveDisabled}
       className={cn(
-        "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:cursor-wait disabled:opacity-70",
+        "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-70",
         saved
           ? "bg-cadmium-soft text-cadmium"
           : "border border-paper bg-mist text-ink",

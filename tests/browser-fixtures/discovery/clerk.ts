@@ -5,3 +5,7 @@ export function useClerk() {
     },
   };
 }
+
+export function useAuth() {
+  return { isLoaded: true, isSignedIn: true };
+}

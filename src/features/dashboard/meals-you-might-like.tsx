@@ -156,7 +156,7 @@ function DiscoverySelection({
               href={recipeDetailPath(meal.slug)}
               saveControl={{
                 saved: library.isSaved(meal.id),
-                isSavePending: library.isSavePending(meal.id),
+                isSaveDisabled: library.isSaveDisabled,
                 onToggleSave: () =>
                   library.toggleSave({
                     catalogueMealId: meal.id,

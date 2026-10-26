@@ -8,11 +8,13 @@ Recipes are the durable food unit used by Decide, Plan, Shop, Cook, and Remember
 - A `Recipe` is a private, mutable snapshot owned by an authenticated account.
 - Plans may create a private snapshot for referential integrity without presenting it as explicitly saved.
 - Saving catalogue content creates or reuses a personal recipe, records `savedAt`, and preserves its source. Plans and history reference the personal recipe, so later catalogue changes cannot silently alter them.
-- **Save recipe** is the only initial library action. Favouriting is a separate preference signal and remains deferred until it serves recommendations or another proven job.
+- **Save recipe / the heart** toggles catalogue membership in Saved. This is the app's favouriting action; it does not create a separate preference record.
 - The authenticated planning candidate pool prefers eligible recipes in **My recipes**—regardless of whether they were created manually or saved from shared content—before using standard catalogue meals as fallback. Later scoring may add favourites, cooking history, recency, context, and explicit preferences without changing plan storage.
 - Future public publishing is a separate concern. Do not represent it with a nullable owner or an `isPublic` flag on a personal recipe.
 
 ## Catalogue lifecycle
+
+Catalogue hearts share `useCatalogueRecipeLibrary` across discovery, listing cards and recipe headers. The hook uses Convex `withOptimisticUpdate` on `listSavedCatalogueMeals`: hearts change immediately and remain interactive while requests are pending, with no busy spinner. The authenticated `setCatalogueMealSaved` mutation accepts explicit desired membership by catalogue identity, so rapid reversals never depend on a temporary recipe ID. Convex rebases pending updates and rolls them back on failure; the caller surfaces an error toast. Un-saving retains snapshots referenced by plans or shopping lists. Guest hearts still preserve a save intent and request sign-in before any personal mutation; the resumed save uses the same optimistic path.
 
 The standard catalogue is public, non-personal Convex content. Each stable meal identity has independently versioned `catalogueMeals` rows with `staging`, `published`, or `retired` status and a typed Convex storage image ID. Exactly one revision per meal may be published. Published rows form the current catalogue; retired rows remain readable so guest drafts and explicit save requests can resolve the exact meal revisions they pinned. This supports frequent one-at-a-time publishing without cloning the rest of the catalogue.
 

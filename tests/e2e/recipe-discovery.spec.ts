@@ -22,7 +22,10 @@ test.beforeAll(async () => {
   const result = await build({
     configFile: false,
     logLevel: "error",
-    define: { "process.env.NODE_ENV": JSON.stringify("production") },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify("production"),
+      "process.env.NEXT_PUBLIC_CAPACITOR_BUILD": JSON.stringify("false"),
+    },
     resolve: {
       alias: {
         "@/features/auth/use-foodedo-auth": path.resolve(
@@ -33,6 +36,7 @@ test.beforeAll(async () => {
           "tests/browser-fixtures/household/navigation.ts",
         ),
         "convex/react": path.join(fixture, "convex.ts"),
+        "convex-helpers/react": path.join(fixture, "convex.ts"),
         "@clerk/react": path.join(fixture, "clerk.ts"),
         "next/image": path.resolve(
           "tests/browser-fixtures/catalogue-admin/next.tsx",
@@ -145,6 +149,80 @@ test("failed saves stay unsaved and can be retried", async ({ page }) => {
   await page.evaluate(() => sessionStorage.removeItem("fixture:fail-save"));
   await heart.click();
   await expect(heart).toHaveAttribute("aria-pressed", "true");
+});
+
+test("discovery hearts update before the server and roll back failed saves without a spinner", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/");
+  await page.evaluate(() => {
+    sessionStorage.setItem("fixture:save-delay", "800");
+    sessionStorage.setItem("fixture:fail-save", "true");
+  });
+  const heart = region(page).getByRole("listitem").first().getByRole("button");
+  await heart.click();
+  await expect(heart).toHaveAttribute("aria-pressed", "true");
+  await expect(heart).toBeEnabled();
+  await expect(heart).not.toHaveAttribute("aria-busy", "true");
+  await expect(
+    page.getByText("Foodedo couldn’t update this saved recipe. Try again."),
+  ).toBeVisible();
+  await expect(heart).toHaveAttribute("aria-pressed", "false");
+});
+
+test("listing and recipe header hearts stay in sync during rapid reversals and failed unsaves", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/?surfaces");
+  await page.evaluate(() =>
+    sessionStorage.setItem("fixture:save-delay", "600"),
+  );
+  const header = page.getByRole("region", { name: "Recipe header" });
+  const headerHeart = header.getByRole("button", {
+    name: /^(Unsave|Save) Dinner 1$/,
+  });
+  const grid = page
+    .getByRole("heading", { name: "Ideas for you", exact: true })
+    .locator("..")
+    .locator("..");
+  const gridHeart = grid.getByRole("button", {
+    name: /^(Unsave|Save) Dinner 1$/,
+  });
+  await headerHeart.click();
+  await expect(gridHeart).toHaveAttribute("aria-pressed", "true");
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("fixture:saved") ?? "[]"),
+    ),
+  ).not.toContain("meal-1");
+  await gridHeart.click();
+  await expect(headerHeart).toHaveAttribute("aria-pressed", "false");
+  await headerHeart.click();
+  await expect(gridHeart).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(sessionStorage.getItem("fixture:saved") ?? "[]"),
+      ),
+    )
+    .toContain("meal-1");
+  // Wait for all three queued requests, then verify rollback of a failed unsave.
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("fixture:pending-saves")),
+    )
+    .toBe("0");
+  await page.evaluate(() =>
+    sessionStorage.setItem("fixture:fail-save", "true"),
+  );
+  await gridHeart.click();
+  await expect(headerHeart).toHaveAttribute("aria-pressed", "false");
+  await expect(gridHeart).toBeEnabled();
+  await expect(
+    page.getByText("Foodedo couldn’t update this saved recipe. Try again."),
+  ).toBeVisible();
+  await expect(headerHeart).toHaveAttribute("aria-pressed", "true");
+  await expect(gridHeart).toHaveAttribute("aria-pressed", "true");
 });
 
 test("guest heart taps on mobile preserve save intent through sign-in", async ({

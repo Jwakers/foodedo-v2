@@ -16,7 +16,7 @@ export function RecipeCard({
   meta,
   imageSrc,
   saved,
-  isSavePending = false,
+  isSaveDisabled = false,
   onToggleSave,
   href,
   onOpen,
@@ -26,7 +26,7 @@ export function RecipeCard({
   meta: ReactNode;
   imageSrc?: string | null;
   saved: boolean;
-  isSavePending?: boolean;
+  isSaveDisabled?: boolean;
   onToggleSave: () => Promise<unknown> | void;
   href?: string;
   onOpen?: () => void;
@@ -88,7 +88,7 @@ export function RecipeCard({
         <RecipeSaveButton
           title={title}
           saved={saved}
-          isSavePending={isSavePending}
+          isSaveDisabled={isSaveDisabled}
           onToggleSave={onToggleSave}
         />
       ) : null}

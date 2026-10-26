@@ -1,3 +1,4 @@
+import type { OptimisticLocalStore } from "convex/browser";
 import { useSyncExternalStore } from "react";
 import { getFunctionName, type FunctionReference } from "convex/server";
 import { selectDiscoveryMeals } from "../../../src/lib/domain/recipe-discovery";
@@ -108,7 +109,11 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
       return { meals };
     case "catalogue:list":
       return {
-        page: meals.slice(-8).reverse(),
+        page: meals.filter(
+          (meal) =>
+            !(args as { savedOnly?: boolean })?.savedOnly ||
+            savedIds().includes(meal.id),
+        ),
         isDone: false,
         continueCursor: "more",
       };
@@ -119,30 +124,78 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
     case "recipes:listSavedCatalogueMeals":
       if (sessionStorage.getItem("fixture:saved-loading") === "true")
         return undefined;
-      return savedIds().map((id) => ({
-        catalogueMealId: id,
-        recipeId: `saved-${id}`,
-      }));
+      return optimisticSavedRecipes();
     default:
       return null;
   }
 }
+type SaveArgs = {
+  catalogueMealId: string;
+  catalogueVersion: number;
+  saved: boolean;
+};
+type OptimisticUpdate = (store: OptimisticLocalStore, args: SaveArgs) => void;
+const pending: { args: SaveArgs; update?: OptimisticUpdate }[] = [];
+let mutationQueue = Promise.resolve();
+function optimisticSavedRecipes() {
+  let value = savedIds().map((id) => ({
+    catalogueMealId: id,
+    recipeId: `saved-${id}`,
+  }));
+  const store = {
+    getQuery: () => value,
+    setQuery: (_query: unknown, _args: unknown, next: typeof value) => {
+      value = next;
+    },
+  } as unknown as OptimisticLocalStore;
+  for (const layer of pending) layer.update?.(store, layer.args);
+  return value;
+}
 export function useMutation(reference: FunctionReference<"mutation">) {
-  return async (args: { catalogueMealId?: string; recipeId?: string }) => {
-    if (getFixtureIdentity() === "guest")
-      throw new Error("Guest personal write");
-    if (sessionStorage.getItem("fixture:fail-save") === "true")
-      throw new Error("Fixture save failure");
-    const name = getFunctionName(reference);
-    const ids = new Set(savedIds());
-    if (name === "recipes:saveCatalogueMeal") ids.add(args.catalogueMealId!);
-    else if (name === "recipes:removeMineFromLibrary")
-      ids.delete(args.recipeId!.replace("saved-", ""));
-    else throw new Error(`Unexpected mutation ${name}`);
-    sessionStorage.setItem("fixture:saved", JSON.stringify([...ids]));
-    change();
-    return { status: "saved", recipeId: `saved-${args.catalogueMealId}` };
-  };
+  function createMutation(update?: OptimisticUpdate) {
+    const mutate = (args: SaveArgs) => {
+      const layer = { args, update };
+      pending.push(layer);
+      sessionStorage.setItem("fixture:pending-saves", String(pending.length));
+      change();
+      const result = mutationQueue
+        .then(async () => {
+          if (getFixtureIdentity() === "guest")
+            throw new Error("Guest personal write");
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              Number(sessionStorage.getItem("fixture:save-delay") ?? 0),
+            ),
+          );
+          if (sessionStorage.getItem("fixture:fail-save") === "true")
+            throw new Error("Fixture save failure");
+          if (getFunctionName(reference) !== "recipes:setCatalogueMealSaved")
+            throw new Error("Unexpected mutation");
+          const ids = new Set(savedIds());
+          if (args.saved) ids.add(args.catalogueMealId);
+          else ids.delete(args.catalogueMealId);
+          sessionStorage.setItem("fixture:saved", JSON.stringify([...ids]));
+          return null;
+        })
+        .finally(() => {
+          pending.splice(pending.indexOf(layer), 1);
+          sessionStorage.setItem(
+            "fixture:pending-saves",
+            String(pending.length),
+          );
+          change();
+        });
+      mutationQueue = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      return result;
+    };
+    mutate.withOptimisticUpdate = createMutation;
+    return mutate;
+  }
+  return createMutation();
 }
 
 const client = {
@@ -164,4 +217,12 @@ const client = {
 };
 export function useConvex() {
   return client;
+}
+
+export function usePaginatedQuery(
+  reference: FunctionReference<"query">,
+  args: unknown,
+) {
+  const result = useQuery(reference, args) as { page: unknown[] } | undefined;
+  return { results: result?.page ?? [], status: "Exhausted", loadMore() {} };
 }

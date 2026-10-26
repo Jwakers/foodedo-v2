@@ -312,7 +312,7 @@ export function PlanMealSelector({
         <h3
           aria-live="polite"
           aria-atomic="true"
-          className="min-h-15 font-display text-26 leading-7.5 font-semibold tracking-title break-words text-ink"
+          className="font-display text-26 leading-7.5 font-semibold tracking-title break-words text-ink"
         >
           {formatRecipeHeading(selected.title)}
         </h3>

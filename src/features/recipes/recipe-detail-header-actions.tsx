@@ -14,9 +14,8 @@ export function RecipeDetailHeaderActions({
 }: {
   recipe: CatalogueMeal;
 }) {
-  const { isSaved, isSavePending, toggleSave } = useCatalogueRecipeLibrary();
+  const { isSaved, isSaveDisabled, toggleSave } = useCatalogueRecipeLibrary();
   const saved = isSaved(recipe.id);
-  const pending = isSavePending(recipe.id);
 
   return (
     <>
@@ -30,8 +29,7 @@ export function RecipeDetailHeaderActions({
             : `Save ${formatRecipeHeading(recipe.title)}`
         }
         aria-pressed={saved}
-        aria-busy={pending || undefined}
-        disabled={pending}
+        disabled={isSaveDisabled}
         className={cn(
           saved && "bg-cadmium-soft text-cadmium hover:bg-cadmium-soft",
         )}

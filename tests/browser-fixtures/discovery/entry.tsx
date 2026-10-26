@@ -1,3 +1,4 @@
+import { OnboardingProvider } from "../../../src/features/onboarding/use-onboarding";
 import { createRoot } from "react-dom/client";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
@@ -8,7 +9,9 @@ import {
 import { MealsYouMightLike } from "../../../src/features/dashboard/meals-you-might-like";
 import { ActivePlanDashboard } from "../../../src/features/dashboard/active-plan-dashboard";
 import { CatalogueSaveIntentResume } from "../../../src/features/recipes/catalogue-recipe-library";
-import { fixturePlan } from "./convex";
+import { fixturePlan, meals } from "./convex";
+import { RecipeDetailHeaderActions } from "../../../src/features/recipes/recipe-detail-header-actions";
+import { RecipesListing } from "../../../src/features/recipes/recipes-listing";
 
 function App() {
   const { select, isHousehold } = useHouseholdSpace();
@@ -45,6 +48,16 @@ function App() {
         </div>
       ) : null}
       <main className="px-page-inline py-8">
+        {new URLSearchParams(location.search).has("surfaces") ? (
+          <>
+            <section aria-label="Recipe header">
+              <RecipeDetailHeaderActions
+                recipe={{ ...meals[1], ingredients: [], steps: [] }}
+              />
+            </section>
+            <RecipesListing />
+          </>
+        ) : null}
         {home ? (
           full ? (
             <ActivePlanDashboard
@@ -67,6 +80,8 @@ function App() {
 }
 createRoot(document.getElementById("root")!).render(
   <HouseholdProvider>
-    <App />
+    <OnboardingProvider>
+      <App />
+    </OnboardingProvider>
   </HouseholdProvider>,
 );

@@ -9,6 +9,117 @@ const modules = import.meta.glob("./**/*.ts");
 const authSubject = "recipe-test-user";
 const catalogueMealId = "stable-catalogue-meal";
 
+test("desired-state favourites support repeated reversals across revisions", async () => {
+  const t = createTestContext();
+  const { asUser } = await seedUserAndRelease(t);
+  const args = { catalogueMealId, catalogueVersion: 2 };
+  for (const saved of [true, true, false, false, true]) {
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      saved,
+    });
+    expect(
+      await asUser.query(api.recipes.listSavedCatalogueMeals, {}),
+    ).toHaveLength(saved ? 1 : 0);
+  }
+  await seedUserAndRelease(t, 3);
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    catalogueVersion: 3,
+    saved: false,
+  });
+  expect(await asUser.query(api.recipes.listSavedCatalogueMeals, {})).toEqual(
+    [],
+  );
+});
+
+test("favourites reject guests and unsupported saves, and remain private", async () => {
+  const t = createTestContext();
+  const { asUser } = await seedUserAndRelease(t);
+  const args = { catalogueMealId, catalogueVersion: 2, saved: true };
+  await expect(
+    t.mutation(api.recipes.setCatalogueMealSaved, args),
+  ).rejects.toThrow();
+  await expect(
+    asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      catalogueVersion: 999,
+    }),
+  ).rejects.toThrow("This recipe can’t be saved right now.");
+  expect(await asUser.query(api.recipes.listSavedCatalogueMeals, {})).toEqual(
+    [],
+  );
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, args);
+  await t.run((ctx) =>
+    ctx.db.insert("users", {
+      authSubject: "another-favourite-user",
+      name: "Another user",
+      email: "another@example.com",
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  await t
+    .withIdentity({ subject: "another-favourite-user" })
+    .mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      saved: false,
+    });
+  expect(
+    await asUser.query(api.recipes.listSavedCatalogueMeals, {}),
+  ).toHaveLength(1);
+});
+
+test("unfavouriting preserves a plan's pinned snapshot and reuses it on resave", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  const args = { catalogueMealId, catalogueVersion: 2 };
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    saved: true,
+  });
+  const [saved] = await asUser.query(api.recipes.listSavedCatalogueMeals, {});
+  await t.run(async (ctx) => {
+    const mealPlanId = await ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: "2030-11-01",
+      endDate: "2030-11-01",
+      status: "active",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await ctx.db.insert("mealSlots", {
+      ownerId,
+      mealPlanId,
+      date: "2030-11-01",
+      recipeId: saved.recipeId,
+      status: "planned",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+  });
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    saved: false,
+  });
+  expect(await asUser.query(api.recipes.listSavedCatalogueMeals, {})).toEqual(
+    [],
+  );
+  expect(
+    await asUser.query(api.recipes.getMine, { recipeId: saved.recipeId }),
+  ).toMatchObject({
+    title: "Stable meal version 2",
+    source: { catalogueVersion: 2 },
+  });
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    saved: true,
+  });
+  expect(await asUser.query(api.recipes.listSavedCatalogueMeals, {})).toEqual([
+    saved,
+  ]);
+});
+
 function createTestContext() {
   return convexTest(schema, modules);
 }

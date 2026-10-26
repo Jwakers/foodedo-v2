@@ -2,16 +2,16 @@
 
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 import {
   createCatalogueSaveIntent,
   readCatalogueSaveIntent,
 } from "@/lib/domain/auth-intents";
 import { createCatalogueSaveIntentStore } from "@/lib/platform/auth-intent-store";
+import { optimisticallySetCatalogueSaved } from "./optimistic-catalogue-saves";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 
 type ToggleCatalogueSaveArgs = {
@@ -20,7 +20,7 @@ type ToggleCatalogueSaveArgs = {
   title: string;
 };
 
-const emptySavedRecipeMap: ReadonlyMap<string, Id<"recipes">> = new Map();
+const emptySavedMealIds: ReadonlySet<string> = new Set();
 
 /**
  * Reactive catalogue-library state and the single save entry point for recipe
@@ -34,31 +34,25 @@ export function useCatalogueRecipeLibrary() {
     api.recipes.listSavedCatalogueMeals,
     isAuthenticated ? {} : "skip",
   );
-  const saveCatalogueMeal = useMutation(api.recipes.saveCatalogueMeal);
-  const removeMineFromLibrary = useMutation(api.recipes.removeMineFromLibrary);
-  const pendingMealIdsRef = useRef(new Set<string>());
-  const [pendingMealIds, setPendingMealIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
+  const setSavedMutation = useMutation(api.recipes.setCatalogueMealSaved);
+  const setSaved = useMemo(
+    () =>
+      setSavedMutation.withOptimisticUpdate(optimisticallySetCatalogueSaved),
+    [setSavedMutation],
   );
-
-  const savedRecipeIdByMealId = useMemo(() => {
-    if (!savedRecipes) return emptySavedRecipeMap;
-
-    return new Map(
-      savedRecipes.map(({ catalogueMealId, recipeId }) => [
-        catalogueMealId,
-        recipeId,
-      ]),
-    );
-  }, [savedRecipes]);
+  const savedMealIds = useMemo(
+    () =>
+      savedRecipes
+        ? new Set(savedRecipes.map((recipe) => recipe.catalogueMealId))
+        : emptySavedMealIds,
+    [savedRecipes],
+  );
 
   async function toggleSave({
     catalogueMealId,
     catalogueVersion,
     title,
   }: ToggleCatalogueSaveArgs) {
-    if (pendingMealIdsRef.current.has(catalogueMealId)) return;
-
     if (!isClerkLoaded) {
       toast.info("Foodedo is still checking your account. Try again.");
       return;
@@ -93,41 +87,16 @@ export function useCatalogueRecipeLibrary() {
       return;
     }
 
-    setMealPending(catalogueMealId, true);
     try {
-      const savedRecipeId = savedRecipeIdByMealId.get(catalogueMealId);
-      if (savedRecipeId) {
-        const result = await removeMineFromLibrary({
-          recipeId: savedRecipeId,
-        });
-        if (result.status === "not_found") {
-          toast.info(`“${title}” is no longer in your saved recipes.`);
-        }
-        return;
-      }
-
-      const result = await saveCatalogueMeal({
+      await setSaved({
         catalogueMealId,
         catalogueVersion,
+        saved: !savedMealIds.has(catalogueMealId),
       });
-      if (result.status === "catalogue_unsupported") {
-        toast.error("This recipe can’t be saved right now.");
-      }
     } catch (error) {
       console.error(`Failed to update saved recipe “${title}”.`, error);
       toast.error("Foodedo couldn’t update this saved recipe. Try again.");
-    } finally {
-      setMealPending(catalogueMealId, false);
     }
-  }
-
-  function setMealPending(catalogueMealId: string, pending: boolean) {
-    if (pending) {
-      pendingMealIdsRef.current.add(catalogueMealId);
-    } else {
-      pendingMealIdsRef.current.delete(catalogueMealId);
-    }
-    setPendingMealIds(new Set(pendingMealIdsRef.current));
   }
 
   const isLibraryLoading = Boolean(
@@ -140,11 +109,9 @@ export function useCatalogueRecipeLibrary() {
 
   return {
     isLibraryLoading,
-    isSaved: (catalogueMealId: string) =>
-      savedRecipeIdByMealId.has(catalogueMealId),
-    isSavePending: (catalogueMealId: string) =>
-      isLibraryLoading || pendingMealIds.has(catalogueMealId),
-    savedRecipeIdByMealId,
+    isSaved: (catalogueMealId: string) => savedMealIds.has(catalogueMealId),
+    isSaveDisabled: isLibraryLoading,
+    savedMealIds,
     toggleSave,
   };
 }
@@ -155,7 +122,12 @@ export function useCatalogueRecipeLibrary() {
  */
 export function CatalogueSaveIntentResume() {
   const { status, isAuthenticated } = useFoodedoAuth();
-  const saveCatalogueMeal = useMutation(api.recipes.saveCatalogueMeal);
+  const setSavedMutation = useMutation(api.recipes.setCatalogueMealSaved);
+  const setSaved = useMemo(
+    () =>
+      setSavedMutation.withOptimisticUpdate(optimisticallySetCatalogueSaved),
+    [setSavedMutation],
+  );
   const isResumingRef = useRef(false);
 
   useEffect(() => {
@@ -172,14 +144,12 @@ export function CatalogueSaveIntentResume() {
         const intent = readCatalogueSaveIntent(await store.read());
         if (!intent) return;
 
-        const result = await saveCatalogueMeal({
+        await setSaved({
           catalogueMealId: intent.catalogueMealId,
           catalogueVersion: intent.catalogueVersion,
+          saved: true,
         });
 
-        if (result.status === "catalogue_unsupported") {
-          toast.error("This recipe can’t be saved right now.");
-        }
         await store.clear();
       } catch (error) {
         console.error("Failed to resume catalogue recipe save.", error);
@@ -190,7 +160,7 @@ export function CatalogueSaveIntentResume() {
         isResumingRef.current = false;
       }
     })();
-  }, [isAuthenticated, saveCatalogueMeal, status]);
+  }, [isAuthenticated, setSaved, status]);
 
   return null;
 }

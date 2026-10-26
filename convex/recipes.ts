@@ -20,6 +20,7 @@ import {
   internalMutation,
   mutation,
   query,
+  type MutationCtx,
   type QueryCtx,
 } from "./_generated/server";
 import { canReadSpace } from "./lib/spaces";
@@ -100,6 +101,46 @@ export const saveCatalogueMeal = mutation({
   },
 });
 
+/** Explicit desired state lets queued optimistic taps safely reverse a save. */
+export const setCatalogueMealSaved = mutation({
+  args: {
+    catalogueMealId: v.string(),
+    catalogueVersion: v.number(),
+    saved: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, { catalogueMealId, catalogueVersion, saved }) => {
+    const ownerId = await requireUserId(ctx);
+    if (saved) {
+      if (
+        (await getCatalogueMeal(ctx, catalogueMealId, catalogueVersion)) ===
+        null
+      )
+        throw new ConvexError("This recipe can’t be saved right now.");
+      await getOrCreateCatalogueRecipe(ctx, {
+        ownerId,
+        catalogueMealId,
+        catalogueVersion,
+        saveToLibrary: true,
+      });
+      await retireIntroductions(ctx, ownerId, ["recipes"]);
+    } else {
+      const recipes = await ctx.db
+        .query("recipes")
+        .withIndex("by_owner_and_catalogue_meal_and_saved_at", (q) =>
+          q
+            .eq("ownerId", ownerId)
+            .eq("source.catalogueMealId", catalogueMealId)
+            .gt("savedAt", 0),
+        )
+        .collect();
+      for (const recipe of recipes)
+        await removeRecipeFromLibrary(ctx, ownerId, recipe);
+    }
+    return null;
+  },
+});
+
 export const getMine = query({
   args: { recipeId: v.id("recipes") },
   returns: v.union(recipeViewValidator, v.null()),
@@ -129,37 +170,46 @@ export const removeMineFromLibrary = mutation({
       return { status: "not_found" } as const;
     }
 
-    // Un-saving also proves this was a favourite, including records created
-    // before onboarding flags existed. Do not reintroduce the hint afterward.
-    if (recipe.source.type === "catalogue") {
-      await retireIntroductions(ctx, ownerId, ["recipes"]);
-    }
-
-    const referencedSlot = await ctx.db
-      .query("mealSlots")
-      .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
-      .first();
-
-    const shoppingListItems = await ctx.db
-      .query("shoppingListItems")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    const referencedInShoppingList = shoppingListItems.some((item) =>
-      item.sourceRecipeIds.includes(recipe._id),
-    );
-
-    if (referencedSlot === null && !referencedInShoppingList) {
-      await ctx.db.delete(recipe._id);
-    } else {
-      await ctx.db.patch(recipe._id, {
-        savedAt: undefined,
-        updatedAt: Date.now(),
-      });
-    }
-
+    await removeRecipeFromLibrary(ctx, ownerId, recipe);
     return { status: "removed" } as const;
   },
 });
+
+async function removeRecipeFromLibrary(
+  ctx: MutationCtx,
+  ownerId: Doc<"users">["_id"],
+  recipe: Doc<"recipes">,
+) {
+  // Un-saving also proves this was a favourite, including records created
+  // before onboarding flags existed. Do not reintroduce the hint afterward.
+  if (recipe.source.type === "catalogue") {
+    await retireIntroductions(ctx, ownerId, ["recipes"]);
+  }
+
+  const referencedSlot = await ctx.db
+    .query("mealSlots")
+    .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
+    .first();
+
+  const shoppingListItems = await ctx.db
+    .query("shoppingListItems")
+    .withIndex("by_owner_and_updated_at", (q) =>
+      q.eq("ownerId", recipe.ownerId),
+    )
+    .collect();
+  const referencedInShoppingList = shoppingListItems.some((item) =>
+    item.sourceRecipeIds.includes(recipe._id),
+  );
+
+  if (referencedSlot === null && !referencedInShoppingList) {
+    await ctx.db.delete(recipe._id);
+  } else {
+    await ctx.db.patch(recipe._id, {
+      savedAt: undefined,
+      updatedAt: Date.now(),
+    });
+  }
+}
 
 export const repairImport = mutation({
   args: {

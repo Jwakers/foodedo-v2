@@ -1256,6 +1256,13 @@ test.describe("Home meal selector", () => {
       .toBeLessThan(1);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await next.click();
+    // Embla applies even a jump on its next render frame.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
     const offset = await photo
       .locator(":scope > div > div")
       .nth(2)
