@@ -153,7 +153,7 @@ test("server proposals use partner favourites and are independent of the acting 
   const { t, alice, bob, householdId, claim, save } = await setup();
   await save(bob, 9);
   await alice.mutation(api.mealPlans.claimGuestDraft, claim);
-  const args = { householdId, fromDate: dates[0]!, variant: 1 };
+  const args = { householdId, variant: 1 };
   const proposal = await alice.query(
     api.mealPlans.getRegenerationProposal,
     args,
@@ -171,7 +171,7 @@ test("server proposals use partner favourites and are independent of the acting 
   ).toBe(true);
 });
 
-test("partial replans and extensions balance favourites against meals being retained", async () => {
+test("whole-plan replans use favourites and extensions balance retained meals", async () => {
   const { alice, bob, householdId, claim, save } = await setup();
   for (const meal of [0, 1, 2, 8]) await save(alice, meal);
   await save(bob, 9);
@@ -179,13 +179,14 @@ test("partial replans and extensions balance favourites against meals being reta
   for (let variant = 1; variant <= 10; variant++) {
     const proposal = await alice.query(api.mealPlans.getRegenerationProposal, {
       householdId,
-      fromDate: dates[2]!,
       variant,
     });
     if (proposal.status !== "ready") throw new Error("Missing proposal");
-    expect(proposal.mealSlots[0]?.catalogueMealId).toBe("meal-0");
-    expect(proposal.mealSlots[1]?.catalogueMealId).toBe("meal-1");
-    expect(proposal.mealSlots[2]?.catalogueMealId).toBe("meal-9");
+    expect(proposal.mealSlots).toHaveLength(3);
+    expect(proposal.mealSlots.every((slot) => slot.isChanged)).toBe(true);
+    expect(proposal.mealSlots.map((slot) => slot.catalogueMealId)).toContain(
+      "meal-9",
+    );
   }
   const before = await alice.query(api.mealPlans.getCurrent, { householdId });
   await alice.mutation(api.mealPlans.adjustActivePlan, {

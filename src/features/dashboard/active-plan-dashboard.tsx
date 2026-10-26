@@ -1,34 +1,17 @@
 "use client";
 
-import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
+import { useMemo } from "react";
 import { ArrowRight, Check, Download } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-
 import type { FunctionReturnType } from "convex/server";
 
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { FeatureDiscovery } from "@/components/feature-discovery";
-import {
-  DashboardCarousel,
-  DashboardCarouselCard,
-  DashboardCarouselList,
-  DashboardCarouselItem,
-} from "@/features/dashboard/dashboard-carousel";
+import { useHouseholdSpace } from "@/features/household/household-context";
+import { PlanMealSelector } from "@/features/dashboard/plan-meal-selector";
 import { MealsYouMightLike } from "@/features/dashboard/meals-you-might-like";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
-import {
-  formatPlanWeekdayUpper,
-  resolveActivePlanFocus,
-  resolveActivePlanRestOfWeek,
-  type ActivePlanMealSlot,
-} from "@/lib/domain/plan-display";
-import {
-  personalRecipeDetailPath,
-  personalRecipeCookPath,
-  recipeCookPath,
-  recipeDetailPath,
-} from "@/lib/routing/recipes";
+import { readablePlanMeals } from "@/lib/domain/plan-display";
+import { planMealSelectionKey } from "@/lib/platform/plan-meal-selection-store";
 import { api } from "../../../convex/_generated/api";
 
 type ActiveMealPlan = NonNullable<
@@ -36,29 +19,31 @@ type ActiveMealPlan = NonNullable<
 >;
 
 export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
-  const focus = resolveActivePlanFocus({ mealSlots: plan.mealSlots });
-  const restOfWeek = resolveActivePlanRestOfWeek({
-    mealSlots: plan.mealSlots,
-    focusDate: focus?.meal.date ?? null,
-  });
+  const { spaceKey } = useHouseholdSpace();
+  const meals = useMemo(
+    () => readablePlanMeals(plan.mealSlots),
+    [plan.mealSlots],
+  );
+  const selectionKey = planMealSelectionKey(spaceKey, plan._id);
   return (
     <section
       aria-labelledby="active-plan-heading"
-      className="mx-auto flex w-full max-w-175 flex-col gap-6"
+      className="mx-auto flex w-full max-w-175 flex-col gap-5"
     >
       <h1 id="active-plan-heading" className="sr-only">
-        Your week
+        Your plan
       </h1>
 
-      {focus ? (
-        <TonightFocus focus={focus} servings={plan.servings} />
+      {meals.length > 0 ? (
+        <PlanMealSelector
+          key={selectionKey}
+          selectionKey={selectionKey}
+          meals={meals}
+          servings={plan.servings}
+        />
       ) : (
-        <EmptyTonightNotice />
+        <EmptyPlanNotice />
       )}
-
-      {restOfWeek.length > 0 ? (
-        <RestOfWeekCarousel meals={restOfWeek} servings={plan.servings} />
-      ) : null}
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
       <LatestRecipesCarousel />
@@ -68,169 +53,20 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
   );
 }
 
-function TonightFocus({
-  focus,
-  servings,
-}: {
-  focus: NonNullable<ReturnType<typeof resolveActivePlanFocus>>;
-  servings: number;
-}) {
-  const { meal, timingLabel, durationLabel } = focus;
-  const overline = durationLabel
-    ? `${timingLabel} · ${durationLabel.toUpperCase()}`
-    : timingLabel;
-  const href = meal.recipeId
-    ? personalRecipeDetailPath(meal.recipeId, servings, servings)
-    : meal.catalogueMealSlug
-      ? recipeDetailPath(
-          meal.catalogueMealSlug,
-          {
-            catalogueMealId: meal.catalogueMealId ?? undefined,
-            catalogueVersion: meal.catalogueVersion ?? undefined,
-          },
-          servings,
-        )
-      : null;
-
-  return (
-    <article className="flex flex-col gap-3.5">
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden="true"
-          className="size-2 shrink-0 rounded-full bg-leaf"
-        />
-        <p className="text-12 font-bold tracking-overline text-graphite uppercase">
-          {overline}
-        </p>
-      </div>
-
-      <div className="relative aspect-[316/190] overflow-hidden rounded-compact bg-mist">
-        {meal.imageSrc ? (
-          <Image
-            src={meal.imageSrc}
-            alt=""
-            fill
-            priority
-            sizes="(min-width: 640px) 700px, calc(100vw - 40px)"
-            className="object-cover"
-          />
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <h2 className="font-display text-30 font-semibold tracking-title text-ink">
-          {href ? (
-            <Link
-              href={href}
-              className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
-            >
-              {formatRecipeHeading(meal.title)}
-            </Link>
-          ) : (
-            meal.title
-          )}
-        </h2>
-        {meal.description ? (
-          <p className="text-16 leading-relaxed text-graphite">
-            {meal.description}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="flex gap-2">
-        {meal.recipeId || meal.catalogueMealSlug ? (
-          <ButtonLink
-            className="min-w-0 flex-1"
-            href={
-              meal.recipeId
-                ? personalRecipeCookPath(meal.recipeId, servings, servings)
-                : recipeCookPath(meal.catalogueMealSlug!, servings, {
-                    catalogueMealId: meal.catalogueMealId ?? undefined,
-                    catalogueVersion: meal.catalogueVersion ?? undefined,
-                  })
-            }
-          >
-            Cook this meal
-            <ArrowRight aria-hidden="true" className="size-4.5" />
-          </ButtonLink>
-        ) : (
-          <Button className="min-w-0 flex-1" disabled>
-            Cook this meal
-          </Button>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function EmptyTonightNotice() {
+function EmptyPlanNotice() {
   return (
     <div className="rounded-surface bg-mist p-4">
       <p className="font-display text-22 font-semibold text-ink">
-        No dinners left this week
+        Your plan’s recipes are unavailable
       </p>
       <p className="mt-1 text-14 text-graphite">
-        Plan another week when you’re ready for the next round.
+        Open your plan to review its meals or choose replacements.
       </p>
       <ButtonLink href="/week" className="mt-3 w-full">
-        Plan my week
+        View plan
         <ArrowRight aria-hidden="true" className="size-4.5" />
       </ButtonLink>
     </div>
-  );
-}
-
-function RestOfWeekCarousel({
-  meals,
-  servings,
-}: {
-  meals: ActivePlanMealSlot[];
-  servings: number;
-}) {
-  return (
-    <DashboardCarousel
-      headingId="rest-of-week-heading"
-      title="The rest of your week"
-      href="/week"
-      action="Full week"
-    >
-      <DashboardCarouselList>
-        {meals.map((meal) => (
-          <DashboardCarouselItem key={meal.date}>
-            <RestOfWeekCard meal={meal} servings={servings} />
-          </DashboardCarouselItem>
-        ))}
-      </DashboardCarouselList>
-    </DashboardCarousel>
-  );
-}
-
-function RestOfWeekCard({
-  meal,
-  servings,
-}: {
-  meal: ActivePlanMealSlot;
-  servings: number;
-}) {
-  const href = meal.recipeId
-    ? personalRecipeDetailPath(meal.recipeId, servings, servings)
-    : meal.catalogueMealSlug
-      ? recipeDetailPath(
-          meal.catalogueMealSlug,
-          {
-            catalogueMealId: meal.catalogueMealId ?? undefined,
-            catalogueVersion: meal.catalogueVersion ?? undefined,
-          },
-          servings,
-        )
-      : null;
-  return (
-    <DashboardCarouselCard
-      title={meal.title}
-      imageSrc={meal.imageSrc}
-      href={href}
-      meta={formatPlanWeekdayUpper(meal.date)}
-    />
   );
 }
 

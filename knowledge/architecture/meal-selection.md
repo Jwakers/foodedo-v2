@@ -29,11 +29,11 @@ The selector itself truncates supplied history to four plans. This keeps the
 policy bounded even if an adapter accidentally provides more data, and keeps
 the client and server on the same recency model.
 
-Single-meal choices, extensions and partial replans include the meals being
+Single-meal choices and extensions include the meals being
 retained as scoring context. Their protein categories and represented members
 count toward variety and household balance, but they are not returned as new
 selections. A manually pinned first meal uses the same context before filling
-the remaining days.
+the other meal slots.
 
 ## Boundaries
 
@@ -102,3 +102,17 @@ falls outside that bounded window as new plans are accepted. Dismissal is always
 a mild capped score contribution; it never excludes a candidate or prevents
 manual selection. Private and Household feedback stay separate. Account deletion
 removes the user's feedback, including household attribution.
+
+## Flexible meals within a dated plan
+
+Plan dates identify an approximate planning window, not a cooking schedule. Stored slot dates remain stable ordering and edit identifiers for compatibility with saved plans, guest drafts and feedback; no storage migration is required. All active meals remain visible and editable after the range ends. Home offers a visual selector of readable meals in stable slot order, without weekday labels. No completion is inferred or tracked.
+
+Whole-plan regeneration has no date-cutoff argument: preview and application consider every occupied slot, preserve empty slots and retain the original full date range, including empty edges. Stale-write checks, explicit approval, shopping-state carryover and undo still apply. The next-plan action gains emphasis from the day before the end date onward without expiring the active plan. Plan-level ranges remain available in setup and history.
+
+## Home meal selector
+
+The approved Paper 13A–13F exploration is implemented as one selector. Embla Carousel v8 owns photograph swiping and snapping; thumbnails scroll independently with native horizontal overflow. Selecting a thumbnail or photo arrow updates the photograph, full title, time, servings, description and both recipe/Cook links together. On mobile, the thumbnail strip bleeds to the viewport edges while its first and last items retain the normal content inset. Selection smoothly brings the chosen thumbnail toward the start of the strip, clamped naturally near the end, without scrolling the page. Photo arrows slide between neighbours; direct thumbnail choices jump to the corresponding photo. Reduced-motion preferences disable these transitions. “View plan” opens the existing Week view. One readable meal needs no arrows or thumbnail strip; unavailable slots remain in the plan but are omitted here.
+
+Thumbnails use the actual recipe title at 14px in a fixed 128px item, with two-line visual truncation and a full accessible button name. Selection has a green outline and heavier text, with `aria-pressed` rather than completion semantics. The main title is never clamped; descriptions are capped at two lines and omitted when missing. There is no numbered progress badge, autoplay or sticky Cook action. Shopping, latest recipes and discovery retain their existing roles below the selector.
+
+An explicit Home selection is tab-local UI state, scoped to the signed-in space and plan, stored in sessionStorage with an in-memory fallback. It survives recipe/Cook navigation and reload in that tab. Persist the slot identity (with a date fallback for older view contracts), not recipe identity, so repeated meals remain independently selectable and a changed plan start date does not reset the choice. A new plan starts at its first readable meal; an unavailable or removed selection falls back to the first readable meal. Recipe and Cook openings do not write completion, history or preference signals. Suggested defaults based on those interactions remain future work and must never override an active explicit choice or reorder/hide alternatives.

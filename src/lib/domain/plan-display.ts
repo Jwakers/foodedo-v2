@@ -8,8 +8,6 @@ import {
 export type GuestPlanMealRow = {
   date: string;
   requestedServings?: number;
-  weekday: string;
-  dayOfMonth: string;
 } & (
   | {
       kind: "planned";
@@ -38,47 +36,6 @@ export function todayPlanDate(now: Date = new Date()): string {
 export function tomorrowPlanDate(now: Date = new Date()): string {
   const local = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return formatLocalPlanDate(local);
-}
-
-export function formatPlanDayParts(date: string): {
-  weekday: string;
-  dayOfMonth: string;
-} {
-  const parts = parsePlanDateParts(date);
-  const utc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
-
-  return {
-    weekday: utc
-      .toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" })
-      .toUpperCase(),
-    dayOfMonth: parts.day.toString().padStart(2, "0"),
-  };
-}
-
-/** e.g. "Saturday" for swap sheet titles. */
-export function formatPlanWeekdayLong(date: string): string {
-  const parts = parsePlanDateParts(date);
-  const utc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
-  return utc.toLocaleDateString("en-GB", {
-    weekday: "long",
-    timeZone: "UTC",
-  });
-}
-
-/** e.g. "Sat" for the replacing-meal chip (title case, not uppercase). */
-export function formatPlanWeekdayShort(date: string): string {
-  const parts = parsePlanDateParts(date);
-  const utc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
-  return utc.toLocaleDateString("en-GB", {
-    weekday: "short",
-    timeZone: "UTC",
-  });
-}
-
-/** e.g. "Wednesday 3 Sep" for an upcoming plan day. */
-export function formatPlanDateWithWeekday(date: string): string {
-  const parts = parsePlanDateParts(date);
-  return `${formatPlanWeekdayLong(date)} ${parts.day} ${shortMonth(parts.month)}`;
 }
 
 /**
@@ -134,6 +91,8 @@ export function formatMealDurationLabel(
 }
 
 export type ActivePlanMealSlot = {
+  _id?: string;
+  isAvailable?: boolean;
   recipeId?: string;
   date: string;
   title: string;
@@ -147,68 +106,18 @@ export type ActivePlanMealSlot = {
   status: "planned" | "cooked" | "skipped";
 };
 
-export type ActivePlanFocus = {
-  meal: ActivePlanMealSlot;
-  /** Overline label without duration, e.g. TONIGHT / TOMORROW / FRIDAY. */
-  timingLabel: string;
-  durationLabel: string | null;
-};
-
-/**
- * Pick the meal to feature on Home: today's planned meal when present,
- * otherwise the next upcoming planned meal in the active week.
- */
-export function resolveActivePlanFocus({
-  mealSlots,
-  today = todayPlanDate(),
-}: {
-  mealSlots: ReadonlyArray<ActivePlanMealSlot>;
-  today?: string;
-}): ActivePlanFocus | null {
-  const upcoming = mealSlots
-    .filter((slot) => slot.status === "planned" && slot.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const meal = upcoming[0];
-  if (!meal) return null;
-
-  return {
-    meal,
-    timingLabel: formatActivePlanTimingLabel(meal.date, today),
-    durationLabel: formatMealDurationLabel(
-      meal.prepMinutes ?? undefined,
-      meal.cookMinutes ?? undefined,
-    ),
-  };
-}
-
-export function resolveActivePlanRestOfWeek({
-  mealSlots,
-  focusDate,
-  today = todayPlanDate(),
-}: {
-  mealSlots: ReadonlyArray<ActivePlanMealSlot>;
-  focusDate: string | null;
-  today?: string;
-}): ActivePlanMealSlot[] {
+/** Dates order slots; they never determine which meals are available. */
+export function readablePlanMeals(
+  mealSlots: ReadonlyArray<ActivePlanMealSlot>,
+): ActivePlanMealSlot[] {
   return mealSlots
     .filter(
       (slot) =>
-        slot.status === "planned" &&
-        slot.date >= today &&
-        slot.date !== focusDate,
+        slot.status !== "skipped" &&
+        slot.isAvailable !== false &&
+        Boolean(slot.recipeId || slot.catalogueMealSlug),
     )
-    .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-/** Full weekday name uppercased for rest-of-week tiles (FRIDAY). */
-export function formatPlanWeekdayUpper(date: string): string {
-  return formatPlanWeekdayLong(date).toUpperCase();
-}
-
-function formatActivePlanTimingLabel(date: string, today: string): string {
-  if (date === today) return "TONIGHT";
-  if (date === addCalendarDays(today, 1)) return "TOMORROW";
-  return formatPlanWeekdayUpper(date);
+    .toSorted((a, b) => a.date.localeCompare(b.date));
 }
 
 /** Display label for catalogue protein categories (e.g. meat-free → Meat-free). */
@@ -225,15 +134,11 @@ export function resolveGuestPlanMealRows({
   mealsByReference: ReadonlyMap<string, CatalogueMealSummary>;
 }): GuestPlanMealRow[] {
   return draft.mealChoices.map((choice) => {
-    const day = formatPlanDayParts(choice.date);
-
     if (choice.catalogueMealId === null) {
       return {
         kind: "empty" as const,
         requestedServings: draft.servings,
         date: choice.date,
-        weekday: day.weekday,
-        dayOfMonth: day.dayOfMonth,
       };
     }
     if (choice.catalogueVersion === null) {
@@ -255,8 +160,6 @@ export function resolveGuestPlanMealRows({
     return {
       kind: "planned" as const,
       date: choice.date,
-      weekday: day.weekday,
-      dayOfMonth: day.dayOfMonth,
       meal,
       requestedServings: draft.servings,
       durationLabel: formatMealDurationLabel(
@@ -318,7 +221,6 @@ export function resolveActivePlanWeekRows({
 
   return Array.from({ length: planDays }, (_, index) => {
     const date = addCalendarDays(startDate, index);
-    const day = formatPlanDayParts(date);
     const slot = byDate.get(date);
 
     if (!slot || slot.status === "skipped") {
@@ -326,8 +228,6 @@ export function resolveActivePlanWeekRows({
         kind: "empty" as const,
         requestedServings: servings,
         date,
-        weekday: day.weekday,
-        dayOfMonth: day.dayOfMonth,
       };
     }
 
@@ -364,8 +264,6 @@ export function resolveActivePlanWeekRows({
     return {
       kind: "planned" as const,
       date,
-      weekday: day.weekday,
-      dayOfMonth: day.dayOfMonth,
       meal,
       requestedServings: servings,
       durationLabel: formatMealDurationLabel(
@@ -376,7 +274,7 @@ export function resolveActivePlanWeekRows({
   });
 }
 
-/** Last two calendar days of the plan — when “Start next plan” may rise. */
+/** A gentle next-plan cue, beginning the day before the range ends. */
 export function isNearActivePlanEnd({
   endDate,
   today = todayPlanDate(),
@@ -384,20 +282,7 @@ export function isNearActivePlanEnd({
   endDate: string;
   today?: string;
 }): boolean {
-  return today >= addCalendarDays(endDate, -1) && today <= endDate;
-}
-
-export function formatActivePlanEndSummary({
-  endDate,
-  dinnersLeft,
-}: {
-  endDate: string;
-  dinnersLeft: number;
-}): string {
-  const weekday = formatPlanWeekdayShort(endDate);
-  const dinnerLabel =
-    dinnersLeft === 1 ? "1 dinner left" : `${dinnersLeft} dinners left`;
-  return `Ends ${weekday} · ${dinnerLabel}`;
+  return today >= addCalendarDays(endDate, -1);
 }
 
 function formatLocalPlanDate(date: Date) {

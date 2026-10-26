@@ -1101,9 +1101,6 @@ function IngredientSourcesDrawer({
                           {source.recipeTitle}
                         </span>
                         <span className="mt-0.5 block text-13 text-graphite">
-                          {source.date
-                            ? `${formatWeekday(source.date)} · `
-                            : ""}
                           {formatSourceAmount(source.amount, item.name)}
                         </span>
                       </span>
@@ -1232,13 +1229,6 @@ function syncErrorMessage(status: string) {
     default:
       return "Foodedo couldn’t prepare your list. Try again.";
   }
-}
-
-function formatWeekday(date: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T00:00:00Z`));
 }
 
 function formatSourceAmount(amount: string, itemName: string) {

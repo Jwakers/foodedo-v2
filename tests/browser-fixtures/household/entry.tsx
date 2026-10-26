@@ -16,6 +16,7 @@ import { InviteLinkPage } from "../../../src/features/household/invite-link-page
 import { SavedWeekPage } from "../../../src/features/plan/saved-week-page";
 import { HouseholdPage } from "../../../src/features/household/household-page";
 import { JoinHouseholdPage } from "../../../src/features/household/join-household-page";
+import { PlanThisMeal } from "../../../src/features/plan/plan-this-meal";
 import { ReplanReview } from "../../../src/features/plan/replan-review";
 import { PlanSetupRoute } from "../../../src/features/plan/plan-setup-page";
 import { WeekPage } from "../../../src/features/plan/week-page";
@@ -70,6 +71,14 @@ function Screen() {
           <JoinHouseholdPage />
         ) : currentScreen === "replan" ? (
           <ReplanReview />
+        ) : currentScreen === "planner" ? (
+          <PlanThisMeal
+            meal={{
+              id: "private-meal",
+              version: 1,
+              title: "Private work-trip dinner",
+            }}
+          />
         ) : currentScreen === "dashboard" ? (
           <main className="px-page-inline py-8">
             <Dashboard />

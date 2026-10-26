@@ -4,16 +4,10 @@ import {
   countPlanDays,
   formatGuestPlanSummary,
   formatMealDurationLabel,
-  formatPlanDayParts,
   formatPlanDateRange,
-  formatPlanDateWithWeekday,
-  formatPlanWeekdayLong,
-  formatPlanWeekdayShort,
   formatProteinCategoryLabel,
-  formatActivePlanEndSummary,
   isNearActivePlanEnd,
-  resolveActivePlanFocus,
-  resolveActivePlanRestOfWeek,
+  readablePlanMeals,
   resolveActivePlanWeekRows,
   resolveGuestPlanMealRows,
   summarizeGuestPlanDraft,
@@ -28,13 +22,6 @@ test("formats tomorrow as a local calendar plan date", () => {
 });
 
 test("formats day parts and week summary for plan review", () => {
-  expect(formatPlanDayParts("2026-08-29")).toEqual({
-    weekday: "SAT",
-    dayOfMonth: "29",
-  });
-  expect(formatPlanWeekdayLong("2026-08-29")).toBe("Saturday");
-  expect(formatPlanWeekdayShort("2026-08-29")).toBe("Sat");
-  expect(formatPlanDateWithWeekday("2026-09-03")).toBe("Thursday 3 Sep");
   expect(
     countPlanDays({ startDate: "2026-08-29", endDate: "2026-09-02" }),
   ).toBe(5);
@@ -105,8 +92,6 @@ test("resolves draft rows with duration labels when times exist", () => {
   expect(rows[0]).toMatchObject({
     kind: "planned",
     date: "2026-08-29",
-    weekday: "SAT",
-    dayOfMonth: "29",
     durationLabel: "25 min",
   });
   if (rows[0]?.kind === "planned") {
@@ -116,8 +101,6 @@ test("resolves draft rows with duration labels when times exist", () => {
     kind: "empty",
     requestedServings: draft.servings,
     date: "2026-08-31",
-    weekday: "MON",
-    dayOfMonth: "31",
   });
   expect(summarizeGuestPlanDraft(draft)).toBe(
     "29 Aug–4 Sep · 6 planned dinners",
@@ -126,7 +109,7 @@ test("resolves draft rows with duration labels when times exist", () => {
   expect(formatMealDurationLabel(20, undefined)).toBe("20 min");
 });
 
-test("features tonight or the next upcoming planned meal", () => {
+test("features the first readable meal and lists all others in stable order", () => {
   expect(todayPlanDate(new Date(2026, 7, 28, 23, 30))).toBe("2026-08-28");
 
   const meals = [
@@ -162,29 +145,16 @@ test("features tonight or the next upcoming planned meal", () => {
     },
   ];
 
-  const focus = resolveActivePlanFocus({
-    mealSlots: meals,
-    today: "2026-08-28",
-  });
-  expect(focus?.timingLabel).toBe("TONIGHT");
-  expect(focus?.durationLabel).toBe("30 min");
-  expect(focus?.meal.title).toBe("Tonight meal");
-
-  const rest = resolveActivePlanRestOfWeek({
-    mealSlots: meals,
-    focusDate: focus?.meal.date ?? null,
-    today: "2026-08-28",
-  });
-  expect(rest.map((meal) => meal.title)).toEqual([
-    "Tomorrow meal",
-    "Later meal",
-  ]);
-
-  const tomorrowFocus = resolveActivePlanFocus({
-    mealSlots: meals.slice(1),
-    today: "2026-08-28",
-  });
-  expect(tomorrowFocus?.timingLabel).toBe("TOMORROW");
+  expect(readablePlanMeals(meals)).toEqual(meals);
+  const unavailable = {
+    ...meals[0]!,
+    recipeId: "missing-recipe",
+    isAvailable: false,
+  };
+  const unordered = [meals[2]!, unavailable, meals[1]!];
+  expect(readablePlanMeals(unordered)).toEqual([meals[1], meals[2]]);
+  expect(readablePlanMeals([unavailable])).toEqual([]);
+  expect(readablePlanMeals([{ ...meals[0]!, status: "skipped" }])).toEqual([]);
 });
 
 test("fills free days only inside the active plan's date range", () => {
@@ -256,6 +226,6 @@ test("detects the end of an active plan for quieter Start next plan", () => {
     isNearActivePlanEnd({ endDate: "2026-09-04", today: "2026-09-02" }),
   ).toBe(false);
   expect(
-    formatActivePlanEndSummary({ endDate: "2026-09-04", dinnersLeft: 2 }),
-  ).toBe("Ends Fri · 2 dinners left");
+    isNearActivePlanEnd({ endDate: "2026-09-04", today: "2026-10-26" }),
+  ).toBe(true);
 });

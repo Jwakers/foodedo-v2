@@ -17,7 +17,7 @@ import {
 const saveBenefits = [
   {
     title: "Keep this exact week",
-    description: "Your swaps and free days stay as you’ve set them",
+    description: "Your meal choices and empty slots stay as you’ve set them",
   },
   {
     title: "One clean shopping list",

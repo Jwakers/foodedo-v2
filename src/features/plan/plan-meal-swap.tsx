@@ -24,8 +24,6 @@ import {
 } from "@/features/recipes/use-recipe-filters";
 import {
   formatMealDurationLabel,
-  formatPlanWeekdayLong,
-  formatPlanWeekdayShort,
   formatProteinCategoryLabel,
 } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
@@ -47,7 +45,6 @@ const quickFilterLabels = [
 ] as const;
 
 export function PlanMealSwap({
-  date,
   currentMeal,
   isSwapping = false,
   filters = emptyRecipeFilters,
@@ -90,17 +87,10 @@ export function PlanMealSwap({
     setSelectedId(null);
   }
 
-  const weekdayLong = formatPlanWeekdayLong(date);
-  const weekdayShort = formatPlanWeekdayShort(date);
-
   return (
     <>
       <DrawerStackHeader
-        title={
-          currentMeal
-            ? `Swap ${weekdayLong}’s meal`
-            : `Choose ${weekdayLong}’s meal`
-        }
+        title={currentMeal ? "Swap this meal" : "Choose a meal"}
         description="Choose a better fit for your week"
         closeLabel="Close recipe picker"
       />
@@ -127,9 +117,6 @@ export function PlanMealSwap({
                 {formatRecipeHeading(currentMeal.title)}
               </p>
             </div>
-            <span className="shrink-0 text-13 text-graphite">
-              {weekdayShort}
-            </span>
           </div>
         ) : null}
 

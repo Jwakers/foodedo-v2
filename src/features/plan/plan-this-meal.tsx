@@ -15,10 +15,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { usePlanThisMeal } from "@/features/plan/use-plan-this-meal";
-import {
-  formatPlanDateWithWeekday,
-  formatPlanDayParts,
-} from "@/lib/domain/plan-display";
 import type { PlanThisMealDay } from "@/lib/domain/plan-this-meal";
 import { cn } from "@/lib/utils/cn";
 
@@ -62,7 +58,7 @@ export function PlanThisMeal({
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <DrawerTitle>Plan this meal</DrawerTitle>
             <DrawerDescription>
-              Choose a day for {formatRecipeHeading(meal.title)}.
+              Choose where to add {formatRecipeHeading(meal.title)}.
             </DrawerDescription>
           </div>
           <DrawerClose asChild>
@@ -98,17 +94,17 @@ export function PlanThisMeal({
                 onClick={() => void planner.addDay()}
               >
                 {planner.isAddingDay ? (
-                  "Adding another day…"
+                  "Adding another meal…"
                 ) : (
                   <>
                     <Plus aria-hidden="true" className="size-4" />
-                    Add another day
+                    Add another meal
                   </>
                 )}
               </Button>
               <p className="max-w-80 text-center text-11 leading-4 text-graphite">
-                Adds {formatPlanDateWithWeekday(planner.nextPlanDate)} with{" "}
-                {formatRecipeHeading(meal.title)}.
+                Adds {formatRecipeHeading(meal.title)} and extends your plan by
+                one day.
               </p>
             </div>
           ) : null}
@@ -131,8 +127,6 @@ function PlanDayOption({
   disabled: boolean;
   onSelect: () => void;
 }) {
-  const { weekday, dayOfMonth } = formatPlanDayParts(day.date);
-  const dateLabel = formatPlanDateWithWeekday(day.date);
   const isThisMeal = day.planned?.catalogueMealId === mealId;
   const action = isThisMeal ? "Planned" : day.planned ? "Replace" : "Add";
 
@@ -144,34 +138,24 @@ function PlanDayOption({
       aria-busy={isPlanning || undefined}
       aria-label={
         isThisMeal
-          ? `Already planned for ${dateLabel}`
+          ? `${formatRecipeHeading(day.planned!.title)} is already in this slot`
           : day.planned
-            ? `Replace ${formatRecipeHeading(day.planned.title)} on ${dateLabel}`
-            : `Add to ${dateLabel}`
+            ? `Replace ${formatRecipeHeading(day.planned.title)}`
+            : "Add a meal"
       }
       className="h-auto min-h-16 w-full justify-start gap-3 rounded-none border-b border-border px-0 py-2.5 text-left font-normal hover:bg-transparent disabled:cursor-default disabled:opacity-100"
       onClick={onSelect}
     >
-      <span className="flex w-9 shrink-0 flex-col gap-0.75">
-        <span className="text-10 font-bold tracking-label text-graphite">
-          {weekday}
-        </span>
-        <span className="font-display text-18 font-semibold text-ink">
-          {dayOfMonth}
-        </span>
-      </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-display text-16 font-semibold tracking-card text-ink">
-          {day.planned
-            ? formatRecipeHeading(day.planned.title)
-            : "No meal planned"}
+          {day.planned ? formatRecipeHeading(day.planned.title) : "Add a meal"}
         </span>
         <span className="text-12 text-graphite">
           {isThisMeal
             ? "Already this meal"
             : day.planned
               ? "Replaces this meal"
-              : "Free day"}
+              : "Empty slot"}
         </span>
       </span>
       <span

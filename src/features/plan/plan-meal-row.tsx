@@ -53,8 +53,6 @@ export function PlanMealRow({
   if (row.kind === "empty") {
     return (
       <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
-        <PlanDayLabel weekday={row.weekday} dayOfMonth={row.dayOfMonth} />
-
         <div className="flex h-16.5 w-20.5 shrink-0 items-center justify-center rounded-sm bg-leaf-soft text-leaf">
           {readOnly ? (
             <Minus aria-hidden="true" className="size-6" strokeWidth={1.7} />
@@ -65,10 +63,10 @@ export function PlanMealRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="font-display text-16 font-semibold tracking-card text-ink">
-            No meal planned
+            {readOnly ? "Empty slot" : "Add a meal"}
           </p>
           <p className="text-11 text-graphite">
-            {readOnly ? "Left free" : "Leave it free or add a meal"}
+            {readOnly ? "Empty slot" : "Choose a meal whenever you’re ready"}
           </p>
         </div>
 
@@ -171,8 +169,6 @@ function PlannedMealRow({
 
   return (
     <div className="flex min-h-21.5 items-center gap-2.5 border-b border-border py-2.5">
-      <PlanDayLabel weekday={row.weekday} dayOfMonth={row.dayOfMonth} />
-
       {recipeHref ? (
         <Link
           href={recipeHref}
@@ -454,24 +450,5 @@ function SwapPane({
         push(planMealDrawerViews.preview);
       }}
     />
-  );
-}
-
-function PlanDayLabel({
-  weekday,
-  dayOfMonth,
-}: {
-  weekday: string;
-  dayOfMonth: string;
-}) {
-  return (
-    <div className="flex w-9 shrink-0 flex-col gap-0.75">
-      <span className="text-10 font-bold tracking-label text-graphite">
-        {weekday}
-      </span>
-      <span className="font-display text-18 font-semibold text-ink">
-        {dayOfMonth}
-      </span>
-    </div>
   );
 }

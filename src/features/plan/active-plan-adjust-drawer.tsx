@@ -32,10 +32,7 @@ import {
   PLAN_DAY_OPTIONS,
   planDatesRemovedByShortening,
 } from "@/lib/domain/guest-draft";
-import {
-  countPlanDays,
-  formatPlanWeekdayLong,
-} from "@/lib/domain/plan-display";
+import { countPlanDays } from "@/lib/domain/plan-display";
 
 type ChangeScope = "this-plan" | "future";
 
@@ -222,12 +219,12 @@ export function ActivePlanAdjustDrawer({
           {removedDates.length > 0 ? (
             <div className="mb-2 rounded-sm bg-mist px-3 py-2 text-13 text-ink">
               <p className="font-medium">
-                This will remove {formatRemovedDates(removedDates)} from this
-                plan.
+                This will shorten your plan by {removedDates.length}{" "}
+                {removedDates.length === 1 ? "slot" : "slots"}.
               </p>
               <p className="mt-0.5 text-12 leading-4.5 text-graphite">
-                Meals on those dates move into earlier free days where possible;
-                any that cannot fit will be removed.
+                Meals fill empty slots where possible; any that cannot fit will
+                be removed.
               </p>
             </div>
           ) : null}
@@ -339,10 +336,4 @@ function formatPlanStartDate(date: string) {
     month: "short",
     timeZone: "UTC",
   });
-}
-
-function formatRemovedDates(dates: readonly string[]) {
-  const labels = dates.map(formatPlanWeekdayLong);
-  if (labels.length === 1) return labels[0];
-  return `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
 }

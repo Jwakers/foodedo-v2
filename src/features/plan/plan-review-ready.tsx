@@ -11,11 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useGuestPlanReviewDockEffect } from "@/features/plan/guest-plan-review-chrome";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
 import { SavePlanDrawer } from "@/features/plan/save-plan-drawer";
-import {
-  addCalendarDays,
-  formatPlanDateWithWeekday,
-  type GuestPlanMealRow,
-} from "@/lib/domain/plan-display";
+import { type GuestPlanMealRow } from "@/lib/domain/plan-display";
 
 export function PlanReviewReady({
   mode,
@@ -60,10 +56,6 @@ export function PlanReviewReady({
   // Closing the drawer for Clerk must not clear the pending claim key.
   const preserveClaimOnCloseRef = useRef(false);
   const canAddDay = mode === "standard" && rows.length < 7;
-  const nextPlanDate =
-    canAddDay && rows.length > 0
-      ? addCalendarDays(rows[rows.length - 1]!.date, 1)
-      : null;
 
   useGuestPlanReviewDockEffect(isLoaded && !isSignedIn);
 
@@ -129,13 +121,14 @@ export function PlanReviewReady({
             : "Your week is ready"}
         </h1>
         <p className="text-14 font-medium text-graphite">{summary}</p>
+        <p className="text-13 text-graphite">Cook these meals in any order.</p>
       </div>
 
       {mode === "replan" ? (
         <p className="mt-4 rounded-sm bg-mist px-3 py-2.5 text-13 leading-5 text-graphite">
-          Your dates, servings and free days stay the same. Saving replaces the
-          planned meals and updates the linked shopping list. Extras and checks
-          on ingredients still needed stay.
+          Your date range, servings and empty slots stay the same. Saving
+          replaces the planned meals and updates the linked shopping list.
+          Extras and checks on ingredients still needed stay.
         </p>
       ) : null}
 
@@ -163,7 +156,7 @@ export function PlanReviewReady({
         ))}
       </ul>
 
-      {nextPlanDate ? (
+      {canAddDay ? (
         <div className="flex flex-col items-center gap-1.5 border-b border-border py-4">
           <Button
             variant="secondary"
@@ -180,24 +173,23 @@ export function PlanReviewReady({
                     error,
                   );
                   toast.error(
-                    "Foodedo couldn’t add another day. Check storage access and try again.",
+                    "Foodedo couldn’t add another meal. Check storage access and try again.",
                   );
                 }
               })();
             }}
           >
             {isAddingDay ? (
-              "Adding another day…"
+              "Adding another meal…"
             ) : (
               <>
                 <Plus aria-hidden="true" className="size-4" />
-                Add another day
+                Add another meal
               </>
             )}
           </Button>
           <p className="max-w-80 text-center text-11 leading-4 text-graphite">
-            Adds {formatPlanDateWithWeekday(nextPlanDate)} with a meal chosen
-            for you.
+            Adds a meal chosen for you and extends your plan by one day.
           </p>
         </div>
       ) : null}

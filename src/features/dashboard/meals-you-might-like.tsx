@@ -44,7 +44,7 @@ function DiscoveryForSpace({
   const library = useCatalogueRecipeLibrary();
   const client = useConvex();
   const [day] = useState(todayPlanDate);
-  const localPlan = useLocalPlanExclusions(!hasSavedPlan, spaceKey, day);
+  const localPlan = useLocalPlanExclusions(!hasSavedPlan, spaceKey);
   const [result, setResult] = useState<
     | { status: "loading" }
     | { status: "ready"; meals: CatalogueMealSummary[] }

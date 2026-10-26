@@ -24,20 +24,14 @@ export function nextPlanDay({
   return null;
 }
 
-/**
- * Days a recipe can still be planned onto: every date in the plan window from
- * today onwards, with whatever is already planned there. Free days have no
- * slot, so the window comes from the plan's dates rather than its slots.
- */
-export function upcomingPlanDays({
+/** All slots in the plan, independent of the current date. */
+export function planMealOptions({
   startDate,
   endDate,
-  today,
   slots,
 }: {
   startDate: string;
   endDate: string;
-  today: string;
   slots: ReadonlyArray<{
     date: string;
     catalogueMealId: string | null;
@@ -50,7 +44,6 @@ export function upcomingPlanDays({
   for (let offset = 0; offset < maximumPlanDays; offset += 1) {
     const date = addDaysToPlanDate(startDate, offset);
     if (date > endDate) break;
-    if (date < today) continue;
     const slot = slotsByDate.get(date);
     days.push({
       date,

@@ -22,12 +22,8 @@ import {
 } from "@/features/plan/use-guest-plan-draft";
 import { addDaysToPlanDate, type GuestDraftV1 } from "@/lib/domain/guest-draft";
 import {
-  formatPlanDateWithWeekday,
-  todayPlanDate,
-} from "@/lib/domain/plan-display";
-import {
   nextPlanDay,
-  upcomingPlanDays,
+  planMealOptions,
   type PlanThisMealDay,
 } from "@/lib/domain/plan-this-meal";
 import {
@@ -38,21 +34,18 @@ import {
 type PlannerTarget =
   | {
       kind: "saved";
-      today: string;
       mealPlanId: Id<"mealPlans">;
       expectedUpdatedAt: number;
     }
   | {
       kind: "draft";
-      today: string;
       draft: GuestDraftV1;
       reviewPath: "/week" | "/week/new";
     };
 
 /**
- * Recipe detail's "Plan this meal": a saved active plan wins when it still has
- * upcoming days, then a local draft; otherwise a new week starts with this
- * meal on its first day, matching which plan the Week tab shows.
+ * Recipe detail uses the saved active plan, then a local draft, regardless of
+ * their date ranges. Without either, start setup with this meal selected.
  */
 export function usePlanThisMeal({
   catalogueMealId,
@@ -106,9 +99,9 @@ export function usePlanThisMeal({
 
   let days: PlanThisMealDay[] = [];
   if (target?.kind === "saved" && currentPlan) {
-    days = savedPlanDays(currentPlan, target.today);
+    days = savedPlanDays(currentPlan);
   } else if (target?.kind === "draft") {
-    days = draftPlanDays(target.draft, target.today, mealsByReference);
+    days = draftPlanDays(target.draft, mealsByReference);
   }
   const nextPlanDate =
     target?.kind === "saved" && currentPlan
@@ -134,7 +127,7 @@ export function usePlanThisMeal({
     switch (status) {
       case "plan_changed":
         toast.info("Your plan just changed.", {
-          description: "Check the days and try again.",
+          description: "Check the meals and try again.",
         });
         return;
       case "no_active_plan":
@@ -142,7 +135,7 @@ export function usePlanThisMeal({
         setTarget(null);
         return;
       case "plan_full":
-        toast.info("This plan already has seven days.");
+        toast.info("This plan already has seven meal slots.");
         return;
       case "plan_unavailable":
         toast.error("This plan can’t be updated right now.", {
@@ -169,7 +162,6 @@ export function usePlanThisMeal({
       return;
     }
 
-    const today = todayPlanDate();
     const hasSavedPlan = isAuthenticated && Boolean(currentPlan);
     const reviewPath = hasSavedPlan ? "/week/new" : "/week";
     if (currentPlan?.hasActivePlanConflict) {
@@ -180,18 +172,17 @@ export function usePlanThisMeal({
     }
     setPending({ kind: "opening" });
     try {
-      if (currentPlan && savedPlanDays(currentPlan, today).length > 0) {
+      if (currentPlan) {
         setTarget({
           kind: "saved",
-          today,
           mealPlanId: currentPlan._id,
           expectedUpdatedAt: currentPlan.updatedAt,
         });
         return;
       }
       const draft = await readCurrentGuestPlanDraft(guestCatalogue);
-      if (draft && draftPlanDays(draft, today, mealsByReference).length > 0) {
-        setTarget({ kind: "draft", today, draft, reviewPath });
+      if (draft) {
+        setTarget({ kind: "draft", draft, reviewPath });
         return;
       }
       startWeek();
@@ -246,8 +237,8 @@ export function usePlanThisMeal({
       }
 
       setTarget(null);
-      toast.success(`Planned for ${formatPlanDateWithWeekday(date)}`, {
-        action: { label: "View week", onClick: () => router.push(viewPath) },
+      toast.success("Meal added to your plan", {
+        action: { label: "View plan", onClick: () => router.push(viewPath) },
       });
     } catch (error) {
       console.error("Failed to plan this meal.", error);
@@ -269,7 +260,6 @@ export function usePlanThisMeal({
     setPending({ kind: "adding" });
     try {
       let viewPath: "/week" | "/week/new" = "/week";
-      let plannedDate = nextPlanDate;
       if (target.kind === "saved") {
         if (!currentPlan) {
           toast.info("You no longer have an active plan.");
@@ -287,24 +277,22 @@ export function usePlanThisMeal({
           handleSavedPlanFailure(result.status);
           return;
         }
-        plannedDate = result.date;
       } else {
         if (guestCatalogue === null) {
           throw new Error("The catalogue is unavailable.");
         }
-        const updatedDraft = await extendCurrentGuestPlanDraft({
+        await extendCurrentGuestPlanDraft({
           catalogue: guestCatalogue,
           catalogueMealId,
           catalogueVersion,
         });
         await refreshStoredReferences();
-        plannedDate = updatedDraft.mealChoices.at(-1)!.date;
         viewPath = target.reviewPath;
       }
 
       setTarget(null);
-      toast.success(`Planned for ${formatPlanDateWithWeekday(plannedDate)}`, {
-        action: { label: "View week", onClick: () => router.push(viewPath) },
+      toast.success("Meal added to your plan", {
+        action: { label: "View plan", onClick: () => router.push(viewPath) },
       });
     } catch (error) {
       console.error("Failed to add a day for this meal.", error);
@@ -337,35 +325,29 @@ export function usePlanThisMeal({
   };
 }
 
-function savedPlanDays(
-  plan: {
-    startDate: string;
-    endDate: string;
-    mealSlots: ReadonlyArray<{
-      date: string;
-      catalogueMealId: string | null;
-      title: string;
-    }>;
-  },
-  today: string,
-) {
-  return upcomingPlanDays({
+function savedPlanDays(plan: {
+  startDate: string;
+  endDate: string;
+  mealSlots: ReadonlyArray<{
+    date: string;
+    catalogueMealId: string | null;
+    title: string;
+  }>;
+}) {
+  return planMealOptions({
     startDate: plan.startDate,
     endDate: plan.endDate,
-    today,
     slots: plan.mealSlots,
   });
 }
 
 function draftPlanDays(
   draft: GuestDraftV1,
-  today: string,
   mealsByReference: ReadonlyMap<string, CatalogueMealSummary>,
 ) {
-  return upcomingPlanDays({
+  return planMealOptions({
     startDate: draft.planStartDate,
     endDate: addDaysToPlanDate(draft.planStartDate, draft.planDays - 1),
-    today,
     slots: draft.mealChoices.flatMap((choice) =>
       choice.catalogueMealId === null || choice.catalogueVersion === null
         ? []

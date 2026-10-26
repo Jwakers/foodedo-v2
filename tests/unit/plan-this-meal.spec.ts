@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   nextPlanDay,
-  upcomingPlanDays,
+  planMealOptions,
 } from "../../src/lib/domain/plan-this-meal";
 
 test("returns the next date only for plans shorter than seven days", () => {
@@ -14,12 +14,11 @@ test("returns the next date only for plans shorter than seven days", () => {
   ).toBeNull();
 });
 
-test("lists every plan date from today, including free days", () => {
+test("lists every slot, including elapsed and empty slots", () => {
   expect(
-    upcomingPlanDays({
+    planMealOptions({
       startDate: "2026-09-27",
       endDate: "2026-10-01",
-      today: "2026-09-29",
       slots: [
         { date: "2026-09-27", catalogueMealId: "meal-a", title: "Meal A" },
         { date: "2026-09-29", catalogueMealId: "meal-b", title: "Meal B" },
@@ -27,6 +26,11 @@ test("lists every plan date from today, including free days", () => {
       ],
     }),
   ).toEqual([
+    {
+      date: "2026-09-27",
+      planned: { catalogueMealId: "meal-a", title: "Meal A" },
+    },
+    { date: "2026-09-28", planned: null },
     {
       date: "2026-09-29",
       planned: { catalogueMealId: "meal-b", title: "Meal B" },
@@ -39,13 +43,17 @@ test("lists every plan date from today, including free days", () => {
   ]);
 });
 
-test("returns no days once the whole plan is in the past", () => {
+test("retains all slots of a fully elapsed plan", () => {
   expect(
-    upcomingPlanDays({
+    planMealOptions({
       startDate: "2026-09-20",
       endDate: "2026-09-26",
-      today: "2026-09-29",
       slots: [],
     }),
-  ).toEqual([]);
+  ).toEqual(
+    Array.from({ length: 7 }, (_, i) => ({
+      date: `2026-09-${20 + i}`,
+      planned: null,
+    })),
+  );
 });

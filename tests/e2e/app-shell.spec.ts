@@ -156,7 +156,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
 
   await page.getByRole("button", { name: /Choose a recipe/ }).click();
   await expect(
-    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+    page.getByRole("heading", { name: "Swap this meal" }),
   ).toBeVisible();
   await expect(
     page.getByText("Choose a better fit for your week"),
@@ -179,7 +179,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
   await expect(
-    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+    page.getByRole("heading", { name: "Swap this meal" }),
   ).toBeVisible();
 
   const previewCandidate = page.getByRole("button", {
@@ -198,7 +198,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
   await expect(
-    page.getByRole("heading", { name: /Swap .+’s meal/ }),
+    page.getByRole("heading", { name: "Swap this meal" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Select Beef Stroganoff" }).click();
@@ -223,7 +223,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
     page.getByRole("button", { name: "Remove from plan" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Remove from plan" }).click();
-  await expect(page.getByText("No meal planned")).toHaveCount(1);
+  await expect(page.getByText("Add a meal", { exact: true })).toHaveCount(1);
   await expect(page.getByText(/6 planned dinners/)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
     6,
@@ -243,12 +243,12 @@ test("enters the guest app from welcome and keeps skip across navigation", async
 
   await page.getByRole("button", { name: "Choose a recipe" }).click();
   await expect(
-    page.getByRole("heading", { name: /^Choose .+’s meal$/ }),
+    page.getByRole("heading", { name: "Choose a meal" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Select Beef Stroganoff" }).click();
   await page.getByRole("button", { name: "Add Beef Stroganoff" }).click();
 
-  await expect(page.getByText("No meal planned")).toHaveCount(0);
+  await expect(page.getByText("Add a meal", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/7 planned dinners/)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
     7,
@@ -506,21 +506,23 @@ test("plans a recipe from its detail page as a guest", async ({ page }) => {
     page.getByRole("heading", { name: "Plan this meal" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Add another day" }),
+    page.getByRole("button", { name: "Add another meal" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: /^Already planned for / }),
+    page.getByRole("button", { name: /is already in this slot$/ }),
   ).toBeDisabled();
   await page
-    .getByRole("button", { name: /^Replace .+ on / })
+    .getByRole("button", { name: /^Replace / })
     .first()
     .click();
-  await expect(page.getByText(/^Planned for /)).toBeVisible();
+  await expect(
+    page.getByText("Meal added to your plan", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Plan this meal" }),
   ).toHaveCount(0);
 
-  await page.getByRole("button", { name: "View week" }).click();
+  await page.getByRole("button", { name: "View plan" }).click();
   await expect(
     page.getByRole("button", {
       name: `Actions for ${recipeTitle}`,

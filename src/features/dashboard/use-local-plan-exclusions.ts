@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { readStoredGuestPlanDraft } from "@/features/plan/guest-plan-draft";
-import { addDaysToPlanDate } from "@/lib/domain/guest-draft";
 import { createIndexedDbGuestDraftStore } from "@/lib/platform/guest-draft-store";
 
 type LocalPlanExclusions =
@@ -12,11 +11,7 @@ type LocalPlanExclusions =
 const noLocalExclusions: LocalPlanExclusions = { status: "ready", mealIds: [] };
 
 /** The server cannot read IndexedDB. Send it only this draft's catalogue IDs. */
-export function useLocalPlanExclusions(
-  enabled: boolean,
-  spaceKey: string,
-  day: string,
-) {
+export function useLocalPlanExclusions(enabled: boolean, spaceKey: string) {
   const [state, setState] = useState<LocalPlanExclusions>({
     status: "loading",
   });
@@ -29,12 +24,9 @@ export function useLocalPlanExclusions(
     void readStoredGuestPlanDraft(store)
       .then((draft) => {
         if (cancelled) return;
-        const expired =
-          draft &&
-          addDaysToPlanDate(draft.planStartDate, draft.planDays - 1) < day;
         const completed = draft?.claim?.completedAt !== undefined;
         const mealIds =
-          !draft || completed || expired
+          !draft || completed
             ? []
             : draft.mealChoices.flatMap((choice) =>
                 choice.catalogueMealId ? [choice.catalogueMealId] : [],
@@ -48,6 +40,6 @@ export function useLocalPlanExclusions(
     return () => {
       cancelled = true;
     };
-  }, [enabled, spaceKey, day]);
+  }, [enabled, spaceKey]);
   return enabled ? state : noLocalExclusions;
 }

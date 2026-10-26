@@ -12,8 +12,6 @@ import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { AccountConnectionError } from "@/components/account-connection-error";
 import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import {
-  todayPlanDate,
-  formatPlanWeekdayLong,
   formatPlanDateRange,
   formatMealDurationLabel,
 } from "@/lib/domain/plan-display";
@@ -28,14 +26,13 @@ export function ReplanReview() {
   const sourceId = params.get("plan");
   const revision = Number(params.get("revision"));
   const origin = params.get("space");
-  const [fromDate] = useState(todayPlanDate);
   const [variant] = useState(1);
   const [busy, setBusy] = useState(false);
   const [changed, setChanged] = useState(false);
   const proposal = useQuery(
     api.mealPlans.getRegenerationProposal,
     isAuthenticated && ready && origin === spaceKey
-      ? { ...spaceArgs, fromDate, variant }
+      ? { ...spaceArgs, variant }
       : "skip",
   );
   const current = useQuery(
@@ -87,14 +84,12 @@ export function ReplanReview() {
     return (
       <main className="mx-auto flex max-w-175 flex-col gap-4 px-page-inline py-7">
         <h1 className="font-display text-30 font-semibold">
-          No remaining meals to replan
+          Your plan couldn’t be replanned
         </h1>
         <ButtonLink href="/week">Return to Week</ButtonLink>
       </main>
     );
   const reviewed = proposal;
-  const past = reviewed.mealSlots.filter((slot) => slot.date < fromDate);
-  const remaining = reviewed.mealSlots.filter((slot) => slot.date >= fromDate);
   async function applyReviewed() {
     if (busy) return;
     setBusy(true);
@@ -103,7 +98,6 @@ export function ReplanReview() {
         ...spaceArgs,
         sourcePlanId: reviewed.sourcePlanId,
         sourceUpdatedAt: reviewed.sourceUpdatedAt,
-        fromDate: reviewed.fromDate,
         variant: reviewed.variant,
       });
       if (result.status !== "applied") {
@@ -149,20 +143,14 @@ export function ReplanReview() {
           {isHousehold ? "Household" : "Private"} week
         </p>
         <h1 className="font-display text-30 font-semibold tracking-title">
-          {past.length ? "Review remaining meals" : "Review your new week"}
+          Review your new meals
         </h1>
         <p className="text-15 leading-relaxed text-graphite">
           {formatPlanDateRange(current)} · serves {current.servings}
         </p>
       </div>
-      {past.length ? (
-        <p className="rounded-sm bg-mist p-3 text-14 text-graphite">
-          {past.length} earlier{" "}
-          {past.length === 1 ? "meal stays" : "meals stay"} unchanged.
-        </p>
-      ) : null}
       <ul className="border-t border-border">
-        {remaining.map((slot) => {
+        {reviewed.mealSlots.map((slot) => {
           const savedSlot = current.mealSlots.find(
             (meal) => meal.date === slot.date,
           );
@@ -182,17 +170,6 @@ export function ReplanReview() {
               key={slot.date}
               className="flex items-center gap-2.5 border-b border-border py-3"
             >
-              <div
-                className="flex w-9 shrink-0 flex-col gap-0.75"
-                aria-label={formatPlanWeekdayLong(slot.date)}
-              >
-                <span className="text-10 font-bold tracking-label text-graphite">
-                  {formatPlanWeekdayLong(slot.date).slice(0, 3).toUpperCase()}
-                </span>
-                <span className="font-display text-18 font-semibold text-ink">
-                  {Number(slot.date.slice(-2))}
-                </span>
-              </div>
               <div className="relative flex h-18 w-20.5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-mist">
                 {imageSrc ? (
                   <Image
@@ -245,11 +222,9 @@ export function ReplanReview() {
         >
           {busy
             ? "Updating…"
-            : past.length
-              ? "Update remaining meals"
-              : isHousehold
-                ? "Replace shared week"
-                : "Replace private week"}
+            : isHousehold
+              ? "Replace shared week"
+              : "Replace private week"}
         </Button>
         <ButtonLink href="/week" variant="secondary">
           Keep current week

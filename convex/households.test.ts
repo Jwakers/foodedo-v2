@@ -351,7 +351,6 @@ test("shared review rejects stale writes and preserves shopping state on replace
   await bob.mutation(api.households.acceptInvite, { token });
   const proposal = await alice.query(api.mealPlans.getRegenerationProposal, {
     householdId,
-    fromDate: "2026-11-01",
     variant: 1,
   });
   if (proposal.status !== "ready") throw new Error("No review");
@@ -370,7 +369,6 @@ test("shared review rejects stale writes and preserves shopping state on replace
         householdId,
         sourcePlanId: proposal.sourcePlanId,
         sourceUpdatedAt: proposal.sourceUpdatedAt,
-        fromDate: "2026-11-01",
         variant: 1,
       })
     ).status,
@@ -393,7 +391,6 @@ test("shared review rejects stale writes and preserves shopping state on replace
   ).rejects.toThrow();
   const latest = await alice.query(api.mealPlans.getRegenerationProposal, {
     householdId,
-    fromDate: "2026-11-01",
     variant: 1,
   });
   if (latest.status !== "ready") throw new Error("No review");
@@ -401,7 +398,6 @@ test("shared review rejects stale writes and preserves shopping state on replace
     householdId,
     sourcePlanId: latest.sourcePlanId,
     sourceUpdatedAt: latest.sourceUpdatedAt,
-    fromDate: "2026-11-01",
     variant: 1,
   });
   expect(result.status).toBe("applied");

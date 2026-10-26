@@ -184,7 +184,7 @@ test("only discovery has hearts, and it follows Latest Recipes on the active das
     region(page).getByRole("button", { name: /^Save / }),
   ).toHaveCount(6);
   const latest = page.getByRole("region", { name: "Latest recipes" });
-  const rest = page.getByRole("region", { name: "The rest of your week" });
+  const rest = page.getByRole("region", { name: "Meals in your plan" });
   await expect(latest.getByRole("button", { name: /Save / })).toHaveCount(0);
   await expect(rest.getByRole("button", { name: /Save / })).toHaveCount(0);
   expect(
@@ -241,14 +241,14 @@ test("guest discovery is stable across visits during the day and rotates the nex
   expect(await destinations(page)).not.toEqual(first);
 });
 
-test("guest discovery excludes the current local draft without changing it", async ({
+test("guest discovery excludes an elapsed local draft without changing it", async ({
   page,
 }) => {
   await page.clock.setFixedTime(new Date("2030-11-01T12:00:00Z"));
   await page.goto("https://discovery.fixture/?role=guest&empty");
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
   const draft = createGuestDraft({
-    planStartDate: "2030-11-01",
+    planStartDate: "2030-10-01",
     planDays: 3,
     now: new Date("2030-11-01T12:00:00Z").getTime(),
     catalogueMeals: [0, 1, 2].map((index) => ({

@@ -139,6 +139,9 @@ export function PlanSetupForm({
         </>
       }
     >
+      <p className="mb-3 text-13 text-graphite">
+        Your date range is a guide. Cook the meals in any order.
+      </p>
       <div className="mb-2 flex justify-end">
         <Button
           variant="inline"

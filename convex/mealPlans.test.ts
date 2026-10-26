@@ -909,3 +909,64 @@ test("existing plans suppress the first-save shopping introduction", async () =>
       ?.firstSavedPlanId,
   ).toBeUndefined();
 });
+
+test("whole-plan regeneration preserves edge gaps, elapsed meals, range and undo", async () => {
+  const t = createTestContext();
+  const { asUser } = await authenticateTestUser(t);
+  const choices = guestMealChoices().map((choice, index) =>
+    index === 0 || index === 6
+      ? { ...choice, catalogueMealId: null, catalogueVersion: null }
+      : choice,
+  );
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: choices,
+  });
+  const before = await asUser.query(api.mealPlans.getCurrent, {});
+  if (!before) throw new Error("Missing plan");
+  const proposal = await asUser.query(api.mealPlans.getRegenerationProposal, {
+    variant: 1,
+  });
+  if (proposal.status !== "ready") throw new Error("Missing proposal");
+  expect(proposal.mealSlots.map((slot) => slot.date)).toEqual(
+    before.mealSlots.map((slot) => slot.date),
+  );
+  expect(proposal.mealSlots.every((slot) => slot.isChanged)).toBe(true);
+  const result = await asUser.mutation(
+    api.mealPlans.applyRegenerationProposal,
+    {
+      sourcePlanId: proposal.sourcePlanId,
+      sourceUpdatedAt: proposal.sourceUpdatedAt,
+      variant: proposal.variant,
+    },
+  );
+  if (result.status !== "applied") throw new Error("Not applied");
+  const after = await asUser.query(api.mealPlans.getCurrent, {});
+  expect(after).toMatchObject({
+    startDate: before.startDate,
+    endDate: before.endDate,
+    servings: 4,
+  });
+  expect(after!.mealSlots.map((slot) => slot.date)).toEqual(
+    before.mealSlots.map((slot) => slot.date),
+  );
+  const shopping = await asUser.query(api.shoppingLists.getCurrent, {});
+  if (shopping.status !== "ready") throw new Error("Missing list");
+  expect(shopping.list).toMatchObject({
+    startDate: before.startDate,
+    endDate: before.endDate,
+  });
+  expect(
+    await asUser.mutation(api.mealPlans.undoPlanReplacement, {
+      currentMealPlanId: result.mealPlanId,
+      previousMealPlanId: result.previousMealPlanId,
+      currentUpdatedAt: result.currentUpdatedAt,
+    }),
+  ).toEqual({ status: "restored" });
+  expect((await asUser.query(api.mealPlans.getCurrent, {}))?._id).toBe(
+    before._id,
+  );
+});

@@ -61,10 +61,28 @@ test.beforeEach(async ({ page }) => {
         });
       else if (new URL(route.request().url()).pathname === "/app.css")
         await route.fulfill({ contentType: "text/css", body: stylesheet });
+      else if (new URL(route.request().url()).pathname.startsWith("/images/"))
+        await route.fulfill({
+          path: path.resolve(
+            "public",
+            new URL(route.request().url()).pathname.slice(1),
+          ),
+        });
+      else if (
+        new URL(route.request().url()).pathname.startsWith(
+          "/_next/static/media/",
+        )
+      )
+        await route.fulfill({
+          path: path.resolve(
+            ".next/static/media",
+            path.basename(new URL(route.request().url()).pathname),
+          ),
+        });
       else
         await route.fulfill({
           contentType: "text/html",
-          body: '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--font-dm-sans:Arial;--font-fraunces:Georgia}</style></head><body><div id="root"></div><script src="/app.js"></script></body></html>',
+          body: '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--font-dm-sans:"DM Sans",Arial;--font-fraunces:Fraunces,Georgia}body{font-family:var(--font-dm-sans)}</style></head><body><div id="root"></div><script src="/app.js"></script></body></html>',
         });
     },
   );
@@ -174,7 +192,7 @@ test("replan immediately generates with the existing settings without a setup st
     .getByRole("button", { name: "Replan this week", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Review your new week", exact: true }),
+    page.getByRole("heading", { name: "Review your new meals", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Replan this week", exact: true }),
@@ -209,7 +227,7 @@ for (const width of [320, 390, 1280]) {
       .getByRole("button", { name: "Replan this week", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Review your new week", exact: true }),
+      page.getByRole("heading", { name: "Review your new meals", exact: true }),
     ).toBeVisible();
     const image = page.locator("main li img").first();
     await expect(image).toBeVisible();
@@ -772,4 +790,624 @@ test("guest dismissals transfer once and do not leak into the next account", asy
       sessionStorage.getItem("fixture:retired:fixture-bob"),
     ),
   ).toBeNull();
+});
+
+for (const now of ["2030-10-20", "2030-11-01", "2030-11-02", "2030-12-01"]) {
+  test(`plan meals stay editable and visible at ${now}`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date(`${now}T12:00:00Z`));
+    await page.goto("https://household.fixture/?screen=week");
+    await expect(
+      page.getByRole("button", { name: "Actions for Family tomato pasta" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("1 planned dinner", { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.locator("main li").getByText(/FRI|SAT|SUN/, { exact: true }),
+    ).toHaveCount(0);
+    await page.goto(
+      "https://household.fixture/?screen=dashboard&meals=multiple",
+    );
+    await expect(
+      page.getByRole("heading", { name: "What sounds good?", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Family tomato pasta", exact: true }),
+    ).toBeVisible();
+    const carousel = page.getByRole("region", {
+      name: "Meals in your plan",
+      exact: true,
+    });
+    await expect(
+      carousel.getByRole("button", {
+        name: "Another plan dinner",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      carousel.getByRole("button", {
+        name: "Family tomato pasta",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      carousel.getByRole("link", { name: "View plan" }),
+    ).toHaveAttribute("href", "/week");
+    await page.clock.setFixedTime(
+      new Date(new Date(`${now}T12:00:00Z`).getTime() + 86_400_000),
+    );
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Family tomato pasta", exact: true }),
+    ).toBeVisible();
+  });
+}
+
+test("dashboard skips unavailable recipes without removing the plan slot", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2030-12-01T12:00:00Z"));
+  await page.goto(
+    "https://household.fixture/?screen=dashboard&meals=multiple&unavailable=first",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Another plan dinner", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Built from 2 planned meals")).toBeVisible();
+});
+
+for (const space of ["household", "private"]) {
+  test(`recipe planner edits an elapsed ${space} plan without date choices`, async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date("2030-12-01T12:00:00Z"));
+    if (space === "private")
+      await page.addInitScript(() =>
+        localStorage.setItem(
+          "foodedo:space:fixture-alice:household-one",
+          "private",
+        ),
+      );
+    await page.goto("https://household.fixture/?screen=planner");
+    await page
+      .getByRole("button", { name: "Plan this meal", exact: true })
+      .click();
+    const planner = page.getByRole("dialog", { name: "Plan this meal" });
+    await expect(planner).toBeVisible();
+    await expect(
+      planner.getByText(/Friday|Saturday|Sunday|2030|November/),
+    ).toHaveCount(0);
+    await expect(
+      planner.getByRole("button", { name: "Add a meal", exact: true }),
+    ).toHaveCount(2);
+    await planner
+      .getByRole("button", { name: "Add a meal", exact: true })
+      .first()
+      .click();
+    await expect(planner).toBeHidden();
+    const planned = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("fixture:planned-meal")!),
+    );
+    expect(planned.householdId).toBe(
+      space === "household" ? "household-one" : undefined,
+    );
+    expect(planned).toMatchObject({
+      date: "2030-11-02",
+      catalogueMealId: "private-meal",
+    });
+  });
+}
+
+test("elapsed plan and its date-free recipe picker fit on mobile", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date("2030-12-01T12:00:00Z"));
+  await page.goto("https://household.fixture/?screen=week");
+  await expect(
+    page.getByRole("button", { name: /Start next plan/ }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("flexible-plan-mobile.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Actions for Family tomato pasta" })
+    .click();
+  await page.getByRole("button", { name: /^Choose a recipe/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Swap this meal", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.getByRole("dialog").evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+  });
+  await page.screenshot({
+    path: testInfo.outputPath("flexible-picker-mobile.png"),
+    fullPage: true,
+  });
+});
+
+test("shopping sources show the recipe without assigning a weekday", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2030-12-01T12:00:00Z"));
+  await page.goto("https://household.fixture/?screen=shop");
+  await page.getByRole("button", { name: "View details for Parsley" }).click();
+  const sources = page.getByRole("dialog", { name: "Parsley", exact: true });
+  await expect(
+    sources.getByText("Family tomato pasta", { exact: true }),
+  ).toBeVisible();
+  await expect(sources.getByText(/Friday|Saturday|Sunday/)).toHaveCount(0);
+});
+
+test("archived plans retain meals and date ranges without offering edits", async ({
+  page,
+}) => {
+  await page.goto("https://household.fixture/?screen=week&archived=true");
+  await expect(
+    page.getByText("1 Nov–3 Nov · archived", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "View Family tomato pasta recipe" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Actions for / })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("button", { name: "Add meal", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Empty slot", { exact: true }).first(),
+  ).toBeVisible();
+});
+
+test.describe("Home meal selector", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const first = "Creamy Beef Stroganoff with Mushrooms";
+  const second = "Crispy Fish Tacos with Crunchy Lime Slaw";
+  const fourth =
+    "Pan-Fried Mackerel with Lemon, Fresh Herbs and Buttered New Potatoes";
+  const selector = (page: import("@playwright/test").Page) =>
+    page.getByRole("region", { name: "Meals in your plan", exact: true });
+
+  test("real titles, both links and metadata update as one selection", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+    const region = selector(page);
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toBeVisible();
+    await expect(
+      region.getByRole("button", { name: "Previous meal", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      region.getByRole("button", { name: first, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await region.getByRole("button", { name: second, exact: true }).click();
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await expect(region.getByText("26 min", { exact: true })).toBeVisible();
+    await expect(region.getByText("Serves 4", { exact: true })).toBeVisible();
+    await expect(
+      region.getByRole("link", { name: "Cook this meal", exact: true }),
+    ).toHaveAttribute(
+      "href",
+      /recipeId=shared-selector-recipe-1&servings=4&planServings=4$/,
+    );
+    await expect(
+      region.getByRole("link", { name: "View recipe", exact: true }),
+    ).toHaveAttribute(
+      "href",
+      /\/recipes\/view\?recipeId=shared-selector-recipe-1&servings=4&planServings=4$/,
+    );
+    await expect(region.getByRole("button", { pressed: true })).toHaveCount(1);
+    await expect(
+      page.getByText("Shopping list ready", { exact: true }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("meal-selector-default-mobile.png"),
+      fullPage: true,
+    });
+  });
+
+  test("one meal and missing metadata have no empty carousel controls", async ({
+    page,
+  }) => {
+    await page.goto(
+      "https://household.fixture/?screen=dashboard&selector=1&description=missing&images=missing&timing=missing",
+    );
+    const region = selector(page);
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toBeVisible();
+    await expect(region.getByRole("button")).toHaveCount(0);
+    await expect(region.getByRole("list")).toHaveCount(0);
+    await expect(region.getByRole("img")).toHaveCount(0);
+    await expect(region.getByText("Serves 4", { exact: true })).toBeVisible();
+    await expect(
+      region.getByRole("link", { name: "Cook this meal", exact: true }),
+    ).toBeVisible();
+    await expect(
+      region.getByRole("link", { name: "View recipe", exact: true }),
+    ).toBeVisible();
+  });
+
+  test("two meals keep full titles and catalogue references", async ({
+    page,
+  }) => {
+    await page.goto(
+      "https://household.fixture/?screen=dashboard&selector=2&source=catalogue",
+    );
+    const region = selector(page);
+    await expect(region.getByRole("listitem")).toHaveCount(2);
+    await region
+      .getByRole("button", { name: "Next meal", exact: true })
+      .click();
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await expect(
+      region.getByRole("button", { name: "Next meal", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      region.getByRole("link", { name: "View recipe", exact: true }),
+    ).toHaveAttribute(
+      "href",
+      /slug=selector-meal-1&servings=4&catalogueMealId=selector-meal-1&catalogueVersion=2$/,
+    );
+    await expect(
+      region.getByRole("link", { name: "Cook this meal", exact: true }),
+    ).toHaveAttribute(
+      "href",
+      /slug=selector-meal-1&servings=4&catalogueMealId=selector-meal-1&catalogueVersion=2$/,
+    );
+  });
+
+  test("long plans scroll thumbnails without changing selection and keep the selected item visible", async ({
+    page,
+  }, testInfo) => {
+    await page.goto(
+      "https://household.fixture/?screen=dashboard&selector=8&description=long",
+    );
+    const region = selector(page);
+    const strip = region.getByRole("list", { name: "Choose a planned meal" });
+    expect(
+      await strip.evaluate((node) => node.scrollWidth > node.clientWidth),
+    ).toBe(true);
+    await strip.evaluate((node) => {
+      node.scrollLeft = 400;
+    });
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toBeVisible();
+    const photo = region.locator('[aria-label="Meal photographs"]');
+    await photo.focus();
+    await photo.press("End");
+    await expect(
+      region.getByRole("heading", { name: fourth, exact: true }),
+    ).toBeVisible();
+    await expect(
+      region.getByRole("button", { name: "Next meal", exact: true }),
+    ).toBeDisabled();
+    const selected = region.getByRole("button", { pressed: true });
+    const viewport = await strip.boundingBox();
+    await expect
+      .poll(async () => {
+        const bounds = await selected.boundingBox();
+        return (
+          bounds!.x >= viewport!.x - 1 &&
+          bounds!.x + bounds!.width <= viewport!.x + viewport!.width + 1
+        );
+      })
+      .toBe(true);
+    expect(
+      await selected
+        .locator("span")
+        .last()
+        .evaluate((element) => element.getBoundingClientRect().height),
+    ).toBeLessThanOrEqual(36);
+    const description = region.getByText(/^Tender, golden ingredients/);
+    expect(
+      await description.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      ),
+    ).toBeLessThanOrEqual(40);
+    await page.screenshot({
+      path: testInfo.outputPath("meal-selector-long-plan-mobile.png"),
+      fullPage: true,
+    });
+  });
+
+  test("thumbnail keyboard choices and photo swiping are consistent", async ({
+    page,
+  }) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+    const region = selector(page);
+    const photo = region.locator('[aria-label="Meal photographs"]');
+    await expect(photo.locator(":scope > div")).toHaveAttribute(
+      "style",
+      /transform/,
+    );
+    const box = await photo.boundingBox();
+    const session = await page.context().newCDPSession(page);
+    const x = box!.x + box!.width * 0.8,
+      y = box!.y + box!.height * 0.3;
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x, y }],
+    });
+    for (let step = 1; step <= 8; step++)
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: x - step * box!.width * 0.09, y }],
+      });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await session.detach();
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toHaveCount(0);
+    await photo.press("Home");
+    const firstThumb = region.getByRole("button", { name: first, exact: true });
+    await firstThumb.focus();
+    await firstThumb.press("ArrowRight");
+    await expect(
+      region.getByRole("button", { name: second, exact: true }),
+    ).toBeFocused();
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+  });
+
+  test("mobile thumbnails bleed to the edges and bring choices forward without scrolling the page", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=8");
+    const region = selector(page);
+    const strip = region.getByRole("list", { name: "Choose a planned meal" });
+    const bounds = await strip.boundingBox();
+    expect(bounds!.x).toBe(0);
+    expect(bounds!.width).toBe(390);
+    const initialPageY = await page.evaluate(() => scrollY);
+    const thumbnails = strip.getByRole("button");
+    for (const index of [2, 3]) {
+      await thumbnails.nth(index).click();
+      await expect(thumbnails.nth(index)).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await expect
+        .poll(async () => (await thumbnails.nth(index).boundingBox())!.x)
+        .toBeCloseTo(20, 0);
+      expect(await page.evaluate(() => scrollY)).toBe(initialPageY);
+    }
+    await page.screenshot({
+      path: testInfo.outputPath("meal-selector-edge-bleed-mobile.png"),
+      fullPage: true,
+    });
+    await region.getByRole("group", { name: "Meal photographs" }).press("End");
+    await expect
+      .poll(() =>
+        strip.evaluate(
+          (node) => node.scrollWidth - node.clientWidth - node.scrollLeft,
+        ),
+      )
+      .toBeLessThan(1);
+    // At the end, keep the last few meals together instead of adding empty space.
+    expect((await thumbnails.last().boundingBox())!.x).toBeGreaterThan(20);
+  });
+
+  test("photo arrows slide between meals and respect reduced motion", async ({
+    page,
+  }) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+    const region = selector(page);
+    const photo = region.getByRole("group", { name: "Meal photographs" });
+    await expect(photo.locator(":scope > div")).toHaveAttribute(
+      "style",
+      /transform/,
+    );
+    const next = region.getByRole("button", { name: "Next meal", exact: true });
+    const movement = await next.evaluate(async (button) => {
+      const photo = document.querySelector('[aria-label="Meal photographs"]')!;
+      const slide = photo.firstElementChild!.firstElementChild!;
+      const start = slide.getBoundingClientRect().left;
+      (button as HTMLButtonElement).click();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      return {
+        distance: start - slide.getBoundingClientRect().left,
+        width: photo.clientWidth,
+      };
+    });
+    expect(movement.distance).toBeGreaterThan(0);
+    expect(movement.distance).toBeLessThan(movement.width);
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        photo
+          .locator(":scope > div > div")
+          .nth(1)
+          .evaluate((node) =>
+            Math.abs(
+              node.getBoundingClientRect().left -
+                node.parentElement!.parentElement!.getBoundingClientRect().left,
+            ),
+          ),
+      )
+      .toBeLessThan(1);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await next.click();
+    const offset = await photo
+      .locator(":scope > div > div")
+      .nth(2)
+      .evaluate((node) =>
+        Math.abs(
+          node.getBoundingClientRect().left -
+            node.parentElement!.parentElement!.getBoundingClientRect().left,
+        ),
+      );
+    expect(offset).toBeLessThan(1);
+  });
+
+  test("explicit selection survives recipe and Cook Mode navigation, reload, and live plan edits", async ({
+    page,
+  }) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+    const region = selector(page);
+    await region.getByRole("button", { name: second, exact: true }).click();
+    for (const action of ["View recipe", "Cook this meal"]) {
+      await region.getByRole("link", { name: action, exact: true }).click();
+      await page.goBack();
+      await expect(
+        selector(page).getByRole("heading", { name: second, exact: true }),
+      ).toBeVisible();
+      await expect(selector(page).getByRole("listitem")).toHaveCount(4);
+    }
+    await page.reload();
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => {
+      sessionStorage.setItem("fixture:rebase", "true");
+      sessionStorage.setItem("fixture:servings", "6");
+      sessionStorage.setItem("fixture:plan-revision", "2");
+      dispatchEvent(new Event("fixture:plan-change"));
+    });
+    await expect(
+      region.getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await expect(region.getByText("Serves 6", { exact: true })).toBeVisible();
+    await page.evaluate(() => {
+      sessionStorage.setItem("fixture:hide-slot", "1");
+      dispatchEvent(new Event("fixture:plan-change"));
+    });
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => {
+      sessionStorage.removeItem("fixture:hide-slot");
+      dispatchEvent(new Event("fixture:plan-change"));
+    });
+    await expect(
+      region.getByRole("heading", { name: first, exact: true }),
+    ).toBeVisible();
+  });
+
+  test("choices stay scoped to the account, private/household space and plan", async ({
+    page,
+  }) => {
+    await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+    const region = selector(page);
+    await region.getByRole("button", { name: second, exact: true }).click();
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "foodedo:space:fixture-alice:household-one",
+        "private",
+      );
+      dispatchEvent(new Event("storage"));
+    });
+    await expect(
+      region.getByRole("button", { name: first, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await region.getByRole("button", { name: fourth, exact: true }).click();
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "foodedo:space:fixture-alice:household-one",
+        "household",
+      );
+      dispatchEvent(new Event("storage"));
+    });
+    await expect(
+      region.getByRole("button", { name: second, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.evaluate(() => {
+      sessionStorage.setItem("fixture:new-plan", "replacement-plan");
+      dispatchEvent(new Event("fixture:plan-change"));
+    });
+    await expect(
+      region.getByRole("button", { name: first, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("blocked session storage still permits selection and unavailable plans show recovery", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const originalGet = Storage.prototype.getItem;
+      const originalSet = Storage.prototype.setItem;
+      Storage.prototype.getItem = function (key) {
+        if (key.startsWith("foodedo:home-meal:")) throw new Error("Blocked");
+        return originalGet.call(this, key);
+      };
+      Storage.prototype.setItem = function (key, value) {
+        if (key.startsWith("foodedo:home-meal:")) throw new Error("Blocked");
+        originalSet.call(this, key, value);
+      };
+    });
+    await page.goto("https://household.fixture/?screen=dashboard&selector=2");
+    await selector(page)
+      .getByRole("button", { name: "Next meal", exact: true })
+      .click();
+    await expect(
+      selector(page).getByRole("heading", { name: second, exact: true }),
+    ).toBeVisible();
+    await page.goto(
+      "https://household.fixture/?screen=dashboard&selector=2&unavailable=all",
+    );
+    await expect(selector(page)).toHaveCount(0);
+    await expect(
+      page.getByText("Your plan’s recipes are unavailable", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Built from 2 planned meals", { exact: true }),
+    ).toBeVisible();
+  });
+
+  for (const width of [320, 390, 1280]) {
+    test(`selector fits at ${width}px without shrinking full titles`, async ({
+      page,
+    }, testInfo) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("https://household.fixture/?screen=dashboard&selector=4");
+      const region = selector(page);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+      await expect(
+        region.getByRole("heading", { name: first, exact: true }),
+      ).toBeVisible();
+      const primary = await region
+        .getByRole("link", { name: "Cook this meal", exact: true })
+        .boundingBox();
+      const secondary = await region
+        .getByRole("link", { name: "View recipe", exact: true })
+        .boundingBox();
+      expect(primary!.width).toBeGreaterThan(secondary!.width);
+      expect(primary!.height).toBeGreaterThanOrEqual(44);
+      expect(secondary!.height).toBeGreaterThanOrEqual(44);
+      await page.screenshot({
+        path: testInfo.outputPath(`meal-selector-${width}.png`),
+        fullPage: true,
+      });
+    });
+  }
 });

@@ -15,12 +15,10 @@ import { Button } from "@/components/ui/button";
 import { ActivePlanAdjustDrawer } from "@/features/plan/active-plan-adjust-drawer";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
 import {
-  formatActivePlanEndSummary,
   formatGuestPlanSummary,
   formatPlanDateRange,
   isNearActivePlanEnd,
   resolveActivePlanWeekRows,
-  todayPlanDate,
 } from "@/lib/domain/plan-display";
 import {
   useCatalogueMeals,
@@ -178,25 +176,16 @@ export function ActiveWeek({
     ),
   );
   const plannedCount = plan.mealSlots.filter(
-    (slot) => slot.status === "planned",
+    (slot) => slot.status !== "skipped",
   ).length;
   const nearEnd = !isArchived && isNearActivePlanEnd({ endDate: plan.endDate });
-  const today = todayPlanDate();
-  const dinnersLeft = plan.mealSlots.filter(
-    (slot) => slot.status === "planned" && slot.date >= today,
-  ).length;
   const summary = isArchived
     ? `${formatPlanDateRange(plan)} · archived`
-    : nearEnd
-      ? formatActivePlanEndSummary({
-          endDate: plan.endDate,
-          dinnersLeft,
-        })
-      : formatGuestPlanSummary({
-          planStartDate: plan.startDate,
-          planEndDate: plan.endDate,
-          plannedMealCount: plannedCount,
-        });
+    : formatGuestPlanSummary({
+        planStartDate: plan.startDate,
+        planEndDate: plan.endDate,
+        plannedMealCount: plannedCount,
+      });
 
   return (
     <main
@@ -271,7 +260,7 @@ export function ActiveWeek({
             <PlanMealRow
               key={`${row.date}:${plan.updatedAt}`}
               row={row}
-              readOnly={isArchived || row.date < today}
+              readOnly={isArchived}
               onRemoveMeal={
                 plan.mealSlots.length > 1
                   ? async (date) => {

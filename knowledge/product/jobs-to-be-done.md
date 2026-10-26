@@ -34,6 +34,8 @@ Each job below is a user situation, not a screen name.
 
 **Success:** The coming week is decided with little fiddling. Individual meals can change without starting over.
 
+A plan has an approximate date range for setup, history and a gentle next-plan cue, but its meals have no assigned cooking day. Cook them in any order. Elapsed dates never hide meals, lock editing or imply completion. The plan stays active until explicitly replaced or archived; completion tracking is outside the current scope.
+
 **Do:** Defaults and suggestions; lock/swap individual meals. For signed-in users, allow a fast optional adjustment of days, start date, servings, and saved-recipe strategy. Keep one-off plan input separate from the user's usual planning defaults.
 
 **Don't:** Make generation metadata, leftover engines, or household aggregation blocking. Don't copy V1's generator forest.

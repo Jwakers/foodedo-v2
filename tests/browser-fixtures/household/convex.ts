@@ -38,34 +38,105 @@ const meal = (shared: boolean) => ({
   ],
   steps: [{ id: "s", text: "Cook dinner." }],
 });
+const selectorTitles = [
+  "Creamy Beef Stroganoff with Mushrooms",
+  "Crispy Fish Tacos with Crunchy Lime Slaw",
+  "Lemon and Garlic Roasted Chicken with Potatoes",
+  "Pan-Fried Mackerel with Lemon, Fresh Herbs and Buttered New Potatoes",
+];
+function selectorSlots(shared: boolean) {
+  const params = new URLSearchParams(location.search);
+  const count = Math.min(12, Math.max(1, Number(params.get("selector")) || 1));
+  return Array.from({ length: count }, (_, index) => ({
+    _id: `${shared ? "shared" : "private"}-selector-slot-${index}`,
+    date: `2030-${sessionStorage.getItem("fixture:rebase") === "true" ? "12" : "11"}-${String(index + 1).padStart(2, "0")}`,
+    recipeId:
+      params.get("source") === "catalogue"
+        ? undefined
+        : `${shared ? "shared" : "private"}-selector-recipe-${index}`,
+    isAvailable:
+      params.get("unavailable") !== "all" &&
+      String(index) !== sessionStorage.getItem("fixture:hide-slot"),
+    catalogueMealId: `selector-meal-${index}`,
+    catalogueVersion: index + 1,
+    catalogueMealSlug: `selector-meal-${index}`,
+    title: selectorTitles[index % selectorTitles.length]!,
+    description:
+      params.get("description") === "missing"
+        ? null
+        : params.get("description") === "long"
+          ? "Tender, golden ingredients with a rich sauce, fresh herbs and seasonal vegetables, served with buttery potatoes and a bright lemon dressing for a relaxed and satisfying evening meal. This deliberately long description must stay within two lines."
+          : "A satisfying dinner with fresh herbs and seasonal vegetables.",
+    imageSrc:
+      params.get("images") === "missing"
+        ? null
+        : [
+            "/images/welcome/pasta-primavera.webp",
+            "/images/recipes/fish-tacos.webp",
+            "/images/welcome/chicken-shawarma.webp",
+            "/images/welcome/chickpea-curry.webp",
+          ][index % 4]!,
+    prepMinutes: params.get("timing") === "missing" ? null : 5,
+    cookMinutes: params.get("timing") === "missing" ? null : 20 + index,
+    status: "planned",
+  }));
+}
 const plan = (shared: boolean) => ({
-  _id: shared ? "shared-plan" : "private-plan",
+  _id:
+    sessionStorage.getItem("fixture:new-plan") ??
+    (shared ? "shared-plan" : "private-plan"),
   startDate: "2030-11-01",
   endDate: "2030-11-03",
   servings: shared
     ? Number(sessionStorage.getItem("fixture:servings") ?? 4)
     : 1,
   updatedAt: Number(sessionStorage.getItem("fixture:plan-revision") ?? 1),
-  status: "active",
+  status:
+    new URLSearchParams(location.search).get("archived") === "true"
+      ? "archived"
+      : "active",
   hasActivePlanConflict: false,
-  mealSlots: [
-    {
-      _id: shared ? "shared-slot" : "private-slot",
-      slotId: shared ? "shared-slot" : "private-slot",
-      date: "2030-11-01",
-      recipeId: shared ? "shared-recipe" : "private-recipe",
-      isAvailable: true,
-      catalogueMealId: meal(shared).id,
-      catalogueVersion: 1,
-      catalogueMealSlug: shared ? meal(shared).slug : null,
-      title: meal(shared).title,
-      description: "A simple dinner",
-      imageSrc: null,
-      prepMinutes: 5,
-      cookMinutes: 15,
-      status: "planned",
-    },
-  ],
+  mealSlots: new URLSearchParams(location.search).has("selector")
+    ? selectorSlots(shared)
+    : [
+        {
+          _id: shared ? "shared-slot" : "private-slot",
+          slotId: shared ? "shared-slot" : "private-slot",
+          date: "2030-11-01",
+          recipeId: shared ? "shared-recipe" : "private-recipe",
+          isAvailable:
+            new URLSearchParams(location.search).get("unavailable") !== "first",
+          catalogueMealId: meal(shared).id,
+          catalogueVersion: 1,
+          catalogueMealSlug: shared ? meal(shared).slug : null,
+          title: meal(shared).title,
+          description: "A simple dinner",
+          imageSrc: null,
+          prepMinutes: 5,
+          cookMinutes: 15,
+          status: "planned",
+        },
+        ...(new URLSearchParams(location.search).get("meals") === "multiple"
+          ? [
+              {
+                _id: "second-slot",
+                slotId: "second-slot",
+                date: "2030-11-02",
+                recipeId: "second-recipe",
+                isAvailable: true,
+                catalogueMealId: "private-meal",
+                catalogueVersion: 1,
+                catalogueMealSlug: "private-meal",
+                title: "Another plan dinner",
+                description: "Another dinner",
+                imageSrc: null,
+                prepMinutes: 10,
+                cookMinutes: 20,
+                status: "planned",
+              },
+            ]
+          : []),
+      ],
 });
 const makeItem = (shared: boolean) => ({
   _id: shared ? "shared-item" : "private-item",
@@ -170,7 +241,6 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
         status: "ready",
         sourcePlanId: plan(shared)._id,
         sourceUpdatedAt: plan(shared).updatedAt,
-        fromDate: "2030-11-01",
         variant: 1,
         mealSlots: plan(shared).mealSlots.map((slot) => ({
           ...slot,
@@ -236,6 +306,10 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
 export function useMutation(reference: FunctionReference<"mutation">) {
   const mutate = async (args: Record<string, unknown>) => {
     const name = getFunctionName(reference);
+    if (name === "mealPlans:planMeal" || name === "mealPlans:addPlanDay") {
+      sessionStorage.setItem("fixture:planned-meal", JSON.stringify(args));
+      return { status: "planned", date: args.date ?? "2030-11-04" };
+    }
     if (name === "planningPreferences:updateUsual") {
       sessionStorage.setItem("fixture:usual-update", JSON.stringify(args));
       return null;
