@@ -10,6 +10,10 @@ test("guest introductions stay dismissed across reloads and generation retires H
   await expect(homeHint).toBeVisible();
   await page.getByRole("button", { name: "Plan my week", exact: true }).click();
   await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Plan my week", exact: true }).click();
+  await expect(
     page.getByRole("heading", { name: "Your week is ready" }),
   ).toBeVisible({ timeout: 15000 });
   await page.goto("/");

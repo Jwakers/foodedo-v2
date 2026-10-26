@@ -108,6 +108,12 @@ test("starting next week uses household favourites before usual settings have be
   );
   await page.goto("https://household.fixture/week?screen=week-page");
   await page.getByRole("button", { name: /Start next plan/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Plan your next week", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Plan our week", exact: true })
+    .click();
   await expect(page).toHaveURL("https://household.fixture/week/new");
   const firstMeal = await page.evaluate(
     () =>
@@ -130,6 +136,103 @@ test("starting next week uses household favourites before usual settings have be
   );
   expect(firstMeal).toBe("family-meal");
 });
+
+test("next-plan settings stay temporary unless future defaults are explicitly chosen", async ({
+  page,
+}) => {
+  await page.goto("https://household.fixture/week/setup?mode=next");
+  await expect(
+    page.getByRole("heading", { name: "Plan your next week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "5 days", exact: true }).click();
+  await page.getByRole("button", { name: "Choose date", exact: true }).click();
+  await page.getByLabel("Choose plan start date").fill("2030-11-04");
+  await expect(
+    page.getByRole("radio", { name: /This plan only/ }),
+  ).toBeChecked();
+  expect(
+    await page.evaluate(() => sessionStorage.getItem("fixture:usual-update")),
+  ).toBeNull();
+  await page.getByRole("radio", { name: /This and future plans/ }).check();
+  await page
+    .getByRole("button", { name: "Plan our week", exact: true })
+    .click();
+  await expect(page).toHaveURL("https://household.fixture/week/new");
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("fixture:usual-update")!),
+    ),
+  ).toEqual({ usualPlanDays: 5 });
+});
+
+test("replan immediately generates with the existing settings without a setup step", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2030-11-01T12:00:00.001Z"));
+  await page.goto("https://household.fixture/week?screen=week-page");
+  await page
+    .getByRole("button", { name: "Replan this week", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Review your new week", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Replan this week", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Replan this week", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      sessionStorage.getItem("fixture:proposal-requested"),
+    ),
+  ).toBe("true");
+});
+
+for (const width of [320, 390, 1280]) {
+  test(`replan review shows meal imagery and fits at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.clock.setFixedTime(new Date("2030-11-01T12:00:00.001Z"));
+    await page.addInitScript(() =>
+      sessionStorage.setItem("fixture:review-images", "true"),
+    );
+    await page.route("**/images/recipes/fish-tacos.webp", (route) =>
+      route.fulfill({
+        path: path.resolve("public/images/recipes/fish-tacos.webp"),
+        contentType: "image/webp",
+      }),
+    );
+    await page.goto("https://household.fixture/week?screen=week-page");
+    await page
+      .getByRole("button", { name: "Replan this week", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Review your new week", exact: true }),
+    ).toBeVisible();
+    const image = page.locator("main li img").first();
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() =>
+        image.evaluate((element) => (element as HTMLImageElement).naturalWidth),
+      )
+      .toBeGreaterThan(0);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+    await expect(
+      page.getByRole("button", { name: "Replace shared week", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Keep current week", exact: true }),
+    ).toHaveAttribute("href", "/week");
+    await page.screenshot({
+      path: testInfo.outputPath(`replan-review-${width}.png`),
+      fullPage: true,
+    });
+  });
+}
 
 test("an existing member can leave an old invite through the logo without getting redirected back", async ({
   page,

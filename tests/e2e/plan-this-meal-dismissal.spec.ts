@@ -15,8 +15,12 @@ test("can leave the recipe planner by closing or swiping without choosing a day"
     name: "Plan this meal",
     exact: true,
   });
-  // With no existing plan this first action creates a local guest week.
+  // A new week is configured before it is generated.
   await planMeal.click();
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Plan my week", exact: true }).click();
   await expect(page).toHaveURL(/\/week$/);
   await page.goBack();
   await planMeal.click();

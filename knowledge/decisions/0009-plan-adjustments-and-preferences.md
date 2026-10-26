@@ -25,7 +25,9 @@ Keep three separate kinds of state:
 
 Dietary requirements and allergies are a separate, independently persistent profile capability. They are not governed by this scope selector.
 
-The adjustment sheet closes after **Apply changes**, updates the parent summary, and leaves **Plan my week** as the explicit generation action.
+Before generating a new plan, Home opens a dedicated setup view on Week. The setup view reuses the adjustment controls and keeps **Plan my week** fixed above the navigation. Merely opening setup never generates or changes a plan. The same entry step covers next plans and recipe-led new plans. The scope choices retain the persistence rules above; generation saves only explicitly changed reusable preferences when the user chooses **This and future plans**.
+
+Generated-plan review and saved weeks do not repeat setup controls. **Edit this week** continues to open the existing adjustment sheet and applies changes to the saved plan. Existing regeneration journeys are unchanged: **Replan this week** keeps its original behaviour, and **Try another week** immediately shuffles the current draft. Neither action enters the new setup view.
 
 ## Consequences
 

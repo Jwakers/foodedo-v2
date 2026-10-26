@@ -21,6 +21,9 @@ const meal = (shared: boolean) => ({
   position: 0,
   title: shared ? "Family tomato pasta" : "Private work-trip dinner",
   description: "A simple dinner",
+  ...(sessionStorage.getItem("fixture:review-images") === "true"
+    ? { imageSrc: "/images/recipes/fish-tacos.webp" }
+    : {}),
   proteinCategory: "meat-free",
   servings: shared ? 4 : 1,
   prepMinutes: 5,
@@ -161,6 +164,20 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
       return new URLSearchParams(location.search).get("plan") === "empty"
         ? null
         : plan(shared);
+    case "mealPlans:getRegenerationProposal":
+      sessionStorage.setItem("fixture:proposal-requested", "true");
+      return {
+        status: "ready",
+        sourcePlanId: plan(shared)._id,
+        sourceUpdatedAt: plan(shared).updatedAt,
+        fromDate: "2030-11-01",
+        variant: 1,
+        mealSlots: plan(shared).mealSlots.map((slot) => ({
+          ...slot,
+          isChanged: true,
+          previousTitle: "Previous dinner",
+        })),
+      };
     case "mealPlans:getCatalogueSelectionSignals":
       if (sessionStorage.getItem("fixture:selection-signals") === "enabled")
         return [
@@ -219,6 +236,10 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
 export function useMutation(reference: FunctionReference<"mutation">) {
   const mutate = async (args: Record<string, unknown>) => {
     const name = getFunctionName(reference);
+    if (name === "planningPreferences:updateUsual") {
+      sessionStorage.setItem("fixture:usual-update", JSON.stringify(args));
+      return null;
+    }
     if (name === "onboarding:retire") {
       sessionStorage.setItem(
         "fixture:onboarding-syncs",

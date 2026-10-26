@@ -1,14 +1,11 @@
 "use client";
 
-import { getDraftSpaceKey } from "@/lib/platform/draft-space";
-import { bindReviewSource } from "./review-source";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
@@ -17,7 +14,6 @@ import {
   ActiveWeek,
   type ActiveWeekPlanSummary,
 } from "@/features/plan/active-week";
-import { beginNextGuestPlanDraft } from "@/features/plan/guest-plan-draft";
 import { PlanReview } from "@/features/plan/plan-review";
 import { PlanReviewLoading } from "@/features/plan/plan-review-loading";
 import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
@@ -55,9 +51,6 @@ export function WeekPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<Id<"mealPlans"> | null>(
     null,
   );
-  const [pendingPlanAction, setPendingPlanAction] = useState<
-    "replan" | "next" | null
-  >(null);
   const selectedArchivedPlan = useQuery(
     api.mealPlans.getArchived,
     isAuthenticated && selectedPlanId !== null
@@ -98,19 +91,6 @@ export function WeekPage() {
       </main>
     );
   }
-
-  const catalogueContract = {
-    currentMeals: catalogue.meals.map((meal) => ({
-      catalogueMealId: meal.id,
-      catalogueVersion: meal.version,
-      proteinCategory: meal.proteinCategory,
-    })),
-    readableMeals: catalogue.meals.map((meal) => ({
-      catalogueMealId: meal.id,
-      catalogueVersion: meal.version,
-      proteinCategory: meal.proteinCategory,
-    })),
-  };
 
   if (currentPlan) {
     const activePlan = currentPlan;
@@ -154,35 +134,8 @@ export function WeekPage() {
       router.push(`/week/replan?${search}`);
     }
 
-    async function handleStartNextPlan() {
-      if (pendingPlanAction !== null) return;
-
-      const generationKey = getDraftSpaceKey();
-      setPendingPlanAction("next");
-      try {
-        await beginNextGuestPlanDraft({
-          reviewSource: bindReviewSource(activePlan),
-          catalogue: catalogueContract,
-          planDays: planningPreferences?.usualPlanDays ?? 7,
-          servings: planningPreferences?.usualServings ?? 4,
-          selectionSignals: savedCatalogueMeals ?? [],
-          preferredCatalogueMealIds:
-            (planningPreferences?.prioritiseSavedRecipes ?? true)
-              ? (savedCatalogueMeals ?? [])
-                  .filter((meal) => meal.isSaved)
-                  .map((meal) => meal.catalogueMealId)
-              : [],
-          recentPlanMealIds: recentSelectionHistory ?? [],
-        });
-        if (getDraftSpaceKey() !== generationKey) return;
-        router.push("/week/new");
-      } catch (error) {
-        console.error("Failed to start the next plan.", error);
-        toast.error(
-          "Foodedo couldn’t start your next plan. Check storage access and try again.",
-        );
-        setPendingPlanAction(null);
-      }
+    function handleStartNextPlan() {
+      router.push("/week/setup?mode=next");
     }
 
     return (
@@ -194,8 +147,8 @@ export function WeekPage() {
           ),
         }}
         plans={plans}
-        isReplanning={pendingPlanAction === "replan"}
-        isStartingNextPlan={pendingPlanAction === "next"}
+        isReplanning={false}
+        isStartingNextPlan={false}
         onReplan={handleReplan}
         onStartNextPlan={handleStartNextPlan}
         onSelectPlan={(mealPlanId) => {

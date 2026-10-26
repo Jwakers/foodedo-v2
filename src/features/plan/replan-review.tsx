@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
+import { Utensils } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -12,8 +14,12 @@ import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import {
   todayPlanDate,
   formatPlanWeekdayLong,
+  formatPlanDateRange,
+  formatMealDurationLabel,
 } from "@/lib/domain/plan-display";
 import { PlanReviewLoading } from "./plan-review-loading";
+import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
+import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 
 export function ReplanReview() {
   const { status, isAuthenticated } = useFoodedoAuth();
@@ -39,6 +45,7 @@ export function ReplanReview() {
   const apply = useMutation(api.mealPlans.applyRegenerationProposal);
   const undo = useMutation(api.mealPlans.undoPlanReplacement);
   const router = useRouter();
+  const catalogue = useCurrentCatalogue();
   if (status === "connection_error") return <AccountConnectionError />;
   if (status === "guest")
     return (
@@ -136,18 +143,18 @@ export function ReplanReview() {
     }
   }
   return (
-    <main className="mx-auto flex min-h-[70dvh] max-w-175 flex-col gap-5 px-page-inline pt-5 pb-8">
-      <p className="text-12 font-bold tracking-label text-leaf uppercase">
-        {isHousehold ? "Household" : "Private"} week
-      </p>
-      <h1 className="font-display text-30 font-semibold tracking-title">
-        {past.length ? "Review remaining meals" : "Review your new week"}
-      </h1>
-      <p className="text-15 leading-relaxed text-graphite">
-        {isHousehold
-          ? "Your current shared week stays in place until you apply these changes."
-          : "Your current week stays in place until you apply these changes."}
-      </p>
+    <main className="mx-auto flex w-full max-w-175 flex-col gap-5 px-page-inline pt-5 pb-8">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-12 font-bold tracking-label text-leaf uppercase">
+          {isHousehold ? "Household" : "Private"} week
+        </p>
+        <h1 className="font-display text-30 font-semibold tracking-title">
+          {past.length ? "Review remaining meals" : "Review your new week"}
+        </h1>
+        <p className="text-15 leading-relaxed text-graphite">
+          {formatPlanDateRange(current)} · serves {current.servings}
+        </p>
+      </div>
       {past.length ? (
         <p className="rounded-sm bg-mist p-3 text-14 text-graphite">
           {past.length} earlier{" "}
@@ -155,47 +162,99 @@ export function ReplanReview() {
         </p>
       ) : null}
       <ul className="border-t border-border">
-        {remaining.map((slot) => (
-          <li
-            key={slot.date}
-            className="flex flex-col gap-1 border-b border-border py-4"
-          >
-            <p className="text-12 font-semibold uppercase text-graphite">
-              {formatPlanWeekdayLong(slot.date)}
-            </p>
-            <p className="font-display text-22 font-semibold text-ink">
-              {slot.title}
-            </p>
-            {slot.servingNotice ? (
-              <p className="text-12 text-graphite">{slot.servingNotice}</p>
-            ) : null}
-            {slot.isChanged ? (
-              <p className="text-14 text-graphite">Was: {slot.previousTitle}</p>
-            ) : (
-              <p className="text-14 text-graphite">Unchanged</p>
-            )}
-          </li>
-        ))}
+        {remaining.map((slot) => {
+          const savedSlot = current.mealSlots.find(
+            (meal) => meal.date === slot.date,
+          );
+          const imageSrc = !slot.isChanged
+            ? savedSlot?.imageSrc
+            : slot.catalogueMealId
+              ? catalogue?.meals.find(
+                  (meal) => meal.id === slot.catalogueMealId,
+                )?.imageSrc
+              : null;
+          const duration = formatMealDurationLabel(
+            slot.prepMinutes ?? undefined,
+            slot.cookMinutes ?? undefined,
+          );
+          return (
+            <li
+              key={slot.date}
+              className="flex items-center gap-2.5 border-b border-border py-3"
+            >
+              <div
+                className="flex w-9 shrink-0 flex-col gap-0.75"
+                aria-label={formatPlanWeekdayLong(slot.date)}
+              >
+                <span className="text-10 font-bold tracking-label text-graphite">
+                  {formatPlanWeekdayLong(slot.date).slice(0, 3).toUpperCase()}
+                </span>
+                <span className="font-display text-18 font-semibold text-ink">
+                  {Number(slot.date.slice(-2))}
+                </span>
+              </div>
+              <div className="relative flex h-18 w-20.5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-mist">
+                {imageSrc ? (
+                  <Image
+                    src={imageSrc}
+                    alt=""
+                    width={82}
+                    height={72}
+                    sizes="82px"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Utensils
+                    aria-hidden="true"
+                    className="size-6 text-graphite"
+                    strokeWidth={1.5}
+                  />
+                )}
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="font-display text-18 font-semibold leading-snug tracking-card text-ink">
+                  {formatRecipeHeading(slot.title)}
+                </p>
+                {duration ? (
+                  <p className="text-12 text-graphite">{duration}</p>
+                ) : null}
+                {slot.servingNotice ? (
+                  <p className="text-12 text-graphite">{slot.servingNotice}</p>
+                ) : null}
+                {slot.isChanged ? (
+                  <p className="text-12 text-graphite">
+                    Was: {formatRecipeHeading(slot.previousTitle)}
+                  </p>
+                ) : (
+                  <p className="text-12 text-graphite">Unchanged</p>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
-      <p className="text-14 leading-relaxed text-graphite">
-        Shopping extras stay. Checks on ingredients you still need stay too.
-      </p>
-      <Button
-        className="mt-auto"
-        disabled={busy}
-        onClick={() => void applyReviewed()}
-      >
-        {busy
-          ? "Updating…"
-          : past.length
-            ? "Update remaining meals"
-            : isHousehold
-              ? "Replace shared week"
-              : "Replace private week"}
-      </Button>
-      <ButtonLink href="/week" variant="secondary">
-        Keep current week
-      </ButtonLink>
+      <div className="flex flex-col gap-2">
+        <p className="text-13 leading-5 text-graphite">
+          Your current week stays until you apply these changes. Shopping extras
+          and checks on ingredients still needed stay too.
+        </p>
+        <Button
+          className="w-full"
+          disabled={busy}
+          onClick={() => void applyReviewed()}
+        >
+          {busy
+            ? "Updating…"
+            : past.length
+              ? "Update remaining meals"
+              : isHousehold
+                ? "Replace shared week"
+                : "Replace private week"}
+        </Button>
+        <ButtonLink href="/week" variant="secondary">
+          Keep current week
+        </ButtonLink>
+      </div>
     </main>
   );
 }

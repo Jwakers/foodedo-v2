@@ -15,6 +15,8 @@ app and the Capacitor iOS target.
 The SVG files in this directory are the editable masters and contain outlined
 letterforms, so raster output does not depend on fonts installed on the
 developer's Mac. The generator rasterises every committed output with Sharp.
+The browser favicon at `src/app/favicon.ico` includes 16, 32, and 48 pixel
+versions of the app mark, alongside the SVG icon for browsers that support it.
 
 Run `pnpm assets:generate` after changing the source specification or replacing
 the temporary artwork. Run `pnpm assets:check` to verify that all committed

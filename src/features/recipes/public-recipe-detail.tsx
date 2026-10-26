@@ -3,7 +3,6 @@
 import type { CatalogueMeal } from "@/lib/domain/recipes";
 import { RecipeDetailContent } from "./recipe-detail-content";
 import { useCurrentCatalogueMeal } from "./use-catalogue";
-import { useDefaultRecipeServings } from "./use-default-recipe-servings";
 import { PlanThisMeal } from "@/features/plan/plan-this-meal";
 import { recipeStructuredData } from "@/features/public-recipes/metadata";
 import { jsonLd } from "@/lib/seo/structured-data";
@@ -18,7 +17,6 @@ export function PublicRecipeDetail({
 }) {
   const current = useCurrentCatalogueMeal(initialRecipe.slug);
   const recipe = current ?? initialRecipe;
-  const { defaultServings } = useDefaultRecipeServings(false);
   return (
     <>
       <script
@@ -30,7 +28,6 @@ export function PublicRecipeDetail({
       <RecipeDetailContent
         meal={recipe}
         presentation="page"
-        initialServings={defaultServings}
         planMealAction={<PlanThisMeal meal={recipe} />}
       />
     </>

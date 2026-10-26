@@ -11,7 +11,6 @@ import {
 import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
 import { parsePersonalRecipeId } from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
-import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "@/features/recipes/recipe-account-recovery";
@@ -23,8 +22,6 @@ export function CookModeRoute() {
   const personalRecipeId = parsePersonalRecipeId(searchParams);
   const reference = parseRecipeCatalogueReference(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
-  const { defaultServings, isLoading: isLoadingDefaultServings } =
-    useDefaultRecipeServings(explicitServings !== null);
   const pinnedMeal = useCatalogueMeal(
     reference?.catalogueMealId ?? null,
     reference?.catalogueVersion ?? null,
@@ -52,7 +49,7 @@ export function CookModeRoute() {
       </main>
     );
   }
-  if (meal === undefined || isLoadingDefaultServings) {
+  if (meal === undefined) {
     return (
       <main className="min-h-dvh bg-paper" aria-label="Loading cook mode" />
     );
@@ -61,12 +58,7 @@ export function CookModeRoute() {
     <CookModePage
       meal={meal}
       catalogueVersion={meal.version}
-      servings={
-        explicitServings ??
-        (personalRecipeId ? meal.servings : defaultServings) ??
-        meal.servings ??
-        1
-      }
+      servings={explicitServings ?? meal.servings ?? 1}
       personalRecipeId={personalRecipeId ?? undefined}
     />
   );

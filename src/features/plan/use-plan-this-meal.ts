@@ -1,8 +1,6 @@
 "use client";
 
-import { getDraftSpaceKey } from "@/lib/platform/draft-space";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { bindReviewSource } from "./review-source";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
 import { useMutation, useQuery } from "convex/react";
@@ -13,7 +11,6 @@ import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import {
-  beginGuestPlanDraftWithMeal,
   extendCurrentGuestPlanDraft,
   readCurrentGuestPlanDraft,
   replaceGuestPlanMeal,
@@ -23,10 +20,6 @@ import {
   toGuestCatalogueContract,
   useGuestDraftCatalogue,
 } from "@/features/plan/use-guest-plan-draft";
-import {
-  fallbackPrePlanSetup,
-  usePrePlanSetup,
-} from "@/features/plan/use-pre-plan-setup";
 import { addDaysToPlanDate, type GuestDraftV1 } from "@/lib/domain/guest-draft";
 import {
   formatPlanDateWithWeekday,
@@ -87,7 +80,6 @@ export function usePlanThisMeal({
   const addSavedPlanDay = useMutation(api.mealPlans.addPlanDay);
   const { catalogue: draftCatalogue, refreshStoredReferences } =
     useGuestDraftCatalogue();
-  const { setup } = usePrePlanSetup(fallbackPrePlanSetup(preferences));
   const [target, setTarget] = useState<PlannerTarget | null>(null);
   const [pending, setPending] = useState<
     | { kind: "opening" }
@@ -162,35 +154,12 @@ export function usePlanThisMeal({
     }
   }
 
-  async function startWeek(reviewPath: "/week" | "/week/new") {
-    const generationKey = getDraftSpaceKey();
-    if (guestCatalogue === null) {
-      throw new Error("The catalogue is unavailable.");
-    }
-    if (isAuthenticated) {
-      if (currentPlan === undefined)
-        throw new Error("Your week is still loading.");
-    }
-    await beginGuestPlanDraftWithMeal({
-      reviewSource: isAuthenticated
-        ? bindReviewSource(currentPlan ?? null)
-        : undefined,
-      catalogue: guestCatalogue,
-      catalogueMealId,
-      catalogueVersion,
-      planStartDate: setup.startDate,
-      planDays: setup.planDays,
-      servings: setup.servings,
-      selectionSignals: savedCatalogueMeals ?? [],
-      preferredCatalogueMealIds: setup.prioritiseSavedRecipes
-        ? (savedCatalogueMeals ?? [])
-            .filter((meal) => meal.isSaved)
-            .map((meal) => meal.catalogueMealId)
-        : [],
+  function startWeek() {
+    const params = new URLSearchParams({
+      meal: catalogueMealId,
+      version: String(catalogueVersion),
     });
-    await refreshStoredReferences();
-    if (getDraftSpaceKey() !== generationKey) return;
-    router.push(reviewPath);
+    router.push(`/week/setup?${params}`);
   }
 
   async function openPlanner() {
@@ -225,7 +194,7 @@ export function usePlanThisMeal({
         setTarget({ kind: "draft", today, draft, reviewPath });
         return;
       }
-      await startWeek(reviewPath);
+      startWeek();
     } catch (error) {
       console.error("Failed to open Plan this meal.", error);
       toast.error(

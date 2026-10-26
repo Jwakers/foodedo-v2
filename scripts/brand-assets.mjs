@@ -68,12 +68,37 @@ const vectorCopies = [
   },
 ];
 
-async function renderPng(sourceName, size) {
+// ICO directories point to PNG frames, preserving the same artwork at each
+// browser-tab size without introducing another image-generation dependency.
+async function renderFavicon() {
+  const sizes = [16, 32, 48];
+  const frames = await Promise.all(
+    sizes.map((size) => renderPng("app-icon.svg", size, { alpha: true })),
+  );
+  const directory = Buffer.alloc(6 + 16 * frames.length);
+  directory.writeUInt16LE(1, 2);
+  directory.writeUInt16LE(frames.length, 4);
+  let offset = directory.length;
+  frames.forEach((frame, index) => {
+    const entry = 6 + 16 * index;
+    directory[entry] = sizes[index];
+    directory[entry + 1] = sizes[index];
+    directory.writeUInt16LE(1, entry + 4);
+    directory.writeUInt16LE(32, entry + 6);
+    directory.writeUInt32LE(frame.length, entry + 8);
+    directory.writeUInt32LE(offset, entry + 12);
+    offset += frame.length;
+  });
+  return Buffer.concat([directory, ...frames]);
+}
+
+async function renderPng(sourceName, size, { alpha = false } = {}) {
   const svg = await readFile(path.join(sourceDirectory, sourceName));
-  return sharp(svg, { density: 288 })
+  const image = sharp(svg, { density: 288 })
     .resize(size, size, { fit: "fill" })
-    .flatten({ background: colours.paper })
-    .removeAlpha()
+    .flatten({ background: colours.paper });
+  // Next.js's ICO decoder requires embedded PNG frames to use RGBA.
+  return (alpha ? image.ensureAlpha() : image.removeAlpha())
     .toColourspace("srgb")
     .png({ compressionLevel: 9, palette: false })
     .toBuffer();
@@ -93,6 +118,10 @@ async function expectedOutputs() {
       buffer: await readFile(path.join(sourceDirectory, spec.source)),
     });
   }
+  outputs.push({
+    destination: "src/app/favicon.ico",
+    buffer: await renderFavicon(),
+  });
   return outputs;
 }
 
@@ -103,7 +132,7 @@ async function generate() {
     await writeFile(destination, output.buffer);
   }
   console.log(
-    `Generated ${rasterSpecs.length + vectorCopies.length} Foodedo brand assets.`,
+    `Generated ${rasterSpecs.length + vectorCopies.length + 1} Foodedo brand assets.`,
   );
 }
 
@@ -146,6 +175,26 @@ async function assertMaskableSafeArea() {
   }
 }
 
+async function assertFavicon() {
+  const icon = await readFile(path.join(projectRoot, "src/app/favicon.ico"));
+  assert.equal(icon.readUInt16LE(0), 0);
+  assert.equal(icon.readUInt16LE(2), 1);
+  assert.equal(icon.readUInt16LE(4), 3);
+  for (const [index, size] of [16, 32, 48].entries()) {
+    const entry = 6 + 16 * index;
+    assert.equal(icon.readUInt16LE(entry + 6), 32);
+    const length = icon.readUInt32LE(entry + 8);
+    const offset = icon.readUInt32LE(entry + 12);
+    const frame = icon.subarray(offset, offset + length);
+    const { info } = await sharp(frame)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    assert.equal(info.width, size);
+    assert.equal(info.height, size);
+    assert.equal(info.channels, 4, "ICO PNG frames must use RGBA");
+  }
+}
+
 async function check() {
   const failures = [];
   for (const output of await expectedOutputs()) {
@@ -167,6 +216,7 @@ async function check() {
     await assertPng(spec.destination, spec.size);
   }
   await assertMaskableSafeArea();
+  await assertFavicon();
 
   const manifest = await readFile(
     path.join(projectRoot, "src/app/manifest.ts"),
@@ -188,7 +238,7 @@ async function check() {
   assert.match(launchStoryboard, /image="LaunchWordmark\.png"/);
 
   console.log(
-    `Checked ${rasterSpecs.length + vectorCopies.length} Foodedo brand assets.`,
+    `Checked ${rasterSpecs.length + vectorCopies.length + 1} Foodedo brand assets.`,
   );
 }
 

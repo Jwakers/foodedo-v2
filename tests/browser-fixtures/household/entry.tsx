@@ -17,6 +17,7 @@ import { SavedWeekPage } from "../../../src/features/plan/saved-week-page";
 import { HouseholdPage } from "../../../src/features/household/household-page";
 import { JoinHouseholdPage } from "../../../src/features/household/join-household-page";
 import { ReplanReview } from "../../../src/features/plan/replan-review";
+import { PlanSetupRoute } from "../../../src/features/plan/plan-setup-page";
 import { WeekPage } from "../../../src/features/plan/week-page";
 import { InviteContinuation } from "../../../src/features/household/invite-continuation";
 import { BrandLogo } from "../../../src/components/brand-logo";
@@ -41,13 +42,18 @@ function Screen() {
     api.mealPlans.getCurrent,
     guest ? "skip" : spaceArgs,
   ) as ActiveWeekPlan;
-  const currentScreen = joinJourney
-    ? pathname === "/household/join"
-      ? "join"
-      : pathname === "/"
-        ? "dashboard"
-        : "week"
-    : screen;
+  const currentScreen =
+    pathname === "/week/setup"
+      ? "setup"
+      : pathname === "/week/replan"
+        ? "replan"
+        : joinJourney
+          ? pathname === "/household/join"
+            ? "join"
+            : pathname === "/"
+              ? "dashboard"
+              : "week"
+          : screen;
   return (
     <>
       <InviteContinuation />
@@ -58,7 +64,9 @@ function Screen() {
         <button onClick={() => setScreen("household")}>Household tab</button>
       </nav>
       <div key={spaceKey}>
-        {currentScreen === "join" ? (
+        {currentScreen === "setup" ? (
+          <PlanSetupRoute />
+        ) : currentScreen === "join" ? (
           <JoinHouseholdPage />
         ) : currentScreen === "replan" ? (
           <ReplanReview />

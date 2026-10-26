@@ -20,7 +20,6 @@ import {
   parseRecipeCatalogueReference,
 } from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
-import { useDefaultRecipeServings } from "@/features/recipes/use-default-recipe-servings";
 import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "./recipe-account-recovery";
@@ -37,8 +36,6 @@ export function RecipeDetailPage() {
   const personalRecipeId = parsePersonalRecipeId(searchParams);
   const reference = parseRecipeCatalogueReference(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
-  const { defaultServings, isLoading: isLoadingDefaultServings } =
-    useDefaultRecipeServings(explicitServings !== null);
   const pinnedMeal = useCatalogueMeal(
     reference?.catalogueMealId ?? null,
     reference?.catalogueVersion ?? null,
@@ -103,7 +100,7 @@ export function RecipeDetailPage() {
     );
   }
 
-  if (meal === undefined || isLoadingDefaultServings) {
+  if (meal === undefined) {
     return (
       <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
         Loading recipe…
@@ -116,10 +113,7 @@ export function RecipeDetailPage() {
       <RecipeDetailContent
         meal={meal}
         presentation="page"
-        initialServings={
-          explicitServings ??
-          (personalRecipeId ? meal.servings : defaultServings)
-        }
+        initialServings={explicitServings ?? undefined}
         personalRecipeId={personalRecipeId ?? undefined}
         householdSnapshot={personalMeal?.householdSnapshot ?? false}
         planServings={

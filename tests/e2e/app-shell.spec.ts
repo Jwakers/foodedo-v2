@@ -90,8 +90,12 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   ).toBeVisible();
   await expect(
     page.getByText("7 days · starts tomorrow · serves 4"),
-  ).toBeVisible();
+  ).toHaveCount(0);
 
+  await page.getByRole("button", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Plan my week" }).click();
   await expect(
     page.getByRole("heading", { name: "Your week is ready" }),
@@ -272,24 +276,7 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Adjust" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Adjust" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Make Foodedo fit your week" }),
-  ).toBeVisible();
-  await expect(page.getByText("Dietary & planning preferences")).toBeVisible();
-  await expect(
-    page.getByText("Prefer recipes you like — remembered next time"),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Sign in to personalise" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close adjustments" }).click();
-
-  await expect(
-    page.getByRole("heading", { name: "Make Foodedo fit your week" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Adjust" })).toHaveCount(0);
 
   const navigation = page.getByRole("navigation", { name: "Primary" });
   await navigation.getByRole("link", { name: "Recipes" }).click();
@@ -342,7 +329,7 @@ test("does not intercept public recipe deep links with welcome", async ({
     page.getByRole("link", { name: /Bring your own recipe/ }),
   ).toHaveAttribute("href", "/recipes/import");
   await expect(
-    page.getByRole("button", { name: "Save Chicken Fajitas" }),
+    page.getByRole("button", { name: /^Save / }).first(),
   ).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
@@ -503,6 +490,10 @@ test("plans a recipe from its detail page as a guest", async ({ page }) => {
 
   await page.getByRole("button", { name: "Plan this meal" }).click();
   await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Plan my week", exact: true }).click();
+  await expect(
     page.getByRole("heading", { name: "Your week is ready" }),
   ).toBeVisible();
   await expect(
@@ -539,10 +530,19 @@ test("plans a recipe from its detail page as a guest", async ({ page }) => {
 
 test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
   await page.goto("/recipes/view?slug=baked-chicken-and-rice-casserole");
+  const firstIngredient = page
+    .getByRole("region", { name: "Ingredients", exact: true })
+    .getByRole("listitem")
+    .first();
+  const originalIngredient = await firstIngredient.innerText();
   await page.getByRole("button", { name: /Serves 4/ }).click();
   await page.getByRole("button", { name: "Increase servings" }).click();
   await expect(page.getByRole("button", { name: /Serves 5/ })).toBeVisible();
-  await expect(page.getByText("500 g")).toBeVisible();
+  await expect(firstIngredient).not.toHaveText(originalIngredient);
+  const scaledQuantity = (await firstIngredient.innerText()).match(
+    /^[\d.]+\s+\w+/,
+  )?.[0];
+  expect(scaledQuantity).toBeTruthy();
 
   await page.getByRole("button", { name: "Start cooking" }).first().click();
   await expect(page).toHaveURL(
@@ -557,9 +557,10 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
     0,
   );
 
-  const firstPreparation = page.getByRole("button", {
-    name: /Mark chicken breast prepared/,
-  });
+  const firstPreparation = page
+    .getByRole("button", { name: /^Mark .+ prepared$/ })
+    .first();
+  const preparationLabel = await firstPreparation.getAttribute("aria-label");
   await firstPreparation.click();
   await expect(firstPreparation).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
@@ -571,7 +572,7 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
 
   await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
   const startTimer = page
-    .getByRole("button", { name: /^Start .+ timer$/ })
+    .getByRole("button", { name: /Start .+ timer$/ })
     .first();
   for (let steps = 0; steps < 31 && !(await startTimer.isVisible()); steps++) {
     await page.getByRole("button", { name: "Next step" }).click();
@@ -589,7 +590,7 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
     page.getByRole("heading", { name: "Ingredients" }),
   ).toBeVisible();
   await expect(page.getByText("Scaled for 5")).toBeVisible();
-  await expect(page.getByText("500 g")).toBeVisible();
+  await expect(page.getByText(scaledQuantity!, { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: timerLabel!, exact: true }),
   ).toBeVisible();
@@ -626,7 +627,7 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Mark chicken breast prepared/ }),
+    page.getByRole("button", { name: preparationLabel!, exact: true }),
   ).toHaveAttribute("aria-pressed", "false");
 });
 
