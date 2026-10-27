@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
 import { foodedoColors } from "@/lib/design-system/tokens";
 import { cn } from "@/lib/utils/cn";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         {children}
+        {!isCapacitorBuild && <Analytics />}
       </body>
     </html>
   );
