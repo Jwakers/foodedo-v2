@@ -50,6 +50,7 @@ export function articleStructuredData(article: BlogSummary) {
     image: blogImageUrl(article.mainImage, 1200, 630),
     datePublished: article.publishedAt || undefined,
     dateModified: article._updatedAt || undefined,
+    author: { "@type": "Organization", name: "Foodedo", url: siteUrl() },
     publisher: { "@type": "Organization", name: "Foodedo", url: siteUrl() },
   };
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { recipeServingModel } from "@/lib/domain/ingredient-scaling";
 import { SHOPPING_CATEGORIES, type RecipeContent } from "@/lib/domain/recipes";
-import { deriveShoppingListItems } from "@/lib/domain/shopping-list";
+import {
+  classifyShoppingIngredient,
+  deriveShoppingListItems,
+} from "@/lib/domain/shopping-list";
 import snapshot from "./shopping-list-example.json";
 
 const verifiedDate = new Intl.DateTimeFormat("en-GB", {
@@ -28,10 +31,26 @@ export const exampleItems = deriveShoppingListItems(
     recipeId: recipe.id,
     title: recipe.title,
     requestedServings: snapshot.requestedServings,
-    ingredients: recipeServingModel(recipe, snapshot.requestedServings)
-      .ingredients,
+    ingredients: recipeServingModel(
+      recipe,
+      snapshot.requestedServings,
+    ).ingredients.map((ingredient) => ({
+      ...ingredient,
+      // Cupboard staples share one section, even when source categories differ.
+      shoppingCategory:
+        classifyShoppingIngredient(ingredient.name) === "staple"
+          ? ("pantry" as const)
+          : ingredient.shoppingCategory,
+    })),
   })),
-);
+).map((item) => ({
+  ...item,
+  // Reviewed labels for this fixed example; retain the original source details.
+  displayName: item.displayName
+    .replace(/^(\d+) garlic$/, "$1 garlic cloves")
+    .replace(/^(\d+) fillets salmon fillets$/, "$1 salmon fillets")
+    .replace(/^(\d+) tomato$/, "$1 tomatoes"),
+}));
 
 const labels = {
   fruit_and_veg: "Fruit & veg",
@@ -169,12 +188,18 @@ export function ShoppingListExample() {
             Rice vinegar is grouped, but 1 tbsp and 15 ml remain as source
             amounts. Foodedo does not turn them into a combined total.
           </li>
+          <li>
+            Toasted sesame oil is grouped, but its 2 tsp and 5 ml stay as source
+            amounts; black sesame seeds and sesame seeds, like soy sauce and
+            light soy sauce, keep their different names so you can check the
+            recipes before deciding whether one product will suit both.
+          </li>
         </ul>
         <p className="text-16 leading-7 text-graphite">
           Matching names and shopping categories can be grouped. Only
           compatible, readable quantities are added. Different names, categories
-          or units—and amounts such as “to taste”—may need your judgement. The
-          source lines above show what each meal needs.
+          or units, including amounts such as “to taste”, may need your
+          judgement. The source lines above show what each meal needs.
         </p>
       </section>
     </>

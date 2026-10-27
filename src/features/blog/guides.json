@@ -78,7 +78,11 @@
       },
       {
         "heading": "Review suggestions instead of starting from scratch",
-        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection.",
+        "link": {
+          "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+          "label": "Open Tofu Stir-Fry with Broccoli, Pepper and Rice to check its ingredients, servings and method while comparing dinners."
+        }
       },
       {
         "heading": "Save your week and open Shopping",
@@ -111,7 +115,11 @@
       },
       {
         "heading": "Minutes 4–7: start with Foodedo’s suggestions",
-        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection.",
+        "link": {
+          "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+          "label": "Open Tofu Stir-Fry with Broccoli, Pepper and Rice to check its ingredients, servings and method while comparing dinners."
+        }
       },
       {
         "heading": "Minutes 8–11: change only what needs changing",
@@ -132,7 +140,11 @@
     "sections": [
       {
         "heading": "Start with a suggested mix",
-        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection.",
+        "link": {
+          "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+          "label": "Open Tofu Stir-Fry with Broccoli, Pepper and Rice to check its ingredients, servings and method while comparing dinners."
+        }
       },
       {
         "heading": "Change one or two meals, not the whole week",
@@ -161,7 +173,11 @@
       },
       {
         "heading": "Meal planners help you make the dinner decision",
-        "body": "A meal plan turns ideas into dinners. On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+        "body": "A meal plan turns ideas into dinners. On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection.",
+        "link": {
+          "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+          "label": "Open Tofu Stir-Fry with Broccoli, Pepper and Rice to check its ingredients, servings and method while comparing dinners."
+        }
       },
       {
         "heading": "Shopping lists turn the decision into a shop",

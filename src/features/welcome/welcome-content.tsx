@@ -44,7 +44,7 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
           Make food decisions easier.
         </h1>
         <p className="max-w-82.5 text-14 leading-5 text-graphite">
-          Save meal plans, your own recipes and shopping lists—all in one place.
+          Save meal plans, your own recipes and shopping lists in one place.
         </p>
       </div>
 

@@ -35,7 +35,10 @@ test("preserves all six guides and their original URLs without fabricated dates"
     const structured = JSON.parse(jsonLd(articleStructuredData(guide)));
     expect(structured).not.toHaveProperty("datePublished");
     expect(structured).not.toHaveProperty("dateModified");
-    expect(structured).not.toHaveProperty("author");
+    expect(structured.author).toMatchObject({
+      "@type": "Organization",
+      name: "Foodedo",
+    });
     expect(articleMetadata(guide).alternates?.canonical).toContain(
       `/blog/${guide.slug}`,
     );

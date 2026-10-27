@@ -478,6 +478,72 @@
         "style": "normal"
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_key": "c535bea3c5ef",
         "_type": "block",
         "children": [
@@ -1886,6 +1952,72 @@
         "markDefs": []
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_type": "block",
         "_key": "v2-h-0",
         "style": "h2",
@@ -2075,6 +2207,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "e0de6b222452",
@@ -2394,6 +2592,55 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check the ingredients and servings against your household’s needs and budget before choosing your week.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "p-7",
@@ -3523,6 +3770,72 @@
         "markDefs": []
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_type": "block",
         "_key": "v2-h-0",
         "style": "h2",
@@ -3684,6 +3997,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "ba3ab55f50c4",
@@ -3999,6 +4378,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-5",
@@ -4727,6 +5172,72 @@
         "style": "normal"
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_key": "h-5",
         "_type": "block",
         "children": [
@@ -5080,6 +5591,72 @@
         "markDefs": []
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_type": "block",
         "_key": "v2-h-0",
         "style": "h2",
@@ -5241,6 +5818,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "ec7db010a1a7",
@@ -5520,6 +6163,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-5",
@@ -5845,6 +6554,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-5",
@@ -6552,6 +7327,72 @@
         "style": "normal"
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_key": "h-5",
         "_type": "block",
         "children": [
@@ -6825,6 +7666,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-5",
@@ -8108,88 +9015,88 @@
         "style": "h2"
       },
       {
-        "_key": "li-p",
+        "_key": "weeknight-recipe-0",
         "_type": "block",
-        "children": [
-          {
-            "_key": "s-n",
-            "_type": "span",
-            "marks": ["strong"],
-            "text": "One-Pot Pasta:"
-          },
-          {
-            "_key": "s-o",
-            "_type": "span",
-            "marks": [],
-            "text": " Combine your favorite pasta, a jar of sauce, and some veggies in one pot for a no-fuss dinner."
-          }
-        ],
-        "level": 1,
+        "style": "normal",
         "listItem": "bullet",
-        "markDefs": [],
-        "style": "normal"
-      },
-      {
-        "_key": "li-s",
-        "_type": "block",
-        "children": [
-          {
-            "_key": "s-q",
-            "_type": "span",
-            "marks": ["strong"],
-            "text": "Stir-Fried Rice:"
-          },
-          {
-            "_key": "s-r",
-            "_type": "span",
-            "marks": [],
-            "text": " Use leftover rice, a mix of vegetables, and a protein like chicken or tofu. It’s quick, tasty, and reduces food waste."
-          }
-        ],
         "level": 1,
-        "listItem": "bullet",
-        "markDefs": [],
-        "style": "normal"
-      },
-      {
-        "_key": "li-x",
-        "_type": "block",
-        "children": [
-          {
-            "_key": "s-t",
-            "_type": "span",
-            "marks": ["strong"],
-            "text": "Sheet Pan Meals:"
-          },
-          {
-            "_key": "s-u",
-            "_type": "span",
-            "marks": [],
-            "text": " Arrange your protein and veggies on a single pan, season, and bake. A recipe you can easily add to "
-          },
-          {
-            "_key": "s-v",
-            "_type": "span",
-            "marks": ["link-1"],
-            "text": "My recipes"
-          },
-          {
-            "_key": "s-w",
-            "_type": "span",
-            "marks": [],
-            "text": "."
-          }
-        ],
-        "level": 1,
-        "listItem": "bullet",
         "markDefs": [
           {
-            "_key": "link-1",
+            "_key": "recipe",
             "_type": "link",
-            "href": "/dashboard/my-recipes"
+            "href": "/recipes/chicken-shawarma-wraps"
           }
         ],
-        "style": "normal"
+        "children": [
+          {
+            "_type": "span",
+            "_key": "title",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe"]
+          },
+          {
+            "_type": "span",
+            "_key": "detail",
+            "text": ": Check the marinade and preparation steps before choosing an evening for these wraps.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_key": "weeknight-recipe-1",
+        "_type": "block",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "markDefs": [
+          {
+            "_key": "recipe",
+            "_type": "link",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "title",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe"]
+          },
+          {
+            "_type": "span",
+            "_key": "detail",
+            "text": ": A tofu and vegetable dinner with rice; read the method and get the ingredients ready before cooking.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_key": "weeknight-recipe-2",
+        "_type": "block",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "markDefs": [
+          {
+            "_key": "recipe",
+            "_type": "link",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "title",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe"]
+          },
+          {
+            "_type": "span",
+            "_key": "detail",
+            "text": ": Open the recipe to check how the salmon, rice and broccoli are prepared together.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-z",
@@ -8325,6 +9232,72 @@
           }
         ],
         "markDefs": []
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_type": "block",
@@ -9176,6 +10149,72 @@
         "style": "normal"
       },
       {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_key": "h-9",
         "_type": "block",
         "children": [
@@ -9988,6 +11027,72 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_key": "recipe-examples",
+        "_type": "block",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "recipe-0",
+            "href": "/recipes/chicken-shawarma-wraps"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-1",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          },
+          {
+            "_type": "link",
+            "_key": "recipe-2",
+            "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "intro",
+            "text": "For dinner ideas to compare while planning, open ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-0",
+            "text": "Chicken Shawarma Pitta Wraps",
+            "marks": ["recipe-0"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-1",
+            "text": ", ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-1",
+            "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+            "marks": ["recipe-1"]
+          },
+          {
+            "_type": "span",
+            "_key": "join-2",
+            "text": " or ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "recipe-2",
+            "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+            "marks": ["recipe-2"]
+          },
+          {
+            "_type": "span",
+            "_key": "end",
+            "text": ". Check each recipe’s ingredients, servings and method before deciding which evenings it suits.",
+            "marks": []
+          }
+        ]
       },
       {
         "_key": "h-5",

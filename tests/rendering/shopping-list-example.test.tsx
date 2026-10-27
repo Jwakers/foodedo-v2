@@ -8,6 +8,10 @@ import {
 } from "../../src/features/public-pages/shopping-list-example";
 import { classifyShoppingIngredient } from "../../src/lib/domain/shopping-list";
 import { assertExampleSource } from "../../scripts/audit-shopping-list-example.mjs";
+import reviewedArticles from "../../src/features/blog/reviewed-articles.json";
+import { localGuides } from "../../src/features/blog/guides";
+import { ArticleBody } from "../../src/features/blog/article-body";
+import type { BlogArticle } from "../../src/features/blog/content";
 
 test("the reviewed dinners serve two and account for every non-water ingredient", () => {
   expect(exampleRecipes).toHaveLength(3);
@@ -41,6 +45,14 @@ test("the published example combines compatible quantities without inventing con
     "180 g long-grain white rice",
   );
   expect(item("jasmine rice").displayName).toBe("150 g jasmine rice");
+  expect(item("garlic").displayName).toBe("7 garlic cloves");
+  expect(item("salmon fillets").displayName).toBe("2 salmon fillets");
+  expect(item("tomato").displayName).toBe("2 tomatoes");
+  for (const name of ["fine salt", "black pepper"]) {
+    const staples = exampleItems.filter((item) => item.name === name);
+    expect(staples).toHaveLength(1);
+    expect(staples[0].sources).toHaveLength(name === "fine salt" ? 3 : 2);
+  }
 });
 
 test("the source audit rejects missing, revised and changed ingredient data", () => {
@@ -65,4 +77,30 @@ test("the example provides recipe links and all source details in its HTML", () 
   expect(html).toContain("Check your cupboards");
   expect(html).toContain("1 tbsp · Tofu Stir-Fry");
   expect(html).toContain("15 ml · Teriyaki Salmon");
+});
+
+test("weeknight and meal-planning articles render links to the reviewed public recipes", () => {
+  const articles = [
+    ...reviewedArticles.filter(
+      (article) =>
+        article.slug === "quick-weeknight-dinners-busy-families" ||
+        article.slug.includes("meal-plan"),
+    ),
+    ...localGuides.filter(
+      (article) =>
+        article.slug.includes("meal-plan") ||
+        article.slug.includes("meals-varied"),
+    ),
+  ];
+  const destinations = new Set(
+    exampleRecipes.map((recipe) => `/recipes/${recipe.slug}`),
+  );
+  for (const article of articles) {
+    const html = renderToStaticMarkup(
+      <ArticleBody body={article.body as BlogArticle["body"]} />,
+    );
+    const links = [...html.matchAll(/href="(\/recipes\/[^"?]+)"/g)];
+    expect(links.length, article.slug).toBeGreaterThan(0);
+    for (const [, href] of links) expect(destinations.has(href)).toBe(true);
+  }
 });

@@ -6,6 +6,7 @@ import { RecipeImporter } from "@/features/recipes/recipe-importer";
 export const metadata: Metadata = {
   title: "Import a recipe · Foodedo",
   description: "Bring a recipe into your Foodedo collection.",
+  robots: { index: false },
 };
 
 export default function RecipeImportPage() {
