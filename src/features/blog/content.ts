@@ -156,7 +156,10 @@ const legacyDestinations: Record<string, string> = {
   "/dashboard/chalkboard": "/shop",
   "/sign-in": "/?try=1",
   "/sign-up": "/?try=1",
-  "/pricing": "/?try=1",
+  "/pricing": "/faq",
+  "/beta": "/",
+  // Contact restoration is deferred; send existing editorial links to help.
+  "/support/contact": "/support",
   "/how-to-build-shopping-list-from-meal-plan":
     "/blog/how-to-build-shopping-list-from-meal-plan",
 };
@@ -175,6 +178,11 @@ export function resolveBlogLink(href: unknown): string | undefined {
     if (["foodedo.com", "www.foodedo.com"].includes(url.hostname)) {
       const path = url.pathname.replace(/\/$/, "") || "/";
       const recipeMatch = /^\/discover\/recipe\/([a-z0-9-]+)$/.exec(path);
+      if (
+        path === "/discover/recipe/chicken-tacos-with-salsa" ||
+        path === "/recipes/chicken-tacos-with-salsa"
+      )
+        return `/recipes/chicken-tacos-with-avocado-salsa${url.search}${url.hash}`;
       if (recipeMatch)
         return `/recipes/${recipeMatch[1]}${url.search}${url.hash}`;
       const destination = legacyDestinations[path];

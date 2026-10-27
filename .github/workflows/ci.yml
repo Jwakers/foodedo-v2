@@ -29,9 +29,11 @@ jobs:
       - run: pnpm test:convex
       - run: pnpm build:ios:web
       - run: node scripts/check-blog-build.mjs native
+      - run: node scripts/check-public-pages-build.mjs native
       - run: node scripts/check-public-recipes-build.mjs native
       - run: pnpm build
       - run: node scripts/check-blog-build.mjs web
+      - run: node scripts/check-public-pages-build.mjs web
       - run: node scripts/check-public-recipes-build.mjs web
       - run: node scripts/test-public-recipes-cache.mjs
       - run: pnpm exec playwright install --with-deps chromium

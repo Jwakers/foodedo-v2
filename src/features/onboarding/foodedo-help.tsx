@@ -29,15 +29,15 @@ export function useFoodedoHelp() {
 const concepts = [
   [
     "Start with a suggestion",
-    "Foodedo suggests meals for your week. Swap any meal or leave days free before saving.",
+    "Choose Plan my week on Home, set up your days and servings, then generate suggestions. Swap meals or leave days free before saving. You can try this without an account.",
   ],
   [
     "Save your favourites",
-    "Tap the heart to keep recipes you love in Saved. Your favourites also help shape future meal plans.",
+    "Sign in and tap the heart to keep catalogue recipes in Saved. Enable favourites in planning setup when you want them to help shape your suggestions. Imported recipes live in Yours.",
   ],
   [
     "Shop from your plan",
-    "Saving your plan brings its ingredients into one shopping list. Change a meal and the list updates too.",
+    "Sign in to keep your plan and create its linked shopping list automatically. Add everyday extras directly in Shopping. Change a saved meal and the list updates too.",
   ],
 ] as const;
 
@@ -96,7 +96,9 @@ export function FoodedoHelpProvider({ children }: { children: ReactNode }) {
                 Sharing a household?
               </h2>
               <p className="mt-2 text-14 leading-5.5 text-graphite">
-                Your shared plans consider everyone’s saved favourites.
+                Household has a shared plan and shopping list; Private stays
+                separate. When favourites are enabled, shared plans consider
+                members’ saved catalogue favourites.
               </p>
             </section>
           </DrawerBody>

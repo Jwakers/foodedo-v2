@@ -150,7 +150,8 @@
     {
       "path": "/discover/recipe/chicken-tacos-with-salsa",
       "outcome": "permanent-redirect",
-      "canonicalPath": "/recipes/chicken-tacos-with-salsa"
+      "canonicalPath": "/recipes/chicken-tacos-with-avocado-salsa",
+      "reason": "Owner-approved replacement on 27 October 2026 after the original recipe was found missing from V2."
     },
     {
       "path": "/discover/recipe/chicken-teriyaki-stir-fry",

@@ -6,6 +6,7 @@ import { publicRecipePath } from "@/lib/routing/recipes";
 import { siteUrl } from "@/lib/seo/site-url";
 import { getPublishedPosts } from "@/features/blog/sanity.server";
 import { localGuides } from "@/features/blog/guides";
+import publicPages from "@/features/public-pages/pages.json";
 
 export async function blogSitemap(): Promise<MetadataRoute.Sitemap> {
   const [meals, posts] = await Promise.all([
@@ -19,6 +20,7 @@ export async function blogSitemap(): Promise<MetadataRoute.Sitemap> {
     { url: siteUrl() },
     { url: siteUrl("/blog") },
     { url: siteUrl("/recipes") },
+    ...publicPages.map(({ path }) => ({ url: siteUrl(path) })),
     ...meals.map((meal) => ({ url: siteUrl(publicRecipePath(meal.slug)) })),
     ...[...articles.values()].map((article) => ({
       url: siteUrl(`/blog/${article.slug}`),

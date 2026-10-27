@@ -1,0 +1,1078 @@
+{
+  "capturedOn": "2026-10-27",
+  "sources": [
+    "V1 src/app/(site) routes, src/app/sitemap.ts and src/lib/seo-intent-data.ts (read-only)",
+    "docs/blog-url-inventory.json",
+    "docs/recipe-url-inventory.json"
+  ],
+  "exclusions": [
+    "Authenticated V1 dashboard, auth, invite and private recipe routes",
+    "Historical indexed URLs absent from these sources; supplement with Search Console exports"
+  ],
+  "entries": [
+    {
+      "path": "/",
+      "destination": "/",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/recipe-to-shopping-list",
+      "destination": "/recipe-to-shopping-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/family-meal-planning",
+      "destination": "/family-meal-planning",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/household-meal-planning",
+      "destination": "/household-meal-planning",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/how-to-make-a-shopping-list-from-recipes",
+      "destination": "/how-to-make-a-shopping-list-from-recipes",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/combine-recipes-into-one-grocery-list",
+      "destination": "/combine-recipes-into-one-grocery-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/meal-planner-with-grocery-list",
+      "destination": "/meal-planner-with-grocery-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/how-to-create-a-weekly-meal-plan-fast",
+      "destination": "/how-to-create-a-weekly-meal-plan-fast",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/how-to-plan-varied-meals-for-the-week",
+      "destination": "/how-to-plan-varied-meals-for-the-week",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/meal-planning-for-busy-weeknights",
+      "destination": "/meal-planning-for-busy-weeknights",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/meal-plan-vs-shopping-list-what-you-need",
+      "destination": "/meal-plan-vs-shopping-list-what-you-need",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/faq",
+      "destination": "/faq",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/support",
+      "destination": "/support",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/support/how-to-use",
+      "destination": "/support/how-to-use",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2"
+    },
+    {
+      "path": "/privacy",
+      "destination": "/privacy",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2-draft"
+    },
+    {
+      "path": "/terms",
+      "destination": "/terms",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-v2-draft"
+    },
+    {
+      "path": "/blog",
+      "destination": "/blog",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/discover",
+      "destination": "/recipes",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/pricing",
+      "destination": "/faq",
+      "status": 307,
+      "finalStatus": 200,
+      "decision": "temporary-redirect-free-access"
+    },
+    {
+      "path": "/beta",
+      "destination": "/",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "retired-beta-redirect"
+    },
+    {
+      "path": "/support/contact",
+      "destination": "/support/contact",
+      "status": 404,
+      "finalStatus": 404,
+      "decision": "deferred-contact-restoration"
+    },
+    {
+      "path": "/blog/stop-asking-whats-for-dinner-foodedo",
+      "destination": "/blog/stop-asking-whats-for-dinner-foodedo",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/eliminate-weekly-food-decisions-meal-planning",
+      "destination": "/blog/eliminate-weekly-food-decisions-meal-planning",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/quick-weeknight-dinners-busy-families",
+      "destination": "/blog/quick-weeknight-dinners-busy-families",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/involve-kids-meal-planning-busy-families",
+      "destination": "/blog/involve-kids-meal-planning-busy-families",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/simplified-meal-planning-for-those-who-hate-it",
+      "destination": "/blog/simplified-meal-planning-for-those-who-hate-it",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/efficiently-organise-recipe-collection",
+      "destination": "/blog/efficiently-organise-recipe-collection",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/meal-planning-busy-families-simple-weekly-system",
+      "destination": "/blog/meal-planning-busy-families-simple-weekly-system",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/healthy-weekly-meal-plan-ideas-shopping-list",
+      "destination": "/blog/healthy-weekly-meal-plan-ideas-shopping-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/cheap-weekly-meal-plan-uk-family-of-4",
+      "destination": "/blog/cheap-weekly-meal-plan-uk-family-of-4",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/weekly-meal-plan-family-of-4-shopping-list",
+      "destination": "/blog/weekly-meal-plan-family-of-4-shopping-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/what-to-cook-this-week-meal-plan-generator",
+      "destination": "/blog/what-to-cook-this-week-meal-plan-generator",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/use-foodedo-for-stress-free-family-dinners",
+      "destination": "/blog/use-foodedo-for-stress-free-family-dinners",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/keeping-kitchen-cupboards-organised",
+      "destination": "/blog/keeping-kitchen-cupboards-organised",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/why-foodedo-is-best-choice-over-paprika",
+      "destination": "/blog/why-foodedo-is-best-choice-over-paprika",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/key-principles-cooking-delicious-meals",
+      "destination": "/blog/key-principles-cooking-delicious-meals",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/sneak-healthy-foods-into-kids-meals",
+      "destination": "/blog/sneak-healthy-foods-into-kids-meals",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/why-you-need-a-rice-cooker-for-family-meal-planning",
+      "destination": "/blog/why-you-need-a-rice-cooker-for-family-meal-planning",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/overcoming-meal-planning-challenges-busy-families",
+      "destination": "/blog/overcoming-meal-planning-challenges-busy-families",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-cook-chicken-thighs-perfectly-every-time",
+      "destination": "/blog/how-to-cook-chicken-thighs-perfectly-every-time",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/tips-for-planning-family-friendly-weekly-meal-plan",
+      "destination": "/blog/tips-for-planning-family-friendly-weekly-meal-plan",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-build-shopping-list-from-meal-plan",
+      "destination": "/blog/how-to-build-shopping-list-from-meal-plan",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-use-foodedo-weekly-meal-plan",
+      "destination": "/blog/how-to-use-foodedo-weekly-meal-plan",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-save-and-organise-recipes-from-websites",
+      "destination": "/blog/how-to-save-and-organise-recipes-from-websites",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/meal-planning-as-a-couple-or-household",
+      "destination": "/blog/meal-planning-as-a-couple-or-household",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-start-meal-planning",
+      "destination": "/blog/how-to-start-meal-planning",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/meal-planning-for-busy-families",
+      "destination": "/blog/meal-planning-for-busy-families",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/why-i-built-foodedo-making-meal-planning-simple-again",
+      "destination": "/blog/why-i-built-foodedo-making-meal-planning-simple-again",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-turn-recipes-into-one-grocery-list",
+      "destination": "/blog/how-to-turn-recipes-into-one-grocery-list",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-combine-ingredients-from-multiple-recipes",
+      "destination": "/blog/how-to-combine-ingredients-from-multiple-recipes",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/weekly-meal-plan-and-shopping-list-guide",
+      "destination": "/blog/weekly-meal-plan-and-shopping-list-guide",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-build-a-weekly-meal-plan-in-15-minutes",
+      "destination": "/blog/how-to-build-a-weekly-meal-plan-in-15-minutes",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/how-to-keep-meals-varied-without-overthinking-it",
+      "destination": "/blog/how-to-keep-meals-varied-without-overthinking-it",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/blog/recipe-app-vs-meal-planner-vs-grocery-list-app",
+      "destination": "/blog/recipe-app-vs-meal-planner-vs-grocery-list-app",
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "preserved"
+    },
+    {
+      "path": "/discover/recipe/baked-chicken-and-rice-casserole",
+      "destination": "/recipes/baked-chicken-and-rice-casserole",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/baked-fish-with-lemon-and-herbs",
+      "destination": "/recipes/baked-fish-with-lemon-and-herbs",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/baked-pesto-fish-with-vegetables",
+      "destination": "/recipes/baked-pesto-fish-with-vegetables",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/baked-turkey-meatballs-with-spaghetti",
+      "destination": "/recipes/baked-turkey-meatballs-with-spaghetti",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/bbq-pulled-pork-sandwiches",
+      "destination": "/recipes/bbq-pulled-pork-sandwiches",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-and-broccoli-stir-fry",
+      "destination": "/recipes/beef-and-broccoli-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-and-mushroom-pie",
+      "destination": "/recipes/beef-and-mushroom-pie",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-and-mushroom-stroganoff",
+      "destination": "/recipes/beef-and-mushroom-stroganoff",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-and-vegetable-stir-fry",
+      "destination": "/recipes/beef-and-vegetable-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-and-vegetable-traybake",
+      "destination": "/recipes/beef-and-vegetable-traybake",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-bolognese",
+      "destination": "/recipes/beef-bolognese",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-fajitas",
+      "destination": "/recipes/beef-fajitas",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-kofta-with-couscous",
+      "destination": "/recipes/beef-kofta-with-couscous",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-lasagne",
+      "destination": "/recipes/beef-lasagne",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-stroganoff",
+      "destination": "/recipes/beef-stroganoff",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/beef-tacos",
+      "destination": "/recipes/beef-tacos",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/caprese-salad-with-garlic-bread",
+      "destination": "/recipes/caprese-salad-with-garlic-bread",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-alfredo-pasta",
+      "destination": "/recipes/chicken-alfredo-pasta",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-chorizo-paella",
+      "destination": "/recipes/chicken-and-chorizo-paella",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-leek-pie",
+      "destination": "/recipes/chicken-and-leek-pie",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-mushroom-risotto",
+      "destination": "/recipes/chicken-and-mushroom-risotto",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-spinach-pasta",
+      "destination": "/recipes/chicken-and-spinach-pasta",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-and-vegetable-stir-fry",
+      "destination": "/recipes/chicken-and-vegetable-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-fajitas",
+      "destination": "/recipes/chicken-fajitas",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-katsu-curry",
+      "destination": "/recipes/chicken-katsu-curry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-parmesan-bake",
+      "destination": "/recipes/chicken-parmesan-bake",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-shawarma-wraps",
+      "destination": "/recipes/chicken-shawarma-wraps",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-stir-fry",
+      "destination": "/recipes/chicken-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-tacos-with-avocado-salsa",
+      "destination": "/recipes/chicken-tacos-with-avocado-salsa",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-tacos-with-salsa",
+      "destination": "/recipes/chicken-tacos-with-avocado-salsa",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "owner-approved-replacement"
+    },
+    {
+      "path": "/discover/recipe/chicken-teriyaki-stir-fry",
+      "destination": "/recipes/chicken-teriyaki-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chicken-tikka-masala",
+      "destination": "/recipes/chicken-tikka-masala",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chickpea-and-spinach-stuffed-sweet-potatoes",
+      "destination": "/recipes/chickpea-and-spinach-stuffed-sweet-potatoes",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chickpea-curry",
+      "destination": "/recipes/chickpea-curry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/chinese-lemon-fish-stir-fry",
+      "destination": "/recipes/chinese-lemon-fish-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/cottage-pie",
+      "destination": "/recipes/cottage-pie",
+      "status": 308,
+      "finalStatus": 404,
+      "decision": "documented-removed-recipe"
+    },
+    {
+      "path": "/discover/recipe/crispy-pork-hoisin-sesame-wraps",
+      "destination": "/recipes/crispy-pork-hoisin-sesame-wraps",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/duck-breast-with-orange-sauce",
+      "destination": "/recipes/duck-breast-with-orange-sauce",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/fish-pie",
+      "destination": "/recipes/fish-pie",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/fish-tacos-with-cabbage-slaw",
+      "destination": "/recipes/fish-tacos-with-cabbage-slaw",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/fish-tacos-with-mango-salsa",
+      "destination": "/recipes/fish-tacos-with-mango-salsa",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/grilled-mackerel-with-lemon-and-dill",
+      "destination": "/recipes/grilled-mackerel-with-lemon-and-dill",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/grilled-sardines-with-lemon-and-garlic",
+      "destination": "/recipes/grilled-sardines-with-lemon-and-garlic",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/honey-garlic-chicken",
+      "destination": "/recipes/honey-garlic-chicken",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/honey-garlic-pork-chops",
+      "destination": "/recipes/honey-garlic-pork-chops",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/italian-beef-meatballs",
+      "destination": "/recipes/italian-beef-meatballs",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lamb-and-mint-pasta",
+      "destination": "/recipes/lamb-and-mint-pasta",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lamb-and-vegetable-traybake",
+      "destination": "/recipes/lamb-and-vegetable-traybake",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lamb-biryani",
+      "destination": "/recipes/lamb-biryani",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lamb-kofta-kebabs-with-tzatziki",
+      "destination": "/recipes/lamb-kofta-kebabs-with-tzatziki",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lemon-garlic-butter-prawns",
+      "destination": "/recipes/lemon-garlic-butter-prawns",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lemon-garlic-butter-salmon",
+      "destination": "/recipes/lemon-garlic-butter-salmon",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lemon-herb-grilled-chicken",
+      "destination": "/recipes/lemon-herb-grilled-chicken",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/lemon-herb-roasted-chicken-thighs",
+      "destination": "/recipes/lemon-herb-roasted-chicken-thighs",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mac-and-cheese",
+      "destination": "/recipes/mac-and-cheese",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-baked-salmon",
+      "destination": "/recipes/mediterranean-baked-salmon",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-chicken-bake",
+      "destination": "/recipes/mediterranean-chicken-bake",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-chickpea-salad",
+      "destination": "/recipes/mediterranean-chickpea-salad",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mediterranean-quinoa-bowl",
+      "destination": "/recipes/mediterranean-quinoa-bowl",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mushroom-and-spinach-quesadillas",
+      "destination": "/recipes/mushroom-and-spinach-quesadillas",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/mushroom-risotto",
+      "destination": "/recipes/mushroom-risotto",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/one-pan-beef-and-potatoes",
+      "destination": "/recipes/one-pan-beef-and-potatoes",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/one-pan-lemon-herb-chicken-and-vegetables",
+      "destination": "/recipes/one-pan-lemon-herb-chicken-and-vegetables",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/oven-baked-cod-with-tomato-and-basil",
+      "destination": "/recipes/oven-baked-cod-with-tomato-and-basil",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pasta-primavera",
+      "destination": "/recipes/pasta-primavera",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pasta-puttanesca-with-olives-and-capers",
+      "destination": "/recipes/pasta-puttanesca-with-olives-and-capers",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-and-apple-casserole",
+      "destination": "/recipes/pork-and-apple-casserole",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-and-mushroom-pasta",
+      "destination": "/recipes/pork-and-mushroom-pasta",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-and-sweet-potato-hash",
+      "destination": "/recipes/pork-and-sweet-potato-hash",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-ramen-bowl",
+      "destination": "/recipes/pork-ramen-bowl",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-schnitzel-with-potato-salad",
+      "destination": "/recipes/pork-schnitzel-with-potato-salad",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-stir-fry-with-vegetables",
+      "destination": "/recipes/pork-stir-fry-with-vegetables",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/pork-tacos-with-salsa",
+      "destination": "/recipes/pork-tacos-with-salsa",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/prawn-and-chorizo-risotto",
+      "destination": "/recipes/prawn-and-chorizo-risotto",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/roast-gammon-with-onion-sauce",
+      "destination": "/recipes/roast-gammon-with-onion-sauce",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/roasted-vegetable-and-hummus-wrap",
+      "destination": "/recipes/roasted-vegetable-and-hummus-wrap",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/shrimp-fried-rice",
+      "destination": "/recipes/shrimp-fried-rice",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/spaghetti-carbonara",
+      "destination": "/recipes/spaghetti-carbonara",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/spicy-chicken-and-chickpea-stew",
+      "destination": "/recipes/spicy-chicken-and-chickpea-stew",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/spinach-and-feta-stuffed-mushrooms",
+      "destination": "/recipes/spinach-and-feta-stuffed-mushrooms",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/stuffed-peppers",
+      "destination": "/recipes/stuffed-peppers",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/thai-fish-curry",
+      "destination": "/recipes/thai-fish-curry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/thai-green-curry-chicken",
+      "destination": "/recipes/thai-green-curry-chicken",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/thai-green-curry-with-fish",
+      "destination": "/recipes/thai-green-curry-with-fish",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/thai-noodle-soup",
+      "destination": "/recipes/thai-noodle-soup",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/thai-red-curry-with-tofu",
+      "destination": "/recipes/thai-red-curry-with-tofu",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/tofu-stir-fry-with-broccoli-and-peppers",
+      "destination": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/turkey-and-spinach-traybake",
+      "destination": "/recipes/turkey-and-spinach-traybake",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/turkey-and-vegetable-stir-fry",
+      "destination": "/recipes/turkey-and-vegetable-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/turkey-tacos",
+      "destination": "/recipes/turkey-tacos",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/vegetable-biryani",
+      "destination": "/recipes/vegetable-biryani",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/vegetable-lasagna",
+      "destination": "/recipes/vegetable-lasagna",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/vegetable-stir-fry",
+      "destination": "/recipes/vegetable-stir-fry",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/vegetarian-chili",
+      "destination": "/recipes/vegetarian-chili",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/vegetarian-tacos",
+      "destination": "/recipes/vegetarian-tacos",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/veggie-stuffed-sweet-potatoes",
+      "destination": "/recipes/veggie-stuffed-sweet-potatoes",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/discover/recipe/venison-chilli",
+      "destination": "/recipes/venison-chilli",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "permanent-redirect"
+    },
+    {
+      "path": "/recipes/chicken-tacos-with-salsa",
+      "destination": "/recipes/chicken-tacos-with-avocado-salsa",
+      "status": 308,
+      "finalStatus": 200,
+      "decision": "owner-approved-replacement"
+    }
+  ]
+}

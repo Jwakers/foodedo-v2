@@ -87,7 +87,7 @@ for (const viewport of [
     expect(bottomGap).toBeGreaterThanOrEqual(23);
     expect(bottomGap).toBeLessThanOrEqual(25);
     await expect(
-      help.getByText(/keep recipes you love in Saved/),
+      help.getByText(/keep catalogue recipes in Saved/),
     ).toBeVisible();
     await help
       .getByRole("button", { name: "Back to what I was doing" })

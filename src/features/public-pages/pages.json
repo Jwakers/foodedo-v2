@@ -1,0 +1,457 @@
+[
+  {
+    "path": "/recipe-to-shopping-list",
+    "title": "Turn recipes into one shopping list",
+    "description": "Turn your planned recipes into a linked grocery list. Review meals, save your plan and check what you need before shopping.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Start with the meals you want to cook",
+        "body": "Browse Foodedo recipes or try a suggested plan. Review the meals and swap any that do not fit your week. You can try planning as a guest; your draft stays temporarily on this device."
+      },
+      {
+        "heading": "Keep your plan to get its shopping list",
+        "body": "Create an account or sign in when you want to keep the plan. Saving a plan creates its linked shopping list, using the recipes and servings in that plan. You do not need to retype every ingredient."
+      },
+      {
+        "heading": "Check quantities and cupboard basics",
+        "body": "Open Shopping to review the ingredients. Foodedo combines compatible ingredient lines, but different names or measurements can remain separate. Check those lines and your cupboards before you buy; Foodedo does not track pantry stock automatically."
+      },
+      {
+        "heading": "Shop from the same list as your plan",
+        "body": "Add everyday extras, remove items you already have and tick off purchases. When saved meals change, their linked list updates automatically. Review new ingredients before your next shop."
+      }
+    ],
+    "related": [
+      "/how-to-make-a-shopping-list-from-recipes",
+      "/combine-recipes-into-one-grocery-list",
+      "/meal-planner-with-grocery-list"
+    ]
+  },
+  {
+    "path": "/family-meal-planning",
+    "title": "Family meal planning that fits your week",
+    "description": "Make family dinners easier with suggested meals, flexible servings and a shopping list linked to your saved plan.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Let a suggested week do the first draft",
+        "body": "Start with dinner ideas from the standard catalogue rather than building a recipe collection first. Review the suggestions together and swap meals that will not suit your family."
+      },
+      {
+        "heading": "Plan for the people eating",
+        "body": "Choose servings that fit your table and check each recipe before cooking. A weekly dinner plan can reduce last-minute decisions without deciding every breakfast and lunch."
+      },
+      {
+        "heading": "Bring another cook into the week",
+        "body": "After signing in, create a household and invite someone to join. Household has its own shared plan and shopping list. Private remains a separate space for your own plans."
+      },
+      {
+        "heading": "Make one practical shopping trip",
+        "body": "Keep the plan to create its shopping list, then check cupboards and add extras. Review quantities and dietary suitability yourself; a suggestion is a starting point for your household."
+      }
+    ],
+    "related": [
+      "/household-meal-planning",
+      "/meal-planning-for-busy-weeknights",
+      "/recipe-to-shopping-list"
+    ]
+  },
+  {
+    "path": "/household-meal-planning",
+    "title": "Share meal planning with your household",
+    "description": "Keep a shared dinner plan and shopping list in Household while retaining a separate Private planning space.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Start with a week worth sharing",
+        "body": "Try a suggested plan, review the meals and sign in to keep it. Create a household when you want to coordinate cooking and shopping with someone else."
+      },
+      {
+        "heading": "Invite someone to join",
+        "body": "Share a household invitation link. The recipient signs in and explicitly accepts the invitation; signing in alone does not join a household. Invitations are single-use and expire after seven days."
+      },
+      {
+        "heading": "Use Household for the shared week",
+        "body": "Members work from the same household plan and shopping list. Select Household before starting, choose Plan our week in setup and Save household plan after reviewing the meals. Check the selected space before changing meals or shopping items."
+      },
+      {
+        "heading": "Keep Private separate",
+        "body": "Creating a household copies your active private plan and its shopping state into the shared space, leaving the private originals intact. Personal imported recipes are not all exposed to members automatically. Leaving ends your access to household content; remaining members keep access."
+      }
+    ],
+    "related": ["/family-meal-planning", "/support/how-to-use", "/faq"]
+  },
+  {
+    "path": "/how-to-make-a-shopping-list-from-recipes",
+    "title": "How to make a shopping list from recipes",
+    "description": "A step-by-step recipe shopping routine: choose dinners, save a plan, check ingredients and shop from its linked list.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "1. Choose dinners for the days you need",
+        "body": "Start with a suggested plan or recipes you want to cook. Review busy nights and choose servings before keeping the plan."
+      },
+      {
+        "heading": "2. Save the plan",
+        "body": "Sign in or create an account to keep your choices. The saved plan gets a shopping list automatically, so you can move from choosing meals to checking ingredients."
+      },
+      {
+        "heading": "3. Check what is already at home",
+        "body": "Read through Shopping and compare the list with your cupboards. Remove items you do not need to buy. Add essentials that are not part of a recipe."
+      },
+      {
+        "heading": "4. Check off purchases",
+        "body": "Use the list as you shop. If you change a meal later, its ingredients update in the linked list. Review the changes rather than starting another handwritten list."
+      }
+    ],
+    "related": [
+      "/recipe-to-shopping-list",
+      "/combine-recipes-into-one-grocery-list",
+      "/blog/how-to-turn-recipes-into-one-grocery-list"
+    ]
+  },
+  {
+    "path": "/combine-recipes-into-one-grocery-list",
+    "title": "Combine recipes into one grocery list",
+    "description": "Bring ingredients from several planned meals into one shopping list, with practical checks for quantities and duplicate lines.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Put the recipes in one plan",
+        "body": "A list belongs to a saved plan. Choose the meals and servings together, then keep the plan so ingredients from those meals appear in one place."
+      },
+      {
+        "heading": "Understand what combining means",
+        "body": "Compatible ingredient lines can be consolidated. Different ingredient names and incompatible units may remain separate; Foodedo does not promise to recognise every equivalent ingredient or convert every measurement."
+      },
+      {
+        "heading": "Review ingredients in context",
+        "body": "Open an ingredient’s details to see the meals that use it. Check the original recipes when a quantity or ingredient needs clarification, and review your cupboards before removing anything."
+      },
+      {
+        "heading": "Keep extras and meal ingredients together",
+        "body": "Add everyday shopping items to the linked list. Changes to saved meals reconcile their ingredients automatically while manual extras remain yours to manage."
+      }
+    ],
+    "related": [
+      "/recipe-to-shopping-list",
+      "/how-to-make-a-shopping-list-from-recipes",
+      "/blog/how-to-combine-ingredients-from-multiple-recipes"
+    ]
+  },
+  {
+    "path": "/meal-planner-with-grocery-list",
+    "title": "A meal planner with a linked grocery list",
+    "description": "Connect dinner decisions with grocery shopping: review a suggested week and get a shopping list when you save your plan.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Decide dinner before writing the list",
+        "body": "A suggested plan gives you a starting point. Review it, swap meals and choose servings so the week reflects what you expect to cook."
+      },
+      {
+        "heading": "Save once, then open Shop",
+        "body": "Keeping a plan requires an account and creates its linked shopping list. The plan supplies recipe ingredients; you add any household extras."
+      },
+      {
+        "heading": "Adjust meals without rebuilding your list",
+        "body": "Saved plan changes update the same list. Retained ingredients keep their shopping state, new ingredients appear and obsolete recipe ingredients leave the list."
+      },
+      {
+        "heading": "Return to earlier shopping",
+        "body": "Previous saved plans retain their linked shopping lists. When shopping for an earlier plan, check that you are viewing the right week and the right Private or Household space."
+      }
+    ],
+    "related": [
+      "/recipe-to-shopping-list",
+      "/how-to-create-a-weekly-meal-plan-fast",
+      "/family-meal-planning"
+    ]
+  },
+  {
+    "path": "/how-to-create-a-weekly-meal-plan-fast",
+    "title": "How to create a weekly meal plan quickly",
+    "description": "Start with suggested dinners, review the week and keep a practical meal plan without organising a recipe database first.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Begin with a suggested plan",
+        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+      },
+      {
+        "heading": "Review the nights that need flexibility",
+        "body": "Check the proposed dinners against your week. Swap meals that do not suit you instead of rebuilding the whole plan. Check recipe timing where an evening is tight."
+      },
+      {
+        "heading": "Keep the week when it looks useful",
+        "body": "Guests can explore a temporary draft. Sign in or create an account to keep your plan and access its linked shopping list."
+      },
+      {
+        "heading": "Leave room for real life",
+        "body": "A plan is a useful set of dinner decisions, not a requirement to cook on an exact day. Adjust it as needed and review shopping changes before buying."
+      }
+    ],
+    "related": [
+      "/how-to-plan-varied-meals-for-the-week",
+      "/meal-planning-for-busy-weeknights",
+      "/blog/how-to-build-a-weekly-meal-plan-in-15-minutes"
+    ]
+  },
+  {
+    "path": "/how-to-plan-varied-meals-for-the-week",
+    "title": "How to plan varied meals for the week",
+    "description": "Review a suggested dinner plan for variety in ingredients, cooking styles and effort, without starting from a blank page.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Look at the week as a whole",
+        "body": "Start with suggested meals and read across the plan before keeping it. Notice repeated main ingredients or cooking methods that would make the week feel repetitive."
+      },
+      {
+        "heading": "Swap the meal that repeats too much",
+        "body": "Keep the dinners you like and replace one that feels too similar. A small change can bring variety without making every evening unfamiliar."
+      },
+      {
+        "heading": "Balance familiar meals with new ideas",
+        "body": "Use favourite meals alongside catalogue suggestions. You can save recipes to your account over time; building a large personal library is not a prerequisite for planning."
+      },
+      {
+        "heading": "Check effort as well as flavour",
+        "body": "Mix quicker dinners with meals that need more time. Read recipe details for dietary requirements and ingredient suitability rather than assuming variety guarantees nutritional balance."
+      }
+    ],
+    "related": [
+      "/how-to-create-a-weekly-meal-plan-fast",
+      "/family-meal-planning",
+      "/blog/how-to-keep-meals-varied-without-overthinking-it"
+    ]
+  },
+  {
+    "path": "/meal-planning-for-busy-weeknights",
+    "title": "Meal planning for busy weeknights",
+    "description": "Reduce the daily dinner decision with a flexible plan, realistic cooking times and a linked shopping list.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "Find the evenings with least time",
+        "body": "Review the coming week before choosing dinners. On busy nights, look for recipes whose preparation and cooking steps fit the time and equipment you have."
+      },
+      {
+        "heading": "Review suggestions instead of starting over",
+        "body": "Let Foodedo suggest a plan, then swap dinners that do not fit. Check the recipe method as well as the summary time before deciding."
+      },
+      {
+        "heading": "Shop for the meals you kept",
+        "body": "Save the plan to get its linked shopping list. Check cupboards, add essentials and review quantities before leaving home."
+      },
+      {
+        "heading": "Change the plan when the week changes",
+        "body": "Move through your dinners in the order that works for you. Changes to saved meals update the linked list, so check it again if you swap a dinner after shopping."
+      }
+    ],
+    "related": [
+      "/how-to-create-a-weekly-meal-plan-fast",
+      "/meal-planner-with-grocery-list",
+      "/family-meal-planning"
+    ]
+  },
+  {
+    "path": "/meal-plan-vs-shopping-list-what-you-need",
+    "title": "Meal plan vs shopping list: what each one does",
+    "description": "Understand the difference between deciding what to cook and deciding what to buy, and how Foodedo connects the two.",
+    "kind": "guide",
+    "sections": [
+      {
+        "heading": "A meal plan answers what to cook",
+        "body": "Your plan records the meals and servings you intend to use. It reduces the repeated dinner decision and gives you a set of recipes to work from."
+      },
+      {
+        "heading": "A shopping list answers what to buy",
+        "body": "The list brings recipe ingredients into a shopping checklist. Add extras and check cupboards yourself; a shopping list is not an automatic inventory of food at home."
+      },
+      {
+        "heading": "Use the plan as the starting point",
+        "body": "In Foodedo, saving a plan creates its linked shopping list. If you change a saved meal, the list updates from the plan rather than becoming a separate set of recipe decisions."
+      },
+      {
+        "heading": "Choose the space you mean to use",
+        "body": "Private and Household each have their own plans and lists. Use Household when coordinating with members, and Private for plans you keep to yourself."
+      }
+    ],
+    "related": [
+      "/meal-planner-with-grocery-list",
+      "/recipe-to-shopping-list",
+      "/blog/recipe-app-vs-meal-planner-vs-grocery-list-app"
+    ]
+  },
+  {
+    "path": "/faq",
+    "title": "Foodedo frequently asked questions",
+    "description": "Answers about free access, guest planning, accounts, shopping lists and sharing a Foodedo household.",
+    "kind": "help",
+    "sections": [
+      {
+        "heading": "Is Foodedo free?",
+        "body": "Foodedo is currently free. There is no subscription to purchase. You can browse the standard catalogue and try planning before creating an account."
+      },
+      {
+        "heading": "Do I need an account?",
+        "body": "You can browse public recipes and try a temporary plan as a guest. Sign in or create an account when you want to keep a plan, save recipes or share a household. Guest drafts stay on this device and are not synced to an account until you keep them."
+      },
+      {
+        "heading": "How do I get a shopping list?",
+        "body": "Save a meal plan to create its linked shopping list. Saved plan changes update that list automatically. Shopping-list editing requires an account."
+      },
+      {
+        "heading": "Will all duplicate ingredients be merged?",
+        "body": "Compatible lines can combine, but different names or units may remain separate. Check quantities and your cupboards before shopping. Foodedo does not automatically track pantry stock."
+      },
+      {
+        "heading": "Can we share a plan?",
+        "body": "Signed-in users can create a household and invite someone to join. Household plans and lists are shared with its members; Private is a separate space."
+      },
+      {
+        "heading": "Does the website work offline?",
+        "body": "Use an internet connection for catalogue access and account sync. Foodedo does not promise general offline use in the browser. A temporary guest draft on your device is not a backup of your account."
+      },
+      {
+        "heading": "How do I save or import recipes?",
+        "body": "All shows Foodedo catalogue meals. Use the heart to save catalogue favourites in Saved. When signed in, import a supported recipe link or pasted text to keep a personal recipe in Yours. Usable imports save automatically; incomplete imports ask for missing details. Review the saved result and correct errors."
+      },
+      {
+        "heading": "Can I change every recipe’s servings?",
+        "body": "Choose servings when setting up a plan, then check individual recipes and shopping quantities. Recipes that support scaling offer serving adjustments. Source-only recipes keep the author’s quantities and do not offer a scaling control."
+      },
+      {
+        "heading": "Where do I add milk or other everyday extras?",
+        "body": "Add non-recipe essentials directly to the shopping list linked to your saved plan. Use Check your cupboards to review suggested staples. Checking what is already at home is manual."
+      }
+    ],
+    "related": ["/support/how-to-use", "/support", "/recipe-to-shopping-list"]
+  },
+  {
+    "path": "/support",
+    "title": "Foodedo help and support",
+    "description": "Find help with planning dinners, using shopping lists and understanding Private and Household spaces.",
+    "kind": "help",
+    "sections": [
+      {
+        "heading": "Get started with a useful week",
+        "body": "Browse recipes or try a suggested plan. Review and swap dinners, then create an account when you want to keep the result. Read How to use Foodedo for the full journey."
+      },
+      {
+        "heading": "Find the right plan and list",
+        "body": "Check whether you are in Private or Household. Each space has its own plans and shopping lists. An earlier plan has its own linked list, so check the selected week too."
+      },
+      {
+        "heading": "If account content is unavailable",
+        "body": "Check your connection and that you are signed in to the account that owns the content. A guest draft is local to its device. Do not clear browser storage if you still need an unsaved draft."
+      },
+      {
+        "heading": "Understand what Foodedo keeps",
+        "body": "Read the FAQ for account and guest boundaries. Privacy and Terms describe the service and the handling of information; the V2 drafts are marked for review."
+      }
+    ],
+    "related": ["/support/how-to-use", "/faq", "/privacy", "/terms"]
+  },
+  {
+    "path": "/support/how-to-use",
+    "title": "How to use Foodedo",
+    "description": "A practical introduction to trying a dinner plan, keeping it and shopping from the recipes you choose.",
+    "kind": "help",
+    "sections": [
+      {
+        "heading": "1. Try a suggested week",
+        "body": "On Home, choose Plan my week. In Plan your week, choose how many days you need, the start date and servings. Choose Plan my week there to generate suggestions, then review the dinners, swap unsuitable meals or leave a day free. You can try this without an account or a saved recipe collection."
+      },
+      {
+        "heading": "2. Review your dinners",
+        "body": "Read recipe details and swap meals that do not fit. Check allergens, ingredients and cooking instructions yourself before deciding what to cook."
+      },
+      {
+        "heading": "3. Keep the plan",
+        "body": "Sign in or create an account when you want to save your choices. Foodedo keeps the guest draft through sign-in so you can complete saving it; check the saved result before leaving."
+      },
+      {
+        "heading": "4. Open your shopping list",
+        "body": "Saving creates a linked list. Check cupboards, remove items you already have, add everyday extras and check off purchases. Saved meal changes update their ingredients automatically."
+      },
+      {
+        "heading": "5. Share when it helps",
+        "body": "Create a household and invite another signed-in person to join if you want to share planning. Choose Household for the shared week and Private for your own. You can also save catalogue favourites and import personal recipes when signed in."
+      },
+      {
+        "heading": "6. Import a useful personal recipe",
+        "body": "When signed in, open Recipes and import a supported recipe link or paste the recipe text. Usable imports save automatically in Yours; incomplete imports ask for missing information. Check the result and edit errors. Not every website can be read, and this flow does not import photos or videos."
+      }
+    ],
+    "related": ["/faq", "/household-meal-planning", "/recipe-to-shopping-list"]
+  },
+  {
+    "path": "/privacy",
+    "title": "Privacy Policy",
+    "description": "V2 privacy draft describing guest data, account information, saved food and household sharing.",
+    "kind": "legal",
+    "sections": [
+      {
+        "heading": "About this draft",
+        "body": "This V2 privacy draft describes verified product behavior. It requires owner review before publication as the operative policy. Controller identity, a privacy contact, retention periods, provider terms and international transfer details remain to be confirmed."
+      },
+      {
+        "heading": "Guest use and device storage",
+        "body": "Public catalogue browsing and temporary guest planning are available without an account. Guest drafts and interface preferences can be stored on your device. Guest drafts do not create anonymous personal backend accounts and are not synced between devices."
+      },
+      {
+        "heading": "Accounts and saved content",
+        "body": "Clerk provides authentication. Convex stores account-linked product data such as saved recipes, preferences, plans and shopping lists. Signing in is required for personal persistence and shared household access."
+      },
+      {
+        "heading": "Recipe imports",
+        "body": "Recipe imports process submitted source material using server-side processing and AI services to produce structured recipe content. Completed import jobs clear pasted source text and expire after a short retention period. The final provider disclosures and retention schedule require owner review."
+      },
+      {
+        "heading": "Household sharing",
+        "body": "Household members can access shared plans, shopping lists and explicitly shared recipe snapshots. Creating a household copies the active private plan and linked shopping state. Your private recipe library is not automatically shared in full. Shared records can remain available to other members when you leave."
+      },
+      {
+        "heading": "Deletion and privacy requests",
+        "body": "Account-deletion handling removes user-owned product data and ends household membership; shared household content follows its separate lifecycle. The public request channel, any recovery window and the final retention policy must be confirmed before this draft is approved."
+      }
+    ],
+    "related": ["/terms", "/faq"]
+  },
+  {
+    "path": "/terms",
+    "title": "Terms of Service",
+    "description": "V2 terms draft covering free access, account responsibilities, recipe information and household sharing.",
+    "kind": "legal",
+    "sections": [
+      {
+        "heading": "About this draft",
+        "body": "These V2 terms require owner review before publication as the operative terms. The service operator, contact details, eligibility, governing law, liability provisions and change-notice process remain to be confirmed."
+      },
+      {
+        "heading": "Using Foodedo",
+        "body": "Foodedo helps you decide what to cook, save recipes, plan dinners and shop from a linked list. It is currently free. Guest planning is temporary on your device; an account is required to keep personal plans and use shared household features."
+      },
+      {
+        "heading": "Your account and content",
+        "body": "Keep account access secure and only submit content you are entitled to use. Check imported recipes before relying on them: processing can change structure and wording and can require corrections. Saving an imported recipe does not transfer ownership of its source material."
+      },
+      {
+        "heading": "Food and recipe information",
+        "body": "Check ingredients, allergens, dietary suitability, quantities and cooking instructions yourself. Suggestions and generated imports can be incomplete or inaccurate. Foodedo does not provide medical advice or guarantee suitability for an allergy or dietary requirement."
+      },
+      {
+        "heading": "Sharing a household",
+        "body": "Accept invitations only when you intend to share a planning space. Household members can access and change shared plans and shopping lists. Private remains separate. Shared household content can remain with other members after you leave."
+      },
+      {
+        "heading": "Availability and changes",
+        "body": "Online access is needed for catalogue and account services. Temporary guest drafts are not a guaranteed backup. Final commitments concerning availability, suspension, service changes and dispute handling require owner approval."
+      }
+    ],
+    "related": ["/privacy", "/faq"]
+  }
+]

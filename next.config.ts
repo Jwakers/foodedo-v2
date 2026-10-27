@@ -36,6 +36,18 @@ const nextConfig: NextConfig = {
     ? {
         async redirects() {
           return [
+            { source: "/pricing", destination: "/faq", permanent: false },
+            { source: "/beta", destination: "/", permanent: true },
+            {
+              source: "/discover/recipe/chicken-tacos-with-salsa",
+              destination: "/recipes/chicken-tacos-with-avocado-salsa",
+              permanent: true,
+            },
+            {
+              source: "/recipes/chicken-tacos-with-salsa",
+              destination: "/recipes/chicken-tacos-with-avocado-salsa",
+              permanent: true,
+            },
             { source: "/discover", destination: "/recipes", permanent: true },
             {
               source: "/discover/recipe/:slug",

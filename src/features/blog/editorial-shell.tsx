@@ -47,7 +47,27 @@ export function EditorialShell({ children }: { children: ReactNode }) {
       <footer className="mt-auto border-t border-border">
         <div className="mx-auto flex max-w-360 flex-col justify-between gap-4 px-page-inline pt-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] text-14 text-graphite sm:flex-row sm:items-center lg:px-24 lg:py-8">
           <p>Foodedo · Make food decisions easier.</p>
-          <nav aria-label="Public footer" className="flex gap-6">
+          <nav
+            aria-label="Public footer"
+            className="flex flex-wrap gap-x-6 gap-y-2"
+          >
+            {[
+              ["/recipe-to-shopping-list", "Recipes to shopping list"],
+              ["/family-meal-planning", "Family planning"],
+              ["/household-meal-planning", "Household planning"],
+              ["/support", "Help"],
+              ["/faq", "FAQ"],
+              ["/privacy", "Privacy"],
+              ["/terms", "Terms"],
+            ].map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex min-h-11 items-center text-ink underline-offset-4 hover:underline focus-visible:outline-cadmium"
+              >
+                {label}
+              </Link>
+            ))}
             <Link
               href="/recipes"
               className="inline-flex min-h-11 items-center text-ink underline-offset-4 hover:underline"

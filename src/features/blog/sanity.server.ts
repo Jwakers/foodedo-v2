@@ -4,6 +4,7 @@ import { cache } from "react";
 import { z } from "zod";
 import { blogArticleSchema, blogSummarySchema } from "./content";
 import { getLocalGuide } from "./guides";
+import { applyReviewedContent } from "./reviewed-content";
 import {
   publishedPostFilter,
   querySanity,
@@ -14,8 +15,10 @@ export const getPublishedPosts = cache(async () => {
   const response = await querySanity(
     `*[${publishedPostFilter}] | order(publishedAt desc, _id asc){${summaryProjection}}`,
   );
-  return z.object({ result: z.array(blogSummarySchema) }).parse(response)
-    .result;
+  return z
+    .object({ result: z.array(blogSummarySchema) })
+    .parse(response)
+    .result.map(applyReviewedContent);
 });
 
 export const getBlogArticle = cache(async (slug: string) => {
@@ -27,6 +30,8 @@ export const getBlogArticle = cache(async (slug: string) => {
     { slug },
   );
   // Only a successful, valid CMS response can establish that an article is absent.
-  return z.object({ result: blogArticleSchema.nullable() }).parse(response)
-    .result;
+  const article = z
+    .object({ result: blogArticleSchema.nullable() })
+    .parse(response).result;
+  return article ? applyReviewedContent(article) : null;
 });

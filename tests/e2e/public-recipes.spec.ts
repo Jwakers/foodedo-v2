@@ -64,6 +64,9 @@ test("all legacy recipe URLs have a tested migration outcome and public discover
   expect(redirect.status()).toBe(308);
   expect(redirect.headers().location).toBe("/recipes?utm_source=old");
   const directory = await (await request.get("/recipes")).text();
+  // The directory intentionally renders its first 20 recipes. The complete
+  // catalogue is discoverable through the sitemap, independently of pagination.
+  expect(directory).toMatch(/href="\/recipes\/[a-z0-9-]+"/);
   const xml = await (await request.get("/sitemap.xml")).text();
   expect(xml).toContain(`<loc>${origin}/recipes</loc>`);
   expect(xml).not.toContain("/discover");
@@ -79,7 +82,6 @@ test("all legacy recipe URLs have a tested migration outcome and public discover
       continue;
     }
     expect(response.status(), entry.path).toBe(200);
-    expect(directory, entry.path).toContain(`href="${entry.canonicalPath}"`);
     expect(xml, entry.path).toContain(
       `<loc>${origin}${entry.canonicalPath}</loc>`,
     );
@@ -148,11 +150,22 @@ test("mobile reading and Start cooking retain the displayed revision and selecte
       ).toBeVisible();
     }
   }
-  await page.getByRole("button", { name: /^Serves/ }).click();
-  await page.getByRole("button", { name: /increase/i }).click();
-  const selected = await page
-    .getByRole("button", { name: /^Serves/ })
-    .innerText();
+  const servingsControl = page.getByRole("button", { name: /^Serves/ });
+  let expectedServings = String(reference.recipeYield);
+  if (await servingsControl.count()) {
+    await servingsControl.click();
+    await page.getByRole("button", { name: /increase/i }).click();
+    expectedServings = (await servingsControl.innerText()).match(/\d+/)![0];
+  } else {
+    // Source-only quantities deliberately prevent scaling; cooking must retain
+    // the authored servings instead of requiring a control that is unavailable.
+    await expect(
+      page.getByText("Quantities are kept as written by the author."),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`Serves ${reference.recipeYield}`, { exact: true }),
+    ).toBeVisible();
+  }
   await page.getByRole("button", { name: "Start cooking" }).first().click();
   await expect(page).toHaveURL(/\/recipes\/cook\?/);
   const url = new URL(page.url());
@@ -161,5 +174,5 @@ test("mobile reading and Start cooking retain the displayed revision and selecte
   expect(url.searchParams.get("catalogueVersion")).toBe(
     String(reference.version),
   );
-  expect(url.searchParams.get("servings")).toBe(selected.match(/\d+/)![0]);
+  expect(url.searchParams.get("servings")).toBe(expectedServings);
 });

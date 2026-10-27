@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
+import reviewedArticles from "../../src/features/blog/reviewed-articles.json";
 import inventory from "../../docs/blog-url-inventory.json";
+import { load } from "cheerio";
 
 test("serves the index, articles and sitemap from the full route cache", async ({
   request,
@@ -72,9 +74,16 @@ test("all 33 migrated articles serve initial HTML and matching metadata", async 
     expect(structured, article.path).not.toBeNull();
     expect(JSON.parse(structured![1])).toMatchObject({
       "@type": "BlogPosting",
-      headline: article.title,
+      headline:
+        reviewedArticles.find(
+          (reviewed) => `/blog/${reviewed.slug}` === article.path,
+        )?.title || article.title,
     });
     expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
+    const text = load(html)("main").text();
+    expect(text, article.path).not.toMatch(
+      /chalkboard|Discover (?:feature|tab|section)|share your Foodedo account|90%|free trial/i,
+    );
     expect(html, article.path).not.toMatch(
       /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
     );
@@ -111,9 +120,12 @@ test("reading and navigating articles works without JavaScript", async ({
     "How to Build a Weekly Meal Plan in 15 Minutes",
   );
   await expect(
-    page.getByText("Check your calendar and mark your busiest nights first.", {
-      exact: false,
-    }),
+    page.getByText(
+      "Look at your calendar and decide which evenings need dinner at home.",
+      {
+        exact: false,
+      },
+    ),
   ).toBeVisible();
   await page.getByRole("link", { name: "Back to Blog" }).click();
   await expect(page).toHaveURL(/\/blog$/);
@@ -155,6 +167,10 @@ test("returning from the blog preserves an existing guest plan", async ({
 }) => {
   test.setTimeout(60_000);
   await page.goto("/?try=1");
+  await page.getByRole("button", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Plan my week" }).click();
   await expect(
     page.getByRole("heading", { name: "Your week is ready" }),

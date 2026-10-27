@@ -67,6 +67,18 @@ test("resolves V1 links while preserving external URLs, query strings and fragme
   expect(resolveBlogLink("/dashboard/shopping-list")).toBe("/shop");
   expect(resolveBlogLink("/dashboard/import-recipe")).toBe("/recipes/import");
   expect(resolveBlogLink("/discover")).toBe("/recipes");
+  expect(resolveBlogLink("/pricing?source=blog#free")).toBe(
+    "/faq?source=blog#free",
+  );
+  expect(resolveBlogLink("https://www.foodedo.com/support/contact")).toBe(
+    "/support",
+  );
+  expect(resolveBlogLink("/beta")).toBe("/");
+  expect(
+    resolveBlogLink(
+      "/discover/recipe/chicken-tacos-with-salsa?source=blog#ingredients",
+    ),
+  ).toBe("/recipes/chicken-tacos-with-avocado-salsa?source=blog#ingredients");
   expect(resolveBlogLink("/sign-up?source=blog")).toBe("/?try=1&source=blog");
   expect(resolveBlogLink("/how-to-build-shopping-list-from-meal-plan")).toBe(
     "/blog/how-to-build-shopping-list-from-meal-plan",
