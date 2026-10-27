@@ -69,15 +69,17 @@ test("only a successful null means missing; backend errors propagate", async () 
   expect(query).toHaveBeenCalledTimes(2);
 });
 
-test("the public directory embeds only the first 20-item page", async () => {
-  const result = {
-    page: [{ slug: "first-page-meal" }],
-    isDone: false,
-    continueCursor: "next",
-  };
-  query.mockResolvedValue(result);
-  expect(await getPublishedRecipePage()).toEqual(result);
-  expect(query).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
-    paginationOpts: { numItems: 20, cursor: null },
-  });
+test("the public directory slices a shared catalogue snapshot without exposing a cursor", async () => {
+  const meals = Array.from({ length: 25 }, (_, index) => ({
+    slug: `meal-${index}`,
+    position: index,
+  }));
+  query.mockResolvedValue({ meals });
+  const result = (await getPublishedRecipePage())!;
+  expect(result.page).toHaveLength(20);
+  expect(result.page[0].slug).toBe("meal-24");
+  expect(result.page.at(-1)?.slug).toBe("meal-5");
+  expect(result.isDone).toBe(false);
+  expect(result).not.toHaveProperty("continueCursor");
+  expect(query).toHaveBeenCalledExactlyOnceWith(expect.anything(), {});
 });

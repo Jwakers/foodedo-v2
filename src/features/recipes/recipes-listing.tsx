@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { RecipesIntroduction } from "@/features/onboarding/contextual-introductions";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -37,6 +37,11 @@ import {
 } from "@/lib/domain/plan-display";
 import { formatPersonalRecipeSourceLabel } from "@/lib/domain/recipe-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
+import type { RecipeDirectorySeed } from "@/lib/domain/recipe-directory";
+import { RecipePagination } from "./recipe-pagination";
+import { useWebRecipeBrowse } from "./use-web-recipe-browse";
+import { recipeBrowseHref } from "@/lib/domain/recipe-browse";
+import { toggleRecipeQuickFilter } from "./use-recipe-filters";
 import {
   type RecipeFilters,
   type RecipeSort,
@@ -48,7 +53,6 @@ import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 
 const pageSize = 20;
-type CataloguePage = FunctionReturnType<typeof api.catalogue.list>;
 
 const scopes = ["All", "Saved", "Yours"] as const;
 type RecipeScope = (typeof scopes)[number];
@@ -57,8 +61,10 @@ const recipeDrawerViews = { filters: "filters", sort: "sort" } as const;
 
 export function RecipesListing({
   initialPage,
+  webPagination,
 }: {
-  initialPage?: CataloguePage;
+  initialPage?: RecipeDirectorySeed;
+  webPagination?: { pageNumber: number; totalPages: number; location: string };
 }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { isAuthenticated } = useFoodedoAuth();
@@ -69,25 +75,56 @@ export function RecipesListing({
     savedMealIds,
     toggleSave,
   } = useCatalogueRecipeLibrary();
-  const [scope, setScope] = useState<RecipeScope>("All");
+  const [nativeScope, setNativeScope] = useState<RecipeScope>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterStackKey, setFilterStackKey] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const {
-    filters: recipeFilters,
-    sort: recipeSort,
-    setFilters: setRecipeFilters,
-    setSort: setRecipeSort,
-    isQuickFilterActive,
-    toggleQuickFilter,
-  } = useRecipeFilters();
+  const [nativeSearch, setNativeSearch] = useState("");
+  const nativeFilters = useRecipeFilters();
+  const web = webPagination !== undefined;
+  const browse = useWebRecipeBrowse(
+    web,
+    webPagination?.pageNumber ?? 1,
+    webPagination?.location,
+  );
+  const scope = web ? browse.state.scope : nativeScope;
+  const searchQuery = web ? browse.state.search : nativeSearch;
+  const recipeFilters = web ? browse.state.filters : nativeFilters.filters;
+  const recipeSort = web ? browse.state.sort : nativeFilters.sort;
+  const setScope = (scope: RecipeScope) =>
+    web
+      ? browse.update({ ...browse.state, scope, page: 1 })
+      : setNativeScope(scope);
+  const setSearchQuery = (search: string) =>
+    web
+      ? browse.update({ ...browse.state, search, page: 1 })
+      : setNativeSearch(search);
+  const setRecipeFilters = (filters: RecipeFilters) =>
+    web
+      ? browse.update({ ...browse.state, filters, page: 1 })
+      : nativeFilters.setFilters(filters);
+  const setRecipeSort = (sort: RecipeSort) =>
+    web
+      ? browse.update({ ...browse.state, sort, page: 1 })
+      : nativeFilters.setSort(sort);
+  const toggleQuickFilter = (
+    label: Parameters<typeof toggleRecipeQuickFilter>[1],
+  ) => setRecipeFilters(toggleRecipeQuickFilter(recipeFilters, label));
+  const isQuickFilterActive = nativeFilters.isQuickFilterActive;
+  const currentPage = web ? browse.state.page : 1;
+  const publicBrowse = web && browse.state.scope === "All";
+  const usePublicSeed =
+    publicBrowse &&
+    recipeBrowseHref(browse.state) === webPagination.location &&
+    initialPage !== undefined;
 
   // Saved / Yours need an account; a lone “All” tab is redundant for guests.
   const showScopes = Boolean(isLoaded && isSignedIn);
   const activeScope: RecipeScope = showScopes ? scope : "All";
   const catalogueQuery = usePaginatedQuery(
     api.catalogue.list,
-    activeScope === "Yours" || (activeScope === "Saved" && !isAuthenticated)
+    usePublicSeed ||
+      activeScope === "Yours" ||
+      (activeScope === "Saved" && !isAuthenticated)
       ? "skip"
       : {
           ...recipeFilters,
@@ -112,20 +149,86 @@ export function RecipesListing({
     { initialNumItems: pageSize },
   );
   const useInitialPage =
-    catalogueQuery.status === "LoadingFirstPage" &&
-    activeScope === "All" &&
-    !searchQuery &&
-    !hasActiveRecipeFilters(recipeFilters) &&
-    recipeSort === "recommended" &&
-    initialPage !== undefined;
-  const meals = useInitialPage ? initialPage.page : catalogueQuery.results;
+    usePublicSeed ||
+    (!web &&
+      catalogueQuery.status === "LoadingFirstPage" &&
+      activeScope === "All" &&
+      !searchQuery &&
+      !hasActiveRecipeFilters(recipeFilters) &&
+      recipeSort === "recommended" &&
+      initialPage !== undefined);
+  const activeQuery =
+    activeScope === "Yours" ? personalRecipeQuery : catalogueQuery;
+  const pageEnd = currentPage * pageSize;
+  const needsMoreForPage =
+    web &&
+    !usePublicSeed &&
+    activeQuery.results.length < pageEnd &&
+    (activeQuery.status === "CanLoadMore" ||
+      activeQuery.status === "LoadingMore");
+  const { status: pageStatus, loadMore: loadPageBatch } = activeQuery;
+  // A web page may span short backend batches from bounded sparse searches.
+  useEffect(() => {
+    if (needsMoreForPage && pageStatus === "CanLoadMore")
+      loadPageBatch(pageSize);
+  }, [needsMoreForPage, pageStatus, loadPageBatch]);
+  const exhaustedPageCount = Math.max(
+    1,
+    Math.ceil(activeQuery.results.length / pageSize),
+  );
+  useEffect(() => {
+    if (
+      web &&
+      !usePublicSeed &&
+      isLoaded &&
+      (activeScope === "All" || isAuthenticated) &&
+      activeQuery.status === "Exhausted" &&
+      currentPage > exhaustedPageCount
+    ) {
+      browse.update({ ...browse.state, page: exhaustedPageCount });
+    }
+  });
+  const meals = useInitialPage
+    ? initialPage!.page
+    : web
+      ? catalogueQuery.results.slice((currentPage - 1) * pageSize, pageEnd)
+      : catalogueQuery.results;
   const catalogueIsLoading =
-    catalogueQuery.status === "LoadingFirstPage" && !useInitialPage;
+    !useInitialPage &&
+    (catalogueQuery.status === "LoadingFirstPage" || needsMoreForPage);
   const catalogueCanLoadMore = useInitialPage
-    ? !initialPage.isDone
+    ? !initialPage!.isDone
     : catalogueQuery.status === "CanLoadMore" ||
       catalogueQuery.status === "LoadingMore";
-  const ownRecipes = personalRecipeQuery.results;
+  const ownRecipes = web
+    ? personalRecipeQuery.results.slice((currentPage - 1) * pageSize, pageEnd)
+    : personalRecipeQuery.results;
+  const totalPages = usePublicSeed
+    ? webPagination.totalPages
+    : activeQuery.status === "Exhausted"
+      ? exhaustedPageCount
+      : undefined;
+  const hasNext = usePublicSeed
+    ? !initialPage!.isDone
+    : activeQuery.results.length > pageEnd ||
+      activeQuery.status === "CanLoadMore" ||
+      activeQuery.status === "LoadingMore";
+  const pagination = web ? (
+    <RecipePagination
+      page={currentPage}
+      totalPages={totalPages}
+      hasNext={hasNext}
+      href={(page) => recipeBrowseHref({ ...browse.state, page })}
+      onNavigate={
+        publicBrowse
+          ? undefined
+          : (page) => {
+              browse.update({ ...browse.state, page }, true);
+              window.scrollTo({ top: 0 });
+            }
+      }
+    />
+  ) : undefined;
   const savedIsEmpty =
     activeScope === "Saved" && !isLibraryLoading && savedMealIds.size === 0;
 
@@ -231,9 +334,10 @@ export function RecipesListing({
 
       {activeScope === "All" ? (
         <CatalogueGrid
+          pagination={pagination}
           heading="Ideas for you"
           countLabel={
-            catalogueCanLoadMore
+            !web && catalogueCanLoadMore
               ? `${recipeCountLabel(meals.length)} loaded`
               : recipeCountLabel(meals.length)
           }
@@ -261,9 +365,10 @@ export function RecipesListing({
 
       {activeScope === "Saved" && !isLibraryLoading && !savedIsEmpty ? (
         <CatalogueGrid
+          pagination={pagination}
           heading="Saved favourites"
           countLabel={
-            catalogueCanLoadMore
+            !web && catalogueCanLoadMore
               ? `${recipeCountLabel(meals.length)} loaded`
               : recipeCountLabel(meals.length)
           }
@@ -281,8 +386,12 @@ export function RecipesListing({
 
       {activeScope === "Yours" ? (
         <YoursGrid
+          pagination={pagination}
           recipes={ownRecipes}
-          isLoading={personalRecipeQuery.status === "LoadingFirstPage"}
+          isLoading={
+            personalRecipeQuery.status === "LoadingFirstPage" ||
+            needsMoreForPage
+          }
           canLoadMore={personalRecipeQuery.status === "CanLoadMore"}
           isLoadingMore={personalRecipeQuery.status === "LoadingMore"}
           onLoadMore={() => personalRecipeQuery.loadMore(pageSize)}
@@ -387,7 +496,9 @@ function CatalogueGrid({
   canLoadMore,
   isLoadingMore,
   onLoadMore,
+  pagination,
 }: {
+  pagination?: ReactNode;
   isLoading: boolean;
   canLoadMore: boolean;
   isLoadingMore: boolean;
@@ -415,7 +526,7 @@ function CatalogueGrid({
       ) : meals.length === 0 ? (
         <SearchEmptyState
           hasActiveFilters={hasActiveFilters}
-          hasMore={canLoadMore || isLoadingMore}
+          hasMore={!pagination && (canLoadMore || isLoadingMore)}
         />
       ) : (
         <ul className="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-5">
@@ -440,11 +551,13 @@ function CatalogueGrid({
           ))}
         </ul>
       )}
-      <LoadMoreButton
-        canLoadMore={canLoadMore}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={onLoadMore}
-      />
+      {pagination ?? (
+        <LoadMoreButton
+          canLoadMore={canLoadMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={onLoadMore}
+        />
+      )}
     </section>
   );
 }
@@ -457,7 +570,9 @@ function YoursGrid({
   onLoadMore,
   filters,
   searchQuery,
+  pagination,
 }: {
+  pagination?: ReactNode;
   recipes: ReadonlyArray<PersonalRecipeView>;
   isLoading: boolean;
   canLoadMore: boolean;
@@ -494,7 +609,7 @@ function YoursGrid({
       ) : recipes.length === 0 ? (
         <SearchEmptyState
           hasActiveFilters={hasActiveRecipeFilters(filters)}
-          hasMore={canLoadMore || isLoadingMore}
+          hasMore={!pagination && (canLoadMore || isLoadingMore)}
         />
       ) : (
         <>
@@ -515,11 +630,13 @@ function YoursGrid({
           </ul>
         </>
       )}
-      <LoadMoreButton
-        canLoadMore={canLoadMore}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={onLoadMore}
-      />
+      {pagination ?? (
+        <LoadMoreButton
+          canLoadMore={canLoadMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={onLoadMore}
+        />
+      )}
     </section>
   );
 }

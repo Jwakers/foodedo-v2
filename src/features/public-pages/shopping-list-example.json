@@ -1,0 +1,413 @@
+{
+  "verifiedOn": "2026-10-27",
+  "catalogueUrl": "https://moonlit-perch-843.convex.cloud",
+  "requestedServings": 2,
+  "recipes": [
+    {
+      "id": "chicken-shawarma-wraps",
+      "slug": "chicken-shawarma-wraps",
+      "version": 2.0,
+      "title": "Chicken Shawarma Pitta Wraps",
+      "servings": 2.0,
+      "servingScaling": "source_only",
+      "ingredients": [
+        {
+          "id": "ingredient-0ac4a23df75d50c4",
+          "name": "chicken breast",
+          "note": "thinly sliced into 5 mm strips",
+          "quantity": "400",
+          "shoppingCategory": "meat_and_fish",
+          "unit": "g"
+        },
+        {
+          "id": "ingredient-a6bce00eb15d73f4",
+          "name": "ground cumin",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ingredient-new-coriander",
+          "name": "ground coriander",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ingredient-f5ba129668c63d7b",
+          "name": "smoked paprika",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ingredient-new-turmeric",
+          "name": "ground turmeric",
+          "quantity": "1/2",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ingredient-new-cinnamon",
+          "name": "ground cinnamon",
+          "quantity": "1/4",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ingredient-85153a464b2a377b",
+          "name": "olive oil",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ingredient-c5ecaa396ad7c6ca",
+          "name": "garlic",
+          "note": "finely grated or minced",
+          "quantity": "2",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "clove"
+        },
+        {
+          "id": "ingredient-new-lemon",
+          "name": "lemon",
+          "note": "juice half for the marinade and half for the sauce; cut the rest into wedges to serve if you like",
+          "quantity": "1",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "id": "ingredient-83632b4d8c1e3bd8",
+          "name": "Greek-style yogurt",
+          "quantity": "200",
+          "shoppingCategory": "dairy_and_eggs",
+          "unit": "g"
+        },
+        {
+          "id": "ingredient-new-lettuce",
+          "name": "little gem lettuce",
+          "note": "shredded",
+          "quantity": "1",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "id": "ingredient-5c94042d8a4ac6db",
+          "name": "cucumber",
+          "note": "thinly sliced",
+          "quantity": "1/2",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "id": "ingredient-dfffc3d48379ead2",
+          "name": "tomato",
+          "note": "ripe, thinly sliced",
+          "quantity": "2",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "id": "ingredient-f3bf533138ca8c0c",
+          "name": "pitta bread",
+          "quantity": "4",
+          "shoppingCategory": "bakery",
+          "unit": "whole"
+        },
+        {
+          "id": "ingredient-new-salt",
+          "name": "fine salt",
+          "quantity": "to taste",
+          "shoppingCategory": "pantry"
+        },
+        {
+          "id": "ingredient-new-pepper",
+          "name": "black pepper",
+          "note": "freshly ground",
+          "quantity": "to taste",
+          "shoppingCategory": "pantry"
+        }
+      ]
+    },
+    {
+      "id": "tofu-stir-fry-with-broccoli-and-peppers",
+      "slug": "tofu-stir-fry-with-broccoli-and-peppers",
+      "version": 2.0,
+      "title": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
+      "servings": 2.0,
+      "servingScaling": "safe",
+      "ingredients": [
+        {
+          "group": "Tofu",
+          "id": "ingredient-c6deb79b4a049d16",
+          "name": "firm tofu",
+          "note": "drained",
+          "quantity": "396",
+          "shoppingCategory": "pantry",
+          "unit": "g"
+        },
+        {
+          "group": "Tofu and sauce",
+          "id": "ingredient-new-cornflour",
+          "name": "cornflour",
+          "note": "divided",
+          "quantity": "4",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "group": "Stir-fry",
+          "id": "ingredient-new-neutral-oil",
+          "name": "neutral oil",
+          "note": "such as sunflower or vegetable oil",
+          "quantity": "2",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-385116b522449272",
+          "name": "soy sauce",
+          "quantity": "4",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-48e70539bebdfa2d",
+          "name": "toasted sesame oil",
+          "quantity": "2",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-06b6bbf1964c1462",
+          "name": "garlic",
+          "note": "finely chopped or grated",
+          "quantity": "3",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "clove"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-8e4be07af81fc26e",
+          "name": "fresh ginger",
+          "note": "finely grated",
+          "quantity": "15",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "g"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-new-rice-vinegar",
+          "name": "rice vinegar",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-new-brown-sugar",
+          "name": "soft light brown sugar",
+          "quantity": "2",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "group": "Sauce",
+          "id": "ingredient-new-water-sauce",
+          "name": "water",
+          "note": "for the sauce, plus 2 tbsp for the pan",
+          "quantity": "120",
+          "shoppingCategory": "other",
+          "unit": "ml"
+        },
+        {
+          "group": "Stir-fry",
+          "id": "ingredient-a75325b8b5edf780",
+          "name": "broccoli",
+          "note": "cut into small florets, stalk thinly sliced",
+          "quantity": "250",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "g"
+        },
+        {
+          "group": "Stir-fry",
+          "id": "ingredient-cb1a52acb4c4251b",
+          "name": "red bell pepper",
+          "note": "deseeded and thinly sliced",
+          "quantity": "1",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "group": "Stir-fry",
+          "id": "ingredient-8b6719978f8ac84c",
+          "name": "spring onions",
+          "note": "thinly sliced, white and green parts separated",
+          "quantity": "2",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "whole"
+        },
+        {
+          "group": "Rice",
+          "id": "ingredient-16c7bb86ef98af14",
+          "name": "long-grain white rice",
+          "quantity": "180",
+          "shoppingCategory": "pantry",
+          "unit": "g"
+        },
+        {
+          "group": "Rice",
+          "id": "ingredient-new-water-rice",
+          "name": "water",
+          "note": "for the rice",
+          "quantity": "360",
+          "shoppingCategory": "other",
+          "unit": "ml"
+        },
+        {
+          "group": "Rice",
+          "id": "ingredient-new-salt",
+          "name": "fine salt",
+          "note": "for the rice",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "pinch"
+        },
+        {
+          "group": "To serve",
+          "id": "ingredient-7d072943e95d7512",
+          "name": "black sesame seeds",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        }
+      ]
+    },
+    {
+      "id": "ai-kn7d32cbxfjc2s9yd55102kkcx8gj13z",
+      "slug": "teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli",
+      "version": 2.0,
+      "title": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
+      "servings": 2.0,
+      "servingScaling": "source_only",
+      "ingredients": [
+        {
+          "id": "ing_jasmine_rice",
+          "name": "jasmine rice",
+          "quantity": "150",
+          "shoppingCategory": "pantry",
+          "unit": "g"
+        },
+        {
+          "id": "ing_salmon",
+          "name": "salmon fillets",
+          "note": "about 140-160g each, preferably skin-on",
+          "quantity": "2",
+          "shoppingCategory": "meat_and_fish",
+          "unit": "fillets"
+        },
+        {
+          "id": "ing_broccoli",
+          "name": "broccoli",
+          "note": "cut into small florets",
+          "quantity": "300",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "g"
+        },
+        {
+          "id": "ing_spring_onions",
+          "name": "spring onions",
+          "note": "finely sliced",
+          "quantity": "2",
+          "shoppingCategory": "fruit_and_veg"
+        },
+        {
+          "id": "ing_garlic",
+          "name": "garlic",
+          "note": "finely grated or crushed",
+          "quantity": "2",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "cloves"
+        },
+        {
+          "id": "ing_ginger",
+          "name": "fresh ginger",
+          "note": "finely grated",
+          "quantity": "15",
+          "shoppingCategory": "fruit_and_veg",
+          "unit": "g"
+        },
+        {
+          "id": "ing_light_soy",
+          "name": "light soy sauce",
+          "quantity": "45",
+          "shoppingCategory": "pantry",
+          "unit": "ml"
+        },
+        {
+          "id": "ing_honey",
+          "name": "runny honey",
+          "quantity": "30",
+          "shoppingCategory": "pantry",
+          "unit": "g"
+        },
+        {
+          "id": "ing_rice_vinegar",
+          "name": "rice vinegar",
+          "quantity": "15",
+          "shoppingCategory": "pantry",
+          "unit": "ml"
+        },
+        {
+          "id": "ing_sesame_oil",
+          "name": "toasted sesame oil",
+          "quantity": "5",
+          "shoppingCategory": "pantry",
+          "unit": "ml"
+        },
+        {
+          "id": "ing_cornflour",
+          "name": "cornflour",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tsp"
+        },
+        {
+          "id": "ing_rapeseed_oil",
+          "name": "rapeseed oil",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ing_sesame_seeds",
+          "name": "sesame seeds",
+          "note": "for serving",
+          "quantity": "1",
+          "shoppingCategory": "pantry",
+          "unit": "tbsp"
+        },
+        {
+          "id": "ing_salt",
+          "name": "fine salt",
+          "note": "divided, or to taste",
+          "quantity": "1/2",
+          "shoppingCategory": "other",
+          "unit": "tsp"
+        },
+        {
+          "id": "ing_black_pepper",
+          "name": "black pepper",
+          "note": "plus extra to taste",
+          "quantity": "1/4",
+          "shoppingCategory": "other",
+          "unit": "tsp"
+        }
+      ]
+    }
+  ]
+}

@@ -16,7 +16,11 @@
       },
       {
         "heading": "Check your cupboards and add extras",
-        "body": "Open Shopping to review the ingredients from your saved plan. Check your cupboards lets you add suggested staples if you need them. Remove ingredients you already have, and add extras such as milk, foil or cleaning supplies. Foodedo does not track your pantry stock for you."
+        "body": "Open Shopping to review the ingredients from your saved plan. Check your cupboards lets you add suggested staples if you need them. Remove ingredients you already have, and add extras such as milk, foil or cleaning supplies. Foodedo does not track your pantry stock for you.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See the worked three-recipe shopping list, with quantities and source details."
+        }
       },
       {
         "heading": "Use the list while you shop",
@@ -45,7 +49,11 @@
       },
       {
         "heading": "Review the automatically combined list",
-        "body": "Saving the plan creates one linked shopping list. Matching ingredient names are grouped, and compatible amounts can be added together. Different names may remain separate, and amounts with incompatible units are not automatically added together. Check the ingredient details before shopping rather than assuming every similar ingredient has been merged."
+        "body": "Saving the plan creates one linked shopping list. Matching ingredient names are grouped, and compatible amounts can be added together. Different names may remain separate, and amounts with incompatible units are not automatically added together. Check the ingredient details before shopping rather than assuming every similar ingredient has been merged.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See the worked three-recipe shopping list, with quantities and source details."
+        }
       },
       {
         "heading": "Check what you already have",
@@ -74,7 +82,11 @@
       },
       {
         "heading": "Save your week and open Shopping",
-        "body": "Choose Save my plan when you are happy with the review. Sign in or create an account if you have been trying it as a guest. The saved plan creates its shopping list automatically. Open Shopping, remove ingredients already in your cupboards and add any extras you need."
+        "body": "Choose Save my plan when you are happy with the review. Sign in or create an account if you have been trying it as a guest. The saved plan creates its shopping list automatically. Open Shopping, remove ingredients already in your cupboards and add any extras you need.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See the worked three-recipe shopping list, with quantities and source details."
+        }
       },
       {
         "heading": "Set up a household when you want to share",

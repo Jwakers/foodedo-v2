@@ -50,6 +50,12 @@ try {
     await readFile(path.join(root, ".next/prerender-manifest.json"), "utf8"),
   );
   assert.equal(manifest.routes[recipePath(freshSlug)], undefined);
+  const nextDirectoryPage = 3;
+  const continuationPath = `/recipes?page=${nextDirectoryPage}`;
+  const continuationSlugs = Array.from(
+    { length: (nextDirectoryPage - 1) * 20 },
+    (_, index) => `public-directory-fixture-${index}`,
+  );
   for (const artifact of artifacts) {
     await cp(path.join(root, ".next", artifact), path.join(scratch, artifact), {
       recursive: true,
@@ -114,7 +120,11 @@ try {
     "Metadata and body should share one read",
   );
 
-  await state({ offsetMs: 1_810_000, version: 2 });
+  await state({
+    offsetMs: 1_810_000,
+    version: 2,
+    published: [freshSlug, ...continuationSlugs],
+  });
   const unchanged = await request(recipePath(freshSlug));
   assert.equal(unchanged.cache, "HIT");
   assert.ok(
@@ -124,7 +134,7 @@ try {
   await eventually(async () => {
     const response = await request("/recipes");
     return (
-      response.cache === "HIT" &&
+      response.status === 200 &&
       response.html.includes(`href="${recipePath(freshSlug)}"`)
     );
   }, "Directory did not refresh after 30 minutes");
@@ -139,12 +149,34 @@ try {
     "Sitemap should read the complete published directory once",
   );
   assert.equal(
-    (await state()).requests.listingPage,
+    (await state()).requests.listingPage ?? 0,
+    0,
+    "Directory and sitemap should share the same catalogue snapshot",
+  );
+  const continuation = await request(continuationPath);
+  assert.equal(continuation.status, 200);
+  assert.equal(
+    continuation.cache,
+    null,
+    "Query-driven HTML must not use the full route cache",
+  );
+  assert.ok(
+    continuation.html.includes(
+      `href="${recipePath(continuationSlugs.at(-1))}"`,
+    ),
+  );
+  assert.ok(
+    !continuation.html.includes(`href="${recipePath(freshSlug)}"`),
+    "Continuation must contain its own slice, not the first page",
+  );
+  assert.equal((await request(continuationPath)).status, 200);
+  assert.equal(
+    (await state()).requests.listing,
     1,
-    "Recipe directory should read only the first page once",
+    "New continuation pages share the cached listing",
   );
   console.log(
-    "PASS: unbuilt slug MISS → HIT; 30-minute first-page and sitemap refresh; recipe still cached.",
+    "PASS: unbuilt recipe MISS → HIT; query-driven directory slices share the 30-minute sitemap data cache without rebuilding; recipe still cached.",
   );
 
   assert.equal((await request(recipePath(missingSlug))).status, 404);

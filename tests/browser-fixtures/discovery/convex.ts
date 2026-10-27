@@ -1,5 +1,5 @@
 import type { OptimisticLocalStore } from "convex/browser";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { getFunctionName, type FunctionReference } from "convex/server";
 import { selectDiscoveryMeals } from "../../../src/lib/domain/recipe-discovery";
 import { PROTEIN_CATEGORIES } from "../../../src/lib/domain/recipes";
@@ -109,7 +109,15 @@ function queryResult(reference: FunctionReference<"query">, args?: unknown) {
       return { meals };
     case "catalogue:list":
       return {
-        page: meals.filter(
+        page: (new URLSearchParams(location.search).has("pagination")
+          ? Array.from({ length: 45 }, (_, index) => ({
+              ...meals[index % meals.length],
+              id: `meal-${index}`,
+              slug: `meal-${index}`,
+              title: `Dinner ${index}`,
+            }))
+          : meals
+        ).filter(
           (meal) =>
             !(args as { savedOnly?: boolean })?.savedOnly ||
             savedIds().includes(meal.id),
@@ -222,7 +230,20 @@ export function useConvex() {
 export function usePaginatedQuery(
   reference: FunctionReference<"query">,
   args: unknown,
+  options?: { initialNumItems: number },
 ) {
   const result = useQuery(reference, args) as { page: unknown[] } | undefined;
-  return { results: result?.page ?? [], status: "Exhausted", loadMore() {} };
+  const [count, setCount] = useState(options?.initialNumItems ?? 20);
+  const [key, setKey] = useState(JSON.stringify(args));
+  if (key !== JSON.stringify(args)) {
+    setKey(JSON.stringify(args));
+    setCount(options?.initialNumItems ?? 20);
+  }
+  return {
+    results: result?.page.slice(0, count) ?? [],
+    status: result && result.page.length > count ? "CanLoadMore" : "Exhausted",
+    loadMore(number = 20) {
+      setCount((count) => count + number);
+    },
+  };
 }

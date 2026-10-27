@@ -29,6 +29,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:unit
       - run: pnpm test:convex
+      - run: node scripts/audit-shopping-list-example.mjs
       - run: pnpm build:ios:web
       - run: node scripts/check-blog-build.mjs native
       - run: node scripts/check-public-pages-build.mjs native

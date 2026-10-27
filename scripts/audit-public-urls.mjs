@@ -61,7 +61,7 @@ for (let offset = 0; offset < entries.length; offset += 4) {
             `${entry.path}: redirect in sitemap`,
           );
         }
-        if (entry.finalStatus !== 200 || entry.destination === "/") return;
+        if (entry.finalStatus !== 200) return;
         const $ = load(await response.text());
         assert.equal($("h1").length, 1, `${entry.path}: expected one H1`);
         assert.ok(
@@ -107,6 +107,7 @@ for (const path of [
   "/discover?source=legacy",
   "/discover/recipe/chicken-tacos-with-salsa?source=legacy",
   "/recipes/chicken-tacos-with-salsa?source=legacy",
+  "/recipes/page/1?source=legacy",
 ]) {
   const response = await get(path);
   assert.equal(
@@ -121,7 +122,43 @@ assert.equal(
 );
 const robots = await (await get("/robots.txt")).text();
 assert.ok(robots.includes(`Sitemap: ${new URL("/sitemap.xml", canonical)}`));
+// Follow the same visible pagination links as a visitor without JavaScript.
+const discovered = new Set();
+const visited = new Set();
+let directoryPath = "/recipes";
+while (directoryPath) {
+  assert.ok(!visited.has(directoryPath), "Recipe pagination loops");
+  visited.add(directoryPath);
+  const response = await get(directoryPath);
+  assert.equal(response.status, 200, `${directoryPath}: unavailable`);
+  const $ = load(await response.text());
+  assert.equal(
+    $("link[rel=canonical]").attr("href"),
+    new URL(directoryPath, canonical).href,
+  );
+  $("main a[href]").each((_, element) => {
+    const href = $(element).attr("href");
+    if (
+      /^\/recipes\/[a-z0-9-]+$/.test(href) &&
+      locations.has(new URL(href, canonical).href)
+    )
+      discovered.add(new URL(href, canonical).href);
+  });
+  const next = $('nav[aria-label="Recipe pages"] a')
+    .toArray()
+    .map((element) => $(element).attr("href"))
+    .find((href) => /^\/recipes\?page=\d+$/.test(href) && !visited.has(href));
+  directoryPath = next || "";
+}
+const expectedRecipes = [...locations].filter((url) =>
+  /^\/recipes\/[a-z0-9-]+$/.test(new URL(url).pathname),
+);
+assert.deepEqual(
+  expectedRecipes.filter((url) => !discovered.has(url)),
+  [],
+  "Recipes missing from crawlable directory",
+);
 assert.deepEqual(failures, [], failures.join("\n"));
 console.log(
-  `Verified ${entries.length} public legacy URLs at ${base.origin}, including restored contact and the removed-recipe exception. Statuses, redirects, initial content, canonicals, indexability and sitemap passed.`,
+  `Verified ${entries.length} public legacy URLs and ${expectedRecipes.length} recipes across ${visited.size} linked directory pages at ${base.origin}. Statuses, redirects, initial content, canonicals, indexability and sitemap passed.`,
 );

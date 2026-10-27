@@ -35,9 +35,11 @@ export function publicPageMetadata(path: string): Metadata {
 export function PublicPage({
   path,
   children,
+  introduction,
 }: {
   path: string;
   children?: ReactNode;
+  introduction?: ReactNode;
 }) {
   const page = getPage(path);
   return (
@@ -59,6 +61,7 @@ export function PublicPage({
           </h1>
           <p className="text-18 leading-7 text-graphite">{page.description}</p>
         </header>
+        {introduction}
         {page.sections.map((section, index) => (
           <section
             key={section.heading}
@@ -72,6 +75,14 @@ export function PublicPage({
               {section.heading}
             </h2>
             <p className="text-16 leading-7 text-graphite">{section.body}</p>
+            {"link" in section && section.link ? (
+              <Link
+                href={section.link.href}
+                className="mt-3 inline-flex min-h-11 items-center text-16 underline underline-offset-4 focus-visible:outline-cadmium"
+              >
+                {section.link.label}
+              </Link>
+            ) : null}
           </section>
         ))}
       </article>

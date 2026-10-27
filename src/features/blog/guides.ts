@@ -22,6 +22,29 @@ export const localGuides = guideContent.map((guide) => {
         style: "normal",
         children: [{ _type: "span" as const, text: section.body }],
       },
+      ...("link" in section && section.link
+        ? [
+            {
+              _type: "block" as const,
+              _key: `link-${index}`,
+              style: "normal",
+              markDefs: [
+                {
+                  _type: "link",
+                  _key: `example-${index}`,
+                  href: section.link.href,
+                },
+              ],
+              children: [
+                {
+                  _type: "span" as const,
+                  text: section.link.label,
+                  marks: [`example-${index}`],
+                },
+              ],
+            },
+          ]
+        : []),
     ]),
   };
   return article;

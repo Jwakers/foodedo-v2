@@ -5,6 +5,13 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { CatalogueMeal, CatalogueMealSummary } from "@/lib/domain/recipes";
+import { recipeDirectoryPage } from "@/lib/domain/recipe-directory";
+import { filterRecipes } from "@/lib/domain/recipe-filtering";
+import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
+import {
+  parseRecipeBrowse,
+  type WebRecipeBrowse,
+} from "@/lib/domain/recipe-browse";
 
 export const recipeRevalidateSeconds = 86_400;
 export const directoryRevalidateSeconds = 1_800;
@@ -64,15 +71,17 @@ export const getPublicRecipe = cache(
   },
 );
 
-/** Only the first page is embedded in the public directory's HTML/RSC payload. */
-export const getPublishedRecipePage = cache(async () => {
-  const url = deploymentUrl();
-  return unstable_cache(
-    () =>
-      client(url).query(api.catalogue.list, {
-        paginationOpts: { numItems: 20, cursor: null },
-      }),
-    ["public-recipes-page-v1", url],
-    { revalidate: directoryRevalidateSeconds },
-  )();
-});
+/** Cached public summaries are filtered and sliced before reaching the browser. */
+export const getPublishedRecipePage = cache(
+  async (state: WebRecipeBrowse = parseRecipeBrowse("/recipes")) => {
+    const meals = await getPublishedRecipes();
+    return recipeDirectoryPage(
+      filterCatalogueMealsBySearch(
+        filterRecipes(meals, state.filters),
+        state.search,
+      ),
+      state.page,
+      state.sort,
+    );
+  },
+);

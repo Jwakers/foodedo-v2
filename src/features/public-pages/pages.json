@@ -2,24 +2,20 @@
   {
     "path": "/recipe-to-shopping-list",
     "title": "Turn recipes into one shopping list",
-    "description": "Turn your planned recipes into a linked grocery list. Review meals, save your plan and check what you need before shopping.",
+    "description": "Turn recipes into one shopping list without retyping ingredients. See a worked grocery list for three dinners for two, including quantities and what needs checking.",
     "kind": "guide",
     "sections": [
       {
-        "heading": "Start with the meals you want to cook",
-        "body": "Browse Foodedo recipes or try a suggested plan. Review the meals and swap any that do not fit your week. You can try planning as a guest; your draft stays temporarily on this device."
+        "heading": "How to make your own linked list",
+        "body": "Browse Foodedo recipes or try a suggested plan. Choose the meals you want to cook, check servings and review your choices. You can try planning as a guest; your draft stays temporarily on this device."
       },
       {
-        "heading": "Keep your plan to get its shopping list",
-        "body": "Create an account or sign in when you want to keep the plan. Saving a plan creates its linked shopping list, using the recipes and servings in that plan. You do not need to retype every ingredient."
+        "heading": "Save your plan, then check Shopping",
+        "body": "Create an account or sign in to keep your plan and use its linked shopping list. Saving creates the list automatically. Check ingredient details and your cupboards, add everyday extras and tick off purchases. Foodedo does not track pantry stock automatically."
       },
       {
-        "heading": "Check quantities and cupboard basics",
-        "body": "Open Shopping to review the ingredients. Foodedo combines compatible ingredient lines, but different names or measurements can remain separate. Check those lines and your cupboards before you buy; Foodedo does not track pantry stock automatically."
-      },
-      {
-        "heading": "Shop from the same list as your plan",
-        "body": "Add everyday extras, remove items you already have and tick off purchases. When saved meals change, their linked list updates automatically. Review new ingredients before your next shop."
+        "heading": "Keep the list connected to your meals",
+        "body": "Changes to saved meals update their linked ingredients. Manual extras stay on the list, and matching ingredients retain their shopping state. Review quantities again if you change a meal after shopping. Try Foodedo below to build your own plan; it does not automatically select the three example dinners."
       }
     ],
     "related": [
@@ -94,7 +90,11 @@
       },
       {
         "heading": "2. Save the plan",
-        "body": "Sign in or create an account to keep your choices. The saved plan gets a shopping list automatically, so you can move from choosing meals to checking ingredients."
+        "body": "Sign in or create an account to keep your choices. The saved plan gets a shopping list automatically, so you can move from choosing meals to checking ingredients.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See three real recipes combined into one shopping list"
+        }
       },
       {
         "heading": "3. Check what is already at home",
@@ -123,7 +123,11 @@
       },
       {
         "heading": "Understand what combining means",
-        "body": "Compatible ingredient lines can be consolidated. Different ingredient names and incompatible units may remain separate; Foodedo does not promise to recognise every equivalent ingredient or convert every measurement."
+        "body": "Compatible ingredient lines can be consolidated. Different ingredient names and incompatible units may remain separate; Foodedo does not promise to recognise every equivalent ingredient or convert every measurement.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See three real recipes combined into one shopping list"
+        }
       },
       {
         "heading": "Review ingredients in context",
@@ -152,7 +156,11 @@
       },
       {
         "heading": "Save once, then open Shop",
-        "body": "Keeping a plan requires an account and creates its linked shopping list. The plan supplies recipe ingredients; you add any household extras."
+        "body": "Keeping a plan requires an account and creates its linked shopping list. The plan supplies recipe ingredients; you add any household extras.",
+        "link": {
+          "href": "/recipe-to-shopping-list",
+          "label": "See three real recipes combined into one shopping list"
+        }
       },
       {
         "heading": "Adjust meals without rebuilding your list",

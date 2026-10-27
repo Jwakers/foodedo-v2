@@ -23,13 +23,10 @@ test("the shared recipe list hydrates search from its server seed", async ({
   );
 });
 
-test("public directory and recipes serve static HTML with the agreed cache lifetimes", async ({
+test("recipe details retain ISR while the directory renders query-specific HTML", async ({
   request,
 }) => {
-  for (const [path, seconds] of [
-    ["/recipes", 1800],
-    [recipePath, 86400],
-  ] as const) {
+  for (const [path, seconds] of [[recipePath, 86400]] as const) {
     await expect
       .poll(async () => {
         const response = await request.get(path);
@@ -41,6 +38,12 @@ test("public directory and recipes serve static HTML with the agreed cache lifet
       })
       .toBe("HIT");
   }
+  const directory = await request.get("/recipes?page=2");
+  expect(directory.status()).toBe(200);
+  expect(directory.headers()["x-nextjs-cache"]).toBeUndefined();
+  expect(await directory.text()).toContain(
+    'href="https://www.foodedo.com/recipes?page=2"',
+  );
   const html = await (await request.get(recipePath)).text();
   expect(html).toContain(`rel="canonical" href="${origin}${recipePath}"`);
   expect(html).toContain("Ingredients");
@@ -64,8 +67,8 @@ test("all legacy recipe URLs have a tested migration outcome and public discover
   expect(redirect.status()).toBe(308);
   expect(redirect.headers().location).toBe("/recipes?utm_source=old");
   const directory = await (await request.get("/recipes")).text();
-  // The directory intentionally renders its first 20 recipes. The complete
-  // catalogue is discoverable through the sitemap, independently of pagination.
+  // The directory renders its first 20 recipes. Continuation pages and the
+  // sitemap both expose the complete catalogue; organic-discovery tests follow the links.
   expect(directory).toMatch(/href="\/recipes\/[a-z0-9-]+"/);
   const xml = await (await request.get("/sitemap.xml")).text();
   expect(xml).toContain(`<loc>${origin}/recipes</loc>`);

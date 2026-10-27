@@ -3,12 +3,11 @@
 import { useHomeEntryState } from "@/components/use-home-entry-state";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Welcome } from "@/features/welcome/welcome";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { enterGuestExperience } from "@/components/use-welcome-session";
 
-export function HomeEntry() {
-  const state = useHomeEntryState();
+function GuestEntryIntent() {
   const guestEntry = useSearchParams().get("try") === "1";
 
   useEffect(() => {
@@ -23,20 +22,22 @@ export function HomeEntry() {
     );
   }, [guestEntry]);
 
-  if (state === "loading") {
-    return (
-      <div
-        className="min-h-[50vh] bg-paper"
-        aria-busy="true"
-        aria-label="Loading"
-      />
-    );
-  }
+  return null;
+}
 
-  if (state === "welcome" && !guestEntry) {
-    return <Welcome />;
-  }
+export function HomeEntry() {
+  const state = useHomeEntryState();
+  return (
+    <>
+      <Suspense fallback={null}>
+        <GuestEntryIntent />
+      </Suspense>
+      {state === "home" ? <HomeDashboard /> : <Welcome />}
+    </>
+  );
+}
 
+function HomeDashboard() {
   return (
     <main className="w-full px-page-inline py-8 sm:px-8 sm:py-12">
       <Dashboard />

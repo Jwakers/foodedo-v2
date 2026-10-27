@@ -17,7 +17,10 @@ const paths = JSON.parse(
 if (mode === "native") {
   assert.ok(
     !Object.keys(paths).some(
-      (path) => path.includes("/discover") || path.includes("/recipes/[slug]"),
+      (path) =>
+        path.includes("/discover") ||
+        path.includes("/recipes/[slug]") ||
+        path.includes("/recipes/page/"),
     ),
     "Public recipe routes leaked into iOS",
   );
@@ -64,8 +67,12 @@ if (mode === "native") {
   const inventory = JSON.parse(
     await readFile("docs/recipe-url-inventory.json", "utf8"),
   );
-  assert.equal(manifest.routes["/recipes"]?.compute, "static");
-  assert.equal(manifest.routes["/recipes"]?.initialRevalidateSeconds, 1800);
+  assert.equal(
+    manifest.routes["/recipes"],
+    undefined,
+    "Query-driven directory must render at request time",
+  );
+  assert.ok(paths["/(product)/recipes/page"], "Web directory route is missing");
   for (const entry of inventory.recipes.filter(
     (entry) => entry.outcome === "permanent-redirect",
   )) {
@@ -86,11 +93,15 @@ if (mode === "native") {
     false,
     "New recipes must render without rebuilding",
   );
+  assert.ok(
+    !Object.keys(paths).some((route) => route.includes("/recipes/page/")),
+    "Separate path-based directory routes must not remain",
+  );
   const sitemap = await readFile(".next/server/app/sitemap.xml.body", "utf8");
   assert.ok(sitemap.includes("/recipes/beef-lasagne"));
   assert.ok(!sitemap.includes("/discover"));
   assert.ok(!sitemap.includes("/recipes/view?"));
   console.log(
-    "Public recipe pages are prebuilt with 24-hour ISR; directory uses 30 minutes; new slugs remain enabled.",
+    "Public recipe pages are prebuilt with 24-hour ISR; directory renders query parameters using cached catalogue data; new slugs remain enabled.",
   );
 }

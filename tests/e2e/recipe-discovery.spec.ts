@@ -86,6 +86,25 @@ test.beforeEach(async ({ page }) => {
 
 const region = (page: import("@playwright/test").Page) =>
   page.getByRole("region", { name: "Meals you might like", exact: true });
+
+test("native-style recipe listing retains one Load more control and appends batches", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/?surfaces&pagination");
+  const listing = page
+    .getByRole("heading", { name: "Ideas for you", exact: true })
+    .locator("..")
+    .locator("..");
+  await expect(listing.getByRole("listitem")).toHaveCount(20);
+  await expect(
+    listing.getByRole("button", { name: "Load more", exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("navigation", { name: "Recipe pages" }),
+  ).toHaveCount(0);
+  await listing.getByRole("button", { name: "Load more", exact: true }).click();
+  await expect(listing.getByRole("listitem")).toHaveCount(40);
+});
 const destinations = (page: import("@playwright/test").Page) =>
   region(page)
     .locator("li a")

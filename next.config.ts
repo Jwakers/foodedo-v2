@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
             },
             { source: "/discover", destination: "/recipes", permanent: true },
             {
+              source: "/recipes/page/1",
+              destination: "/recipes",
+              permanent: true,
+            },
+            {
+              source: "/recipes/page/:pageNumber",
+              destination: "/recipes?page=:pageNumber",
+              permanent: true,
+            },
+            {
               source: "/discover/recipe/:slug",
               destination: "/recipes/:slug",
               permanent: true,

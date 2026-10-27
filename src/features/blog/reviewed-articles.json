@@ -8398,6 +8398,26 @@
       },
       {
         "_type": "block",
+        "_key": "worked-shopping-list-link",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "worked-example",
+            "href": "/recipe-to-shopping-list"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "worked-example-text",
+            "marks": ["worked-example"],
+            "text": "See how three real recipes become one shopping list, with quantities and source details."
+          }
+        ]
+      },
+      {
+        "_type": "block",
         "_key": "v2-p-2",
         "style": "normal",
         "children": [

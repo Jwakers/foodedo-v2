@@ -1,0 +1,117 @@
+import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/brand-logo";
+
+const collageImages = [
+  {
+    src: "/images/welcome/pasta-primavera.webp",
+    alt: "Pasta primavera with colourful vegetables and grated cheese",
+    className:
+      "relative h-full min-h-39.5 w-[60.5%] shrink-0 overflow-hidden rounded-media",
+    sizes: "212px",
+  },
+  {
+    src: "/images/welcome/chicken-shawarma.webp",
+    alt: "Chicken shawarma pittas with salad and yogurt sauce",
+    className: "relative h-[75px] w-full overflow-hidden rounded-md",
+    sizes: "130px",
+  },
+  {
+    src: "/images/welcome/chickpea-curry.webp",
+    alt: "Creamy coconut chickpea curry with spinach and rice",
+    className: "relative h-[75px] w-full overflow-hidden rounded-md",
+    sizes: "130px",
+  },
+] as const;
+
+/** Public presentation is shared by the initial HTML and the hydrated welcome. */
+export function WelcomeContent({ actions }: { actions: ReactNode }) {
+  return (
+    <main
+      aria-labelledby="welcome-heading"
+      className="mx-auto flex w-full max-w-175 flex-col pt-[env(safe-area-inset-top)]"
+    >
+      <div className="flex h-13 shrink-0 items-center px-page-inline">
+        <BrandLogo />
+      </div>
+
+      <div className="flex flex-col gap-2.5 px-page-inline pt-4.5">
+        <h1
+          id="welcome-heading"
+          className="font-display text-42 font-semibold tracking-tight text-ink"
+        >
+          Make food decisions easier.
+        </h1>
+        <p className="max-w-82.5 text-14 leading-5 text-graphite">
+          Save meal plans, your own recipes and shopping lists—all in one place.
+        </p>
+      </div>
+
+      <div className="px-page-inline pt-2.5">
+        <div className="flex h-39.5 w-full gap-2 overflow-hidden rounded-lg">
+          <div className={collageImages[0].className}>
+            <Image
+              src={collageImages[0].src}
+              alt={collageImages[0].alt}
+              fill
+              priority
+              sizes={collageImages[0].sizes}
+              className="object-cover"
+            />
+          </div>
+          <div className="flex min-w-32.5 w-[37%] shrink-0 flex-col gap-2">
+            <div className={collageImages[1].className}>
+              <Image
+                src={collageImages[1].src}
+                alt={collageImages[1].alt}
+                fill
+                priority
+                sizes={collageImages[1].sizes}
+                className="object-cover"
+              />
+            </div>
+            <div className={collageImages[2].className}>
+              <Image
+                src={collageImages[2].src}
+                alt={collageImages[2].alt}
+                fill
+                priority
+                sizes={collageImages[2].sizes}
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5 px-page-inline pt-5 pb-6.5">
+        {actions}
+
+        <p className="text-center text-12 leading-4 text-graphite">
+          Try Foodedo now. Save everything later.
+        </p>
+        {process.env.NEXT_PUBLIC_CAPACITOR_BUILD !== "true" ? (
+          <nav
+            aria-label="Explore Foodedo"
+            className="flex flex-wrap justify-center gap-x-5"
+          >
+            {[
+              ["/recipes", "Recipes"],
+              ["/recipe-to-shopping-list", "Recipes to shopping list"],
+              ["/blog", "Blog"],
+            ].map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex min-h-11 items-center text-14 text-graphite underline underline-offset-4 focus-visible:outline-cadmium"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </div>
+    </main>
+  );
+}
