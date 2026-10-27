@@ -76,6 +76,16 @@ for (const viewport of [
       })
       .toBe(true);
     const guide = help.getByRole("region", { name: "Foodedo guide" });
+    await expect(guide.getByRole("link", { name: "Contact us" })).toHaveCount(
+      1,
+    );
+    const headingStyles = await guide.locator("h2").evaluateAll((headings) =>
+      headings.map((heading) => {
+        const style = getComputedStyle(heading);
+        return `${style.fontFamily}|${style.fontSize}|${style.fontWeight}`;
+      }),
+    );
+    expect(new Set(headingStyles).size).toBe(1);
     const bottomGap = await guide.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
       const last = element.lastElementChild!;

@@ -153,9 +153,9 @@
     {
       "path": "/support/contact",
       "destination": "/support/contact",
-      "status": 404,
-      "finalStatus": 404,
-      "decision": "deferred-contact-restoration"
+      "status": 200,
+      "finalStatus": 200,
+      "decision": "restored-formspree-contact"
     },
     {
       "path": "/blog/stop-asking-whats-for-dinner-foodedo",

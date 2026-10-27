@@ -59,13 +59,11 @@ test("mobile editorial navigation fits, skip link works and CTA enters guest pla
   ).toBeVisible();
 });
 
-test("pricing stays temporary and deferred contact is an honest 404", async ({
-  request,
-}) => {
+test("pricing stays temporary and contact is restored", async ({ request }) => {
   const pricing = await request.get("/pricing?from=old", { maxRedirects: 0 });
   expect(pricing.status()).toBe(307);
   expect(pricing.headers().location).toBe("/faq?from=old");
-  expect((await request.get("/support/contact")).status()).toBe(404);
+  expect((await request.get("/support/contact")).status()).toBe(200);
   expect(
     (await request.get("/public-migration-definitely-missing-page")).status(),
   ).toBe(404);

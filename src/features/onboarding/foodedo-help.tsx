@@ -8,7 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { contactLink } from "@/lib/routing/contact";
 import {
   Drawer,
   DrawerBody,
@@ -38,6 +39,10 @@ const concepts = [
   [
     "Shop from your plan",
     "Sign in to keep your plan and create its linked shopping list automatically. Add everyday extras directly in Shopping. Change a saved meal and the list updates too.",
+  ],
+  [
+    "Sharing a household?",
+    "Household has a shared plan and shopping list; Private stays separate. When favourites are enabled, shared plans consider members’ saved catalogue favourites.",
   ],
 ] as const;
 
@@ -92,14 +97,22 @@ export function FoodedoHelpProvider({ children }: { children: ReactNode }) {
               </section>
             ))}
             <section className="pt-5">
-              <h2 className="text-14 leading-5.5 font-bold">
-                Sharing a household?
+              <h2 className="font-display text-22 leading-6.75 font-semibold tracking-card">
+                Need a hand?
               </h2>
-              <p className="mt-2 text-14 leading-5.5 text-graphite">
-                Household has a shared plan and shopping list; Private stays
-                separate. When favourites are enabled, shared plans consider
-                members’ saved catalogue favourites.
+              <p className="mt-2 text-15 leading-5.75 text-graphite">
+                Have a question or found a problem? Send us a message.
               </p>
+              <a
+                {...contactLink()}
+                onClick={() => setOpen(false)}
+                className={buttonVariants({
+                  variant: "secondary",
+                  className: "mt-4",
+                })}
+              >
+                Contact us
+              </a>
             </section>
           </DrawerBody>
           <DrawerFooter>

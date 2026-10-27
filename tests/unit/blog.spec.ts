@@ -71,7 +71,7 @@ test("resolves V1 links while preserving external URLs, query strings and fragme
     "/faq?source=blog#free",
   );
   expect(resolveBlogLink("https://www.foodedo.com/support/contact")).toBe(
-    "/support",
+    "/support/contact",
   );
   expect(resolveBlogLink("/beta")).toBe("/");
   expect(

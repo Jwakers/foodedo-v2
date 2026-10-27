@@ -9,6 +9,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
+      # Non-deliverable form ID; browser tests intercept every Formspree request.
+      FORMSPREE_FORM_ID: contacttest
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_CONVEX_URL: ${{ vars.NEXT_PUBLIC_CONVEX_URL }}
       NEXT_PUBLIC_CONVEX_SITE_URL: ${{ vars.NEXT_PUBLIC_CONVEX_SITE_URL }}

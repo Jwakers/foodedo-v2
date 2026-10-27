@@ -95,11 +95,6 @@ for (let offset = 0; offset < entries.length; offset += 4) {
           locations.has(new URL(entry.destination, canonical).href),
           `${entry.path}: missing sitemap entry`,
         );
-        assert.equal(
-          $("a[href='/support/contact']").length,
-          0,
-          `${entry.path}: deferred contact link`,
-        );
       } catch (error) {
         failures.push(error.message);
       }
@@ -128,5 +123,5 @@ const robots = await (await get("/robots.txt")).text();
 assert.ok(robots.includes(`Sitemap: ${new URL("/sitemap.xml", canonical)}`));
 assert.deepEqual(failures, [], failures.join("\n"));
 console.log(
-  `Verified ${entries.length} public legacy URLs at ${base.origin}, including deferred contact and removed-recipe exceptions. Statuses, redirects, initial content, canonicals, indexability and sitemap passed.`,
+  `Verified ${entries.length} public legacy URLs at ${base.origin}, including restored contact and the removed-recipe exception. Statuses, redirects, initial content, canonicals, indexability and sitemap passed.`,
 );

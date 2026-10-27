@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { BlogInvitation } from "@/features/blog/editorial-shell";
 import { siteUrl } from "@/lib/seo/site-url";
@@ -31,7 +32,13 @@ export function publicPageMetadata(path: string): Metadata {
   };
 }
 
-export function PublicPage({ path }: { path: string }) {
+export function PublicPage({
+  path,
+  children,
+}: {
+  path: string;
+  children?: ReactNode;
+}) {
   const page = getPage(path);
   return (
     <main
@@ -68,6 +75,7 @@ export function PublicPage({ path }: { path: string }) {
           </section>
         ))}
       </article>
+      {children}
       <nav aria-label="Related reading" className="border-t border-border pt-6">
         <h2 className="mb-3 text-14 font-semibold">Keep exploring</h2>
         <ul>
@@ -84,7 +92,9 @@ export function PublicPage({ path }: { path: string }) {
           ))}
         </ul>
       </nav>
-      {page.kind !== "legal" ? <BlogInvitation /> : null}
+      {page.kind !== "legal" && page.kind !== "contact" ? (
+        <BlogInvitation />
+      ) : null}
     </main>
   );
 }

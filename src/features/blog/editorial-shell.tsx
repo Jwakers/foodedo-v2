@@ -56,6 +56,7 @@ export function EditorialShell({ children }: { children: ReactNode }) {
               ["/family-meal-planning", "Family planning"],
               ["/household-meal-planning", "Household planning"],
               ["/support", "Help"],
+              ["/support/contact", "Contact us"],
               ["/faq", "FAQ"],
               ["/privacy", "Privacy"],
               ["/terms", "Terms"],

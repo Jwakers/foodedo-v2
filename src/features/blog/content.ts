@@ -158,8 +158,6 @@ const legacyDestinations: Record<string, string> = {
   "/sign-up": "/?try=1",
   "/pricing": "/faq",
   "/beta": "/",
-  // Contact restoration is deferred; send existing editorial links to help.
-  "/support/contact": "/support",
   "/how-to-build-shopping-list-from-meal-plan":
     "/blog/how-to-build-shopping-list-from-meal-plan",
 };

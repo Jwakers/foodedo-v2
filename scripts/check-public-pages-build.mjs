@@ -68,6 +68,11 @@ if (mode === "web") {
           !content.includes("A more useful week"),
           `Public page content leaked into ${file}`,
         );
+        assert.doesNotMatch(
+          content,
+          /formspree\.io\/f\/|FORMSPREE_FORM_ID/,
+          `Contact form leaked into ${file}`,
+        );
         for (const page of pages)
           assert.ok(
             !content.includes(`href="${page.path}"`),

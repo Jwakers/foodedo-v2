@@ -1,0 +1,21 @@
+# Contact
+
+The public `/support/contact` page uses the editorial shell and works without an account. Name, Email and Message are required. It posts directly to Formspree, with a JavaScript enhancement for sending, success, provider-validation and network-error feedback. Failures preserve the entered text. There are no attachments, automatic retries, account identifiers or diagnostic payloads; the only submitted fields are `name`, `email`, `message` and Formspree's `_gotcha` honeypot. Messages are not stored in Foodedo's backend or browser storage.
+
+Set `FORMSPREE_FORM_ID=mljjjkkz` in the web deployment environment **before building**. The ID is public; it is not an API secret. The local ignored `.env.local` is configured, while `.env.example` documents the setting without embedding a production form. A missing or invalid setting leaves a readable page with an unavailable message and no submit control. Static page output means changing this setting requires rebuilding the web app.
+
+The recipient inbox is configured in the Formspree dashboard. Use standard spam filtering and the honeypot for this first version, with custom CAPTCHA requirements disabled unless a separate CAPTCHA integration is implemented. If restricting submissions by domain, allow `foodedo.com`; local or preview-origin submissions may be classified as spam by that setting. See [Formspree domain restrictions](https://help.formspree.io/articles/form-and-project-settings/restrict-to-domain) and [the submission pattern](https://formspree.io/blog/formspree-ajax/).
+
+Contact is reachable from the signed-in account menu, the Help drawer (including guests), the support hub and the editorial footer. Web navigation stays on the current site. In packaged iOS, the account action and help link open `NEXT_PUBLIC_SITE_URL` (default `https://www.foodedo.com`) at `/support/contact` in the external device browser using Capacitor's existing new-window handling. The page, form component and Formspree endpoint do not ship in the native bundle. There is no new native plugin or backend endpoint.
+
+The restored URL has a canonical and web sitemap entry; old editorial contact links retain their destination. The migration inventory now expects 200 rather than a deferred 404. The privacy draft discloses Formspree processing of name/email/message; its existing owner-review status remains unchanged.
+
+## Verification
+
+Run formatting, lint, typecheck, unit tests, both production builds and the web/native public-page manifest checks. Browser tests in `tests/e2e/contact.spec.ts` intercept all Formspree traffic: they cover validation, payload minimisation, pending/duplicate submission, success, provider/network errors, retry, keyboard navigation and guest/help/support discovery. The public-page suite checks the restored URL, sitemap and no-JavaScript HTML. No automated real message is sent.
+
+Before release, set the deployment environment, deploy the website and manually confirm one real submission arrives in the configured inbox. On an iOS device, confirm Contact opens the hosted page in the external browser and returning to Foodedo retains the current task. These inbox/device checks cannot be established by a local web build.
+
+Local verification on 27 October 2026: both production builds and editorial/native isolation checks passed, along with formatting, lint, typecheck, 268 unit tests and 22 contact/public-page/blog/onboarding browser tests. The browser suite includes the complete 152-URL audit. The contact page was visually inspected at 390px; keyboard/overflow checks also ran at 320px. CI uses a non-deliverable `contacttest` form ID, and all submission tests intercept Formspree traffic. No real submission, production deployment or physical-device check was performed.
+
+Final review: Name is required, rejects blank/whitespace-only values and is trimmed in the submitted payload. Formspree name validation errors are displayed next to the field, and failed submissions preserve all three entered values. The review also fixed a stale general error remaining after local validation failed on a retry. All three fields retain stable accessible names; the help drawer uses consistent section typography and keeps Contact in its scrolling body. No remaining blocking code-review findings were identified.

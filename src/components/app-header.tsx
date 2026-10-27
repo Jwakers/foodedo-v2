@@ -8,7 +8,8 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/react";
-import { UsersRound, ChevronLeft, CircleHelp } from "lucide-react";
+import { UsersRound, ChevronLeft, CircleHelp, Mail } from "lucide-react";
+import { contactLink } from "@/lib/routing/contact";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -159,6 +160,7 @@ function DefaultAccountControls() {
 
 function AccountButton() {
   const openHelp = useFoodedoHelp();
+  const router = useRouter();
   return (
     <div className="-mr-1 flex size-11 shrink-0 items-center justify-center">
       <UserButton
@@ -183,6 +185,20 @@ function AccountButton() {
             onClick={openHelp}
           />
           <UserButton.Action label="manageAccount" />
+          <UserButton.Action
+            label="Contact us"
+            labelIcon={<Mail className="size-4" />}
+            onClick={() => {
+              const link = contactLink();
+              if (link.target)
+                window.open(
+                  link.href,
+                  link.target,
+                  link.rel.replaceAll(" ", ","),
+                );
+              else router.push(link.href);
+            }}
+          />
           <UserButton.Action label="signOut" />
         </UserButton.MenuItems>
       </UserButton>

@@ -353,7 +353,13 @@
         "body": "Read the FAQ for account and guest boundaries. Privacy and Terms describe the service and the handling of information; the V2 drafts are marked for review."
       }
     ],
-    "related": ["/support/how-to-use", "/faq", "/privacy", "/terms"]
+    "related": [
+      "/support/contact",
+      "/support/how-to-use",
+      "/faq",
+      "/privacy",
+      "/terms"
+    ]
   },
   {
     "path": "/support/how-to-use",
@@ -417,6 +423,10 @@
       {
         "heading": "Deletion and privacy requests",
         "body": "Account-deletion handling removes user-owned product data and ends household membership; shared household content follows its separate lifecycle. The public request channel, any recovery window and the final retention policy must be confirmed before this draft is approved."
+      },
+      {
+        "heading": "Contact messages",
+        "body": "When you use Contact us, your name, email address and message are sent to Formspree and the Foodedo support inbox so we can respond. The form does not attach your Foodedo account details, recipes or diagnostic data. Retention and processor details remain subject to the policy review described above."
       }
     ],
     "related": ["/terms", "/faq"]
@@ -453,5 +463,18 @@
       }
     ],
     "related": ["/privacy", "/faq"]
+  },
+  {
+    "path": "/support/contact",
+    "title": "Contact us",
+    "description": "Have a question, found a problem or want to share an idea? Send the Foodedo team a message.",
+    "kind": "contact",
+    "sections": [
+      {
+        "heading": "We’re here to help",
+        "body": "Tell us what you need help with and include any steps that led to a problem. You do not need an account to get in touch."
+      }
+    ],
+    "related": ["/faq", "/support", "/privacy"]
   }
 ]
