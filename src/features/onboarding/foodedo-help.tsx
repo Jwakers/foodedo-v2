@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { X } from "lucide-react";
+import { useAuth } from "@clerk/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { contactLink } from "@/lib/routing/contact";
 import {
@@ -49,6 +50,7 @@ const concepts = [
 /** A standard drawer keeps the current task mounted while the guide is open. */
 export function FoodedoHelpProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { userId } = useAuth();
   const previousFocus = useRef<HTMLElement | null>(null);
   function openHelp() {
     previousFocus.current =
@@ -104,7 +106,7 @@ export function FoodedoHelpProvider({ children }: { children: ReactNode }) {
                 Have a question or found a problem? Send us a message.
               </p>
               <a
-                {...contactLink()}
+                {...contactLink(undefined, undefined, userId)}
                 onClick={() => setOpen(false)}
                 className={buttonVariants({
                   variant: "secondary",

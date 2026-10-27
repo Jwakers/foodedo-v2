@@ -7,6 +7,7 @@ import {
   Show,
   SignInButton,
   UserButton,
+  useAuth,
 } from "@clerk/react";
 import { UsersRound, ChevronLeft, CircleHelp, Mail } from "lucide-react";
 import { contactLink } from "@/lib/routing/contact";
@@ -159,6 +160,7 @@ function DefaultAccountControls() {
 }
 
 function AccountButton() {
+  const { userId } = useAuth();
   const openHelp = useFoodedoHelp();
   const router = useRouter();
   return (
@@ -189,7 +191,7 @@ function AccountButton() {
             label="Contact us"
             labelIcon={<Mail className="size-4" />}
             onClick={() => {
-              const link = contactLink();
+              const link = contactLink(undefined, undefined, userId);
               if (link.target)
                 window.open(
                   link.href,

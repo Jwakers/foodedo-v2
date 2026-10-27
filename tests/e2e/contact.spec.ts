@@ -28,6 +28,7 @@ test("contact has a standard form fallback without JavaScript", async ({
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
+  await expect(page.locator('input[name="userId"]')).toHaveValue("");
   await context.close();
 });
 
@@ -84,7 +85,8 @@ test("sends only the intended fields and confirms success without duplicate subm
     expect(body).toContain('name="email"');
     expect(body).toContain('name="message"');
     expect(body).toContain('name="_gotcha"');
-    expect(body.match(/Content-Disposition:/g)).toHaveLength(4);
+    expect(body).toMatch(/name="userId"\r\n\r\n\r\n/);
+    expect(body.match(/Content-Disposition:/g)).toHaveLength(5);
     expect(body).not.toMatch(/accountId|recipeId|diagnostic/);
     await pending;
     await route.fulfill({ status: 200, json: { ok: true } });
@@ -218,4 +220,51 @@ test("guest Help and public support expose contact, with accessible mobile field
     .getByRole("link", { name: "Contact us" })
     .click();
   await expect(page).toHaveURL(/\/support\/contact$/);
+});
+
+test("optional identity stays blank and does not block sending when Clerk is unavailable", async ({
+  page,
+}) => {
+  await page.route(/clerk/, (route) => route.abort());
+  await page.route(formEndpoint, (route) =>
+    route.fulfill({ status: 200, json: { ok: true } }),
+  );
+  await fillContact(page);
+  await expect(page.locator('input[name="userId"]')).toHaveValue("");
+  await expect(page.locator('input[name="userId"]')).not.toHaveAttribute(
+    "required",
+  );
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Message sent" }),
+  ).toBeVisible();
+});
+
+test("forwarded signed-in app identity is hidden, submitted and removed from the address bar", async ({
+  page,
+}) => {
+  await page.route(/clerk/, (route) => route.abort());
+  let payload = "";
+  await page.route(formEndpoint, (route) => {
+    payload = route.request().postData()!;
+    return route.fulfill({ status: 200, json: { ok: true } });
+  });
+  await page.goto("/support/contact#supportUserId=user_app_example");
+  const field = page.locator('input[name="userId"]');
+  await expect(field).toHaveValue("user_app_example");
+  await expect(field).toHaveAttribute("type", "hidden");
+  await expect(page).toHaveURL(/\/support\/contact$/);
+  await page.getByLabel("Name", { exact: true }).fill("Sam Taylor");
+  await page.getByLabel("Email", { exact: true }).fill("different@example.com");
+  await page
+    .getByLabel("Message", { exact: true })
+    .fill("A mocked account question.");
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Message sent" }),
+  ).toBeVisible();
+  expect(payload).toContain("user_app_example");
+  expect(payload).toContain("different@example.com");
+  await page.getByRole("button", { name: "Send another message" }).click();
+  await expect(field).toHaveValue("user_app_example");
 });

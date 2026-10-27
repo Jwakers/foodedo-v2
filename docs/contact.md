@@ -1,6 +1,6 @@
 # Contact
 
-The public `/support/contact` page uses the editorial shell and works without an account. Name, Email and Message are required. It posts directly to Formspree, with a JavaScript enhancement for sending, success, provider-validation and network-error feedback. Failures preserve the entered text. There are no attachments, automatic retries, account identifiers or diagnostic payloads; the only submitted fields are `name`, `email`, `message` and Formspree's `_gotcha` honeypot. Messages are not stored in Foodedo's backend or browser storage.
+The public `/support/contact` page uses the editorial shell and works without an account. Name, Email and Message are required. It posts directly to Formspree, with a JavaScript enhancement for sending, success, provider-validation and network-error feedback. Failures preserve the entered text. There are no attachments, automatic retries or diagnostic payloads. The submitted fields are `name`, `email`, `message`, optional `userId` and Formspree's `_gotcha` honeypot. Messages are not stored in Foodedo's backend or browser storage.
 
 Set `FORMSPREE_FORM_ID=mljjjkkz` in the web deployment environment **before building**. The ID is public; it is not an API secret. The local ignored `.env.local` is configured, while `.env.example` documents the setting without embedding a production form. A missing or invalid setting leaves a readable page with an unavailable message and no submit control. Static page output means changing this setting requires rebuilding the web app.
 
@@ -8,7 +8,7 @@ The recipient inbox is configured in the Formspree dashboard. Use standard spam 
 
 Contact is reachable from the signed-in account menu, the Help drawer (including guests), the support hub and the editorial footer. Web navigation stays on the current site. In packaged iOS, the account action and help link open `NEXT_PUBLIC_SITE_URL` (default `https://www.foodedo.com`) at `/support/contact` in the external device browser using Capacitor's existing new-window handling. The page, form component and Formspree endpoint do not ship in the native bundle. There is no new native plugin or backend endpoint.
 
-The restored URL has a canonical and web sitemap entry; old editorial contact links retain their destination. The migration inventory now expects 200 rather than a deferred 404. The privacy draft discloses Formspree processing of name/email/message; its existing owner-review status remains unchanged.
+The restored URL has a canonical and web sitemap entry; old editorial contact links retain their destination. The migration inventory now expects 200 rather than a deferred 404. The privacy draft discloses Formspree processing of name/email/message and the optional account ID; its existing owner-review status remains unchanged.
 
 ## Verification
 
@@ -19,3 +19,13 @@ Before release, set the deployment environment, deploy the website and manually 
 Local verification on 27 October 2026: both production builds and editorial/native isolation checks passed, along with formatting, lint, typecheck, 268 unit tests and 22 contact/public-page/blog/onboarding browser tests. The browser suite includes the complete 152-URL audit. The contact page was visually inspected at 390px; keyboard/overflow checks also ran at 320px. CI uses a non-deliverable `contacttest` form ID, and all submission tests intercept Formspree traffic. No real submission, production deployment or physical-device check was performed.
 
 Final review: Name is required, rejects blank/whitespace-only values and is trimmed in the submitted payload. Formspree name validation errors are displayed next to the field, and failed submissions preserve all three entered values. The review also fixed a stale general error remaining after local validation failed on a retry. All three fields retain stable accessible names; the help drawer uses consistent section typography and keeps Contact in its scrolling body. No remaining blocking code-review findings were identified.
+
+## Optional account context
+
+`userId` is the Clerk user ID (the identity stored as `users.authSubject` in Convex), not a Convex document ID. Contact loads a Clerk-only provider around the form; it does not load Convex or gate the form on account readiness. Signed-in browser users get their full name and primary email address prefilled. Both fields remain editable, and account details arriving later never overwrite a field the user has edited, including one they deliberately cleared. Guests and no-JavaScript visits start with blank fields. An error boundary keeps the form usable if identity loading fails; the draft lives outside that boundary so entered text survives the fallback.
+
+An iOS contact link forwards the signed-in app user's ID in a URL fragment because the external browser may have no Foodedo session. The contact page removes that fragment immediately after reading it into memory, and an authenticated browser session takes precedence if present. No token or secret is transferred; fragments are not sent in HTTP requests or referrer headers. The ID is optional, client-supplied support context and must never be treated as proof of account ownership or authorization for account changes.
+
+Optional-identity verification: both builds, native isolation, formatting, lint, typecheck, 272 unit tests and 24 browser tests passed. The contact tests also verify blank cached/no-JavaScript HTML, submission with Clerk unavailable, a forwarded app ID alongside a different entered email, fragment removal and retention of context for another message. No real Formspree submission was sent.
+
+Account-prefill verification: both builds, native isolation, formatting, lint, typecheck, 272 unit tests, six focused rendering tests and 24 browser tests passed. Rendering tests mock Clerk to verify signed-in defaults, guest/loading blanks, missing profile details and edited values taking precedence. Browser submissions remain mocked; live signed-in account and inbox checks remain manual.

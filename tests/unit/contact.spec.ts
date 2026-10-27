@@ -12,3 +12,16 @@ test("web contact stays on this site and iOS opens only the hosted contact page"
     "https://preview.foodedo.com/support/contact",
   );
 });
+
+test("signed-in native contact carries only an identity hint in the fragment", () => {
+  const link = new URL(
+    contactLink(true, "https://www.foodedo.com", "user_example").href,
+  );
+  expect(link.search).toBe("");
+  expect(new URLSearchParams(link.hash.slice(1)).get("supportUserId")).toBe(
+    "user_example",
+  );
+  expect(contactLink(true, "https://www.foodedo.com", null).href).toBe(
+    "https://www.foodedo.com/support/contact",
+  );
+});

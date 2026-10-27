@@ -426,7 +426,7 @@
       },
       {
         "heading": "Contact messages",
-        "body": "When you use Contact us, your name, email address and message are sent to Formspree and the Foodedo support inbox so we can respond. The form does not attach your Foodedo account details, recipes or diagnostic data. Retention and processor details remain subject to the policy review described above."
+        "body": "When you use Contact us, your name, email address and message are sent to Formspree and the Foodedo support inbox so we can respond. If you are signed in, your Clerk user ID is included to help identify your Foodedo account, even if you enter a different email address. Guest submissions leave this optional field blank. Recipes, session tokens and diagnostic data are not attached. Retention and processor details remain subject to the policy review described above."
       }
     ],
     "related": ["/terms", "/faq"]

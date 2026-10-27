@@ -2,7 +2,7 @@ import {
   PublicPage,
   publicPageMetadata,
 } from "@/features/public-pages/public-page";
-import { ContactForm } from "@/features/contact/contact-form";
+import { ContactFormWithAccount } from "@/features/contact/contact-form-with-account";
 
 export const dynamic = "force-static";
 export const metadata = publicPageMetadata("/support/contact");
@@ -15,7 +15,7 @@ export default function ContactPage() {
       : undefined;
   return (
     <PublicPage path="/support/contact">
-      <ContactForm formId={formId} />
+      <ContactFormWithAccount formId={formId} />
     </PublicPage>
   );
 }
