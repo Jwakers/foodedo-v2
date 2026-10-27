@@ -75,6 +75,20 @@ test("available name parts work when full name or email is missing", () => {
   expect(value(html, "email")).toBe("");
 });
 
+test("a cleared draft after send does not restore account prefill", () => {
+  const html = renderToStaticMarkup(
+    <ContactForm
+      formId="contacttest"
+      prefillName="Alex Example"
+      prefillEmail="alex@example.com"
+      draft={{ name: "", email: "", message: "" }}
+      setDraft={() => {}}
+    />,
+  );
+  expect(value(html, "name")).toBe("");
+  expect(value(html, "email")).toBe("");
+});
+
 test.each(["A different name", ""])(
   "edited fields (%j) win over late account details",
   (name) => {

@@ -1,14 +1,14 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type Dispatch,
   type SetStateAction,
+  type SyntheticEvent,
 } from "react";
-import { Button } from "@/components/ui/button";
 
 type FieldErrors = { name?: string; email?: string; message?: string };
 const fieldClass =
@@ -53,7 +53,7 @@ export function ContactForm({
       </p>
     );
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     const form = event.currentTarget;
