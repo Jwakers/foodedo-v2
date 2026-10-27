@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountSyncGate } from "@/features/auth/account-sync-gate";
 import { AnalyticsIdentity } from "@/components/analytics-identity";
 import { ClerkProvider, useAuth } from "@clerk/react";
 import { ConvexReactClient } from "convex/react";
@@ -24,9 +25,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
     >
       {!isCapacitorBuild && <AnalyticsIdentity />}
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
-        <OnboardingProvider>
-          <HouseholdProvider>{children}</HouseholdProvider>
-        </OnboardingProvider>
+        <AccountSyncGate>
+          <OnboardingProvider>
+            <HouseholdProvider>{children}</HouseholdProvider>
+          </OnboardingProvider>
+        </AccountSyncGate>
       </ConvexProviderWithClerk>
     </ClerkProvider>
   );

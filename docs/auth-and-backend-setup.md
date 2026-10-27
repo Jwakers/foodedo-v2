@@ -134,3 +134,25 @@ The packaged app has origin `capacitor://localhost`, so that origin must appear 
 Use the Clerk production instance and Convex production deployment. Configure their Frontend API URL, publishable key, client URL, and a separate production webhook/signing secret. Never point a production Clerk webhook at the development Convex deployment.
 
 The full release gate is in [the production pre-launch checklist](production-pre-launch-checklist.md).
+
+## Account preparation and recovery
+
+A verified Clerk session is not sufficient for personal queries: the matching
+`users` record must also exist in Convex. `AccountSyncGate`, inside the Convex
+provider and ahead of the product providers, subscribes to the existing
+`users.current` query and checks that its `authSubject` matches the current Clerk
+user. This prevents `ACCOUNT_NOT_SYNCED` errors from household and planning
+queries reaching the generic error boundary during a new-account signup.
+
+If the record is missing or still loading, Foodedo shows an account-preparation
+screen and resumes automatically when the record arrives. After ten seconds,
+it explains the delay and offers retry and support. A sign-out-to-guest action
+is available throughout; retry and sign-out preserve the IndexedDB guest plan.
+Switching accounts requires a matching record for the new Clerk user. Guests
+still enter without waiting for account sync.
+
+This recovery UI does not create users or bypass the webhook. If preparation
+continues indefinitely, check the production Clerk webhook's delivery attempts,
+destination and signing secret. A `user.created` audit event or zero failed
+attempts alone does not establish that a delivery reached the correct Convex
+production deployment. Do not merge accounts by normalising email aliases.
