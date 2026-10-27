@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -120,6 +121,7 @@ export function PlanSetupPage({
 
   async function generate(values: PrePlanSetup, remember: boolean) {
     const generationKey = getDraftSpaceKey();
+    const started = performance.now();
     try {
       if (remember) {
         await updateUsual({
@@ -189,23 +191,37 @@ export function PlanSetupPage({
           : [],
         recentPlanMealIds: history ?? [],
       };
+      let generated;
       if (firstMeal) {
-        await beginGuestPlanDraftWithMeal({
+        generated = await beginGuestPlanDraftWithMeal({
           ...options,
           catalogueMealId: firstMeal,
           catalogueVersion: firstVersion,
         });
       } else if (next) {
-        await beginNextGuestPlanDraft(options);
+        generated = await beginNextGuestPlanDraft(options);
       } else {
-        await beginConfiguredGuestPlanDraft(options);
+        generated = await beginConfiguredGuestPlanDraft(options);
       }
       if (getDraftSpaceKey() !== generationKey) return;
+      track("plan_generated", {
+        is_guest: !isAuthenticated,
+        household_size: values.servings,
+        days: values.planDays,
+        meal_count: generated.mealChoices.filter(
+          (meal) => meal.catalogueMealId !== null,
+        ).length,
+        generation_ms: Math.round(performance.now() - started),
+      });
       applySetup(values);
       retire("home");
       if (onPlanCreated) await onPlanCreated();
       else router.replace(current ? "/week/new" : "/week");
     } catch (error) {
+      track("plan_generation_failed", {
+        is_guest: !isAuthenticated,
+        error_type: "generation_error",
+      });
       console.error("Failed to generate the configured plan.", error);
       toast.error(
         "Foodedo couldn’t start your week. Check your connection and try again.",

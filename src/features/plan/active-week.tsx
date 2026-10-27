@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useAuth } from "@clerk/react";
+import { rememberPlanVisit } from "@/lib/analytics";
+
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -76,6 +80,10 @@ export function ActiveWeek({
   onStartNextPlan: () => void | Promise<void>;
   isStartingNextPlan: boolean;
 }) {
+  const { userId } = useAuth();
+  useEffect(() => {
+    rememberPlanVisit(plan._id, userId);
+  }, [plan._id, userId]);
   const { isHousehold, household, spaceArgs } = useHouseholdSpace();
   const catalogue = useCurrentCatalogue();
   const putMeal = useMutation(api.mealPlans.planMeal);

@@ -1,0 +1,60 @@
+# Product analytics
+
+Web-only PostHog measures the public-to-saved-plan funnel. The browser SDK loads lazily; no server SDK, backend events, schema changes or native analytics are added. The root layout mounts one analytics provider. Clerk's product-layout resource listener manages account identity, including changes while capture is disabled. Re-enabling analytics synchronises that identity before events resume.
+
+## Configuration
+
+Set `NEXT_PUBLIC_POSTHOG_KEY` to the EU project's public ingestion key and `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com` before building the production web deployment. An explicit host overrides the EU default. Leave the key unset in development, tests, CI and previews: every helper is a no-op and the ingestion proxy returns 404. `NEXT_PUBLIC_POSTHOG_DEBUG=true` enables SDK debug logging only in development, when a key is configured. Never commit a live key to the example file.
+
+Requests use `/ingest`, rewritten to a web-only forwarding route. That route selects the configured ingestion/assets host and forwards only the content type and body; Clerk cookies, authorisation, referrer headers and upstream cookies are not forwarded. Rewrites and the forwarding route are excluded from the Capacitor export. This proxy does not override Do Not Track or a user's analytics preference.
+
+## Privacy and persistence
+
+There is no consent banner. PostHog uses `persistence: 'memory'`, manual pageviews, pageleave capture, `person_profiles: 'identified_only'`, Do Not Track, and no autocapture, recordings, surveys, heatmaps, performance or exception capture. Feature flag polling and externally loaded SDK extensions are disabled. Event properties use an explicit allowlist; SDK URL, title, initial person and referrer defaults are removed. IP geolocation is disabled. No emails, names, invitation tokens, recipe text, query strings or error messages are event properties. A Clerk user ID is a pseudonymous identifier, not anonymous data.
+
+First-touch attribution is stored in `sessionStorage` as `foodedo:attribution:v1`, without an analytics identifier. The path excludes query/hash and the referrer is reduced to its origin/domain. UTM values are bounded campaign labels (letters, numbers, underscore or hyphen). Any UTM query parameter disqualifies organic search. Google (including UK/regional domains), Bing, DuckDuckGo, Ecosia and Yahoo referrers qualify as organic when no UTM is present. `register_once` registers this attribution before events; identify preserves these super properties and links the current anonymous activity to the account. Sign-out resets identity and first-touch attribution.
+
+Anonymous PostHog identity lasts for the current document only. Attribution survives same-tab reloads, but memory persistence cannot merge anonymous events across a full reload or OAuth round trip. Identified activity reconnects through the Clerk ID. This is an intentional limitation until consent-backed persistence exists.
+
+`localStorage` contains only save-deduplication markers and last-visit timestamps keyed by account and plan (`foodedo:plan-last-seen:v2:<account>:<plan>`). The older plan-only timestamps are ignored, so one household member cannot establish another member's return baseline on a shared browser. These local account/plan keys are never event properties. Retention is browser-local and does not imply cross-device measurement. The privacy page describes analytics and provides an on/off control; Do Not Track always takes precedence. Opting out clears attribution and local plan analytics markers and stores the preference under `foodedo:analytics-opt-out`. Blocked browser storage is tolerated without affecting planning or saving.
+
+**A consent banner is needed before switching PostHog to cookie persistence.** Do not treat memory persistence as automatic GDPR/PECR compliance. Before production enablement, the owner must confirm the lawful basis, processor/DPA and transfer terms, project retention/deletion policy, and final privacy notice. The ICO's [storage and access guidance](https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guidance-on-the-use-of-storage-and-access-technologies/) covers web storage as well as cookies; its [statistical-purpose exception](https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guidance-on-the-use-of-storage-and-access-technologies/what-are-the-exceptions/) has conditions including clear information and an easy way to object. EU users may require consent before non-essential analytics/storage; keep the key unset where the required consent/legal setup is absent.
+
+## Event map (PR description)
+
+Every event also carries the registered first-touch properties: `first_landing_path`, `first_referrer`, `first_referring_domain`, `utm_source`, `utm_medium`, `utm_campaign`, `is_organic_search`.
+
+| Event                    | Confirmed firing point                                                                                                                                                                                   | Event properties                                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `$pageview`              | Root route observer, initial load and pathname/query navigation; query values are never sent                                                                                                             | `path`, `page_type`: home/article/guide/landing/recipe/recipes_index/app/other                                                   |
+| `try_foodedo_clicked`    | `TryFoodedoLink` (editorial header/footer/body, article invitation, landing invitation), welcome hero, Home Plan my week, recipe Plan this meal action                                                   | `source_path`, `cta_location`: header/footer/article_body/article_footer/landing_footer/landing_hero/home_planner/recipe_planner |
+| `plan_generated`         | Successful setup generation callback in `plan-setup-page.tsx`, owned by `PlanSetupForm`; after local draft persistence                                                                                   | `is_guest`, `household_size` (chosen servings), `days`, actual occupied `meal_count`, `generation_ms`                            |
+| `plan_generation_failed` | Same callback's error boundary; the form's callback otherwise handles errors internally                                                                                                                  | `is_guest`, `error_type` (fixed `generation_error`, never message text)                                                          |
+| `plan_saved`             | Mutation acknowledgement in `useSaveGuestPlan` (called by `PlanReviewReady.handlePrimarySave`) or post-Clerk `GuestPlanClaimResume`; shared dedupe by returned plan ID, including retry acknowledgements | `is_guest_claim`, occupied `meal_count`                                                                                          |
+| `shopping_list_viewed`   | A resolved shopping list is opened, including selection of a historical list                                                                                                                             | none; plan/list IDs omitted                                                                                                      |
+| `signed_up`              | Clerk callback: complete sign-up and matching active session                                                                                                                                             | none; identify uses Clerk ID only                                                                                                |
+| `signed_in`              | Clerk callback: complete sign-in and matching active session; restored sessions identify without counting as new sign-ins                                                                                | none; identify uses Clerk ID only                                                                                                |
+| `plan_returned`          | Saved-plan dashboard or Week (including historical plan) opens with a previous local open/save at least 24 hours earlier                                                                                 | `days_since_last_visit` (whole days)                                                                                             |
+| `recipe_viewed`          | Root observer for public `/recipes/[slug]` visits                                                                                                                                                        | `recipe_slug`, `referrer_type`: article/recipes_index/search/other                                                               |
+| `$pageleave`             | SDK page leave capture                                                                                                                                                                                   | registered attribution and allowed SDK identity fields only                                                                      |
+
+Effects retain route/list guards through React Strict Mode replay. Save events share in-memory and durable per-plan guards; last-visit timestamps are updated synchronously before another effect can evaluate them. Clerk completions are deduplicated per session. Tracking failure never fails a user action.
+
+## Suggested PostHog insights
+
+Create an ordered unique-user funnel:
+
+1. `$pageview`, filtered to `is_organic_search = true`.
+2. `try_foodedo_clicked`.
+3. `plan_generated`.
+4. `plan_saved`.
+
+Use a seven-day conversion window initially. Break down by `first_landing_path`, `page_type` or `cta_location` to compare acquisition/entry points, and by `is_guest_claim` on the save step. Memory persistence undercounts journeys that reload before identification; treat the funnel as directional until consent-backed identity continuity is available.
+
+Create a retention insight with `plan_saved` as the starting event and `plan_returned` as the return event, daily over four weeks. Inspect a trend/distribution of `days_since_last_visit`. This measures reopening a saved plan after a gap, not whether meals were cooked or whether a user liked them. It excludes return visits on a browser with no earlier timestamp.
+
+## Verification
+
+Run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, `pnpm test:convex`, `pnpm build` and `pnpm build:ios:web`. Unit coverage checks no-key no-ops, organic classification/spoofed hosts/UTMs, privacy filtering and the proxy's header isolation. For live verification, configure a test project key in development with debug enabled and inspect PostHog Live Events while navigating, generating, saving, signing out/in and opening recipes/lists. Check exactly one event per action, no sensitive URL properties, guest-to-account linkage and no network events after opting out or enabling DNT. Set a local plan last-seen timestamp at least 24h in the past to verify `plan_returned` once; an immediate reopen must not repeat it.
+
+Validated on 27 October 2026: formatting, lint, typecheck, 293 unit tests, 244 backend/rendering tests, the web production build and the iOS static-export build passed. Live PostHog ingestion and Clerk guest-to-account merging still require verification with a configured project key.

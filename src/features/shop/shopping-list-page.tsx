@@ -1,5 +1,7 @@
 "use client";
 
+import { track } from "@/lib/analytics";
+
 import { SpaceHeader } from "@/components/space-header";
 import { ContextSelector } from "@/features/household/context-selector";
 import { useHouseholdSpace } from "@/features/household/household-context";
@@ -322,6 +324,14 @@ function ReadyShoppingListPage({
     useState<Id<"shoppingListItems"> | null>(null);
   const currentList = current?.list ?? null;
   const list = selectedList ?? currentList;
+  const viewedList = useRef<string | null>(null);
+  const visibleListId = list?._id;
+  useEffect(() => {
+    if (visibleListId && viewedList.current !== visibleListId) {
+      viewedList.current = visibleListId;
+      track("shopping_list_viewed", {});
+    }
+  }, [visibleListId]);
   const needsSync =
     current !== null && (current.list === null || current.list.needsSync);
 

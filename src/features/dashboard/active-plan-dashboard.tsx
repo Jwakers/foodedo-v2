@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useAuth } from "@clerk/react";
+import { rememberPlanVisit } from "@/lib/analytics";
+
 import { useMemo } from "react";
 import { ArrowRight, Check, Download } from "lucide-react";
 import type { FunctionReturnType } from "convex/server";
@@ -19,6 +23,10 @@ type ActiveMealPlan = NonNullable<
 >;
 
 export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
+  const { userId } = useAuth();
+  useEffect(() => {
+    rememberPlanVisit(plan._id, userId);
+  }, [plan._id, userId]);
   const { spaceKey } = useHouseholdSpace();
   const meals = useMemo(
     () => readablePlanMeals(plan.mealSlots),

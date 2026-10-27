@@ -34,6 +34,15 @@ const nextConfig: NextConfig = {
   },
   ...(!isCapacitorBuild
     ? {
+        skipTrailingSlashRedirect: true,
+        async rewrites() {
+          return [
+            {
+              source: "/ingest/:path*",
+              destination: "/api/product-events/:path*",
+            },
+          ];
+        },
         async redirects() {
           return [
             { source: "/pricing", destination: "/faq", permanent: false },

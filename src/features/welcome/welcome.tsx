@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { SignInButton } from "@clerk/react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,16 @@ export function Welcome() {
     <WelcomeContent
       actions={
         <>
-          <Button className="w-full" onClick={enterGuestExperience}>
+          <Button
+            className="w-full"
+            onClick={() => {
+              track("try_foodedo_clicked", {
+                source_path: "/",
+                cta_location: "landing_hero",
+              });
+              enterGuestExperience();
+            }}
+          >
             Try Foodedo
             <ArrowRight aria-hidden="true" className="size-4.5" />
           </Button>

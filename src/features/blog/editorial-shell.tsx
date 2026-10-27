@@ -36,7 +36,7 @@ export function EditorialShell({ children }: { children: ReactNode }) {
             >
               Blog
             </Link>
-            <TryFoodedoLink className={actionClass}>
+            <TryFoodedoLink ctaLocation="header" className={actionClass}>
               Try Foodedo
               <ArrowRight className="size-5" aria-hidden="true" />
             </TryFoodedoLink>
@@ -81,7 +81,10 @@ export function EditorialShell({ children }: { children: ReactNode }) {
             >
               Blog
             </Link>
-            <TryFoodedoLink className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+            <TryFoodedoLink
+              ctaLocation="footer"
+              className="inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+            >
               Try Foodedo
             </TryFoodedoLink>
           </nav>
@@ -110,6 +113,7 @@ export function BlogInvitation({ className }: { className?: string }) {
         Let Foodedo help with what to eat and what to buy.
       </p>
       <TryFoodedoLink
+        ctaLocation="article_footer"
         className={cn(actionClass, "w-full px-6 py-3.5 text-16 sm:w-auto")}
       >
         Try Foodedo

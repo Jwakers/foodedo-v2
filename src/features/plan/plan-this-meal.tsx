@@ -1,5 +1,6 @@
 "use client";
 
+import { track, safePath } from "@/lib/analytics";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { CalendarPlus, Plus, X } from "lucide-react";
 
@@ -42,7 +43,13 @@ export function PlanThisMeal({
           className="w-full"
           disabled={!planner.isReady || planner.isOpening}
           aria-busy={planner.isOpening || undefined}
-          onClick={() => void planner.openPlanner()}
+          onClick={() => {
+            track("try_foodedo_clicked", {
+              source_path: safePath(window.location.pathname),
+              cta_location: "recipe_planner",
+            });
+            void planner.openPlanner();
+          }}
         >
           <CalendarPlus
             aria-hidden="true"

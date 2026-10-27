@@ -1,5 +1,6 @@
 "use client";
 
+import { trackPlanSaved } from "@/lib/analytics";
 import { pendingInvite } from "@/features/household/invite-continuation";
 import { useHouseholdSpace } from "@/features/household/household-context";
 import {
@@ -40,7 +41,7 @@ import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
  */
 export function useSaveGuestPlan() {
   const { spaceArgs } = useHouseholdSpace();
-  const { status, isClerkLoaded, isSignedIn } = useFoodedoAuth();
+  const { status, isClerkLoaded, isSignedIn, userId } = useFoodedoAuth();
   const { openSignIn } = useClerk();
   const claimGuestDraft = useMutation(api.mealPlans.claimGuestDraft);
   const router = useRouter();
@@ -129,6 +130,17 @@ export function useSaveGuestPlan() {
           ? { expectedUpdatedAt: source.updatedAt }
           : {}),
       });
+      if (result.status === "claimed" || result.status === "already_claimed")
+        trackPlanSaved(
+          result.mealPlanId,
+          {
+            is_guest_claim: !draft.reviewSource,
+            meal_count: draft.mealChoices.filter(
+              (m) => m.catalogueMealId !== null,
+            ).length,
+          },
+          userId,
+        );
       await handleClaimResult(result, {
         catalogue: catalogueContract,
         router,
@@ -224,8 +236,26 @@ export function GuestPlanClaimResume() {
               catalogueContract,
               createIndexedDbGuestDraftStore("current"),
             ),
-          claimDraft: (draft) =>
-            claimGuestDraft(guestPlanClaimMutationArgs(draft)),
+          claimDraft: async (draft) => {
+            const result = await claimGuestDraft(
+              guestPlanClaimMutationArgs(draft),
+            );
+            if (
+              result.status === "claimed" ||
+              result.status === "already_claimed"
+            )
+              trackPlanSaved(
+                result.mealPlanId,
+                {
+                  is_guest_claim: true,
+                  meal_count: draft.mealChoices.filter(
+                    (m) => m.catalogueMealId !== null,
+                  ).length,
+                },
+                userId,
+              );
+            return result;
+          },
           clearDraft: (draft) =>
             clearClaimedGuestPlanDraft({
               catalogue: catalogueContract,
@@ -267,6 +297,7 @@ export function GuestPlanClaimResume() {
     claimGuestDraft,
     currentPlan,
     isAuthenticated,
+    userId,
     router,
   ]);
 

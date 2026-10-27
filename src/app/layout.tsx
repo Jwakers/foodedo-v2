@@ -2,9 +2,19 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
+import guides from "@/features/blog/guides.json";
+import publicPages from "@/features/public-pages/pages.json";
+import { AnalyticsProvider } from "@/components/analytics-provider";
 import { foodedoColors } from "@/lib/design-system/tokens";
 import { cn } from "@/lib/utils/cn";
 import "./globals.css";
+
+const analyticsGuidePaths = [
+  ...guides.map((guide) => `/blog/${guide.slug}`),
+  ...publicPages
+    .filter((page) => page.kind === "guide")
+    .map((page) => page.path),
+];
 
 const displayFont = Fraunces({
   subsets: ["latin"],
@@ -55,7 +65,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       )}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        {children}
+        {isCapacitorBuild ? (
+          children
+        ) : (
+          <AnalyticsProvider guidePaths={analyticsGuidePaths}>
+            {children}
+          </AnalyticsProvider>
+        )}
         {!isCapacitorBuild && <Analytics />}
       </body>
     </html>

@@ -1,3 +1,4 @@
+import { AnalyticsPreference } from "@/components/analytics-preference";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -86,6 +87,7 @@ export function PublicPage({
           </section>
         ))}
       </article>
+      {path === "/privacy" && <AnalyticsPreference />}
       {children}
       <nav aria-label="Related reading" className="border-t border-border pt-6">
         <h2 className="mb-3 text-14 font-semibold">Keep exploring</h2>

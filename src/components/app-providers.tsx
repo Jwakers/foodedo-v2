@@ -1,5 +1,6 @@
 "use client";
 
+import { AnalyticsIdentity } from "@/components/analytics-identity";
 import { ClerkProvider, useAuth } from "@clerk/react";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
@@ -21,6 +22,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         isCapacitorBuild ? capacitorClerkOAuthTransport : undefined
       }
     >
+      {!isCapacitorBuild && <AnalyticsIdentity />}
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <OnboardingProvider>
           <HouseholdProvider>{children}</HouseholdProvider>
