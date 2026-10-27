@@ -27,7 +27,8 @@ const nextConfig: NextConfig = {
     "tsx",
     "ts",
     "jsx",
-    "js",
+    // Keep the standard analytics route.js entrypoint out of the static native bundle.
+    ...(!isCapacitorBuild ? ["js"] : []),
   ],
   env: {
     NEXT_PUBLIC_CAPACITOR_BUILD: String(isCapacitorBuild),

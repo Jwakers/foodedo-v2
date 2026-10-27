@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  POST,
-  GET,
-} from "../../src/app/api/product-events/[...path]/route.web";
+import { POST, GET } from "../../src/lib/analytics-proxy.server";
 
 test("the web proxy forwards the event body to EU without cookies, auth or referrer headers", async () => {
   const originalFetch = globalThis.fetch;

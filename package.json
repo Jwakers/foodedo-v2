@@ -6,7 +6,7 @@
     "dev": "convex dev --start 'next dev'",
     "dev:web": "next dev",
     "dev:convex": "convex dev",
-    "build": "next build --webpack",
+    "build": "next build --webpack && node scripts/check-analytics-build-trace.mjs",
     "build:ios:web": "CAPACITOR_BUILD=true next build --webpack",
     "start": "next start",
     "lint": "eslint",
