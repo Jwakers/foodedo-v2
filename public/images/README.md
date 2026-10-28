@@ -9,3 +9,10 @@ These local WebP copies ship with both the web app and the Capacitor iOS bundle.
 - `welcome/chickpea-curry.webp`: Creamy Coconut Chickpea Curry, catalogue ID `creamy-coconut-chickpea-curry`, revision 2. [Source photograph](https://bold-walrus-818.eu-west-1.convex.cloud/api/storage/a5caadbf-b01d-491d-8525-fd25bff52216).
 
 When refreshing these assets, select the current published revision and check its crop in the dashboard or welcome collage.
+
+## Homepage social preview
+
+`social/homepage-fish-tacos.jpg` is a 1200 × 630 JPEG crop of
+`recipes/fish-tacos.webp`, used by the homepage's Open Graph and Twitter large-image
+cards. It is served as a public static asset so social crawlers can fetch it
+without authentication or a catalogue request.

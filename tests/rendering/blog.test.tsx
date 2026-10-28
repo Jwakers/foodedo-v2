@@ -58,6 +58,17 @@ test("renders headings, nested lists, safe links and actual nested CMS image obj
         alt: "A bowl of dinner",
         caption: "Start with something familiar.",
       },
+      {
+        _type: "image",
+        _key: "publisher-image",
+        ...image,
+        alt: "Dinner planning steps",
+        caption: "Review your shopping list.",
+        crop: { top: 0.1, bottom: 0.1, left: 0, right: 0 },
+        hotspot: { x: 0.5, y: 0.5, width: 1, height: 1 },
+      },
+      { _type: "image", alt: "An unfinished image" },
+      { _type: "image", asset: { _ref: "missing" }, alt: "A broken image" },
     ],
   }).body;
   const html = renderToStaticMarkup(
@@ -80,6 +91,11 @@ test("renders headings, nested lists, safe links and actual nested CMS image obj
   expect(html).toContain("<figcaption");
   expect(html).toContain("Start with something familiar.");
   expect(html).toContain("cdn.sanity.io");
+  expect(html).toContain('alt="Dinner planning steps"');
+  expect(html).toContain("Review your shopping list.");
+  expect(html).toContain('height="614"');
+  expect(html).not.toContain("An unfinished image");
+  expect(html).not.toContain("A broken image");
 });
 
 test("omits only a repeated opening title, retaining distinct authored headings", () => {

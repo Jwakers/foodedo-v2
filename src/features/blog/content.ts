@@ -57,8 +57,14 @@ export const inlineImageSchema = z.object({
   alt: z.string().nullish(),
   caption: z.string().nullish(),
 });
+// External publishers also write native Sanity images directly into the body.
+export const bodyImageSchema = blogImageSchema.extend({
+  _type: z.literal("image"),
+  _key: z.string().optional(),
+  caption: z.string().nullish(),
+});
 export const blogBodySchema = z.array(
-  z.union([blockSchema, inlineImageSchema]),
+  z.union([blockSchema, inlineImageSchema, bodyImageSchema]),
 );
 
 const dateSchema = z

@@ -10,6 +10,7 @@ import {
   blogImageUrl,
   blogImageDimensions,
   inlineImageSchema,
+  bodyImageSchema,
   resolveBlogLink,
   type BlogArticle,
 } from "./content";
@@ -19,9 +20,10 @@ const headingClass =
   "font-display text-26 leading-8 font-semibold tracking-title";
 
 function InlineImage({ value }: PortableTextTypeComponentProps<unknown>) {
-  const parsed = inlineImageSchema.safeParse(value);
+  const parsed = inlineImageSchema.or(bodyImageSchema).safeParse(value);
   if (!parsed.success) return null;
-  const { image, alt, caption } = parsed.data;
+  const { alt, caption } = parsed.data;
+  const image = parsed.data._type === "image" ? parsed.data : parsed.data.image;
   const url = blogImageUrl(image, 1440);
   if (!url || !image) return null;
   return (
@@ -73,7 +75,7 @@ function ArticleLink({
 }
 
 const components: PortableTextComponents = {
-  types: { pteImage: InlineImage },
+  types: { pteImage: InlineImage, image: InlineImage },
   block: {
     normal: ({ children }) => <p>{children}</p>,
     // Older CMS bodies contain h1s. Keep one page-level h1 and retain the text.
