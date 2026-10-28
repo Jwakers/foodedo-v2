@@ -14,21 +14,23 @@ function getPage(path: string) {
 
 export function publicPageMetadata(path: string): Metadata {
   const page = getPage(path);
+  const title = page.metaTitle ?? page.title;
+  const description = page.metaDescription ?? page.description;
   return {
-    title: `${page.title} | Foodedo`,
-    description: page.description,
+    title: `${title} | Foodedo`,
+    description,
     alternates: { canonical: siteUrl(path) },
     openGraph: {
-      title: page.title,
-      description: page.description,
+      title,
+      description,
       url: siteUrl(path),
       type: "website",
       siteName: "Foodedo",
     },
     twitter: {
       card: "summary",
-      title: page.title,
-      description: page.description,
+      title,
+      description,
     },
   };
 }

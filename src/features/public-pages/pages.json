@@ -3,6 +3,8 @@
     "path": "/recipe-to-shopping-list",
     "title": "Turn recipes into one shopping list",
     "description": "Turn recipes into one shopping list without retyping ingredients. See a worked grocery list for three dinners for two, including quantities and what needs checking.",
+    "metaTitle": "Recipe to shopping list: a worked example",
+    "metaDescription": "Turn recipes into one shopping list with Foodedo. See a worked example for three dinners, combined ingredient quantities and what to check before shopping.",
     "kind": "guide",
     "sections": [
       {
