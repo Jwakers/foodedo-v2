@@ -41,6 +41,7 @@ export function LatestRecipesCarousel() {
           {recipes.page.map((meal) => (
             <DashboardCarouselItem key={meal.id}>
               <DashboardCarouselCard
+                meal={meal}
                 title={meal.title}
                 imageSrc={meal.imageSrc}
                 href={recipeDetailPath(meal.slug)}

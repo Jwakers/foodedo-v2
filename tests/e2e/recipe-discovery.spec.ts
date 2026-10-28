@@ -24,6 +24,7 @@ test.beforeAll(async () => {
     logLevel: "error",
     define: {
       "process.env.NODE_ENV": JSON.stringify("production"),
+      "process.env.NEXT_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
       "process.env.NEXT_PUBLIC_CAPACITOR_BUILD": JSON.stringify("false"),
     },
     resolve: {
@@ -251,9 +252,21 @@ test("guest heart taps on mobile preserve save intent through sign-in", async ({
   await page.goto("https://discovery.fixture/?role=guest&empty");
   const first = region(page).getByRole("listitem").first();
   const href = await first.getByRole("link").getAttribute("href");
-  const heartBounds = await first.getByRole("button").boundingBox();
-  expect(heartBounds!.width).toBeGreaterThanOrEqual(44);
-  expect(heartBounds!.height).toBeGreaterThanOrEqual(44);
+  const heart = first.getByRole("button");
+  const target = await heart.evaluate((button) => {
+    const bounds = button.getBoundingClientRect();
+    const extension = getComputedStyle(button, "::before");
+    return {
+      width:
+        bounds.width - parseFloat(extension.left) - parseFloat(extension.right),
+      height:
+        bounds.height -
+        parseFloat(extension.top) -
+        parseFloat(extension.bottom),
+    };
+  });
+  expect(target.width).toBeGreaterThanOrEqual(44);
+  expect(target.height).toBeGreaterThanOrEqual(44);
   await first.getByRole("button").tap();
   await expect(
     page.getByRole("dialog", { name: "Sign in", exact: true }),
@@ -272,7 +285,7 @@ test("guest heart taps on mobile preserve save intent through sign-in", async ({
     .toContain(id);
 });
 
-test("only discovery has hearts, and it follows Latest Recipes on the active dashboard", async ({
+test("recipe carousels have hearts while the meal plan does not", async ({
   page,
 }) => {
   await page.goto("https://discovery.fixture/?full");
@@ -282,7 +295,9 @@ test("only discovery has hearts, and it follows Latest Recipes on the active das
   ).toHaveCount(6);
   const latest = page.getByRole("region", { name: "Latest recipes" });
   const rest = page.getByRole("region", { name: "Meals in your plan" });
-  await expect(latest.getByRole("button", { name: /Save / })).toHaveCount(0);
+  await expect(
+    latest.getByRole("button", { name: /^(Save|Unsave) / }),
+  ).toHaveCount(18);
   await expect(rest.getByRole("button", { name: /Save / })).toHaveCount(0);
   expect(
     await page
@@ -293,6 +308,15 @@ test("only discovery has hearts, and it follows Latest Recipes on the active das
   ).toEqual(
     expect.arrayContaining(["latest-recipes-heading", "discovery-heading"]),
   );
+  const save = latest.getByRole("button", {
+    name: "Save Dinner 1",
+    exact: true,
+  });
+  await expect(save).toHaveCSS("width", "32px");
+  await save.click();
+  await expect(
+    latest.getByRole("button", { name: "Unsave Dinner 1", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   const latestY = (await latest.boundingBox())!.y;
   expect((await region(page).boundingBox())!.y).toBeGreaterThan(latestY);
 });

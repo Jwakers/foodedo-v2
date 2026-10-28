@@ -15,7 +15,8 @@ export function RecipeSaveButton({
   saved,
   isSaveDisabled = false,
   onToggleSave,
-}: RecipeSaveControl & { title: string }) {
+  compact = false,
+}: RecipeSaveControl & { title: string; compact?: boolean }) {
   return (
     <button
       type="button"
@@ -28,6 +29,8 @@ export function RecipeSaveButton({
       disabled={isSaveDisabled}
       className={cn(
         "absolute top-1.5 right-1.5 z-10 flex size-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium disabled:opacity-70",
+        compact &&
+          "size-8 before:absolute before:-inset-1.5 before:rounded-full",
         saved
           ? "bg-cadmium-soft text-cadmium"
           : "border border-paper bg-mist text-ink",

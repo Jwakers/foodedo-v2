@@ -119,22 +119,14 @@ function DiscoveryForSpace({
     );
   }
   if (result.status !== "ready") return null;
-  return (
-    <DiscoverySelection
-      meals={result.meals}
-      library={library}
-      className={className}
-    />
-  );
+  return <DiscoverySelection meals={result.meals} className={className} />;
 }
 
 function DiscoverySelection({
   meals,
-  library,
   className,
 }: {
   meals: CatalogueMealSummary[];
-  library: ReturnType<typeof useCatalogueRecipeLibrary>;
   className?: string;
 }) {
   if (meals.length === 0) return null;
@@ -154,16 +146,7 @@ function DiscoverySelection({
               title={meal.title}
               imageSrc={meal.imageSrc}
               href={recipeDetailPath(meal.slug)}
-              saveControl={{
-                saved: library.isSaved(meal.id),
-                isSaveDisabled: library.isSaveDisabled,
-                onToggleSave: () =>
-                  library.toggleSave({
-                    catalogueMealId: meal.id,
-                    catalogueVersion: meal.version,
-                    title: meal.title,
-                  }),
-              }}
+              meal={meal}
             />
           </DashboardCarouselItem>
         ))}
