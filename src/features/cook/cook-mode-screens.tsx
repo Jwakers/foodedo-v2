@@ -185,7 +185,7 @@ export function PreparationScreen({
           })}
         </ul>
       </section>
-      <footer className="border-t border-border px-page-inline pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <footer className="sticky bottom-0 bg-paper border-t border-border px-page-inline pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <p className="mb-2 text-center text-11 text-graphite">
           Your screen will stay awake while you’re cooking
         </p>
@@ -283,7 +283,7 @@ export function StepScreen({
           );
         })}
       </section>
-      <footer className="flex items-center gap-3 border-t border-border px-page-inline pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <footer className="sticky bottom-0 bg-paper flex items-center gap-3 border-t border-border px-page-inline pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <Button
           variant="inline"
           className="min-h-11 shrink-0 px-2 text-graphite"
