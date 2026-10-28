@@ -190,7 +190,7 @@ export function PreparationScreen({
           Your screen will stay awake while you’re cooking
         </p>
         <Button className="w-full" onClick={onStart}>
-          I’m ready — start cooking
+          I’m ready, start cooking
           <ArrowRight className="size-4" />
         </Button>
       </footer>

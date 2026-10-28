@@ -869,3 +869,39 @@ test("discovery ignores corrupt stored reference IDs instead of throwing", async
     expect(await readStoredGuestPlanDraft(store)).toBeNull();
   }
 });
+
+for (const requestedAsGuest of [true, false]) {
+  test(`claim origin ${requestedAsGuest} persists through reload and a signed-in retry`, async () => {
+    const store = createMemoryStore(
+      createGuestDraft({
+        planStartDate: "2030-01-01",
+        catalogueMeals,
+        now: 1,
+      }),
+    );
+    const prepared = await acceptAndPrepareGuestPlanClaim({
+      catalogue,
+      store,
+      now: 2,
+      claimKey: "origin_claim_key_123456",
+      requestedAsGuest,
+    });
+    const reloaded = await readStoredGuestPlanDraft(store);
+    expect(reloaded?.claim?.requestedAsGuest).toBe(requestedAsGuest);
+    const retried = await acceptAndPrepareGuestPlanClaim({
+      catalogue,
+      store,
+      now: 3,
+      claimKey: "other_claim_key_123456",
+      requestedAsGuest: false,
+    });
+    expect(retried.claim?.requestedAsGuest).toBe(requestedAsGuest);
+    expect(retried.claim?.key).toBe(prepared.claim?.key);
+    expect(guestPlanClaimMutationArgs(retried)).not.toHaveProperty(
+      "requestedAsGuest",
+    );
+    expect(guestPlanClaimMutationArgs(retried)).not.toHaveProperty(
+      "claim.requestedAsGuest",
+    );
+  });
+}

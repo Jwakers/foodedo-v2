@@ -145,7 +145,7 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
                 <span className="block text-12 text-graphite">
                   {issue.blocking
                     ? "Confirm when corrected or checked."
-                    : "Optional detail—does not prevent saving."}
+                    : "Optional detail. Does not prevent saving."}
                 </span>
               </span>
             </label>

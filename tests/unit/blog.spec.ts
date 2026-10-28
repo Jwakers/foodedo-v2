@@ -1,3 +1,4 @@
+import reviewed from "../../src/features/blog/reviewed-articles.json";
 import { expect, test } from "@playwright/test";
 import {
   blogArticleSchema,
@@ -182,4 +183,30 @@ test("sitemap XML escapes URLs and does not invent modification dates", async ()
   expect(xml).toContain("slug=meal&amp;servings=2");
   expect((xml.match(/<lastmod>/g) ?? []).length).toBe(1);
   expect(xml).toContain("2026-05-14T12:42:26.878Z");
+});
+
+test("every reviewed article and local guide links to a public recipe", () => {
+  for (const article of reviewed) {
+    expect(
+      article.body
+        .flatMap((block) => ("markDefs" in block ? (block.markDefs ?? []) : []))
+        .some(
+          (mark) =>
+            "href" in mark && /^\/recipes\/[a-z0-9-]+$/.test(String(mark.href)),
+        ),
+      article.slug,
+    ).toBe(true);
+  }
+  for (const guide of localGuides) {
+    expect(
+      guide.body?.some(
+        (block) =>
+          "markDefs" in block &&
+          block.markDefs?.some((mark) =>
+            /^\/recipes\/[a-z0-9-]+$/.test(String(mark.href)),
+          ),
+      ),
+      guide.slug,
+    ).toBe(true);
+  }
 });

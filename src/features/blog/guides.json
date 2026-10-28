@@ -29,6 +29,14 @@
       {
         "heading": "Make next week another small decision",
         "body": "Think about which dinners worked before reviewing your next suggested week. Keep useful suggestions and swap the ones that do not fit. You do not need to rebuild a recipe collection to plan again."
+      },
+      {
+        "heading": "Try a dinner in your plan",
+        "body": "Review a complete recipe before choosing it for your week. Check the ingredients and servings, then use Plan this meal to start planning with a dinner you want to cook.",
+        "link": {
+          "href": "/recipes/teriyaki-salmon-with-jasmine-rice-and-steamed-broccoli",
+          "label": "See the teriyaki salmon with jasmine rice and steamed broccoli recipe."
+        }
       }
     ]
   },
@@ -62,6 +70,14 @@
       {
         "heading": "Add the rest of your shop",
         "body": "Add non-recipe essentials to the same list. If you swap a meal in the saved plan later, Foodedo updates the linked ingredients and keeps your manual extras. You do not need to rebuild the list."
+      },
+      {
+        "heading": "Try a dinner in your plan",
+        "body": "Review a complete recipe before choosing it for your week. Check the ingredients and servings, then use Plan this meal to start planning with a dinner you want to cook.",
+        "link": {
+          "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers",
+          "label": "See the tofu stir-fry with broccoli and peppers recipe."
+        }
       }
     ]
   },

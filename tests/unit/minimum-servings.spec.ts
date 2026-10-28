@@ -75,7 +75,7 @@ test("source-only and unknown-yield recipes keep authored ingredients without le
 });
 test("only known minimum adjustments explain leftovers", () => {
   expect(minimumServingsNotice(meal, 2)).toBe(
-    "Makes 4 portions for 2 people — 2 portions left over.",
+    "Makes 4 portions for 2 people. 2 portions left over.",
   );
   expect(minimumServingsNotice(meal, 3)).toContain("1 portion left over.");
   expect(minimumServingsNotice(meal, 5)).toBeNull();

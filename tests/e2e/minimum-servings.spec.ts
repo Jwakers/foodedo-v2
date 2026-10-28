@@ -72,7 +72,7 @@ test("recipe controls enforce the minimum and Cook agrees after refresh", async 
 }) => {
   await page.goto("https://minimum.fixture/recipes/view?servings=2");
   await expect(
-    page.getByText("Makes 4 portions for 2 people — 2 portions left over."),
+    page.getByText("Makes 4 portions for 2 people. 2 portions left over."),
   ).toBeVisible();
   await expect(page.getByText(/400 g/)).toBeVisible();
   await page.getByRole("button", { name: /^Cook for 4/ }).click();
@@ -82,7 +82,7 @@ test("recipe controls enforce the minimum and Cook agrees after refresh", async 
   await page.getByRole("button", { name: "Increase servings" }).click();
   await expect(page.getByText(/500 g/)).toBeVisible();
   await expect(
-    page.getByText("Makes 5 portions for 2 people — 3 portions left over."),
+    page.getByText("Makes 5 portions for 2 people. 3 portions left over."),
   ).toBeVisible();
   await page
     .getByRole("button", { name: /Start cooking/i })

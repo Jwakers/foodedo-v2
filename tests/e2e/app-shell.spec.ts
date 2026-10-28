@@ -565,14 +565,14 @@ test("runs and recovers the guest Cook Mode flow", async ({ page }) => {
   const preparationLabel = await firstPreparation.getAttribute("aria-label");
   await firstPreparation.click();
   await expect(firstPreparation).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
+  await page.getByRole("button", { name: "I’m ready, start cooking" }).click();
   await expect(page.getByText(/^Step 1 of \d+$/)).toBeVisible();
   await page.getByRole("button", { name: "Previous" }).click();
   await expect(
     page.getByRole("heading", { name: "Get everything ready" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "I’m ready — start cooking" }).click();
+  await page.getByRole("button", { name: "I’m ready, start cooking" }).click();
   const startTimer = page
     .getByRole("button", { name: /Start .+ timer$/ })
     .first();

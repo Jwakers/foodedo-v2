@@ -1,6 +1,6 @@
 "use client";
 
-import { trackPlanSaved } from "@/lib/analytics";
+import { trackClaimedPlan } from "./plan-save-analytics";
 import { pendingInvite } from "@/features/household/invite-continuation";
 import { useHouseholdSpace } from "@/features/household/household-context";
 import {
@@ -78,6 +78,7 @@ export function useSaveGuestPlan() {
     await acceptAndPrepareGuestPlanClaim({
       catalogue: catalogueContract,
       expectedDraft,
+      requestedAsGuest: true,
     });
     openSignIn({});
   }
@@ -102,6 +103,7 @@ export function useSaveGuestPlan() {
         catalogue: catalogueContract,
         store: submittedStore,
         expectedDraft,
+        requestedAsGuest: !isSignedIn,
       });
 
       if (!isSignedIn) {
@@ -130,17 +132,7 @@ export function useSaveGuestPlan() {
           ? { expectedUpdatedAt: source.updatedAt }
           : {}),
       });
-      if (result.status === "claimed" || result.status === "already_claimed")
-        trackPlanSaved(
-          result.mealPlanId,
-          {
-            is_guest_claim: !draft.reviewSource,
-            meal_count: draft.mealChoices.filter(
-              (m) => m.catalogueMealId !== null,
-            ).length,
-          },
-          userId,
-        );
+      trackClaimedPlan(result, draft, userId);
       await handleClaimResult(result, {
         catalogue: catalogueContract,
         router,
@@ -240,20 +232,7 @@ export function GuestPlanClaimResume() {
             const result = await claimGuestDraft(
               guestPlanClaimMutationArgs(draft),
             );
-            if (
-              result.status === "claimed" ||
-              result.status === "already_claimed"
-            )
-              trackPlanSaved(
-                result.mealPlanId,
-                {
-                  is_guest_claim: true,
-                  meal_count: draft.mealChoices.filter(
-                    (m) => m.catalogueMealId !== null,
-                  ).length,
-                },
-                userId,
-              );
+            trackClaimedPlan(result, draft, userId);
             return result;
           },
           clearDraft: (draft) =>
@@ -268,6 +247,14 @@ export function GuestPlanClaimResume() {
               expectedDraft: draft,
               store: createIndexedDbGuestDraftStore("current"),
             }),
+          onExistingPlanConfirmed: (draft) => {
+            if (currentPlan)
+              trackClaimedPlan(
+                { status: "already_claimed", mealPlanId: currentPlan._id },
+                draft,
+                userId,
+              );
+          },
           onSuccessfulClaim: () => navigateAfterSuccessfulClaim(router),
           onCleanupFailure: () => {
             toast.warning("Your plan was saved.", {
@@ -330,18 +317,32 @@ export function GuestPlanClaimResume() {
               catalogueContract,
               createIndexedDbGuestDraftStore("current"),
             ),
-          clearDraft: (draft) =>
-            clearClaimedGuestPlanDraft({
+          clearDraft: (draft) => {
+            if (draft.acceptedAt && draft.claim)
+              trackClaimedPlan(
+                { status: "already_claimed", mealPlanId: currentPlan._id },
+                draft,
+                userId,
+              );
+            return clearClaimedGuestPlanDraft({
               catalogue: catalogueContract,
               expectedDraft: draft,
               store: createIndexedDbGuestDraftStore("current"),
-            }),
+            });
+          },
         });
       } catch (error) {
         console.error("Failed to clear matching guest plan draft.", error);
       }
     })();
-  }, [catalogueContract, currentPlan, isAuthenticated, ready, household]);
+  }, [
+    catalogueContract,
+    currentPlan,
+    isAuthenticated,
+    ready,
+    household,
+    userId,
+  ]);
 
   return null;
 }

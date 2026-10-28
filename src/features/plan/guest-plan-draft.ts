@@ -629,12 +629,14 @@ export async function extendCurrentGuestPlanDraft({
  */
 export async function acceptAndPrepareGuestPlanClaim({
   expectedDraft,
+  requestedAsGuest,
   catalogue,
   now = Date.now(),
   claimKey = createGuestClaimKey(),
   store = guestDraftStore(),
 }: {
   expectedDraft?: GuestDraftV1;
+  requestedAsGuest?: boolean;
   catalogue: GuestCatalogueContract;
   now?: number;
   claimKey?: string;
@@ -667,7 +669,12 @@ export async function acceptAndPrepareGuestPlanClaim({
       existing.acceptedAt === undefined
         ? acceptGuestPlan(existing, now)
         : existing;
-    const prepared = requestGuestPlanClaim(accepted, claimKey, now);
+    const prepared = requestGuestPlanClaim(
+      accepted,
+      claimKey,
+      now,
+      requestedAsGuest,
+    );
 
     return {
       draft: prepared,

@@ -196,7 +196,7 @@ function ingredientDetailLine(
   const amount = ingredientAmount(ingredient);
   const detail = [amount, ingredient.note]
     .filter((value): value is string => value !== undefined && value !== "")
-    .join(" — ");
+    .join(", ");
 
   return detail === "" ? recipeTitle : `${detail} · ${recipeTitle}`;
 }

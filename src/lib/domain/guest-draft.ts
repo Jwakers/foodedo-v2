@@ -33,6 +33,7 @@ export type GuestSelectionMeal = CatalogueMealReference &
   };
 
 export type GuestPlanClaim = {
+  requestedAsGuest?: boolean;
   key: string;
   requestedAt: number;
   completedAt?: number;
@@ -599,6 +600,7 @@ export function requestGuestPlanClaim(
   draft: GuestDraftV1,
   claimKey: string,
   now: number,
+  requestedAsGuest?: boolean,
 ): GuestDraftV1 {
   if (draft.acceptedAt === undefined) {
     throw new Error("Accept the plan before saving it.");
@@ -610,7 +612,11 @@ export function requestGuestPlanClaim(
 
   return {
     ...draft,
-    claim: { key: claimKey, requestedAt: now },
+    claim: {
+      key: claimKey,
+      requestedAt: now,
+      ...(requestedAsGuest === undefined ? {} : { requestedAsGuest }),
+    },
     updatedAt: now,
   };
 }
@@ -969,6 +975,9 @@ function readClaim(
   return {
     key: input.key,
     requestedAt: input.requestedAt,
+    ...(typeof input.requestedAsGuest === "boolean"
+      ? { requestedAsGuest: input.requestedAsGuest }
+      : {}),
     ...(completedAt === undefined ? {} : { completedAt }),
   };
 }

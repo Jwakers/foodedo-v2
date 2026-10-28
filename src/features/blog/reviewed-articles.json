@@ -453,6 +453,38 @@
           }
         ],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/lemon-herb-roasted-chicken-thighs"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Put a simple roasting method into practice with these ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "lemon and herb roasted chicken thighs",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ". Read the ingredients and steps before you begin.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -1011,6 +1043,38 @@
           }
         ],
         "markDefs": []
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/chicken-and-spinach-pasta"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Start with a dinner you would actually cook, such as this ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "chicken and spinach pasta",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ". Review the recipe before adding it to your week.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -1578,6 +1642,38 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/lemon-herb-roasted-chicken-thighs"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "For a complete dinner recipe to follow, try these ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "lemon and herb roasted chicken thighs",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ". Use the recipe’s ingredient amounts and cooking instructions for your chosen servings.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -1927,6 +2023,38 @@
         "listItem": "bullet",
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/creamy-coconut-chickpea-curry"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Choose a dinner such as this ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "creamy coconut chickpea curry",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ", then check its ingredient list against your cupboards before shopping.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -5133,6 +5261,38 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/chicken-fajitas"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "For one possible family dinner, review these ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "chicken fajitas",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ". Check the ingredients and servings before deciding whether they fit your household.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -9677,6 +9837,38 @@
           }
         ],
         "markDefs": []
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/pasta-primavera"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Try Foodedo’s planning workflow with ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "pasta primavera",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ", then decide how you want to plan the rest of your week.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -10086,6 +10278,38 @@
           }
         ],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/beef-lasagne"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "For a family dinner example, look through the ingredients in this ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "beef lasagne",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": " before deciding whether it suits your household.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -10990,6 +11214,38 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/tofu-stir-fry-with-broccoli-and-peppers"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Build your collection around dinners you want to return to, such as this ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "tofu stir-fry with broccoli and peppers",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ". Review it before deciding whether to keep it as a favourite.",
+            "marks": []
+          }
+        ]
       }
     ]
   },
@@ -11802,6 +12058,38 @@
         ],
         "markDefs": [],
         "style": "normal"
+      },
+      {
+        "_type": "block",
+        "_key": "catalogue-dinner-example",
+        "style": "normal",
+        "markDefs": [
+          {
+            "_type": "link",
+            "_key": "catalogue-dinner",
+            "href": "/recipes/chicken-shawarma-wraps"
+          }
+        ],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "example-intro",
+            "text": "Give one evening a concrete option with these ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "example-link",
+            "text": "chicken shawarma wraps",
+            "marks": ["catalogue-dinner"]
+          },
+          {
+            "_type": "span",
+            "_key": "example-end",
+            "text": ", then choose the other dinners you need for your week.",
+            "marks": []
+          }
+        ]
       }
     ]
   }

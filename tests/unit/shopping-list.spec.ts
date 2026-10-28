@@ -269,3 +269,23 @@ test("trims manual items and rejects empty input", () => {
     ShoppingListValidationError,
   );
 });
+
+test("ingredient details use a comma before preparation notes", () => {
+  const items = deriveShoppingListItems([
+    {
+      recipeId: "dinner",
+      title: "Dinner",
+      date: "2030-01-01",
+      ingredients: [
+        {
+          id: "onions",
+          name: "onion",
+          shoppingCategory: "fruit_and_veg",
+          quantity: "3",
+          note: "finely chopped",
+        },
+      ],
+    },
+  ]);
+  expect(items[0].detailLines).toEqual(["3, finely chopped · Dinner"]);
+});

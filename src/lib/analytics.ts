@@ -20,7 +20,7 @@ type Events = {
     generation_ms: number;
   };
   plan_generation_failed: { is_guest: boolean; error_type: "generation_error" };
-  plan_saved: { is_guest_claim: boolean; meal_count: number };
+  plan_saved: { is_guest_claim?: boolean; meal_count: number };
   shopping_list_viewed: Record<string, never>;
   signed_up: Record<string, never>;
   signed_in: Record<string, never>;

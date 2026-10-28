@@ -26,6 +26,7 @@ type GuestPlanClaimDependencies = {
   clearDraft: (draft: GuestDraft) => Promise<boolean>;
   cancelClaim: (draft: GuestDraft) => Promise<void>;
   onSuccessfulClaim: () => void;
+  onExistingPlanConfirmed?: (draft: GuestDraft) => void;
   onCleanupFailure: () => void;
   onUnsupportedCatalogue: () => void;
 };
@@ -78,6 +79,7 @@ export async function resumePendingGuestPlanClaim({
   clearDraft,
   cancelClaim,
   onSuccessfulClaim,
+  onExistingPlanConfirmed,
   onCleanupFailure,
   onUnsupportedCatalogue,
 }: GuestPlanClaimDependencies): Promise<ResumeGuestPlanClaimStatus> {
@@ -92,6 +94,7 @@ export async function resumePendingGuestPlanClaim({
   }
 
   if (currentPlan !== null && currentPlanMatchesDraft(draft, currentPlan)) {
+    onExistingPlanConfirmed?.(draft);
     await clearDraft(draft);
     onSuccessfulClaim();
     return "matched_current_plan";

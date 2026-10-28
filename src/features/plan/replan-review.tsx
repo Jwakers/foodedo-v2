@@ -1,4 +1,5 @@
 "use client";
+import { trackPlanSaved } from "@/lib/analytics";
 import { useState } from "react";
 import Image from "next/image";
 import { Utensils } from "lucide-react";
@@ -20,7 +21,7 @@ import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 
 export function ReplanReview() {
-  const { status, isAuthenticated } = useFoodedoAuth();
+  const { status, isAuthenticated, userId } = useFoodedoAuth();
   const { spaceArgs, ready, isHousehold, spaceKey } = useHouseholdSpace();
   const params = useSearchParams();
   const sourceId = params.get("plan");
@@ -104,6 +105,11 @@ export function ReplanReview() {
         setChanged(true);
         return;
       }
+      trackPlanSaved(
+        result.mealPlanId,
+        { is_guest_claim: false, meal_count: reviewed.mealSlots.length },
+        userId,
+      );
       if (getDraftSpaceKey() === spaceKey) router.replace("/week");
       toast.success(
         isHousehold ? "Household week updated" : "Private week updated",

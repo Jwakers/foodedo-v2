@@ -150,5 +150,5 @@ export function minimumServingsNotice(
     return null;
   const leftovers = cookingServings - requested;
   if (leftovers <= 0) return null;
-  return `Makes ${cookingServings} portions for ${requested} ${requested === 1 ? "person" : "people"} — ${leftovers} ${leftovers === 1 ? "portion" : "portions"} left over.`;
+  return `Makes ${cookingServings} portions for ${requested} ${requested === 1 ? "person" : "people"}. ${leftovers} ${leftovers === 1 ? "portion" : "portions"} left over.`;
 }

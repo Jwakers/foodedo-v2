@@ -242,3 +242,20 @@ test("hydrates cleanup only when the stored draft exactly matches the account pl
     }),
   ).resolves.toBe(false);
 });
+
+test("a matching hydrated plan confirms the pending save even when the mutation response was lost", async () => {
+  const draft = pendingDraft();
+  const { dependencies, calls } = resumeDependencies({
+    draft,
+    currentPlan: currentPlanFromDraft(draft),
+  });
+  const confirmed: GuestDraft[] = [];
+  expect(
+    await resumePendingGuestPlanClaim({
+      ...dependencies,
+      onExistingPlanConfirmed: (draft) => confirmed.push(draft),
+    }),
+  ).toBe("matched_current_plan");
+  expect(confirmed).toEqual([draft]);
+  expect(calls.claim).toBe(0);
+});
