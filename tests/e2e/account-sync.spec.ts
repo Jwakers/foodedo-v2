@@ -125,9 +125,11 @@ test("delayed setup offers retry and guest recovery while preserving the Indexed
   expect(bounds).not.toBeNull();
   expect(bounds!.y + bounds!.height).toBeLessThan(844);
   await page.getByRole("button", { name: "Try again", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Preparing your Foodedo account" }),
-  ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+    )
+    .toBe(2);
   expect(
     await page.evaluate(() => window.accountSyncFixture.readDraft()),
   ).toEqual(draft);
@@ -161,9 +163,9 @@ test("sign-out failure keeps recovery available and preserves the draft", async 
     name: "Sign out and continue as guest",
   });
   await guestButton.click();
-  await expect(page.getByRole("alert")).toContainText(
-    "We couldn’t sign you out",
-  );
+  await expect(
+    page.getByRole("alert").filter({ hasText: "We couldn’t sign you out" }),
+  ).toBeVisible();
   await expect(guestButton).toBeEnabled();
   expect(
     await page.evaluate(() => window.accountSyncFixture.readDraft()),
@@ -210,4 +212,212 @@ test("guests can enter the planner without an account query or setup screen", as
   expect(
     await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
   ).toBe(0);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(0);
+});
+
+test("a missing account recovers automatically without webhook delivery", async ({
+  page,
+}) => {
+  await page.goto("https://account-sync.fixture/?scenario=recover");
+  await expect(
+    page.getByRole("heading", { name: "Signed-in app ready" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(1);
+});
+
+test("failed recovery retries without reloading or losing the local draft", async ({
+  page,
+}) => {
+  await page.goto("https://account-sync.fixture/");
+  await expect(page.getByRole("alert")).toContainText(
+    "We couldn’t prepare your account",
+  );
+  const draft = await page.evaluate(() =>
+    window.accountSyncFixture.seedDraft(),
+  );
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(1);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
+  ).toBe(0);
+  await page.evaluate(() =>
+    window.accountSyncFixture.update({ recovery: "succeed" }),
+  );
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Signed-in app ready" }),
+  ).toBeVisible();
+  // The in-memory count would reset if retry reloaded the document.
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(2);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.readDraft()),
+  ).toEqual(draft);
+});
+
+for (const scenario of ["loading", "ready", "auth-loading"]) {
+  test(`does not repair an account while ${scenario}`, async ({ page }) => {
+    await page.goto(`https://account-sync.fixture/?scenario=${scenario}`);
+    await expect(page.getByRole("heading")).toBeVisible();
+    expect(
+      await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+    ).toBe(0);
+    if (scenario === "loading") {
+      expect(
+        await page.evaluate(
+          () => window.accountSyncFixture.counts.personalQueries,
+        ),
+      ).toBe(0);
+      await page.evaluate(() =>
+        window.accountSyncFixture.update({ account: null }),
+      );
+      await expect(page.getByRole("alert")).toBeVisible();
+      expect(
+        await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+      ).toBe(1);
+    }
+  });
+}
+
+test("a pending repair cannot be submitted twice", async ({ page }) => {
+  await page.clock.install();
+  await page.goto("https://account-sync.fixture/?scenario=pending");
+  await expect(
+    page.getByRole("heading", { name: "Preparing your Foodedo account" }),
+  ).toBeVisible();
+  await page.clock.fastForward(10_001);
+  await expect(
+    page.getByRole("button", { name: "Preparing account…" }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(1);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
+  ).toBe(0);
+  await page.evaluate(() => window.accountSyncFixture.completeRecovery());
+  await expect(
+    page.getByRole("heading", { name: "Signed-in app ready" }),
+  ).toBeVisible();
+});
+
+test("a late repair cannot open the gate for a different account", async ({
+  page,
+}) => {
+  await page.goto("https://account-sync.fixture/?scenario=pending");
+  await expect(
+    page.getByRole("heading", { name: "Preparing your Foodedo account" }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    window.accountSyncFixture.update({
+      userId: "user-b",
+      account: undefined,
+      recovery: "fail",
+    }),
+  );
+  await page.evaluate(() => window.accountSyncFixture.completeRecovery());
+  await expect(
+    page.getByRole("heading", { name: "Preparing your Foodedo account" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
+  ).toBe(0);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(1);
+  await page.evaluate(() =>
+    window.accountSyncFixture.update({ account: null }),
+  );
+  await expect(page.getByRole("alert")).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(2);
+  await page.evaluate(() =>
+    window.accountSyncFixture.update({ recovery: "succeed" }),
+  );
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Signed-in app ready" }),
+  ).toBeVisible();
+});
+
+test("signing out during recovery keeps the guest draft and ignores a late repair", async ({
+  page,
+}) => {
+  await page.goto("https://account-sync.fixture/?scenario=pending");
+  await expect(
+    page.getByRole("heading", { name: "Preparing your Foodedo account" }),
+  ).toBeVisible();
+  const draft = await page.evaluate(() =>
+    window.accountSyncFixture.seedDraft(),
+  );
+  await page
+    .getByRole("button", { name: "Sign out and continue as guest" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Guest planner ready" }),
+  ).toBeVisible();
+  await page.evaluate(() => window.accountSyncFixture.completeRecovery());
+  await expect(
+    page.getByRole("heading", { name: "Guest planner ready" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
+  ).toBe(0);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.readDraft()),
+  ).toEqual(draft);
+});
+
+test("a deleted account offers guest recovery without retrying provisioning", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("https://account-sync.fixture/?scenario=deleted");
+  await expect(
+    page.getByRole("heading", { name: "This account has been deleted" }),
+  ).toBeVisible();
+  const draft = await page.evaluate(() =>
+    window.accountSyncFixture.seedDraft(),
+  );
+  await page.clock.fastForward(10_001);
+  await expect(
+    page.getByRole("button", { name: "Try again", exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(1);
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
+  ).toBe(0);
+  await page
+    .getByRole("button", { name: "Sign out and continue as guest" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Guest planner ready" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.readDraft()),
+  ).toEqual(draft);
+  await page.evaluate(() =>
+    window.accountSyncFixture.update({
+      isSignedIn: true,
+      isAuthenticated: true,
+      userId: "user-b",
+      account: null,
+      recovery: "succeed",
+    }),
+  );
+  await expect(
+    page.getByRole("heading", { name: "Signed-in app ready" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => window.accountSyncFixture.counts.recoveries),
+  ).toBe(2);
 });

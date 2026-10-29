@@ -1,5 +1,8 @@
 import { getFunctionName, type FunctionReference } from "convex/server";
-import { recordPersonalQuery, useFixture } from "./state";
+import { recordPersonalQuery, recoverAccount, useFixture } from "./state";
+export function useMutation() {
+  return recoverAccount;
+}
 export function useConvexAuth() {
   const state = useFixture();
   return {

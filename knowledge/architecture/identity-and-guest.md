@@ -117,3 +117,36 @@ Do not begin with a full recipe importer, settings surface, ingredient taxonomy,
 - Every persistent personal mutation requires authentication and derives ownership server-side.
 - Every personal query scopes through an owner index; never fetch broadly and filter afterward.
 - Guest behavior must work without weakening the authenticated API.
+
+## Account provisioning recovery
+
+Clerk user webhooks continue to synchronize profile changes and deletions. They
+are not required to arrive before an authenticated person can use Foodedo.
+`users.ensureCurrent` accepts no client identity or profile fields: it derives the
+subject, email and name from Convex's validated Clerk identity and atomically
+creates a missing user. Existing records, IDs, profile fields and onboarding state
+are left unchanged. Missing profile claims are stored as null; recovery timestamps
+record provisioning time until a Clerk webhook supplies Clerk's profile timestamps.
+
+The shared web/iOS account gate waits for authentication and a resolved account
+query before making one automatic repair attempt for a missing user. It opens only
+when the account subscription matches the current Clerk user. Failed recovery
+shows an error and offers **Try again**, which repeats provisioning without a page
+reload. Pending attempts cannot be submitted twice, account changes reset recovery
+state, and stale completions cannot open another account's gate. The ten-second
+slow-setup message, guest escape and local drafts remain available.
+
+Release the backend mutation before the frontend that calls it. Verify recovery
+with a dedicated development Clerk account absent from development Convex, then
+confirm production sign-in after release. Keep production webhook delivery and
+its signing secret configured separately for ongoing profile/deletion sync.
+
+Account deletion also atomically records the Clerk subject in
+`deletedUserSubjects`, even when there is no user row yet. This minimal deletion
+marker contains no email or name and is retained to reject still-valid JWTs and
+ignore delayed create/update webhooks for the deleted identity. Duplicate deletion
+events reuse the marker. Recovery returns `ACCOUNT_DELETED`, and the gate offers
+sign-out rather than provisioning retries. A new Clerk identity can register with
+the same email; deletion is matched by subject, never email. This additive table
+requires no existing-user migration, but cannot identify accounts deleted before
+markers were introduced. Deploy the schema and backend before the frontend.

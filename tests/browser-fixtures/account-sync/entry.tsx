@@ -5,13 +5,14 @@ import { api } from "../../../convex/_generated/api";
 import { createIndexedDbGuestDraftStore } from "../../../src/lib/platform/guest-draft-store";
 import { useAuth } from "./clerk";
 import { useConvexAuth, useQuery } from "./convex";
-import { counts, update } from "./state";
+import { completeRecovery, counts, update } from "./state";
 
 declare global {
   interface Window {
     accountSyncFixture: {
       update: typeof update;
       counts: typeof counts;
+      completeRecovery: typeof completeRecovery;
       seedDraft: () => Promise<unknown>;
       readDraft: () => Promise<unknown>;
     };
@@ -21,6 +22,7 @@ const store = createIndexedDbGuestDraftStore("current");
 window.accountSyncFixture = {
   update,
   counts,
+  completeRecovery,
   async seedDraft() {
     await store.write({
       schemaVersion: 3,
@@ -44,7 +46,9 @@ function ProtectedApp() {
   const convex = useConvexAuth();
   useQuery(
     api.households.current,
-    auth.isSignedIn && convex.isAuthenticated ? {} : "skip",
+    auth.isSignedIn && convex.isAuthenticated && !convex.isLoading
+      ? {}
+      : "skip",
   );
   return (
     <h1>{auth.isSignedIn ? "Signed-in app ready" : "Guest planner ready"}</h1>

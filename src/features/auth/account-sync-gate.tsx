@@ -1,9 +1,16 @@
 "use client";
 
 import { useAuth, useClerk } from "@clerk/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { LoaderCircle, RotateCw } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -18,31 +25,79 @@ export function AccountSyncGate({ children }: { children: ReactNode }) {
   const account = useQuery(api.users.current, canReadAccount ? {} : "skip");
 
   if (canReadAccount && (!account || account.authSubject !== userId)) {
-    return <AccountSyncWaiting key={userId} />;
+    return <AccountSyncWaiting key={userId} isMissing={account === null} />;
   }
   return children;
 }
 
-function AccountSyncWaiting() {
+function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
   const { signOut } = useClerk();
+  const ensureCurrent = useMutation(api.users.ensureCurrent);
   const router = useRouter();
   const [isDelayed, setIsDelayed] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<
+    "failed" | "deleted" | null
+  >(null);
+  const recoveryFailed = recoveryError === "failed";
+  const accountDeleted = recoveryError === "deleted";
+  const mounted = useRef(false);
+  const attempted = useRef(false);
+  const inFlight = useRef(false);
+  const signingOut = useRef(false);
   useEffect(() => {
+    mounted.current = true;
     const timer = window.setTimeout(() => setIsDelayed(true), 10_000);
-    return () => window.clearTimeout(timer);
+    return () => {
+      mounted.current = false;
+      window.clearTimeout(timer);
+    };
   }, []);
 
+  const recover = useCallback(async () => {
+    if (!isMissing || accountDeleted || inFlight.current || signingOut.current)
+      return;
+    inFlight.current = true;
+    setIsRecovering(true);
+    setRecoveryError(null);
+    try {
+      await ensureCurrent({});
+      // Only users.current can open the gate, never a mutation completion.
+    } catch (error) {
+      if (mounted.current && !signingOut.current) {
+        const deleted =
+          error instanceof ConvexError &&
+          error.data?.code === "ACCOUNT_DELETED";
+        setRecoveryError(deleted ? "deleted" : "failed");
+      }
+    } finally {
+      inFlight.current = false;
+      if (mounted.current && !signingOut.current) setIsRecovering(false);
+    }
+  }, [ensureCurrent, isMissing, accountDeleted]);
+
+  useEffect(() => {
+    if (isMissing && !attempted.current) {
+      attempted.current = true;
+      void recover();
+    }
+  }, [isMissing, recover]);
+
   async function continueAsGuest() {
-    if (isSigningOut) return;
+    if (signingOut.current) return;
+    signingOut.current = true;
     setIsSigningOut(true);
     setSignOutFailed(false);
     try {
       await signOut();
       router.replace("/?try=1");
     } catch {
+      if (!mounted.current) return;
+      signingOut.current = false;
       setIsSigningOut(false);
+      setIsRecovering(inFlight.current);
       setSignOutFailed(true);
     }
   }
@@ -60,14 +115,18 @@ function AccountSyncWaiting() {
           id="account-sync-heading"
           className="mt-3 font-display text-30 font-semibold tracking-title text-ink"
         >
-          {isDelayed
-            ? "Your account is taking a little longer"
-            : "Preparing your Foodedo account"}
+          {accountDeleted
+            ? "This account has been deleted"
+            : isDelayed
+              ? "Your account is taking a little longer"
+              : "Preparing your Foodedo account"}
         </h1>
         <p className="mt-3 max-w-120 text-15 leading-relaxed text-graphite">
-          {isDelayed
-            ? "Your sign-in worked, but we haven’t finished preparing your account. You can try again or continue as a guest."
-            : "Your sign-in worked. We’re getting your account ready and will continue automatically."}
+          {accountDeleted
+            ? "Sign out to continue as a guest or sign in with another account."
+            : isDelayed
+              ? "Your sign-in worked, but we haven’t finished preparing your account. You can try again or continue as a guest."
+              : "Your sign-in worked. We’re getting your account ready and will continue automatically."}
         </p>
       </div>
       <p className="mt-3 max-w-120 text-14 leading-relaxed text-graphite">
@@ -75,15 +134,16 @@ function AccountSyncWaiting() {
         account until setup finishes.
       </p>
       <div className="mt-6 flex max-w-100 flex-col gap-3">
-        {isDelayed && (
+        {!accountDeleted && (isDelayed || recoveryFailed) && (
           <Button
-            disabled={isSigningOut}
-            onClick={() => window.location.reload()}
+            disabled={isSigningOut || isRecovering || !isMissing}
+            onClick={() => void recover()}
           >
-            Try again <RotateCw aria-hidden="true" className="size-4" />
+            {isRecovering ? "Preparing account…" : "Try again"}{" "}
+            <RotateCw aria-hidden="true" className="size-4" />
           </Button>
         )}
-        {!isDelayed && (
+        {!isDelayed && !accountDeleted && (
           <LoaderCircle
             aria-hidden="true"
             className="mb-2 size-6 text-leaf motion-safe:animate-spin"
@@ -108,6 +168,11 @@ function AccountSyncWaiting() {
           </ButtonLink>
         )}
       </div>
+      {recoveryFailed && (
+        <p role="alert" className="mt-3 text-14 text-danger">
+          We couldn’t prepare your account. Check your connection and try again.
+        </p>
+      )}
       {signOutFailed && (
         <p role="alert" className="mt-3 text-14 text-danger">
           We couldn’t sign you out. Check your connection and try again.

@@ -156,6 +156,10 @@ export default defineSchema({
     reviewedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_meal_revision", ["catalogueMealId", "catalogueVersion"]),
+  // Retain only the subject so stale JWTs and webhooks cannot undo deletion.
+  deletedUserSubjects: defineTable({
+    authSubject: v.string(),
+  }).index("by_auth_subject", ["authSubject"]),
   users: defineTable({
     onboarding: v.optional(onboardingValidator),
     authSubject: v.string(),
