@@ -100,3 +100,160 @@ test("a direct Cook URL below the minimum uses the minimum quantities", async ({
   await expect(page.getByText(/Mise en place · serves 4/)).toBeVisible();
   await expect(page.getByText(/400 g/)).toBeVisible();
 });
+
+declare global {
+  interface Window {
+    cookWakeLockTest: {
+      requests: string[];
+      releases: number;
+      denied: boolean;
+      deferred: boolean;
+      resolve: () => void;
+      visibility: (value: DocumentVisibilityState) => Promise<void>;
+    };
+  }
+}
+
+test.describe("Cook Mode screen wake lock", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const mode = new URLSearchParams(location.search).get("wakeLock");
+      let visibility: DocumentVisibilityState = "visible";
+      const sentinels: Sentinel[] = [];
+      class Sentinel extends EventTarget {
+        released = false;
+        async release() {
+          if (this.released) return;
+          this.released = true;
+          state.releases++;
+          this.dispatchEvent(new Event("release"));
+        }
+      }
+      const state = {
+        requests: [] as string[],
+        releases: 0,
+        denied: mode === "denied",
+        deferred: mode === "deferred",
+        resolve: () => {},
+        visibility: async (value: DocumentVisibilityState) => {
+          visibility = value;
+          if (value === "hidden") {
+            await Promise.all(sentinels.map((lock) => lock.release()));
+          }
+          document.dispatchEvent(new Event("visibilitychange"));
+        },
+      };
+      window.cookWakeLockTest = state;
+      Object.defineProperty(document, "visibilityState", {
+        get: () => visibility,
+      });
+      Object.defineProperty(navigator, "wakeLock", {
+        configurable: true,
+        value: {
+          async request(type: string) {
+            state.requests.push(type);
+            if (state.denied) throw new Error("Power saving policy");
+            const lock = new Sentinel();
+            sentinels.push(lock);
+            if (state.deferred) {
+              await new Promise<void>((resolve) => {
+                state.resolve = resolve;
+              });
+            }
+            return lock;
+          },
+        },
+      });
+      if (mode === "unsupported") {
+        Object.defineProperty(navigator, "wakeLock", { value: undefined });
+      }
+    });
+  });
+
+  test("keeps preparation, instructions and ingredients awake, resumes on return, and releases on completion", async ({
+    page,
+  }) => {
+    await page.goto("https://minimum.fixture/recipes/cook?servings=4");
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.requests))
+      .toEqual(["screen"]);
+    await page.getByRole("button", { name: /I’m ready/ }).click();
+    await page.getByRole("button", { name: "Show ingredients" }).click();
+    await page.getByRole("button", { name: "Back to cooking" }).click();
+    await page.evaluate(async () => {
+      await window.cookWakeLockTest.visibility("hidden");
+      await window.cookWakeLockTest.visibility("visible");
+      window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("pageshow"));
+    });
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.requests))
+      .toEqual(["screen", "screen"]);
+    await page.getByRole("button", { name: /Dinner’s ready/ }).click();
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.releases))
+      .toBe(2);
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    expect(
+      await page.evaluate(() => window.cookWakeLockTest.requests.length),
+    ).toBe(2);
+  });
+
+  test("releases a request that resolves after leaving Cook Mode", async ({
+    page,
+  }) => {
+    await page.goto(
+      "https://minimum.fixture/recipes/cook?servings=4&wakeLock=deferred",
+    );
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.requests.length))
+      .toBe(1);
+    await page.getByRole("button", { name: "Exit cook mode" }).click();
+    await expect(page).toHaveURL(/\/recipes\/view/);
+    await page.evaluate(() => window.cookWakeLockTest.resolve());
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.releases))
+      .toBe(1);
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    expect(
+      await page.evaluate(() => window.cookWakeLockTest.requests.length),
+    ).toBe(1);
+  });
+
+  test("a denied lock does not break cooking and retries on interaction", async ({
+    page,
+  }) => {
+    await page.goto(
+      "https://minimum.fixture/recipes/cook?servings=4&wakeLock=denied",
+    );
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.requests.length))
+      .toBe(1);
+    await page.evaluate(() => {
+      window.cookWakeLockTest.denied = false;
+    });
+    await page.getByRole("button", { name: /I’m ready/ }).click();
+    await expect(page.getByText("Bake until cooked through.")).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.requests.length))
+      .toBe(2);
+    await page.getByRole("button", { name: "Exit cook mode" }).click();
+    await expect
+      .poll(() => page.evaluate(() => window.cookWakeLockTest.releases))
+      .toBe(1);
+  });
+
+  test("cooking still works when the browser has no wake lock API", async ({
+    page,
+  }) => {
+    await page.goto(
+      "https://minimum.fixture/recipes/cook?servings=4&wakeLock=unsupported",
+    );
+    await page.getByRole("button", { name: /I’m ready/ }).click();
+    await expect(page.getByText("Bake until cooked through.")).toBeVisible();
+    await page.getByRole("button", { name: /Dinner’s ready/ }).click();
+    expect(await page.evaluate(() => window.cookWakeLockTest.requests)).toEqual(
+      [],
+    );
+  });
+});

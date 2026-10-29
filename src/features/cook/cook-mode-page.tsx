@@ -25,7 +25,7 @@ import {
   minimumServingsNotice,
 } from "@/lib/domain/ingredient-scaling";
 import type { CatalogueMeal, RecipeTimerCue } from "@/lib/domain/recipes";
-import { setCookScreenAwake } from "@/lib/platform/capacitor/cook-screen";
+import { keepCookScreenAwake } from "@/lib/platform/cook-screen";
 import {
   personalRecipeDetailPath,
   recipeDetailPath,
@@ -81,10 +81,8 @@ export function CookModePage({
   }, [hasRunningTimer]);
 
   useEffect(() => {
-    void setCookScreenAwake(cooking);
-    return () => {
-      void setCookScreenAwake(false);
-    };
+    if (!cooking) return;
+    return keepCookScreenAwake();
   }, [cooking]);
 
   const surface =
@@ -104,7 +102,6 @@ export function CookModePage({
   });
 
   const exit = () => {
-    void setCookScreenAwake(false);
     router.push(
       personalRecipeId
         ? personalRecipeDetailPath(
