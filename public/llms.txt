@@ -1,0 +1,33 @@
+# Foodedo
+
+> Foodedo helps people decide what to cook for dinner, plan their week, save recipes and shop from a list linked to their saved meal plan.
+
+The public website is https://www.foodedo.com. Its main sections are the recipe catalogue, meal-planning and shopping-list guides, the blog, and help and support.
+
+Guests can browse public recipes and try a temporary dinner plan on their device. An account is required to keep plans, save personal recipes and share a household. Saving a plan creates its linked shopping list. Household members share a plan and shopping list while retaining a separate Private planning space.
+
+Shopping lists combine compatible ingredient lines; different names or units may remain separate. Foodedo does not automatically track pantry stock. The FAQ and help pages provide current feature and access details.
+
+## Start here
+
+- [Home](https://www.foodedo.com/): Product overview and entry point for trying a suggested dinner plan.
+- [Recipes](https://www.foodedo.com/recipes): Browse the public Foodedo recipe catalogue and follow links to individual recipes.
+- [How to use Foodedo](https://www.foodedo.com/support/how-to-use): Getting started with planning, saving a plan, shopping and importing recipes.
+- [Frequently asked questions](https://www.foodedo.com/faq): Current information about free access, guest planning, accounts, recipes and households.
+
+## Meal planning and shopping guides
+
+- [Meal planner with a grocery list](https://www.foodedo.com/meal-planner-with-grocery-list): How suggested dinners connect to a shopping list when a plan is saved.
+- [Recipe to shopping list](https://www.foodedo.com/recipe-to-shopping-list): Worked example combining three dinners for two into a shopping list, including quantities and checks.
+- [How to make a shopping list from recipes](https://www.foodedo.com/how-to-make-a-shopping-list-from-recipes): Step-by-step instructions for choosing dinners, saving a plan, checking cupboards and shopping.
+- [How to create a weekly meal plan quickly](https://www.foodedo.com/how-to-create-a-weekly-meal-plan-fast): Start with suggested dinners and review the week.
+- [Meal planning for busy weeknights](https://www.foodedo.com/meal-planning-for-busy-weeknights): Plan dinners around available time and effort.
+- [Family meal planning](https://www.foodedo.com/family-meal-planning): Suggested dinners, flexible servings and shopping for a family.
+- [Household meal planning](https://www.foodedo.com/household-meal-planning): Shared planning and shopping, invitations and separate Private and Household spaces.
+
+## More content and support
+
+- [Blog](https://www.foodedo.com/blog): Articles and guides about meal planning, cooking and shopping.
+- [Help and support](https://www.foodedo.com/support): Help with plans, shopping lists and household sharing.
+- [Contact](https://www.foodedo.com/support/contact): Contact the Foodedo team with a question, problem or idea.
+- [Sitemap](https://www.foodedo.com/sitemap.xml): Index of public pages, published recipes and blog articles.
