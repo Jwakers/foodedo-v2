@@ -29,6 +29,7 @@ import { RecipeFilterPanel } from "@/features/recipes/recipe-filter-panel";
 import { RecipeSortStackPane } from "@/features/recipes/recipe-sort-stack-pane";
 import {
   recipeQuickFilterLabels,
+  isQuickFilterActive,
   useRecipeFilters,
 } from "@/features/recipes/use-recipe-filters";
 import {
@@ -109,7 +110,6 @@ export function RecipesListing({
   const toggleQuickFilter = (
     label: Parameters<typeof toggleRecipeQuickFilter>[1],
   ) => setRecipeFilters(toggleRecipeQuickFilter(recipeFilters, label));
-  const isQuickFilterActive = nativeFilters.isQuickFilterActive;
   const currentPage = web ? browse.state.page : 1;
   const publicBrowse = web && browse.state.scope === "All";
   const usePublicSeed =
@@ -284,9 +284,16 @@ export function RecipesListing({
                 key={label}
                 variant="choice"
                 aria-pressed={activeScope === label}
-                className="h-9 border-transparent px-4.5 text-14 text-graphite aria-pressed:border-transparent"
+                className="h-9 gap-1.5 border-transparent px-4.5 text-14 text-graphite aria-pressed:border-transparent"
                 onClick={() => setScope(label)}
               >
+                {label === "Saved" ? (
+                  <Heart
+                    aria-hidden="true"
+                    className="size-4.5"
+                    strokeWidth={1.8}
+                  />
+                ) : null}
                 {label}
               </Button>
             );
@@ -709,7 +716,7 @@ function EmptySavedState({ onBrowse }: { onBrowse: () => void }) {
         Nothing saved yet
       </h2>
       <p className="mt-2 max-w-65 text-14 leading-5 text-graphite">
-        Save recipes you love and they&apos;ll be easy to find here.
+        Tap the heart on a recipe to save it here.
       </p>
       <Button className="mt-6" onClick={onBrowse}>
         Browse Foodedo recipes

@@ -9,6 +9,119 @@ const modules = import.meta.glob("./**/*.ts");
 const authSubject = "recipe-test-user";
 const catalogueMealId = "stable-catalogue-meal";
 
+test("save confirmation is atomic, account-scoped and independent of dismissed hints", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  await t.run((ctx) =>
+    ctx.db.patch(ownerId, {
+      onboarding: { recipesRetired: true, retired: ["future-feature"] },
+    }),
+  );
+  const args = {
+    catalogueMealId,
+    catalogueVersion: 2,
+    saved: true,
+    supportsSaveConfirmation: true,
+  };
+  await expect(
+    asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      catalogueVersion: 999,
+    }),
+  ).rejects.toThrow();
+  expect(
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      saved: false,
+    }),
+  ).toEqual({ showSavedConfirmation: false });
+  const results = await Promise.all([
+    asUser.mutation(api.recipes.setCatalogueMealSaved, args),
+    asUser.mutation(api.recipes.setCatalogueMealSaved, args),
+  ]);
+  expect(results.map((result) => result.showSavedConfirmation).sort()).toEqual([
+    false,
+    true,
+  ]);
+  expect(await t.run((ctx) => ctx.db.get(ownerId))).toMatchObject({
+    onboarding: {
+      recipesRetired: true,
+      retired: ["future-feature", "recipe-save-confirmation", "recipes"],
+    },
+  });
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    saved: false,
+  });
+  expect(
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, args),
+  ).toEqual({ showSavedConfirmation: false });
+  await t.run((ctx) =>
+    ctx.db.insert("users", {
+      authSubject: "second-saver",
+      name: null,
+      email: null,
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  );
+  expect(
+    await t
+      .withIdentity({ subject: "second-saver" })
+      .mutation(api.recipes.setCatalogueMealSaved, args),
+  ).toEqual({ showSavedConfirmation: true });
+});
+
+test("existing saved recipes do not suppress the new confirmation", async () => {
+  const t = createTestContext();
+  const { asUser } = await seedUserAndRelease(t);
+  await asUser.mutation(api.recipes.saveCatalogueMeal, {
+    catalogueMealId,
+    catalogueVersion: 2,
+  });
+  expect(
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      catalogueMealId,
+      catalogueVersion: 2,
+      saved: true,
+      supportsSaveConfirmation: true,
+    }),
+  ).toEqual({ showSavedConfirmation: true });
+});
+
+test("older clients can save without consuming a confirmation they cannot display", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  const args = { catalogueMealId, catalogueVersion: 2, saved: true };
+  for (const request of [args, { ...args, supportsSaveConfirmation: false }]) {
+    expect(
+      await asUser.mutation(api.recipes.setCatalogueMealSaved, request),
+    ).toEqual({ showSavedConfirmation: false });
+  }
+  expect(
+    await asUser.query(api.recipes.listSavedCatalogueMeals, {}),
+  ).toHaveLength(1);
+  expect(await t.run((ctx) => ctx.db.get(ownerId))).toMatchObject({
+    onboarding: { retired: ["recipes"] },
+  });
+  expect(
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      supportsSaveConfirmation: true,
+    }),
+  ).toEqual({ showSavedConfirmation: true });
+  await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+    ...args,
+    saved: false,
+  });
+  expect(
+    await asUser.mutation(api.recipes.setCatalogueMealSaved, {
+      ...args,
+      supportsSaveConfirmation: true,
+    }),
+  ).toEqual({ showSavedConfirmation: false });
+});
+
 test("desired-state favourites support repeated reversals across revisions", async () => {
   const t = createTestContext();
   const { asUser } = await seedUserAndRelease(t);

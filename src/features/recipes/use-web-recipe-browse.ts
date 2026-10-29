@@ -14,6 +14,18 @@ import {
 
 const locationEvent = "foodedo:recipe-browse";
 
+/** Opening Saved also works when the listing is already mounted with filters. */
+export function openSavedRecipes(navigate: (href: string) => void) {
+  const href = "/recipes?scope=Saved";
+  if (window.location.pathname === "/recipes") {
+    window.history.pushState(null, "", href);
+    window.dispatchEvent(new Event(locationEvent));
+    window.scrollTo({ top: 0 });
+  } else {
+    navigate(href);
+  }
+}
+
 /** Native retains local state. Web refinements use history without a server round trip per keystroke. */
 export function useWebRecipeBrowse(
   enabled: boolean,

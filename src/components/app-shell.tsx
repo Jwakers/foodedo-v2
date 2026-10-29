@@ -17,6 +17,7 @@ import {
   useGuestPlanReviewDockHidden,
 } from "@/features/plan/guest-plan-review-chrome";
 import { CatalogueSaveIntentResume } from "@/features/recipes/catalogue-recipe-library";
+import { RecipeSaveConfirmationProvider } from "@/features/recipes/recipe-save-confirmation";
 import { RecipeImportIntentResume } from "@/features/recipes/recipe-import-intent-resume";
 import { RecipeImportNotifications } from "@/features/recipes/recipe-import-notifications";
 import { cn } from "@/lib/utils/cn";
@@ -27,7 +28,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <FoodedoHelpProvider>
       <GuestPlanReviewChromeProvider>
-        <AppShellChrome>{children}</AppShellChrome>
+        <RecipeSaveConfirmationProvider>
+          <AppShellChrome>{children}</AppShellChrome>
+        </RecipeSaveConfirmationProvider>
       </GuestPlanReviewChromeProvider>
     </FoodedoHelpProvider>
   );

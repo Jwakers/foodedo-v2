@@ -1,5 +1,10 @@
 /** Stable IDs, independent of routes, copy and presentation. Add new IDs here. */
-export const introductionIds = ["home", "recipes", "shopping"] as const;
+export const introductionIds = [
+  "home",
+  "recipes",
+  "shopping",
+  "recipe-save-confirmation",
+] as const;
 export type IntroductionId = (typeof introductionIds)[number];
 
 /** Read the first implementation's fields without resetting existing users. */

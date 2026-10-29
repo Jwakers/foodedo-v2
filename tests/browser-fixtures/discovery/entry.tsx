@@ -1,7 +1,8 @@
 import { OnboardingProvider } from "../../../src/features/onboarding/use-onboarding";
 import { createRoot } from "react-dom/client";
 import { useEffect, useState } from "react";
-import { Toaster } from "sonner";
+import { AppToaster } from "../../../src/components/app-toaster";
+import { RecipeSaveConfirmationProvider } from "../../../src/features/recipes/recipe-save-confirmation";
 import {
   HouseholdProvider,
   useHouseholdSpace,
@@ -17,6 +18,10 @@ function App() {
   const { select, isHousehold } = useHouseholdSpace();
   const [home, setHome] = useState(true);
   const [signIn, setSignIn] = useState(false);
+  const [surfaces] = useState(() =>
+    new URLSearchParams(location.search).has("surfaces"),
+  );
+  const [web] = useState(() => new URLSearchParams(location.search).has("web"));
   useEffect(() => {
     const open = () => setSignIn(true);
     window.addEventListener("fixture:sign-in", open);
@@ -48,14 +53,20 @@ function App() {
         </div>
       ) : null}
       <main className="px-page-inline py-8">
-        {new URLSearchParams(location.search).has("surfaces") ? (
+        {surfaces ? (
           <>
             <section aria-label="Recipe header">
               <RecipeDetailHeaderActions
                 recipe={{ ...meals[1], ingredients: [], steps: [] }}
               />
             </section>
-            <RecipesListing />
+            <RecipesListing
+              webPagination={
+                web
+                  ? { pageNumber: 1, totalPages: 1, location: "/recipes" }
+                  : undefined
+              }
+            />
           </>
         ) : null}
         {home ? (
@@ -74,14 +85,16 @@ function App() {
           <p>Away from Home</p>
         )}
       </main>
-      <Toaster />
+      <AppToaster dockVisible />
     </>
   );
 }
 createRoot(document.getElementById("root")!).render(
   <HouseholdProvider>
     <OnboardingProvider>
-      <App />
+      <RecipeSaveConfirmationProvider>
+        <App />
+      </RecipeSaveConfirmationProvider>
     </OnboardingProvider>
   </HouseholdProvider>,
 );

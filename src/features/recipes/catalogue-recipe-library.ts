@@ -13,6 +13,7 @@ import {
 import { createCatalogueSaveIntentStore } from "@/lib/platform/auth-intent-store";
 import { optimisticallySetCatalogueSaved } from "./optimistic-catalogue-saves";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { useRecipeSaveConfirmation } from "./recipe-save-confirmation";
 
 type ToggleCatalogueSaveArgs = {
   catalogueMealId: string;
@@ -27,8 +28,9 @@ const emptySavedMealIds: ReadonlySet<string> = new Set();
  * surfaces. Guests persist one intent before Clerk opens.
  */
 export function useCatalogueRecipeLibrary() {
-  const { status, isClerkLoaded, isSignedIn, isAuthenticated } =
+  const { status, isClerkLoaded, isSignedIn, isAuthenticated, userId } =
     useFoodedoAuth();
+  const confirmation = useRecipeSaveConfirmation();
   const { openSignIn } = useClerk();
   const savedRecipes = useQuery(
     api.recipes.listSavedCatalogueMeals,
@@ -75,7 +77,7 @@ export function useCatalogueRecipeLibrary() {
       return;
     }
 
-    if (status !== "authenticated") {
+    if (status !== "authenticated" || !userId) {
       toast.error(
         "Foodedo couldn’t connect your account yet. Try saving again.",
       );
@@ -87,12 +89,16 @@ export function useCatalogueRecipeLibrary() {
       return;
     }
 
+    const saved = !savedMealIds.has(catalogueMealId);
+    const complete = confirmation.begin(userId, catalogueMealId, saved);
     try {
-      await setSaved({
+      const result = await setSaved({
         catalogueMealId,
         catalogueVersion,
-        saved: !savedMealIds.has(catalogueMealId),
+        saved,
+        supportsSaveConfirmation: true,
       });
+      complete(result?.showSavedConfirmation === true);
     } catch (error) {
       console.error(`Failed to update saved recipe “${title}”.`, error);
       toast.error("Foodedo couldn’t update this saved recipe. Try again.");
@@ -121,7 +127,8 @@ export function useCatalogueRecipeLibrary() {
  * Mounted once at app-shell level so returning on any route completes the job.
  */
 export function CatalogueSaveIntentResume() {
-  const { status, isAuthenticated } = useFoodedoAuth();
+  const { status, isAuthenticated, userId } = useFoodedoAuth();
+  const confirmation = useRecipeSaveConfirmation();
   const setSavedMutation = useMutation(api.recipes.setCatalogueMealSaved);
   const setSaved = useMemo(
     () =>
@@ -131,7 +138,12 @@ export function CatalogueSaveIntentResume() {
   const isResumingRef = useRef(false);
 
   useEffect(() => {
-    if (status === "loading" || !isAuthenticated || isResumingRef.current) {
+    if (
+      status === "loading" ||
+      !isAuthenticated ||
+      !userId ||
+      isResumingRef.current
+    ) {
       return;
     }
 
@@ -144,11 +156,18 @@ export function CatalogueSaveIntentResume() {
         const intent = readCatalogueSaveIntent(await store.read());
         if (!intent) return;
 
-        await setSaved({
+        const complete = confirmation.begin(
+          userId,
+          intent.catalogueMealId,
+          true,
+        );
+        const result = await setSaved({
           catalogueMealId: intent.catalogueMealId,
           catalogueVersion: intent.catalogueVersion,
           saved: true,
+          supportsSaveConfirmation: true,
         });
+        complete(result?.showSavedConfirmation === true);
 
         await store.clear();
       } catch (error) {
@@ -160,7 +179,7 @@ export function CatalogueSaveIntentResume() {
         isResumingRef.current = false;
       }
     })();
-  }, [isAuthenticated, setSaved, status]);
+  }, [isAuthenticated, setSaved, status, userId, confirmation]);
 
   return null;
 }

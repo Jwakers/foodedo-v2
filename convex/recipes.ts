@@ -10,6 +10,7 @@ import {
 import { syncShoppingListsForRecipe } from "./lib/shoppingListSync";
 import { recipeServingScaling } from "../src/lib/domain/ingredient-scaling";
 import { retireIntroductions } from "./lib/onboarding";
+import { retiredIntroductionIds } from "../src/lib/domain/onboarding";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -107,10 +108,16 @@ export const setCatalogueMealSaved = mutation({
     catalogueMealId: v.string(),
     catalogueVersion: v.number(),
     saved: v.boolean(),
+    // Older web tabs and native releases must not consume feedback they cannot show.
+    supportsSaveConfirmation: v.optional(v.boolean()),
   },
-  returns: v.null(),
-  handler: async (ctx, { catalogueMealId, catalogueVersion, saved }) => {
+  returns: v.object({ showSavedConfirmation: v.boolean() }),
+  handler: async (
+    ctx,
+    { catalogueMealId, catalogueVersion, saved, supportsSaveConfirmation },
+  ) => {
     const ownerId = await requireUserId(ctx);
+    let showSavedConfirmation = false;
     if (saved) {
       if (
         (await getCatalogueMeal(ctx, catalogueMealId, catalogueVersion)) ===
@@ -123,7 +130,18 @@ export const setCatalogueMealSaved = mutation({
         catalogueVersion,
         saveToLibrary: true,
       });
-      await retireIntroductions(ctx, ownerId, ["recipes"]);
+      if (supportsSaveConfirmation) {
+        const user = await ctx.db.get(ownerId);
+        showSavedConfirmation = !retiredIntroductionIds(
+          user?.onboarding,
+        ).includes("recipe-save-confirmation");
+      }
+      await retireIntroductions(ctx, ownerId, [
+        "recipes",
+        ...(supportsSaveConfirmation
+          ? ["recipe-save-confirmation" as const]
+          : []),
+      ]);
     } else {
       const recipes = await ctx.db
         .query("recipes")
@@ -137,7 +155,7 @@ export const setCatalogueMealSaved = mutation({
       for (const recipe of recipes)
         await removeRecipeFromLibrary(ctx, ownerId, recipe);
     }
-    return null;
+    return { showSavedConfirmation };
   },
 });
 

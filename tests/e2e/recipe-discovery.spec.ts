@@ -164,11 +164,130 @@ test("failed saves stay unsaved and can be retried", async ({ page }) => {
   await expect(
     page.getByText("Foodedo couldn’t update this saved recipe. Try again."),
   ).toBeVisible();
+  await expect(page.getByText("Recipe saved", { exact: true })).toHaveCount(0);
   await expect(heart).toHaveAttribute("aria-pressed", "false");
   expect(await destinations(page)).toEqual(before);
   await page.evaluate(() => sessionStorage.removeItem("fixture:fail-save"));
   await heart.click();
   await expect(heart).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Recipe saved", { exact: true })).toBeVisible();
+});
+
+for (const web of [false, true]) {
+  test(`first-save confirmation opens unfiltered Saved on ${web ? "web" : "native"}`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `https://discovery.fixture/recipes?surfaces${web ? "&web" : ""}&q=chicken&quick=1&sort=quickest`,
+    );
+    const search = page.getByRole("textbox", { name: "Search recipes" });
+    await expect(search).toHaveValue("chicken");
+    const headerHeart = page
+      .getByRole("region", { name: "Recipe header" })
+      .getByRole("button", { name: /^(Unsave|Save) Dinner 1$/ });
+    await page.evaluate(() =>
+      sessionStorage.setItem("fixture:save-delay", "600"),
+    );
+    await headerHeart.click();
+    await expect(page.getByText("Recipe saved", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByText("Find it in Recipes → ♥ Saved.", { exact: true }),
+    ).toBeVisible();
+    await expect(headerHeart).toBeFocused();
+    const action = page.getByRole("button", {
+      name: "View saved",
+      exact: true,
+    });
+    const bounds = await action.boundingBox();
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(bounds!.width).toBeGreaterThanOrEqual(44);
+    expect(bounds!.y + bounds!.height).toBeLessThan(844 - 60);
+    await expect(
+      page.locator("[data-sonner-toaster]").locator(".."),
+    ).toHaveAttribute("aria-live", "polite");
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(0);
+    await action.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(
+      "https://discovery.fixture/recipes?scope=Saved",
+    );
+    await expect(search).toHaveValue("");
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    const saved = page.getByRole("button", { name: "Saved", exact: true });
+    await expect(saved).toHaveAttribute("aria-pressed", "true");
+    await expect(saved.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+    await expect(saved).toHaveCSS("column-gap", "6px");
+    await expect(
+      page.getByRole("button", { name: "Under 30 min", exact: true }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await expect(
+      page
+        .getByRole("heading", { name: "Saved favourites", exact: true })
+        .locator("../..")
+        .getByRole("link", { name: /Dinner 1/ }),
+    ).toBeVisible();
+  });
+}
+
+test("save confirmation disappears on unsave and does not repeat after reload", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/recipes?surfaces");
+  const heart = page
+    .getByRole("region", { name: "Recipe header" })
+    .getByRole("button", { name: /^(Unsave|Save) Dinner 1$/ });
+  await heart.click();
+  await expect(page.getByText("Recipe saved", { exact: true })).toBeVisible();
+  await heart.click();
+  await expect(page.getByText("Recipe saved", { exact: true })).toBeHidden();
+  await page.reload();
+  await heart.click();
+  await expect(heart).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("fixture:pending-saves")),
+    )
+    .toBe("0");
+  await expect(page.getByText("Recipe saved", { exact: true })).toHaveCount(0);
+});
+
+test("late save completions do not announce success after an account change or reversal", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/recipes?surfaces");
+  await page.evaluate(() =>
+    sessionStorage.setItem("fixture:save-delay", "700"),
+  );
+  const heart = page
+    .getByRole("region", { name: "Recipe header" })
+    .getByRole("button", { name: /^(Unsave|Save) Dinner 1$/ });
+  await heart.click();
+  await heart.click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("fixture:pending-saves")),
+    )
+    .toBe("0");
+  await expect(page.getByText("Recipe saved", { exact: true })).toHaveCount(0);
+  await page.evaluate(() =>
+    sessionStorage.removeItem("fixture:save-confirmation:fixture-alice"),
+  );
+  await heart.click();
+  await page.evaluate(() => {
+    sessionStorage.setItem("fixture:identity", "fixture-bob");
+    dispatchEvent(new Event("fixture:auth-change"));
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("fixture:pending-saves")),
+    )
+    .toBe("0");
+  await expect(page.getByText("Recipe saved", { exact: true })).toHaveCount(0);
 });
 
 test("discovery hearts update before the server and roll back failed saves without a spinner", async ({
@@ -283,6 +402,9 @@ test("guest heart taps on mobile preserve save intent through sign-in", async ({
       ),
     )
     .toContain(id);
+  await expect(
+    page.getByText("Find it in Recipes → ♥ Saved.", { exact: true }),
+  ).toBeVisible();
 });
 
 test("recipe carousels have hearts while the meal plan does not", async ({

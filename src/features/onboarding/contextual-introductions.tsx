@@ -70,7 +70,7 @@ export function RecipesIntroduction() {
           strokeWidth={1.6}
         />
         <p className="flex-1 text-14 leading-5 text-graphite">
-          Tap the heart to keep favourites in Saved and help shape future plans.
+          Tap the heart to save a recipe. Find it again in Saved.
         </p>
       </div>
     </ContextualIntroduction>

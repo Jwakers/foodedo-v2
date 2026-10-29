@@ -141,6 +141,7 @@ type SaveArgs = {
   catalogueMealId: string;
   catalogueVersion: number;
   saved: boolean;
+  supportsSaveConfirmation?: boolean;
 };
 type OptimisticUpdate = (store: OptimisticLocalStore, args: SaveArgs) => void;
 const pending: { args: SaveArgs; update?: OptimisticUpdate }[] = [];
@@ -162,6 +163,7 @@ function optimisticSavedRecipes() {
 export function useMutation(reference: FunctionReference<"mutation">) {
   function createMutation(update?: OptimisticUpdate) {
     const mutate = (args: SaveArgs) => {
+      const identity = getFixtureIdentity();
       const layer = { args, update };
       pending.push(layer);
       sessionStorage.setItem("fixture:pending-saves", String(pending.length));
@@ -184,7 +186,14 @@ export function useMutation(reference: FunctionReference<"mutation">) {
           if (args.saved) ids.add(args.catalogueMealId);
           else ids.delete(args.catalogueMealId);
           sessionStorage.setItem("fixture:saved", JSON.stringify([...ids]));
-          return null;
+          const key = `fixture:save-confirmation:${identity}`;
+          const showSavedConfirmation =
+            args.saved &&
+            args.supportsSaveConfirmation === true &&
+            sessionStorage.getItem(key) !== "retired";
+          if (args.saved && args.supportsSaveConfirmation)
+            sessionStorage.setItem(key, "retired");
+          return { showSavedConfirmation };
         })
         .finally(() => {
           pending.splice(pending.indexOf(layer), 1);
