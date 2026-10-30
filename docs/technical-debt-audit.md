@@ -42,3 +42,18 @@ Keep the existing domain/platform boundary, indexed authorization helpers, modul
 ## Verification
 
 Run the repository CI matrix: formatting, lint, TypeScript, domain tests, Convex/rendering tests, shopping example audit, native build and isolation checks, web build and content checks, public-recipe cache check, then full Chromium. Builds and browser suites must run sequentially because both use `.next`. Live Clerk–Convex and physical-device release checks remain manual.
+
+### Final automated results
+
+All five batches are implemented on `codex/technical-debt-reduction` without schema or public endpoint changes. A token comparison verified all 62 original meal-plan endpoint/helper/validator/type/constant declarations unchanged apart from export modifiers and imports; the six helper modules have no internal import cycles.
+
+- Formatting, lint, application/backend TypeScript: passed.
+- Domain/feature unit suite: 304 passed.
+- Convex lifecycle and rendering suite: 269 passed.
+- Complete Chromium suite with a fresh CI-mode server: 175 passed, no retries.
+- Native static export and blog/public-page/recipe isolation checks: passed.
+- Web production build, analytics trace and blog/public-page/recipe checks: passed.
+- Public-recipe cache refresh, cached-404 recovery and backend-outage checks: passed.
+- Read-only shopping example/catalogue audit: passed.
+
+Validation exposed two local orchestration hazards: rebuilding while fixtures read `.next` assets, and reusing an old `next start` process after a rebuild. Final checks ran sequentially against a fresh server. Live account authentication and physical iOS testing were not performed; no production deployment or data mutation was performed.

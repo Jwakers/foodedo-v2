@@ -9,7 +9,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { SpaceId } from "./spaces";
 
-const maximumPlanSlots = 31;
+import { maximumPlanSlots } from "./activePlan";
 const maximumListsForOnePlan = 10;
 
 /** Recipe edits must refresh the same derived lists as plan edits. */

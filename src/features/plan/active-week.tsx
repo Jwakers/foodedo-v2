@@ -23,6 +23,7 @@ import {
   formatPlanDateRange,
   isNearActivePlanEnd,
   resolveActivePlanWeekRows,
+  type ActivePlanWeekSlot,
 } from "@/lib/domain/plan-display";
 import {
   useCatalogueMeals,
@@ -42,20 +43,12 @@ export type ActiveWeekPlan = {
   servings: number;
   updatedAt: number;
   status: "active" | "archived";
-  mealSlots: ReadonlyArray<{
-    date: string;
-    recipeId?: string;
-    slotId?: string;
-    status: "planned" | "cooked" | "skipped";
-    title: string;
-    description: string | null;
-    imageSrc: string | null;
-    catalogueMealId: string | null;
-    catalogueVersion: number | null;
-    catalogueMealSlug: string | null;
-    prepMinutes: number | null;
-    cookMinutes: number | null;
-  }>;
+  mealSlots: ReadonlyArray<
+    ActivePlanWeekSlot & {
+      recipeId?: string;
+      slotId?: string;
+    }
+  >;
 };
 
 export type ActiveWeekPlanSummary = Pick<
