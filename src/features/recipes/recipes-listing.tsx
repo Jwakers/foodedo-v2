@@ -40,10 +40,11 @@ import { formatPersonalRecipeSourceLabel } from "@/lib/domain/recipe-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import type { RecipeDirectorySeed } from "@/lib/domain/recipe-directory";
 import { RecipePagination } from "./recipe-pagination";
-import { useWebRecipeBrowse } from "./use-web-recipe-browse";
+import { recipeBrowseEvent, useWebRecipeBrowse } from "./use-web-recipe-browse";
 import { recipeBrowseHref } from "@/lib/domain/recipe-browse";
 import { toggleRecipeQuickFilter } from "./use-recipe-filters";
 import {
+  emptyRecipeFilters,
   type RecipeFilters,
   type RecipeSort,
 } from "@/lib/domain/recipe-filtering";
@@ -82,6 +83,26 @@ export function RecipesListing({
   const [nativeSearch, setNativeSearch] = useState("");
   const nativeFilters = useRecipeFilters();
   const web = webPagination !== undefined;
+  const { setFilters: setNativeFilters, setSort: setNativeSort } =
+    nativeFilters;
+  useEffect(() => {
+    if (web) return;
+    function openSaved() {
+      if (
+        window.location.pathname !== "/recipes" ||
+        new URLSearchParams(window.location.search).get("scope") !== "Saved"
+      )
+        return;
+      setNativeScope("Saved");
+      setNativeSearch("");
+      setNativeFilters(emptyRecipeFilters);
+      setNativeSort("recommended");
+    }
+    // Handle both arriving from another route and an already-mounted listing.
+    openSaved();
+    window.addEventListener(recipeBrowseEvent, openSaved);
+    return () => window.removeEventListener(recipeBrowseEvent, openSaved);
+  }, [web, setNativeFilters, setNativeSort]);
   const browse = useWebRecipeBrowse(
     web,
     webPagination?.pageNumber ?? 1,

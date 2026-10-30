@@ -1,18 +1,14 @@
-import { expect, test } from "@playwright/test";
-import { build } from "vite";
+import { expect, test } from "../helpers/fixture-test";
+import {
+  buildBrowserFixture,
+  productionStylesheet,
+} from "../helpers/browser-fixture";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
 let javascript = "";
 let stylesheet = "";
 test.beforeAll(async () => {
-  const cssRoot = path.resolve(".next/static/css");
-  stylesheet = readdirSync(cssRoot, { recursive: true })
-    .filter((file) => String(file).endsWith(".css"))
-    .map((file) => readFileSync(path.join(cssRoot, String(file)), "utf8"))
-    .join("\n");
-  const result = await build({
-    configFile: false,
-    logLevel: "error",
+  stylesheet = productionStylesheet();
+  javascript = await buildBrowserFixture({
     define: {
       "process.env": JSON.stringify({
         NODE_ENV: "production",
@@ -30,29 +26,11 @@ test.beforeAll(async () => {
         ),
       },
     },
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: path.resolve(
-          "tests/browser-fixtures/minimum-servings/entry.tsx",
-        ),
-        formats: ["iife"],
-        name: "MinimumServingsFixture",
-      },
-    },
+    entry: path.resolve("tests/browser-fixtures/minimum-servings/entry.tsx"),
+    name: "MinimumServingsFixture",
   });
-  const bundle = Array.isArray(result) ? result[0] : result;
-  if (!("output" in bundle)) throw new Error("Expected browser bundle");
-  javascript = bundle.output
-    .filter((item) => item.type === "chunk")
-    .map((item) => item.code)
-    .join("\n");
 });
 test.beforeEach(async ({ page }) => {
-  page.on("pageerror", (error) =>
-    console.error("Fixture error:", error.message),
-  );
   await page.route("https://minimum.fixture/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     await route.fulfill(

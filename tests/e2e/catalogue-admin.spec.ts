@@ -1,21 +1,17 @@
-import { expect, test } from "@playwright/test";
-import { build } from "vite";
+import { expect, test } from "../helpers/fixture-test";
+import {
+  buildBrowserFixture,
+  productionStylesheet,
+} from "../helpers/browser-fixture";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
 let javascript = "";
 let stylesheet = "";
 test.beforeAll(async () => {
   // Use the web build's actual Tailwind output so responsive assertions exercise
   // production layout, rather than an unstyled component harness.
-  const cssRoot = path.resolve(".next/static/css");
-  stylesheet = readdirSync(cssRoot, { recursive: true })
-    .filter((file) => String(file).endsWith(".css"))
-    .map((file) => readFileSync(path.join(cssRoot, String(file)), "utf8"))
-    .join("\n");
+  stylesheet = productionStylesheet();
   const fixture = path.resolve("tests/browser-fixtures/catalogue-admin");
-  const result = await build({
-    configFile: false,
-    logLevel: "error",
+  javascript = await buildBrowserFixture({
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     resolve: {
       alias: {
@@ -26,23 +22,9 @@ test.beforeAll(async () => {
         "next/link": path.join(fixture, "link.tsx"),
       },
     },
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: path.join(fixture, "entry.tsx"),
-        formats: ["iife"],
-        name: "EditorialFixture",
-      },
-    },
+    entry: path.join(fixture, "entry.tsx"),
+    name: "EditorialFixture",
   });
-  const bundle = Array.isArray(result) ? result[0] : result;
-  if (!("output" in bundle))
-    throw new Error("Expected an in-memory browser bundle");
-  javascript = bundle.output
-    .filter((item) => item.type === "chunk")
-    .map((item) => item.code)
-    .join("\n");
 });
 test.beforeEach(async ({ page }) => {
   await page.route("https://editorial.fixture/**", async (route) => {
