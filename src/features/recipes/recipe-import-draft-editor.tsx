@@ -7,7 +7,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { EditorField, NumberField } from "./recipe-editor-fields";
+import { RecipeMetadataFields } from "./recipe-metadata-fields";
+import { EditorField } from "./recipe-editor-fields";
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { SHOPPING_CATEGORIES } from "@/lib/domain/recipes";
 import { importJobResumePath } from "./recipe-import-state";
@@ -151,53 +152,13 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
             </label>
           ))}
         </section>
-        <section className="mt-6 grid gap-4">
-          <EditorField
-            label="Title"
-            value={recipe.title}
-            onChange={(title) => setRecipe({ ...recipe, title })}
-          />
-          <EditorField
-            label="Description"
-            multiline
-            value={recipe.description ?? ""}
-            onChange={(description) =>
-              setRecipe({ ...recipe, description: description || undefined })
-            }
-          />
-          <div>
-            <NumberField
-              label="Minimum servings"
-              min={1}
-              max={recipe.servings ?? 1000}
-              value={recipe.minimumServings}
-              onChange={(minimumServings) =>
-                setRecipe({ ...recipe, minimumServings })
-              }
-            />
-            <p className="mt-1 text-12 text-graphite">
-              Smallest practical recipe size. Leave blank to allow ordinary
-              scaling.
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <NumberField
-              label="Serves"
-              value={recipe.servings}
-              onChange={(servings) => setRecipe({ ...recipe, servings })}
-            />
-            <NumberField
-              label="Prep min"
-              value={recipe.prepMinutes}
-              onChange={(prepMinutes) => setRecipe({ ...recipe, prepMinutes })}
-            />
-            <NumberField
-              label="Cook min"
-              value={recipe.cookMinutes}
-              onChange={(cookMinutes) => setRecipe({ ...recipe, cookMinutes })}
-            />
-          </div>
-        </section>
+        <RecipeMetadataFields
+          recipe={recipe}
+          onChange={(patch) =>
+            setRecipe((current) => ({ ...current, ...patch }))
+          }
+          className="mt-6 grid gap-4"
+        />
         <h2 className="mt-8 font-display text-24">Ingredients</h2>
         <div className="mt-3 grid gap-4">
           {recipe.ingredients.map((line, index) => {
