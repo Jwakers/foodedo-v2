@@ -21,14 +21,14 @@ import { validateDownloadedRecipeImage } from "./lib/recipeImport/images";
 
 import {
   catalogueSchedule,
-  isCatalogueLunchtime,
+  isCatalogueGenerationTime,
 } from "./lib/catalogueGeneration/config";
 
 export const runScheduled = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    if (!catalogueSchedule.enabled || !isCatalogueLunchtime(Date.now()))
+    if (!catalogueSchedule.enabled || !isCatalogueGenerationTime(Date.now()))
       return null;
     await ctx.runMutation(internal.catalogueAdmin.beginScheduled, {});
     return null;

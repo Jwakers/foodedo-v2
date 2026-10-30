@@ -475,12 +475,12 @@ test("a concurrent administrator edit prevents stale authored progress and stops
 });
 
 test.each([
-  [undefined, "2026-10-26T12:00:00Z", 0],
-  ["false", "2026-10-26T12:00:00Z", 0],
-  ["true", "2026-10-26T11:00:00Z", 0],
-  ["true", "2026-10-27T12:00:00Z", 0],
-  ["true", "2026-10-26T12:00:00Z", 1],
-  ["true", "2026-07-01T11:00:00Z", 1],
+  [undefined, "2026-10-26T08:00:00Z", 0],
+  ["false", "2026-10-26T08:00:00Z", 0],
+  ["true", "2026-10-26T07:00:00Z", 0],
+  ["true", "2026-10-27T08:00:00Z", 0],
+  ["true", "2026-10-26T08:00:00Z", 1],
+  ["true", "2026-07-01T07:00:00Z", 1],
 ])(
   "scheduled action with switch %s at %s enqueues %i run(s)",
   async (enabled, now, count) => {

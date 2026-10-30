@@ -27,9 +27,9 @@ export const catalogueSchedule = {
   get enabled() {
     return process.env.FOODEDO_CATALOGUE_SCHEDULE_ENABLED === "true";
   },
-  // Convex cron schedules are UTC. The Node action selects UK noon from these
+  // Convex cron schedules are UTC. The Node action selects UK 8 am from these
   // two candidates so the schedule follows GMT/BST without seasonal redeploys.
-  cron: "0 11,12 * * 1,3,5",
+  cron: "0 7,8 * * 1,3,5",
   timeZone: "Europe/London",
 } as const;
 
@@ -38,7 +38,7 @@ export const catalogueSchedule = {
 export const improvementLimits = { deadlineMs: 480_000 } as const;
 
 // Called in the Node runtime, which supplies IANA timezone data.
-export function isCatalogueLunchtime(now: number): boolean {
+export function isCatalogueGenerationTime(now: number): boolean {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: catalogueSchedule.timeZone,
     weekday: "short",
@@ -47,5 +47,5 @@ export function isCatalogueLunchtime(now: number): boolean {
   }).formatToParts(now);
   const weekday = parts.find((part) => part.type === "weekday")?.value;
   const hour = parts.find((part) => part.type === "hour")?.value;
-  return ["Mon", "Wed", "Fri"].includes(weekday ?? "") && hour === "12";
+  return ["Mon", "Wed", "Fri"].includes(weekday ?? "") && hour === "08";
 }
