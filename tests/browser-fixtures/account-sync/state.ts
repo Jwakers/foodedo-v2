@@ -4,12 +4,12 @@ import { ConvexError } from "convex/values";
 const listeners = new Set<() => void>();
 const scenario = new URLSearchParams(location.search).get("scenario");
 let state = {
-  isLoaded: true,
-  isSignedIn: new URLSearchParams(location.search).get("scenario") !== "guest",
+  isLoaded: scenario !== "home",
+  isSignedIn: scenario !== "guest" && scenario !== "home",
   userId: "user-a" as string | null,
   isAuthenticated: true,
   isLoading: scenario === "auth-loading",
-  account: (scenario === "loading"
+  account: (scenario === "loading" || scenario === "home"
     ? undefined
     : scenario === "ready"
       ? { authSubject: "user-a" }
@@ -22,6 +22,8 @@ let state = {
       : scenario === "pending"
         ? "pending"
         : "fail") as "fail" | "succeed" | "pending" | "deleted",
+  household: undefined as null | undefined | { _id: string },
+  plan: undefined as null | undefined | { _id: string },
 };
 export const counts = { personalQueries: 0, signOuts: 0, recoveries: 0 };
 let finishRecovery: (() => void) | undefined;

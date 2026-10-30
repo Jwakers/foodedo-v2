@@ -1,6 +1,7 @@
 "use client";
 
 import { useHomeEntryState } from "@/components/use-home-entry-state";
+import { HomeLoading } from "@/components/home-loading";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Welcome } from "@/features/welcome/welcome";
 import { Suspense, useEffect } from "react";
@@ -32,7 +33,13 @@ export function HomeEntry() {
       <Suspense fallback={null}>
         <GuestEntryIntent />
       </Suspense>
-      {state === "home" ? <HomeDashboard /> : <Welcome />}
+      {state === "loading" ? (
+        <HomeLoading />
+      ) : state === "home" ? (
+        <HomeDashboard />
+      ) : (
+        <Welcome />
+      )}
     </>
   );
 }

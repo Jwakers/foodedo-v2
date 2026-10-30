@@ -27,6 +27,12 @@ import type * as lib_catalogueGeneration_prompts from "../lib/catalogueGeneratio
 import type * as lib_catalogueGeneration_revisions from "../lib/catalogueGeneration/revisions.js";
 import type * as lib_catalogueGeneration_validators from "../lib/catalogueGeneration/validators.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
+import type * as lib_mealPlans_contracts from "../lib/mealPlans/contracts.js";
+import type * as lib_mealPlans_creation from "../lib/mealPlans/creation.js";
+import type * as lib_mealPlans_model from "../lib/mealPlans/model.js";
+import type * as lib_mealPlans_selection from "../lib/mealPlans/selection.js";
+import type * as lib_mealPlans_validation from "../lib/mealPlans/validation.js";
+import type * as lib_mealPlans_views from "../lib/mealPlans/views.js";
 import type * as lib_mealSelection from "../lib/mealSelection.js";
 import type * as lib_onboarding from "../lib/onboarding.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
@@ -84,6 +90,12 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogueGeneration/revisions": typeof lib_catalogueGeneration_revisions;
   "lib/catalogueGeneration/validators": typeof lib_catalogueGeneration_validators;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
+  "lib/mealPlans/contracts": typeof lib_mealPlans_contracts;
+  "lib/mealPlans/creation": typeof lib_mealPlans_creation;
+  "lib/mealPlans/model": typeof lib_mealPlans_model;
+  "lib/mealPlans/selection": typeof lib_mealPlans_selection;
+  "lib/mealPlans/validation": typeof lib_mealPlans_validation;
+  "lib/mealPlans/views": typeof lib_mealPlans_views;
   "lib/mealSelection": typeof lib_mealSelection;
   "lib/onboarding": typeof lib_onboarding;
   "lib/planningPreferences": typeof lib_planningPreferences;

@@ -1,6 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { AccountSyncGate } from "../../../src/features/auth/account-sync-gate";
+import { HouseholdProvider } from "../../../src/features/household/household-context";
+import { HomeEntry } from "../../../src/features/welcome/home-entry";
+import { useShowAppChrome } from "../../../src/components/use-home-entry-state";
+import { AppNavigation } from "../../../src/components/app-navigation";
 import { api } from "../../../convex/_generated/api";
 import { createIndexedDbGuestDraftStore } from "../../../src/lib/platform/guest-draft-store";
 import { useAuth } from "./clerk";
@@ -54,10 +58,28 @@ function ProtectedApp() {
     <h1>{auth.isSignedIn ? "Signed-in app ready" : "Guest planner ready"}</h1>
   );
 }
+
+function HomeShell() {
+  const showChrome = useShowAppChrome();
+  return (
+    <>
+      {showChrome ? <header>Foodedo</header> : null}
+      <HomeEntry />
+      {showChrome ? <AppNavigation /> : null}
+    </>
+  );
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AccountSyncGate>
-      <ProtectedApp />
+      {new URLSearchParams(location.search).get("scenario") === "home" ? (
+        <HouseholdProvider>
+          <HomeShell />
+        </HouseholdProvider>
+      ) : (
+        <ProtectedApp />
+      )}
     </AccountSyncGate>
   </StrictMode>,
 );

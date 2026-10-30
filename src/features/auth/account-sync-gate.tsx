@@ -3,7 +3,7 @@
 import { useAuth, useClerk } from "@clerk/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -15,6 +15,7 @@ import { LoaderCircle, RotateCw } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { siteUrl } from "@/lib/seo/site-url";
+import { HomeLoading } from "@/components/home-loading";
 
 /** Personal queries require a synced account, not only a valid Clerk token. */
 export function AccountSyncGate({ children }: { children: ReactNode }) {
@@ -34,6 +35,7 @@ function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
   const { signOut } = useClerk();
   const ensureCurrent = useMutation(api.users.ensureCurrent);
   const router = useRouter();
+  const pathname = usePathname();
   const [isDelayed, setIsDelayed] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -100,6 +102,12 @@ function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
       setIsRecovering(inFlight.current);
       setSignOutFailed(true);
     }
+  }
+
+  // An unresolved subscription is routine hydration, not account provisioning.
+  // Keep the gate closed and its timer running; slow loading still offers help.
+  if (pathname === "/" && !isMissing && !isDelayed) {
+    return <HomeLoading />;
   }
 
   return (

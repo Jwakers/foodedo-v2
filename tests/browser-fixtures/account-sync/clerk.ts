@@ -1,4 +1,9 @@
 import { counts, getState, update, useFixture } from "./state";
+import type { ReactNode } from "react";
+
+export function SignInButton({ children }: { children: ReactNode }) {
+  return children;
+}
 export function useAuth() {
   const state = useFixture();
   return {

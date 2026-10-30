@@ -56,6 +56,43 @@ test("shows welcome on signed-out cold open without app chrome", async ({
   );
 });
 
+test("Home never presents Welcome while the session SDK is unavailable", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.route(/clerk/, (route) => route.abort());
+  await page.goto("/");
+  for (const refresh of [false, true]) {
+    if (refresh) await page.reload();
+    await expect(
+      page.getByRole("region", { name: "Loading Foodedo" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Make food decisions easier." }),
+    ).toHaveCount(0);
+    await expect(page.locator("header")).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByRole("button", { name: "Try again", exact: true }),
+    ).toHaveCount(0);
+    await page.clock.fastForward(10_001);
+    await expect(
+      page.getByRole("heading", { name: "Foodedo is taking a little longer" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Try again", exact: true }),
+    ).toBeVisible();
+  }
+  await page.clock.resume();
+  await page.getByRole("link", { name: "Browse recipes", exact: true }).click();
+  await expect(page).toHaveURL(/\/recipes$/);
+  await expect(
+    page.getByRole("heading", { name: "Recipes", exact: true }),
+  ).toBeVisible();
+});
+
 test("keeps a signed-out recipe import intact when authentication is dismissed", async ({
   page,
 }) => {

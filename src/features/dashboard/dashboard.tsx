@@ -2,18 +2,15 @@
 
 import { HomeIntroduction } from "@/features/onboarding/contextual-introductions";
 import { HouseholdDiscovery } from "@/features/household/household-discovery";
-import { useHouseholdSpace } from "@/features/household/household-context";
-
-import { useQuery } from "convex/react";
 import Image from "next/image";
 
-import { api } from "../../../convex/_generated/api";
+import { HomeLoadingContent } from "@/components/home-loading";
 import { AccountConnectionError } from "@/components/account-connection-error";
 import { MealsYouMightLike } from "@/features/dashboard/meals-you-might-like";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
 import { ActivePlanDashboard } from "@/features/dashboard/active-plan-dashboard";
 import { PlanAction } from "@/features/plan/plan-action";
-import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { useDashboardState } from "@/features/dashboard/use-dashboard-state";
 
 const dashboardImages = [
   {
@@ -35,36 +32,11 @@ const dashboardImages = [
 ] as const;
 
 export function Dashboard() {
-  const { household, spaceArgs, ready: spaceReady } = useHouseholdSpace();
-  const { status, isAuthenticated } = useFoodedoAuth();
-  const currentPlan = useQuery(
-    api.mealPlans.getCurrent,
-    isAuthenticated && spaceReady ? spaceArgs : "skip",
-  );
-
-  // Resolve Clerk before choosing guest/account UI. Signed-in users also wait
-  // for Convex so Home never flashes the guest “Plan my week” state.
-  const isCheckingPlan =
-    status === "loading" ||
-    !spaceReady ||
-    (isAuthenticated && currentPlan === undefined);
+  const { auth, household, currentPlan, isCheckingPlan } = useDashboardState();
+  const { status, isAuthenticated } = auth;
 
   if (isCheckingPlan) {
-    return (
-      <section
-        aria-label="Loading your dashboard"
-        className="mx-auto w-full max-w-175"
-        aria-busy="true"
-      >
-        <div className="h-8 w-28 rounded-sm bg-mist" />
-        <div className="mt-3 h-12 w-56 rounded-sm bg-mist" />
-        <div className="mt-6 grid h-52 grid-cols-2 grid-rows-2 gap-2 overflow-hidden rounded-hero sm:h-72">
-          {dashboardImages.map(({ src }) => (
-            <div key={src} className="bg-mist" />
-          ))}
-        </div>
-      </section>
-    );
+    return <HomeLoadingContent />;
   }
 
   if (status === "connection_error") {

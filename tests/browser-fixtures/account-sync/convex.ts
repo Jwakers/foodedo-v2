@@ -17,5 +17,9 @@ export function useQuery(ref: FunctionReference<"query">, args: unknown) {
   recordPersonalQuery();
   if (!state.account || state.account.authSubject !== state.userId)
     throw new Error("ACCOUNT_NOT_SYNCED");
+  if (new URLSearchParams(location.search).get("scenario") === "home") {
+    if (getFunctionName(ref) === "households:current") return state.household;
+    if (getFunctionName(ref) === "mealPlans:getCurrent") return state.plan;
+  }
   return {};
 }

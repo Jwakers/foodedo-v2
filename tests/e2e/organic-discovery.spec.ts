@@ -17,7 +17,13 @@ test("homepage HTML contains useful public content and its own canonical", async
 }) => {
   const response = await request.get("/");
   expect(response.status()).toBe(200);
-  const $ = load(await response.text());
+  // Public content remains available without JS; unresolved sessions see only
+  // the loading view when scripting is enabled, avoiding a Welcome flash.
+  const html = await response.text();
+  const scripted = load(html);
+  expect(scripted('[aria-label="Loading Foodedo"]').length).toBe(1);
+  expect(scripted("h1").length).toBe(0);
+  const $ = load(html, { scriptingEnabled: false });
   expect($("h1").text()).toBe("Make food decisions easier.");
   expect($("link[rel=canonical]")).toHaveLength(1);
   expect($("link[rel=canonical]").attr("href")).toBe(

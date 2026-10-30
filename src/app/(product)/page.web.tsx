@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HomeEntry } from "@/features/welcome/home-entry";
+import { WelcomeContent } from "@/features/welcome/welcome-content";
 import { siteUrl } from "@/lib/seo/site-url";
 
 const title = "Foodedo · Meal planning and shopping lists";
@@ -34,5 +35,20 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <HomeEntry />;
+  return (
+    <>
+      <HomeEntry />
+      <noscript>
+        <style>{"[data-home-loading] { display: none; }"}</style>
+        <WelcomeContent
+          actions={
+            <p className="text-14 text-graphite">
+              Enable JavaScript to try Foodedo, or explore the recipes and
+              guides below.
+            </p>
+          }
+        />
+      </noscript>
+    </>
+  );
 }

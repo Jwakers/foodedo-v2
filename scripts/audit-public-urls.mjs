@@ -62,7 +62,9 @@ for (let offset = 0; offset < entries.length; offset += 4) {
           );
         }
         if (entry.finalStatus !== 200) return;
-        const $ = load(await response.text());
+        // Audit the document as a visitor without JavaScript, including the
+        // homepage's noscript content while its session-aware entry loads.
+        const $ = load(await response.text(), { scriptingEnabled: false });
         assert.equal($("h1").length, 1, `${entry.path}: expected one H1`);
         assert.ok(
           $("h1").text().trim().length > 5,
