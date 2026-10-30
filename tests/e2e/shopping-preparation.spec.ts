@@ -64,10 +64,14 @@ test("a late preparation result cannot replace another space or plan's state", a
   await expect
     .poll(() => page.evaluate(() => window.preparationFixture.requests))
     .toEqual(["alice:private", "bob:new-plan"]);
+  await page.evaluate(() => window.preparationFixture.select("alice:private"));
+  await expect
+    .poll(() => page.evaluate(() => window.preparationFixture.requests))
+    .toEqual(["alice:private", "bob:new-plan", "alice:private"]);
   await page.evaluate(() =>
     window.preparationFixture.finish(0, "plan_unavailable"),
   );
   await expect(page.getByRole("status")).toHaveText("Preparing");
-  await page.evaluate(() => window.preparationFixture.finish(1, "ready"));
+  await page.evaluate(() => window.preparationFixture.finish(2, "ready"));
   await expect(page.getByRole("status")).toHaveText("Ready");
 });
