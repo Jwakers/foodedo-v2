@@ -50,12 +50,15 @@ The Playwright web server runs `next start`, so the regular production build mus
 
 CI must define `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`, and `NEXT_PUBLIC_SITE_URL` as GitHub Actions repository variables. These values are public client configuration, not secrets. `NEXT_PUBLIC_SITE_URL` is the canonical public origin used by links shared from iOS; set `SITE_URL` to the canonical web origin for sitemap generation. A missing required public value fails the relevant Next.js build before tests run.
 
-## Upcoming
+## Automated coverage and remaining release checks
 
-- Cover plan hydration with a deliberately unavailable recipe reference so corrupted historical data cannot crash the app shell.
-- Unauthenticated clients cannot read or mutate personal Convex data.
-- Clerk sign-in yields a Convex-authenticated session and the user webhook creates exactly one indexed user document.
-- Clerk profile updates and deletion update/delete the matching Convex user document.
+Convex lifecycle tests cover unauthenticated/owner isolation, unavailable recipe references, idempotent provisioning and webhook/recovery races, profile synchronization and deletion markers. Controlled browser fixtures cover account setup, retry, identity changes and stale completions. They exercise real components with explicit service mocks; they do not prove the live Clerk–Convex boundary.
+
+Fixture suites share in-memory Vite bundling and production CSS loading under `tests/helpers`. They fail on unexpected browser exceptions. Build the regular web output before running them; do not rebuild `.next` concurrently with browser tests that serve its CSS/fonts.
+
+The remaining release checks are:
+
+- Clerk sign-in yields a Convex-authenticated session against the intended release configuration.
 - Clerk sign-out clears the Convex-authenticated state in web and Capacitor iOS builds.
 - The iOS scene uses `BridgeViewController`; the `ClerkOAuth` plugin is available and every social provider opens an `ASWebAuthenticationSession` rather than stopping at a spinner.
 - Grow tests with each job slice, not with implementation details.
@@ -78,4 +81,4 @@ Record the date, tested Clerk/Convex development deployments, provider, and any 
 
 ## Out of scope for the foundation
 
-Component snapshot forests, Testing Library for the placeholder page, and native UI automation before native behavior exists. Third-party Clerk UI is verified manually in the integration proof rather than automated with stored production credentials.
+Component snapshot forests and broad implementation-mirroring unit suites. Third-party Clerk UI is verified manually in the integration proof rather than automated with stored production credentials.

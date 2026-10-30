@@ -40,7 +40,7 @@ import {
   getRecipeReviewIssues,
   prepareRecipeContent,
 } from "@/lib/domain/recipes";
-import { buildRecipeRepairPatch } from "@/features/recipes/recipe-review-drawer";
+import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
 import { importFailureMessage } from "@/features/recipes/recipe-importer";
 import {
   normaliseImportedDisplayAmount,

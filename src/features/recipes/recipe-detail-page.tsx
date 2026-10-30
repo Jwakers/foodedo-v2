@@ -1,5 +1,7 @@
 "use client";
 
+import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
+
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
@@ -23,10 +25,7 @@ import { parseRecipeServings } from "@/lib/routing/recipes";
 import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "./recipe-account-recovery";
-import {
-  buildRecipeRepairPatch,
-  RecipeReviewDrawer,
-} from "@/features/recipes/recipe-review-drawer";
+import { RecipeReviewDrawer } from "@/features/recipes/recipe-review-drawer";
 
 export function RecipeDetailPage() {
   const { status, isAuthenticated } = useFoodedoAuth();

@@ -83,7 +83,7 @@ export function createGuestDraft({
   emptySlotIndexes?: readonly number[];
   recentPlanMealIds?: readonly (readonly string[])[];
   firstCatalogueMealId?: string;
-}): GuestDraftV1 {
+}): GuestDraft {
   requirePlanDate(planStartDate);
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
@@ -144,10 +144,10 @@ export function createGuestDraft({
 
 /** Clears the given days. Editing clears acceptance/claim like other plan edits. */
 export function applyGuestPlanEmptySlots(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   emptySlotIndexes: readonly number[],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   requireTimestamp(now, "Update time");
   const emptySlots = requireEmptySlotIndexes(emptySlotIndexes, draft.planDays);
   const mealChoices = draft.mealChoices.map((choice, index) =>
@@ -168,18 +168,18 @@ export function applyGuestPlanEmptySlots(
   return editableDraft(draft, mealChoices, now);
 }
 
-export function countPlannedGuestMeals(draft: GuestDraftV1) {
+export function countPlannedGuestMeals(draft: GuestDraft) {
   return draft.mealChoices.filter((choice) => choice.catalogueMealId !== null)
     .length;
 }
 
 /** Adds one meal to the end of an editable plan, up to seven days. */
 export function extendGuestPlanByOneDay(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
   selectedCatalogueMealId?: string,
-): GuestDraftV1 {
+): GuestDraft {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
@@ -237,10 +237,10 @@ export function extendGuestPlanByOneDay(
 
 /** Moves an editable plan window without changing its selected meals. */
 export function rebaseGuestPlanStartDate(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   planStartDate: string,
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   requirePlanDate(planStartDate);
   requireTimestamp(now, "Update time");
   if (draft.planStartDate === planStartDate) return draft;
@@ -278,7 +278,7 @@ export function rebaseGuestPlanStartDate(
 export function readGuestDraft(
   input: unknown,
   { catalogueMeals }: { catalogueMeals: readonly CatalogueMealReference[] },
-): GuestDraftV1 | null {
+): GuestDraft | null {
   if (!isRecord(input)) return null;
   const isLegacyDraft = input.schemaVersion === 2;
   if (!isLegacyDraft && input.schemaVersion !== GUEST_DRAFT_SCHEMA_VERSION) {
@@ -384,11 +384,11 @@ export function readGuestDraft(
 export const readGuestDraftV1 = readGuestDraft;
 
 export function swapGuestPlanMeal(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   date: string,
   catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
@@ -435,11 +435,11 @@ export function swapGuestPlanMeal(
  * already in the plan. Clears acceptance/claim like other plan edits.
  */
 export function chooseGuestPlanMeal(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   date: string,
   catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   const choiceIndex = draft.mealChoices.findIndex(
     (choice) => choice.date === date,
   );
@@ -481,12 +481,12 @@ export function chooseGuestPlanMeal(
 
 /** Sets or replaces one day with a chosen catalogue meal. Clears acceptance/claim. */
 export function setGuestPlanMeal(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   date: string,
   catalogueMealId: string,
   catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
@@ -520,10 +520,10 @@ export function setGuestPlanMeal(
 
 /** Clears one planned day. Editing clears acceptance/claim like other plan edits. */
 export function clearGuestPlanMeal(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   date: string,
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   requireTimestamp(now, "Update time");
 
   const choiceIndex = draft.mealChoices.findIndex(
@@ -543,11 +543,11 @@ export function clearGuestPlanMeal(
 }
 
 export function shuffleGuestPlan(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   catalogueMeals: readonly GuestSelectionMeal[],
   now: number,
   recentPlanMealIds: readonly (readonly string[])[] = [],
-): GuestDraftV1 {
+): GuestDraft {
   const catalogueVersions = requireCatalogueMeals(catalogueMeals);
   const catalogueMealIds = [...catalogueVersions.keys()];
   requireCatalogueMealIds(catalogueMealIds);
@@ -582,10 +582,7 @@ export function shuffleGuestPlan(
   return editableDraft(draft, mealChoices, now);
 }
 
-export function acceptGuestPlan(
-  draft: GuestDraftV1,
-  now: number,
-): GuestDraftV1 {
+export function acceptGuestPlan(draft: GuestDraft, now: number): GuestDraft {
   requireTimestamp(now, "Acceptance time");
 
   return {
@@ -597,11 +594,11 @@ export function acceptGuestPlan(
 }
 
 export function requestGuestPlanClaim(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   claimKey: string,
   now: number,
   requestedAsGuest?: boolean,
-): GuestDraftV1 {
+): GuestDraft {
   if (draft.acceptedAt === undefined) {
     throw new Error("Accept the plan before saving it.");
   }
@@ -626,9 +623,9 @@ export function requestGuestPlanClaim(
  * A later explicit Save creates a fresh idempotency key.
  */
 export function cancelGuestPlanClaim(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   requireTimestamp(now, "Claim cancellation time");
   if (draft.claim === undefined) return draft;
 
@@ -640,9 +637,9 @@ export function cancelGuestPlanClaim(
 }
 
 export function completeGuestPlanClaim(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   if (draft.claim === undefined) {
     throw new Error("There is no plan claim to complete.");
   }
@@ -656,7 +653,7 @@ export function completeGuestPlanClaim(
 }
 
 export function guestDraftMatchesSavedPlan(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   mealChoices: ReadonlyArray<{
     date: string;
     catalogueMealId: string | null;
@@ -766,10 +763,10 @@ function requireServings(value: unknown): asserts value is number {
 }
 
 function editableDraft(
-  draft: GuestDraftV1,
-  mealChoices: GuestMealChoiceV1[],
+  draft: GuestDraft,
+  mealChoices: GuestMealChoice[],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   return {
     schemaVersion: draft.schemaVersion,
     planStartDate: draft.planStartDate,
@@ -800,10 +797,10 @@ function readMealChoices(
   planDays: PlanDays,
   validMeals: ReadonlySet<string>,
   legacyCatalogueVersion?: number,
-): GuestMealChoiceV1[] | null {
+): GuestMealChoice[] | null {
   if (!Array.isArray(input) || input.length !== planDays) return null;
 
-  const choices: GuestMealChoiceV1[] = [];
+  const choices: GuestMealChoice[] = [];
   for (let index = 0; index < input.length; index += 1) {
     const choice = input[index];
     if (
@@ -955,7 +952,7 @@ function readClaim(
   input: unknown,
   acceptedAt: number | undefined,
   updatedAt: number,
-): GuestPlanClaimV1 | undefined | null {
+): GuestPlanClaim | undefined | null {
   if (input === undefined) return undefined;
   if (acceptedAt === undefined || !isRecord(input)) return null;
   if (typeof input.key !== "string" || !isGuestClaimKey(input.key)) return null;

@@ -20,7 +20,7 @@ import {
   countPlannedGuestMeals,
   createGuestDraft,
   shuffleGuestPlan,
-  type GuestDraftV1,
+  type GuestDraft,
 } from "../../src/lib/domain/guest-draft";
 import type {
   GuestDraftMutationResult,
@@ -44,14 +44,14 @@ const catalogue = {
 };
 
 function createMemoryStore(
-  initial: GuestDraftV1 | null = null,
+  initial: GuestDraft | null = null,
   {
     readDelayMs = 0,
   }: {
     readDelayMs?: number;
   } = {},
 ): GuestDraftStore & { writes: number } {
-  let draft: GuestDraftV1 | null = initial;
+  let draft: GuestDraft | null = initial;
   let mutationTail: Promise<void> = Promise.resolve();
   const store: GuestDraftStore & { writes: number } = {
     writes: 0,
@@ -666,7 +666,7 @@ test("cancels a pending claim but preserves the exact local draft", async () => 
     store,
   });
 
-  const cancelled = (await store.read()) as GuestDraftV1;
+  const cancelled = (await store.read()) as GuestDraft;
   expect(cancelled.mealChoices).toEqual(prepared.mealChoices);
   expect(cancelled.acceptedAt).toBe(prepared.acceptedAt);
   expect(cancelled.claim).toBeUndefined();
