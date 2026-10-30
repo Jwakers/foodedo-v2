@@ -12,14 +12,14 @@ import {
   type WebRecipeBrowse,
 } from "@/lib/domain/recipe-browse";
 
-const locationEvent = "foodedo:recipe-browse";
+export const recipeBrowseEvent = "foodedo:recipe-browse";
 
 /** Opening Saved also works when the listing is already mounted with filters. */
 export function openSavedRecipes(navigate: (href: string) => void) {
   const href = "/recipes?scope=Saved";
   if (window.location.pathname === "/recipes") {
     window.history.pushState(null, "", href);
-    window.dispatchEvent(new Event(locationEvent));
+    window.dispatchEvent(new Event(recipeBrowseEvent));
     window.scrollTo({ top: 0 });
   } else {
     navigate(href);
@@ -37,10 +37,10 @@ export function useWebRecipeBrowse(
     (notify: () => void) => {
       if (!enabled) return () => {};
       window.addEventListener("popstate", notify);
-      window.addEventListener(locationEvent, notify);
+      window.addEventListener(recipeBrowseEvent, notify);
       return () => {
         window.removeEventListener("popstate", notify);
-        window.removeEventListener(locationEvent, notify);
+        window.removeEventListener(recipeBrowseEvent, notify);
       };
     },
     [enabled],
@@ -76,7 +76,7 @@ export function useWebRecipeBrowse(
     const href = recipeBrowseHref(next);
     if (push) window.history.pushState(null, "", href);
     else window.history.replaceState(null, "", href);
-    window.dispatchEvent(new Event(locationEvent));
+    window.dispatchEvent(new Event(recipeBrowseEvent));
   }
   return { state: { ...state, filters }, update };
 }

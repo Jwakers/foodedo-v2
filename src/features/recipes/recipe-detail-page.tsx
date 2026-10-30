@@ -1,5 +1,7 @@
 "use client";
 
+import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
+
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
@@ -10,43 +12,23 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { PlanThisMeal } from "@/features/plan/plan-this-meal";
 import { RecipeDetailContent } from "@/features/recipes/recipe-detail-content";
-import {
-  useCatalogueMeal,
-  useCurrentCatalogueMeal,
-} from "@/features/recipes/use-catalogue";
 import { Button } from "@/components/ui/button";
-import {
-  parsePersonalRecipeId,
-  parseRecipeCatalogueReference,
-} from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
-import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
+import { useRecipeSource } from "@/features/recipes/use-recipe-source";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "./recipe-account-recovery";
-import {
-  buildRecipeRepairPatch,
-  RecipeReviewDrawer,
-} from "@/features/recipes/recipe-review-drawer";
+import { RecipeReviewDrawer } from "@/features/recipes/recipe-review-drawer";
 
 export function RecipeDetailPage() {
   const { status, isAuthenticated } = useFoodedoAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const slug = searchParams.get("slug")?.trim() || null;
-  const personalRecipeId = parsePersonalRecipeId(searchParams);
-  const reference = parseRecipeCatalogueReference(searchParams);
+  const { slug, personalRecipeId, personalMeal, meal } =
+    useRecipeSource(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
-  const pinnedMeal = useCatalogueMeal(
-    reference?.catalogueMealId ?? null,
-    reference?.catalogueVersion ?? null,
-  );
-  const currentMeal = useCurrentCatalogueMeal(reference === null ? slug : null);
-  const personalMeal = usePersonalRecipe(personalRecipeId);
   const repairImport = useMutation(api.recipes.repairImport);
   const [repairOpen, setRepairOpen] = useState(false);
   const [repairValues, setRepairValues] = useState<Record<string, string>>({});
-  const catalogueMeal = reference === null ? currentMeal : pinnedMeal;
-  const meal = personalRecipeId ? personalMeal : catalogueMeal;
 
   async function saveRepair() {
     if (!personalRecipeId || !personalMeal) return;

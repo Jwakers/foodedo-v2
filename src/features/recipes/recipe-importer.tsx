@@ -1,5 +1,7 @@
 "use client";
 
+import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
+
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
@@ -24,7 +26,6 @@ import {
 } from "@/components/ui/drawer";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import {
-  buildRecipeRepairPatch,
   RecipeReviewDrawer,
   recipeReviewIssueLabel,
 } from "@/features/recipes/recipe-review-drawer";

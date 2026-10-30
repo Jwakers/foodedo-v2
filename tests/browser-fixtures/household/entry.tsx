@@ -1,4 +1,5 @@
 import { OnboardingProvider } from "../../../src/features/onboarding/use-onboarding";
+import { RecipeSaveConfirmationProvider } from "../../../src/features/recipes/recipe-save-confirmation";
 import { createRoot } from "react-dom/client";
 import { useState } from "react";
 import { Toaster } from "sonner";
@@ -112,7 +113,9 @@ function Screen() {
 createRoot(document.getElementById("root")!).render(
   <OnboardingProvider>
     <HouseholdProvider>
-      <Screen />
+      <RecipeSaveConfirmationProvider>
+        <Screen />
+      </RecipeSaveConfirmationProvider>
     </HouseholdProvider>
   </OnboardingProvider>,
 );

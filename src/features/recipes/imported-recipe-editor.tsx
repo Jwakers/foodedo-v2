@@ -20,7 +20,8 @@ import {
   personalRecipeDetailPath,
 } from "@/lib/routing/recipes";
 
-import { EditorField, NumberField } from "./recipe-editor-fields";
+import { RecipeMetadataFields } from "./recipe-metadata-fields";
+import { EditorField } from "./recipe-editor-fields";
 
 export function ImportedRecipeEditor() {
   const searchParams = useSearchParams();
@@ -91,53 +92,11 @@ function ImportedRecipeEditorForm({
         Changes are saved when you tap Save changes.
       </p>
 
-      <section className="mt-7 grid gap-4">
-        <EditorField
-          label="Title"
-          value={draft.title}
-          onChange={(title) => setDraft({ ...draft, title })}
-        />
-        <EditorField
-          label="Description"
-          multiline
-          value={draft.description ?? ""}
-          onChange={(description) =>
-            setDraft({ ...draft, description: description || undefined })
-          }
-        />
-        <div>
-          <NumberField
-            label="Minimum servings"
-            min={1}
-            max={draft.servings ?? 1000}
-            value={draft.minimumServings}
-            onChange={(minimumServings) =>
-              setDraft({ ...draft, minimumServings })
-            }
-          />
-          <p className="mt-1 text-12 text-graphite">
-            Smallest practical recipe size. Leave blank to allow ordinary
-            scaling.
-          </p>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <NumberField
-            label="Serves"
-            value={draft.servings}
-            onChange={(servings) => setDraft({ ...draft, servings })}
-          />
-          <NumberField
-            label="Prep min"
-            value={draft.prepMinutes}
-            onChange={(prepMinutes) => setDraft({ ...draft, prepMinutes })}
-          />
-          <NumberField
-            label="Cook min"
-            value={draft.cookMinutes}
-            onChange={(cookMinutes) => setDraft({ ...draft, cookMinutes })}
-          />
-        </div>
-      </section>
+      <RecipeMetadataFields
+        recipe={draft}
+        onChange={(patch) => setDraft({ ...draft, ...patch })}
+        className="mt-7 grid gap-4"
+      />
 
       <EditableListHeading title="Ingredients" />
       <div className="grid gap-4">

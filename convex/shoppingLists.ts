@@ -15,7 +15,7 @@ import { readSpace, requireSpace, spaceArgs, type SpaceId } from "./lib/spaces";
 import { shoppingCategoryValidator } from "./lib/recipeValidators";
 import { syncShoppingListForPlan } from "./lib/shoppingListSync";
 
-const maximumPlanSlots = 31;
+import { maximumPlanSlots } from "./lib/activePlan";
 const maximumRecentListCandidates = 30;
 const maximumRecentShoppingLists = 12;
 const shoppingTreatmentValidator = v.union(

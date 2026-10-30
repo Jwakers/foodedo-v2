@@ -11,7 +11,7 @@ import {
   planDatesRemovedByShortening,
   GUEST_DRAFT_SCHEMA_VERSION,
   guestDraftMatchesSavedPlan,
-  readGuestDraftV1,
+  readGuestDraft,
   requestGuestPlanClaim,
   rebaseGuestPlanStartDate,
   setGuestPlanMeal,
@@ -36,7 +36,7 @@ test("individual draft rejection survives storage and rebasing; choosing it agai
   const oldMeal = original.mealChoices[0]!.catalogueMealId!;
   const removed = clearGuestPlanMeal(original, date, 2);
   expect(removed.dismissedMeals).toEqual([{ date, catalogueMealId: oldMeal }]);
-  const restored = readGuestDraftV1(removed, { catalogueMeals });
+  const restored = readGuestDraft(removed, { catalogueMeals });
   expect(restored?.dismissedMeals).toEqual(removed.dismissedMeals);
   expect(
     extendGuestPlanByOneDay(restored!, catalogueMeals, 3).dismissedMeals,
@@ -455,7 +455,7 @@ test("restores only readable meal revisions and consecutive known choices", () =
     now: 100,
   });
 
-  expect(readGuestDraftV1(draft, { catalogueMeals })).toEqual(draft);
+  expect(readGuestDraft(draft, { catalogueMeals })).toEqual(draft);
   const mixedRevisionDraft = {
     ...draft,
     mealChoices: draft.mealChoices.map((choice, index) =>
@@ -463,16 +463,16 @@ test("restores only readable meal revisions and consecutive known choices", () =
     ),
   };
   expect(
-    readGuestDraftV1(mixedRevisionDraft, {
+    readGuestDraft(mixedRevisionDraft, {
       catalogueMeals: [
         ...catalogueMeals,
         { catalogueMealId: "meal-a", catalogueVersion: 2 },
       ],
     }),
   ).toEqual(mixedRevisionDraft);
-  expect(readGuestDraftV1(mixedRevisionDraft, { catalogueMeals })).toBeNull();
+  expect(readGuestDraft(mixedRevisionDraft, { catalogueMeals })).toBeNull();
   expect(
-    readGuestDraftV1(
+    readGuestDraft(
       {
         ...draft,
         mealChoices: draft.mealChoices.map((choice, index) =>
@@ -495,7 +495,7 @@ test("rejects a claim before acceptance and malformed stored claim state", () =>
     requestGuestPlanClaim(draft, "claim_key_1234567890", 200),
   ).toThrow("Accept the plan");
   expect(
-    readGuestDraftV1(
+    readGuestDraft(
       {
         ...draft,
         claim: { key: "claim_key_1234567890", requestedAt: 200 },

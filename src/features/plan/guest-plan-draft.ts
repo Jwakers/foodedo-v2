@@ -19,7 +19,7 @@ import {
   requestGuestPlanClaim,
   setGuestPlanMeal,
   shuffleGuestPlan,
-  type GuestDraftV1,
+  type GuestDraft,
 } from "@/lib/domain/guest-draft";
 import { RECIPE_LIMITS, catalogueMealReferenceKey } from "@/lib/domain/recipes";
 import type { ProteinCategory } from "@/lib/domain/recipes";
@@ -111,7 +111,7 @@ function guestDraftStore(): GuestDraftStore {
 function parseGuestDraft(
   raw: unknown,
   catalogue: GuestCatalogueContract,
-): GuestDraftV1 | null {
+): GuestDraft | null {
   return readGuestDraft(raw, {
     catalogueMeals: catalogue.readableMeals,
   });
@@ -164,7 +164,7 @@ function storedGuestPlanDraftMealReferences(raw: unknown) {
 /** Validate one stored snapshot without hydrating its historical recipe images. */
 export async function readStoredGuestPlanDraft(
   store: GuestDraftStore = guestDraftStore(),
-): Promise<GuestDraftV1 | null> {
+): Promise<GuestDraft | null> {
   const raw = await store.read();
   const references = storedGuestPlanDraftMealReferences(raw);
   if (!references?.length) return null;
@@ -174,7 +174,7 @@ export async function readStoredGuestPlanDraft(
 export async function readCurrentGuestPlanDraft(
   catalogue: GuestCatalogueContract,
   store: GuestDraftStore = guestDraftStore(),
-): Promise<GuestDraftV1 | null> {
+): Promise<GuestDraft | null> {
   return parseGuestDraft(await store.read(), catalogue);
 }
 
@@ -182,7 +182,7 @@ export async function readCurrentGuestPlanDraft(
 export async function loadGuestPlanDraftForReview(
   catalogue: GuestCatalogueContract,
   store: GuestDraftStore = guestDraftStore(),
-): Promise<GuestDraftV1 | null> {
+): Promise<GuestDraft | null> {
   return readCurrentGuestPlanDraft(catalogue, store);
 }
 
@@ -204,7 +204,7 @@ export async function ensureGuestPlanDraft({
   planDays?: PlanDays;
   servings?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = catalogue.currentMeals;
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
@@ -237,7 +237,7 @@ export async function beginConfiguredGuestPlanDraft({
   now = Date.now(),
   store = guestDraftStore(),
 }: {
-  reviewSource?: GuestDraftV1["reviewSource"];
+  reviewSource?: GuestDraft["reviewSource"];
   catalogue: GuestCatalogueContract;
   planStartDate: string;
   planDays: PlanDays;
@@ -248,7 +248,7 @@ export async function beginConfiguredGuestPlanDraft({
   firstCatalogueMealId?: string;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = applySelectionSignals(
     catalogue.currentMeals,
     selectionSignals,
@@ -283,7 +283,7 @@ export async function beginGuestPlanDraftWithMeal({
 }: Parameters<typeof beginConfiguredGuestPlanDraft>[0] & {
   catalogueMealId: string;
   catalogueVersion?: number;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const selectedCatalogue = catalogueForMealReference(
     options.catalogue,
     catalogueMealId,
@@ -316,7 +316,7 @@ export async function beginNextGuestPlanDraft({
   servings = 4,
   store = guestDraftStore(),
 }: {
-  reviewSource?: GuestDraftV1["reviewSource"];
+  reviewSource?: GuestDraft["reviewSource"];
   catalogue: GuestCatalogueContract;
   selectionSignals?: readonly CatalogueSelectionSignal[];
   preferredCatalogueMealIds?: readonly string[];
@@ -326,7 +326,7 @@ export async function beginNextGuestPlanDraft({
   planDays?: PlanDays;
   servings?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = applySelectionSignals(
     catalogue.currentMeals,
     selectionSignals,
@@ -368,10 +368,10 @@ export async function beginNextGuestPlanDraft({
  * free-day policy. User-cleared or otherwise edited free days remain intact.
  */
 function fillLegacyGeneratedFreeDay(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   catalogueMeals: GuestCatalogueContract["currentMeals"],
   now: number,
-): GuestDraftV1 {
+): GuestDraft {
   const legacyFreeChoice = draft.mealChoices[2];
   if (
     draft.updatedAt !== draft.createdAt ||
@@ -414,7 +414,7 @@ export async function beginReplannedGuestPlanDraft({
   recentPlanMealIds?: readonly (readonly string[])[];
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = applySelectionSignals(
     catalogue.currentMeals,
     selectionSignals,
@@ -481,7 +481,7 @@ export async function shuffleCurrentGuestPlanDraft({
   catalogue: GuestCatalogueContract;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = catalogue.currentMeals;
   return store.runMutation((raw) => {
     const existing =
@@ -506,7 +506,7 @@ export async function removeGuestPlanMeal({
   date: string;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
     if (!existing) {
@@ -534,7 +534,7 @@ export async function replaceGuestPlanMeal({
   catalogueVersion?: number;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const selectedCatalogue = catalogueForMealReference(
     catalogue,
     catalogueMealId,
@@ -572,7 +572,7 @@ export async function chooseGuestPlanMealForDate({
   date: string;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const catalogueMeals = catalogue.currentMeals;
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
@@ -599,7 +599,7 @@ export async function extendCurrentGuestPlanDraft({
   catalogueVersion?: number;
   now?: number;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   const selectedCatalogue =
     catalogueMealId === undefined
       ? catalogue
@@ -635,13 +635,13 @@ export async function acceptAndPrepareGuestPlanClaim({
   claimKey = createGuestClaimKey(),
   store = guestDraftStore(),
 }: {
-  expectedDraft?: GuestDraftV1;
+  expectedDraft?: GuestDraft;
   requestedAsGuest?: boolean;
   catalogue: GuestCatalogueContract;
   now?: number;
   claimKey?: string;
   store?: GuestDraftStore;
-}): Promise<GuestDraftV1> {
+}): Promise<GuestDraft> {
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, catalogue);
     if (!existing) {
@@ -683,7 +683,7 @@ export async function acceptAndPrepareGuestPlanClaim({
   });
 }
 
-export function guestPlanClaimMutationArgs(draft: GuestDraftV1) {
+export function guestPlanClaimMutationArgs(draft: GuestDraft) {
   if (draft.claim === undefined) {
     throw new Error("There is no plan claim ready to send.");
   }
@@ -711,7 +711,7 @@ export async function clearClaimedGuestPlanDraft({
   store = guestDraftStore(),
 }: {
   catalogue: GuestCatalogueContract;
-  expectedDraft: GuestDraftV1;
+  expectedDraft: GuestDraft;
   store?: GuestDraftStore;
 }): Promise<boolean> {
   const cleared = await store.clearIf((raw) => {
@@ -730,7 +730,7 @@ export async function cancelPendingGuestPlanClaim({
   store = guestDraftStore(),
 }: {
   catalogue: GuestCatalogueContract;
-  expectedDraft: GuestDraftV1;
+  expectedDraft: GuestDraft;
   now?: number;
   store?: GuestDraftStore;
 }): Promise<void> {
@@ -752,8 +752,8 @@ export async function cancelPendingGuestPlanClaim({
 }
 
 function isSameDraftRevision(
-  current: GuestDraftV1,
-  expected: GuestDraftV1,
+  current: GuestDraft,
+  expected: GuestDraft,
 ): boolean {
   if (
     current.createdAt !== expected.createdAt ||

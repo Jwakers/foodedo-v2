@@ -1,21 +1,16 @@
-import { expect, test, type Page } from "@playwright/test";
-import { build } from "vite";
+import { expect, test } from "../helpers/fixture-test";
+import {
+  buildBrowserFixture,
+  productionStylesheet,
+} from "../helpers/browser-fixture";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
 
-const pageErrors = new WeakMap<Page, string[]>();
 let javascript = "";
 let stylesheet = "";
 test.beforeAll(async () => {
-  const cssRoot = path.resolve(".next/static/css");
-  stylesheet = readdirSync(cssRoot, { recursive: true })
-    .filter((file) => String(file).endsWith(".css"))
-    .map((file) => readFileSync(path.join(cssRoot, String(file)), "utf8"))
-    .join("\n");
+  stylesheet = productionStylesheet();
   const fixture = path.resolve("tests/browser-fixtures/account-sync");
-  const result = await build({
-    configFile: false,
-    logLevel: "error",
+  javascript = await buildBrowserFixture({
     define: {
       "process.env.NODE_ENV": JSON.stringify("development"),
       "process.env.SITE_URL": JSON.stringify("https://www.foodedo.com"),
@@ -34,30 +29,11 @@ test.beforeAll(async () => {
         ),
       },
     },
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: path.join(fixture, "entry.tsx"),
-        formats: ["iife"],
-        name: "AccountSyncFixture",
-      },
-    },
+    entry: path.join(fixture, "entry.tsx"),
+    name: "AccountSyncFixture",
   });
-  const bundle = Array.isArray(result) ? result[0] : result;
-  if (!("output" in bundle)) throw new Error("Expected browser fixture bundle");
-  javascript = bundle.output
-    .filter((item) => item.type === "chunk")
-    .map((item) => item.code)
-    .join("\n");
-});
-test.afterEach(async ({ page }) => {
-  expect(pageErrors.get(page)).toEqual([]);
 });
 test.beforeEach(async ({ page }) => {
-  const errors: string[] = [];
-  pageErrors.set(page, errors);
-  page.on("pageerror", (error) => errors.push(error.message));
   await page.route("https://account-sync.fixture/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === "/app.js")

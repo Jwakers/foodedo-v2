@@ -1,8 +1,10 @@
-import { expect, test } from "@playwright/test";
-import { build } from "vite";
+import { expect, test } from "../helpers/fixture-test";
+import {
+  buildBrowserFixture,
+  productionStylesheet,
+} from "../helpers/browser-fixture";
 import { createGuestDraft } from "../../src/lib/domain/guest-draft";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
 test.use({
   viewport: { width: 390, height: 844 },
   isMobile: true,
@@ -13,15 +15,9 @@ let stylesheet = "";
 test.beforeAll(async () => {
   // Use the web build's actual Tailwind output so responsive assertions exercise
   // production layout, rather than an unstyled component harness.
-  const cssRoot = path.resolve(".next/static/css");
-  stylesheet = readdirSync(cssRoot, { recursive: true })
-    .filter((file) => String(file).endsWith(".css"))
-    .map((file) => readFileSync(path.join(cssRoot, String(file)), "utf8"))
-    .join("\n");
+  stylesheet = productionStylesheet();
   const fixture = path.resolve("tests/browser-fixtures/discovery");
-  const result = await build({
-    configFile: false,
-    logLevel: "error",
+  javascript = await buildBrowserFixture({
     define: {
       "process.env.NODE_ENV": JSON.stringify("production"),
       "process.env.NEXT_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
@@ -47,23 +43,9 @@ test.beforeAll(async () => {
         ),
       },
     },
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: path.join(fixture, "entry.tsx"),
-        formats: ["iife"],
-        name: "DiscoveryFixture",
-      },
-    },
+    entry: path.join(fixture, "entry.tsx"),
+    name: "DiscoveryFixture",
   });
-  const bundle = Array.isArray(result) ? result[0] : result;
-  if (!("output" in bundle))
-    throw new Error("Expected an in-memory browser bundle");
-  javascript = bundle.output
-    .filter((item) => item.type === "chunk")
-    .map((item) => item.code)
-    .join("\n");
 });
 test.beforeEach(async ({ page }) => {
   await page.route(
@@ -181,6 +163,13 @@ for (const web of [false, true]) {
       `https://discovery.fixture/recipes?surfaces${web ? "&web" : ""}&q=chicken&quick=1&sort=quickest`,
     );
     const search = page.getByRole("textbox", { name: "Search recipes" });
+    if (!web) {
+      // Native refinements are local UI state, not URL query parameters.
+      await search.fill("chicken");
+      await page
+        .getByRole("button", { name: "Under 30 min", exact: true })
+        .click();
+    }
     await expect(search).toHaveValue("chicken");
     const headerHeart = page
       .getByRole("region", { name: "Recipe header" })

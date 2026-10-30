@@ -1,22 +1,22 @@
-import { expect, test } from "@playwright/test";
-import { build } from "vite";
+import { expect, test } from "../helpers/fixture-test";
+import {
+  buildBrowserFixture,
+  productionStylesheet,
+} from "../helpers/browser-fixture";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
 let javascript = "";
 let stylesheet = "";
 test.beforeAll(async () => {
   // Use the web build's actual Tailwind output so responsive assertions exercise
   // production layout, rather than an unstyled component harness.
-  const cssRoot = path.resolve(".next/static/css");
-  stylesheet = readdirSync(cssRoot, { recursive: true })
-    .filter((file) => String(file).endsWith(".css"))
-    .map((file) => readFileSync(path.join(cssRoot, String(file)), "utf8"))
-    .join("\n");
+  stylesheet = productionStylesheet();
   const fixture = path.resolve("tests/browser-fixtures/household");
-  const result = await build({
-    configFile: false,
-    logLevel: "error",
-    define: { "process.env.NODE_ENV": JSON.stringify("production") },
+  javascript = await buildBrowserFixture({
+    define: {
+      "process.env.NODE_ENV": JSON.stringify("production"),
+      "process.env.NEXT_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
+      "process.env.NEXT_PUBLIC_CAPACITOR_BUILD": JSON.stringify("false"),
+    },
     resolve: {
       alias: {
         "@/features/auth/use-foodedo-auth": path.join(fixture, "auth.ts"),
@@ -32,23 +32,9 @@ test.beforeAll(async () => {
         ),
       },
     },
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: path.join(fixture, "entry.tsx"),
-        formats: ["iife"],
-        name: "HouseholdFixture",
-      },
-    },
+    entry: path.join(fixture, "entry.tsx"),
+    name: "HouseholdFixture",
   });
-  const bundle = Array.isArray(result) ? result[0] : result;
-  if (!("output" in bundle))
-    throw new Error("Expected an in-memory browser bundle");
-  javascript = bundle.output
-    .filter((item) => item.type === "chunk")
-    .map((item) => item.code)
-    .join("\n");
 });
 test.beforeEach(async ({ page }) => {
   await page.route(
@@ -1330,7 +1316,7 @@ test.describe("Home meal selector", () => {
         "foodedo:space:fixture-alice:household-one",
         "private",
       );
-      dispatchEvent(new Event("storage"));
+      dispatchEvent(new StorageEvent("storage"));
     });
     await expect(
       region.getByRole("button", { name: first, exact: true }),
@@ -1341,7 +1327,7 @@ test.describe("Home meal selector", () => {
         "foodedo:space:fixture-alice:household-one",
         "household",
       );
-      dispatchEvent(new Event("storage"));
+      dispatchEvent(new StorageEvent("storage"));
     });
     await expect(
       region.getByRole("button", { name: second, exact: true }),

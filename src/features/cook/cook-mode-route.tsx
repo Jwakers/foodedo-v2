@@ -4,32 +4,16 @@ import { useSearchParams } from "next/navigation";
 
 import { CookModePage } from "@/features/cook/cook-mode-page";
 import { Button } from "@/components/ui/button";
-import {
-  useCatalogueMeal,
-  useCurrentCatalogueMeal,
-} from "@/features/recipes/use-catalogue";
-import { parseRecipeCatalogueReference } from "@/lib/routing/recipes";
-import { parsePersonalRecipeId } from "@/lib/routing/recipes";
 import { parseRecipeServings } from "@/lib/routing/recipes";
-import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
+import { useRecipeSource } from "@/features/recipes/use-recipe-source";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "@/features/recipes/recipe-account-recovery";
 
 export function CookModeRoute() {
   const { status, isAuthenticated } = useFoodedoAuth();
   const searchParams = useSearchParams();
-  const slug = searchParams.get("slug")?.trim() || null;
-  const personalRecipeId = parsePersonalRecipeId(searchParams);
-  const reference = parseRecipeCatalogueReference(searchParams);
+  const { slug, personalRecipeId, meal } = useRecipeSource(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
-  const pinnedMeal = useCatalogueMeal(
-    reference?.catalogueMealId ?? null,
-    reference?.catalogueVersion ?? null,
-  );
-  const currentMeal = useCurrentCatalogueMeal(reference === null ? slug : null);
-  const personalMeal = usePersonalRecipe(personalRecipeId);
-  const catalogueMeal = reference === null ? currentMeal : pinnedMeal;
-  const meal = personalRecipeId ? personalMeal : catalogueMeal;
 
   if (personalRecipeId && !isAuthenticated)
     return <RecipeAccountRecovery status={status} />;

@@ -1,14 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { track } from "@/lib/analytics";
 
 import { SpaceHeader } from "@/components/space-header";
 import { ContextSelector } from "@/features/household/context-selector";
 import { useHouseholdSpace } from "@/features/household/household-context";
 
-import type { OptimisticLocalStore } from "convex/browser";
-import { useMutation, useQuery } from "convex/react";
-import type { FunctionReturnType } from "convex/server";
+import { useMutation } from "convex/react";
 import {
   ArrowRight,
   CalendarDays,
@@ -19,15 +18,12 @@ import {
   Plus,
   ShoppingBasket,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AccountConnectionError } from "@/components/account-connection-error";
-import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Drawer,
@@ -40,20 +36,24 @@ import {
 import { formatPlanDateRange } from "@/lib/domain/plan-display";
 import { SHOPPING_CATEGORIES } from "@/lib/domain/recipes";
 import type { ShoppingListCategory } from "@/lib/domain/shopping-list";
-import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 
-type CurrentShoppingList = FunctionReturnType<
-  typeof api.shoppingLists.getCurrent
->;
-type ReadyShoppingList = Extract<CurrentShoppingList, { status: "ready" }>;
-type ShoppingItem = NonNullable<ReadyShoppingList["list"]>["items"][number];
-type ShoppingListSummary = FunctionReturnType<
-  typeof api.shoppingLists.getRecentSummaries
->[number];
-type SelectedShoppingList = NonNullable<
-  FunctionReturnType<typeof api.shoppingLists.getById>
->;
+import type {
+  ReadyShoppingList,
+  ShoppingItem,
+  ShoppingListSummary,
+  SelectedShoppingList,
+} from "./shopping-list-types";
+import {
+  optimisticRemovedAt,
+  optimisticallyUpdateShoppingItem,
+} from "./optimistic-shopping-items";
+import {
+  IngredientSourcesDrawer,
+  ShoppingListHistoryDrawer,
+} from "./shopping-list-drawers";
+import { useShoppingListPreparation } from "./use-shopping-list-preparation";
+import { useShoppingListSelection } from "./use-shopping-list-selection";
 
 const categoryOrder: ShoppingListCategory[] = [...SHOPPING_CATEGORIES];
 
@@ -66,120 +66,18 @@ const categoryLabels: Record<ShoppingListCategory, string> = {
   other: "Other",
 };
 
-const optimisticRemovedAt = Number.MAX_SAFE_INTEGER;
-
-function optimisticallyUpdateShoppingItem(
-  localStore: OptimisticLocalStore,
-  itemId: Id<"shoppingListItems">,
-  updateItem: (item: ShoppingItem) => ShoppingItem,
-) {
-  const progressByListId = new Map<
-    Id<"shoppingLists">,
-    { itemCount: number; checkedCount: number }
-  >();
-
-  function updateList<
-    List extends { _id: Id<"shoppingLists">; items: ShoppingItem[] },
-  >(list: List): List | null {
-    const itemIndex = list.items.findIndex((item) => item._id === itemId);
-    if (itemIndex === -1) return null;
-
-    const items = list.items.map((item, index) =>
-      index === itemIndex ? updateItem(item) : item,
-    );
-    const activeItems = items.filter(
-      (item) => item.deletedAt === null && item.included,
-    );
-    progressByListId.set(list._id, {
-      itemCount: activeItems.length,
-      checkedCount: activeItems.filter((item) => item.checked).length,
-    });
-    return { ...list, items };
-  }
-
-  for (const { args, value } of localStore.getAllQueries(
-    api.shoppingLists.getCurrent,
-  )) {
-    if (value?.status !== "ready" || value.list === null) continue;
-    const list = updateList(value.list);
-    if (list !== null) {
-      localStore.setQuery(api.shoppingLists.getCurrent, args, {
-        ...value,
-        list,
-      });
-    }
-  }
-
-  for (const { args, value } of localStore.getAllQueries(
-    api.shoppingLists.getById,
-  )) {
-    if (value === undefined || value === null) continue;
-    const list = updateList(value);
-    if (list !== null) {
-      localStore.setQuery(api.shoppingLists.getById, args, list);
-    }
-  }
-
-  if (progressByListId.size === 0) return;
-  for (const { args, value } of localStore.getAllQueries(
-    api.shoppingLists.getRecentSummaries,
-  )) {
-    if (value === undefined) continue;
-    let changed = false;
-    const summaries = value.map((summary) => {
-      const progress = progressByListId.get(summary._id);
-      if (progress === undefined) return summary;
-      changed = true;
-      return { ...summary, ...progress };
-    });
-    if (changed) {
-      localStore.setQuery(
-        api.shoppingLists.getRecentSummaries,
-        args,
-        summaries,
-      );
-    }
-  }
-}
-
 export function ShoppingListPage() {
-  const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status, isAuthenticated } = useFoodedoAuth();
-  const current = useQuery(
-    api.shoppingLists.getCurrent,
-    isAuthenticated && spaceReady ? spaceArgs : "skip",
-  );
-  const recentLists = useQuery(
-    api.shoppingLists.getRecentSummaries,
-    isAuthenticated && spaceReady ? spaceArgs : "skip",
-  );
-  const requestedListId = searchParams.get("list");
-  const requestedList = recentLists?.find(
-    (list) => list._id === requestedListId,
-  );
-  const currentListId = current?.status === "ready" ? current.list?._id : null;
-  const selectedList = useQuery(
-    api.shoppingLists.getById,
-    isAuthenticated &&
-      requestedList !== undefined &&
-      requestedList._id !== currentListId
-      ? { ...spaceArgs, shoppingListId: requestedList._id }
-      : "skip",
-  );
-
-  useEffect(() => {
-    if (
-      recentLists === undefined ||
-      requestedListId === null ||
-      requestedList !== undefined
-    ) {
-      return;
-    }
-    router.replace(pathname, { scroll: false });
-  }, [pathname, recentLists, requestedList, requestedListId, router]);
+  const {
+    status,
+    isAuthenticated,
+    spaceReady,
+    current,
+    recentLists,
+    selectedList,
+    requestedList,
+    currentListId,
+    selectList,
+  } = useShoppingListSelection();
 
   if (
     status === "loading" ||
@@ -208,19 +106,6 @@ export function ShoppingListPage() {
   const hasHistoricalLists = (recentLists?.length ?? 0) > 0;
   if (current.status === "no_active_plan" && !hasHistoricalLists) {
     return <NoActivePlan />;
-  }
-
-  function selectList(shoppingListId: Id<"shoppingLists"> | null) {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    if (shoppingListId === null || shoppingListId === currentListId) {
-      nextParams.delete("list");
-    } else {
-      nextParams.set("list", shoppingListId);
-    }
-    const query = nextParams.toString();
-    router.push(query === "" ? pathname : `${pathname}?${query}`, {
-      scroll: false,
-    });
   }
 
   if (
@@ -261,7 +146,6 @@ function ReadyShoppingListPage({
   const [extraOpen, setExtraOpen] = useState(false);
   const [extraName, setExtraName] = useState("");
   const [addingExtra, setAddingExtra] = useState(false);
-  const ensureList = useMutation(api.shoppingLists.ensureForCurrentPlan);
   const setItemCheckedMutation = useMutation(api.shoppingLists.setItemChecked);
   const removeItemMutation = useMutation(api.shoppingLists.removeItem);
   const restoreItemMutation = useMutation(api.shoppingLists.restoreItem);
@@ -314,10 +198,8 @@ function ReadyShoppingListPage({
       ),
     [setStapleIncludedMutation],
   );
-  const attemptedSync = useRef(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [syncAttempt, setSyncAttempt] = useState(0);
+  const { needsSync, isSyncing, syncError, retrySync } =
+    useShoppingListPreparation(current);
   const [hideChecked, setHideChecked] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] =
@@ -332,41 +214,13 @@ function ReadyShoppingListPage({
       track("shopping_list_viewed", {});
     }
   }, [visibleListId]);
-  const needsSync =
-    current !== null && (current.list === null || current.list.needsSync);
-
-  useEffect(() => {
-    if (!needsSync || attemptedSync.current) return;
-    attemptedSync.current = true;
-    setIsSyncing(true);
-    void ensureList(spaceArgs)
-      .then((result) => {
-        if (result.status !== "ready") {
-          setSyncError(syncErrorMessage(result.status));
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to synchronize the shopping list.", error);
-        setSyncError("Foodedo couldn’t prepare your list. Try again.");
-      })
-      .finally(() => setIsSyncing(false));
-  }, [ensureList, needsSync, syncAttempt, spaceArgs]);
-
   if (current !== null && (needsSync || current.list === null)) {
     return (
       <ShoppingListLoading
         message={syncError ?? "Preparing this plan’s shopping list…"}
         action={
           syncError ? (
-            <Button
-              className="mt-5"
-              disabled={isSyncing}
-              onClick={() => {
-                attemptedSync.current = false;
-                setSyncError(null);
-                setSyncAttempt((attempt) => attempt + 1);
-              }}
-            >
+            <Button className="mt-5" disabled={isSyncing} onClick={retrySync}>
               Try again
             </Button>
           ) : null
@@ -991,157 +845,6 @@ function HistoricalListPicker({
   );
 }
 
-function ShoppingListHistoryDrawer({
-  open,
-  lists,
-  selectedListId,
-  onOpenChange,
-  onSelect,
-}: {
-  open: boolean;
-  lists: ShoppingListSummary[];
-  selectedListId: Id<"shoppingLists"> | null;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (shoppingListId: Id<"shoppingLists">) => void;
-}) {
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[min(85dvh,38rem)]">
-        <DrawerHeader className="flex-col items-stretch gap-1 pt-1 pb-4">
-          <DrawerTitle>Recent shopping lists</DrawerTitle>
-          <DrawerDescription>
-            Pick up where you left off. Recent lists stay editable.
-          </DrawerDescription>
-        </DrawerHeader>
-        <DrawerBody className="px-0 pb-[max(20px,env(safe-area-inset-bottom))]">
-          <ul className="border-t border-border">
-            {lists.map((list) => {
-              const isSelected = list._id === selectedListId;
-              const progressLabel =
-                list.itemCount === 0
-                  ? "Empty"
-                  : `${list.checkedCount} of ${list.itemCount} picked up`;
-              return (
-                <li key={list._id} className="border-b border-border">
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex min-h-18 w-full items-center px-page-inline text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cadmium",
-                      isSelected && "bg-leaf-soft",
-                    )}
-                    aria-current={isSelected ? "true" : undefined}
-                    onClick={() => onSelect(list._id)}
-                  >
-                    <span className="min-w-0 flex-1 pr-3">
-                      <span className="block text-15 font-semibold text-ink">
-                        {list.status === "active"
-                          ? "Current list"
-                          : "Previous list"}
-                      </span>
-                      <span className="mt-0.5 block text-13 text-graphite">
-                        {formatPlanDateRange(list)} · {progressLabel}
-                      </span>
-                    </span>
-                    <span className="flex w-6 shrink-0 justify-end text-leaf">
-                      {isSelected ? (
-                        <Check aria-hidden="true" className="size-5" />
-                      ) : null}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="px-page-inline pt-4 text-12 leading-relaxed text-graphite">
-            Lists are kept for up to 30 days without activity.
-          </p>
-        </DrawerBody>
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function IngredientSourcesDrawer({
-  item,
-  open,
-  onOpenChange,
-  onRemoveItem,
-}: {
-  item: ShoppingItem | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onRemoveItem: (item: ShoppingItem) => void | Promise<void>;
-}) {
-  const { isHousehold } = useHouseholdSpace();
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[min(85dvh,34rem)]">
-        {item ? (
-          <>
-            <DrawerHeader className="flex-col items-stretch gap-1.5 pt-1 pb-5">
-              <p className="text-12 font-bold tracking-label text-leaf uppercase">
-                Used for
-              </p>
-              <DrawerTitle className="text-32 font-bold">
-                {item.displayName}
-              </DrawerTitle>
-              <DrawerDescription className="text-14">
-                {item.sources.length === 1
-                  ? "Used by 1 meal in this week’s plan."
-                  : `Combined from ${item.sources.length} meals in this week’s plan.`}
-              </DrawerDescription>
-            </DrawerHeader>
-            <DrawerBody className="pb-7">
-              <ul className="-mx-page-inline border-t border-border">
-                {item.sources.map((source, index) => (
-                  <li
-                    key={`${source.recipeId}:${source.date ?? index}`}
-                    className="border-b border-border"
-                  >
-                    <Link
-                      href={personalRecipeDetailPath(
-                        source.recipeId,
-                        source.requestedServings,
-                        source.requestedServings,
-                      )}
-                      className="flex min-h-17 items-center gap-3 px-page-inline py-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cadmium"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-16 font-semibold text-ink">
-                          {source.recipeTitle}
-                        </span>
-                        <span className="mt-0.5 block text-13 text-graphite">
-                          {formatSourceAmount(source.amount, item.name)}
-                        </span>
-                      </span>
-                      <ChevronRight
-                        aria-hidden="true"
-                        className="size-4 shrink-0 text-graphite"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {isHousehold ? (
-                <p className="mt-4 text-14 text-graphite">
-                  Removes it for everyone. You can undo.
-                </p>
-              ) : null}
-              <Button
-                variant="secondary"
-                className="mt-5 w-full"
-                onClick={() => void onRemoveItem(item)}
-              >
-                Remove from list
-              </Button>
-            </DrawerBody>
-          </>
-        ) : null}
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
 function NoActivePlan() {
   const { isHousehold, household } = useHouseholdSpace();
   return (
@@ -1226,23 +929,4 @@ function ShoppingListUnavailable() {
       </ButtonLink>
     </main>
   );
-}
-
-function syncErrorMessage(status: string) {
-  switch (status) {
-    case "no_active_plan":
-      return "Plan a week before creating a shopping list.";
-    case "active_plan_conflict":
-      return "Your account has conflicting active plans.";
-    case "plan_unavailable":
-      return "This week can’t be turned into a list yet.";
-    default:
-      return "Foodedo couldn’t prepare your list. Try again.";
-  }
-}
-
-function formatSourceAmount(amount: string, itemName: string) {
-  const match = amount.match(/^(\d+(?:\.\d+)?)\s*(whole|piece)$/i);
-  if (!match) return amount === "" ? itemName : `${amount} ${itemName}`;
-  return `${match[1]} ${itemName}`;
 }

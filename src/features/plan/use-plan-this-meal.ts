@@ -20,7 +20,7 @@ import {
   toGuestCatalogueContract,
   useGuestDraftCatalogue,
 } from "@/features/plan/use-guest-plan-draft";
-import { addDaysToPlanDate, type GuestDraftV1 } from "@/lib/domain/guest-draft";
+import { addDaysToPlanDate, type GuestDraft } from "@/lib/domain/guest-draft";
 import {
   nextPlanDay,
   planMealOptions,
@@ -39,7 +39,7 @@ type PlannerTarget =
     }
   | {
       kind: "draft";
-      draft: GuestDraftV1;
+      draft: GuestDraft;
       reviewPath: "/week" | "/week/new";
     };
 
@@ -342,7 +342,7 @@ function savedPlanDays(plan: {
 }
 
 function draftPlanDays(
-  draft: GuestDraftV1,
+  draft: GuestDraft,
   mealsByReference: ReadonlyMap<string, CatalogueMealSummary>,
 ) {
   return planMealOptions({
