@@ -165,9 +165,21 @@ export async function syncShoppingListForPlan(
     const nextItem = derivedItems[order]!;
     const key = shoppingItemIdentityKey(nextItem.name, nextItem.category);
     const matches = derivedByKey.get(key) ?? [];
+    // When old spellings collapse into one item, only carry completed/removed
+    // state if every previous row had it. A partially bought total still needs
+    // to be visible on the list.
+    const mergedState =
+      matches.length > 1
+        ? {
+            checked: matches.every((item) => item.checked),
+            deletedAt: matches.every((item) => item.deletedAt !== undefined)
+              ? matches[0]!.deletedAt
+              : undefined,
+          }
+        : {};
     const existingItem = matches.shift();
-    if (matches.length === 0) derivedByKey.delete(key);
-    else derivedByKey.set(key, matches);
+    derivedByKey.delete(key);
+    for (const duplicate of matches) await ctx.db.delete(duplicate._id);
 
     if (existingItem === undefined) {
       await ctx.db.insert("shoppingListItems", {
@@ -197,6 +209,7 @@ export async function syncShoppingListForPlan(
           ? existingItem.included
           : existingItem.checked;
     await ctx.db.patch(existingItem._id, {
+      ...mergedState,
       name: nextItem.name,
       displayName: nextItem.displayName,
       category: nextItem.category,

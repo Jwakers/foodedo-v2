@@ -33,7 +33,9 @@ active meal plan
 - A Shopping List has a one-to-one lifecycle relationship with its meal plan.
 - Saving a plan creates its list in the same transaction. Opening Shop defensively creates a missing legacy list if needed.
 - Changes to a plan reconcile its existing list automatically: retained exact-name ingredients preserve their checked and removed state, obsolete derived ingredients disappear, and new ingredients arrive unchecked.
-- Manual items are never changed by plan reconciliation. Ingredient-name canonicalisation remains deliberately deferred.
+- Manual items are never changed by plan reconciliation. The explicit alias table in `src/lib/domain/ingredient-names.ts` supplies common singular/plural pairs and synonyms (for example egg/eggs, courgette/zucchini and spring onion/scallion). Matches apply to the whole cleaned name within the same shopping category. Unknown names keep exact normalised matching; qualifiers are never stripped. The same table supplies singular/plural Shopping labels. Recipe names, quantities and notes remain authored content. Extend the table with explicit equivalent names and regression cases; do not add stemming, substring matching, or fresh/dried/product-form substitutions. A broader ingredient catalogue remains deferred. When legacy rows merge during reconciliation, the combined row stays unchecked or visible unless every previous row was checked or removed respectively. Existing stored lists adopt the rule on their next plan/recipe reconciliation; this change does not run a backfill.
+
+Ordinary onions, brown onions and yellow onions explicitly share the `onion` shopping identity and display as onions. Red onions, white onions, shallots and spring onions remain distinct; recipes retain their authored variety.
 
 ## Household staples
 

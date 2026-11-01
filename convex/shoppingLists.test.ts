@@ -462,3 +462,108 @@ test("shopping-list history does not expose another owner’s snapshot", async (
     }),
   ).toBeNull();
 });
+
+for (const allCompleted of [false, true]) {
+  test(`reconciles legacy egg spellings with all completed = ${allCompleted}`, async () => {
+    const t = convexTest(schema, modules);
+    const listId = await t.run(async (ctx) => {
+      const ownerId = await ctx.db.insert("users", {
+        authSubject: "egg-user",
+        email: null,
+        name: null,
+        createdAt: 1,
+        updatedAt: 1,
+      });
+      const recipeId = await ctx.db.insert("recipes", {
+        ownerId,
+        title: "Egg supper",
+        servings: 2,
+        ingredients: [
+          {
+            id: "one",
+            name: "eggs",
+            quantity: "4",
+            shoppingCategory: "dairy_and_eggs",
+          },
+          {
+            id: "two",
+            name: "egg",
+            quantity: "2",
+            shoppingCategory: "dairy_and_eggs",
+          },
+        ],
+        steps: [{ id: "cook", text: "Cook." }],
+        proteinCategory: "meat-free",
+        source: { type: "manual" },
+        updatedAt: 1,
+      });
+      const planId = await ctx.db.insert("mealPlans", {
+        ownerId,
+        startDate: "2026-11-01",
+        endDate: "2026-11-01",
+        status: "active",
+        servings: 2,
+        createdAt: 1,
+        updatedAt: 2,
+      });
+      await ctx.db.insert("mealSlots", {
+        ownerId,
+        mealPlanId: planId,
+        date: "2026-11-01",
+        recipeId,
+        status: "planned",
+        createdAt: 1,
+        updatedAt: 1,
+      });
+      const listId = await ctx.db.insert("shoppingLists", {
+        ownerId,
+        mealPlanId: planId,
+        mealPlanUpdatedAt: 1,
+        status: "active",
+        createdAt: 1,
+        updatedAt: 1,
+      });
+      for (const [order, name] of ["eggs", "egg"].entries()) {
+        const completed = order === 0 || allCompleted;
+        await ctx.db.insert("shoppingListItems", {
+          ownerId,
+          shoppingListId: listId,
+          name,
+          displayName: name,
+          category: "dairy_and_eggs",
+          detailLines: [],
+          sourceRecipeIds: [recipeId],
+          origin: "derived",
+          treatment: "required",
+          included: true,
+          checked: completed,
+          ...(completed ? { deletedAt: 1 } : {}),
+          order,
+          createdAt: 1,
+          updatedAt: 1,
+        });
+      }
+      return listId;
+    });
+    const asUser = t.withIdentity({ subject: "egg-user" });
+    expect(
+      await asUser.mutation(api.shoppingLists.ensureForCurrentPlan, {}),
+    ).toEqual({ status: "ready", shoppingListId: listId });
+    const items = await t.run(async (ctx) =>
+      ctx.db
+        .query("shoppingListItems")
+        .withIndex("by_list_and_order", (q) => q.eq("shoppingListId", listId))
+        .collect(),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      displayName: "6 eggs",
+      checked: allCompleted,
+    });
+    expect(items[0].deletedAt).toBe(allCompleted ? 1 : undefined);
+    expect(items[0].sources?.map((source) => source.amount)).toEqual([
+      "4",
+      "2",
+    ]);
+  });
+}

@@ -1,5 +1,11 @@
 import type { RecipeIngredientLine, ShoppingCategory } from "./recipes";
 import { normaliseImportedDisplayAmount } from "./recipe-normalization";
+import {
+  normaliseIngredientName,
+  shoppingIngredientDisplayName,
+} from "./ingredient-names";
+
+export { normaliseIngredientName } from "./ingredient-names";
 
 export const SHOPPING_LIST_LIMITS = {
   items: 500,
@@ -167,9 +173,9 @@ export function formatShoppingItemDisplayName<TRecipeId extends string>(
     : String(Number(quantity.toFixed(2)));
 
   if (unit === "whole" || unit === "piece" || unit === "") {
-    return `${quantityLabel} ${name}`;
+    return `${quantityLabel} ${shoppingIngredientDisplayName(name, quantity)}`;
   }
-  return `${quantityLabel} ${formatUnit(unit, quantity)} ${name}`;
+  return `${quantityLabel} ${formatUnit(unit, quantity)} ${shoppingIngredientDisplayName(name)}`;
 }
 
 export function prepareManualShoppingItemName(name: string) {
@@ -183,10 +189,6 @@ export function prepareManualShoppingItemName(name: string) {
     );
   }
   return normalised;
-}
-
-export function normaliseIngredientName(name: string) {
-  return name.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function ingredientDetailLine(

@@ -4,7 +4,70 @@ import {
   deriveShoppingListItems,
   prepareManualShoppingItemName,
   ShoppingListValidationError,
+  shoppingItemIdentityKey,
 } from "../../src/lib/domain/shopping-list";
+
+for (const names of [
+  ["eggs", "egg"],
+  ["egg", "eggs"],
+]) {
+  test(`combines 4 ${names[0]} and 2 ${names[1]} with recipe quantities intact`, () => {
+    const items = deriveShoppingListItems(
+      names.map((name, index) => ({
+        recipeId: `recipe-${index}`,
+        title: `Recipe ${index}`,
+        ingredients: [
+          {
+            id: "eggs",
+            name,
+            shoppingCategory: "dairy_and_eggs" as const,
+            quantity: index === 0 ? "4" : "2",
+          },
+        ],
+      })),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0].displayName).toBe("6 eggs");
+    expect(items[0].sources.map((source) => source.amount)).toEqual(["4", "2"]);
+    expect(items[0].sourceRecipeIds).toEqual(["recipe-0", "recipe-1"]);
+    expect(items[0].detailLines).toEqual(["4 · Recipe 0", "2 · Recipe 1"]);
+  });
+}
+
+test("egg matching preserves qualifiers and category boundaries", () => {
+  const key = shoppingItemIdentityKey("egg", "dairy_and_eggs");
+  expect(shoppingItemIdentityKey(" EGGS ", "dairy_and_eggs")).toBe(key);
+  for (const name of ["egg whites", "egg yolks", "duck eggs", "large eggs"]) {
+    expect(shoppingItemIdentityKey(name, "dairy_and_eggs")).not.toBe(key);
+  }
+  expect(shoppingItemIdentityKey("eggs", "other")).not.toBe(key);
+});
+
+test("egg grouping leaves incompatible quantities visible without adding them", () => {
+  const [item] = deriveShoppingListItems([
+    {
+      recipeId: "one",
+      title: "One",
+      ingredients: [
+        {
+          id: "whole",
+          name: "eggs",
+          shoppingCategory: "dairy_and_eggs",
+          quantity: "4",
+        },
+        {
+          id: "weight",
+          name: "egg",
+          shoppingCategory: "dairy_and_eggs",
+          quantity: "100",
+          unit: "g",
+        },
+      ],
+    },
+  ]);
+  expect(item.displayName).toBe("eggs");
+  expect(item.sources.map((source) => source.amount)).toEqual(["4", "100 g"]);
+});
 
 test("groups only matching ingredient names and preserves each source amount", () => {
   const items = deriveShoppingListItems([
@@ -114,7 +177,7 @@ test("omits water and labels staples while deriving recipe items", () => {
   });
 });
 
-test("combines compatible amounts without pluralising the ingredient name", () => {
+test("uses the mapped plural for compatible whole-item amounts", () => {
   const [lemons] = deriveShoppingListItems([
     {
       recipeId: "chicken",
@@ -144,7 +207,7 @@ test("combines compatible amounts without pluralising the ingredient name", () =
     },
   ]);
 
-  expect(lemons?.displayName).toBe("2 lemon");
+  expect(lemons?.displayName).toBe("2 lemons");
 });
 
 test("keeps garlic singular when combining whole amounts", () => {
@@ -288,4 +351,121 @@ test("ingredient details use a comma before preparation notes", () => {
     },
   ]);
   expect(items[0].detailLines).toEqual(["3, finely chopped · Dinner"]);
+});
+
+for (const [first, second, display] of [
+  ["onion", "brown onions", "3 onions"],
+  ["brown onion", "onions", "3 onions"],
+  ["yellow onion", "brown onions", "3 onions"],
+  ["tomato", "tomatoes", "3 tomatoes"],
+  ["potatoes", "potato", "3 potatoes"],
+  ["zucchini", "courgettes", "3 courgettes"],
+  ["eggplants", "aubergine", "3 aubergines"],
+  ["scallions", "spring onion", "3 spring onions"],
+  ["garbanzo beans", "chickpea", "3 chickpeas"],
+  ["chili", "chillies", "3 chillies"],
+]) {
+  test(`groups ${first} with ${second} and uses a consistent display name`, () => {
+    for (const names of [
+      [first, second],
+      [second, first],
+    ]) {
+      const items = deriveShoppingListItems(
+        names.map((name, index) => ({
+          recipeId: `recipe-${index}`,
+          title: `Recipe ${index}`,
+          ingredients: [
+            {
+              id: "line",
+              name,
+              quantity: index === 0 ? "1" : "2",
+              shoppingCategory: "other" as const,
+            },
+          ],
+        })),
+      );
+      expect(items).toHaveLength(1);
+      expect(items[0].displayName).toBe(display);
+      expect(items[0].sources.map((source) => source.amount)).toEqual([
+        "1",
+        "2",
+      ]);
+    }
+  });
+}
+
+test("synonyms preserve fresh, dried, colour, preparation and product distinctions", () => {
+  for (const [first, second] of [
+    ["tomato", "chopped tomatoes"],
+    ["tomato", "tinned tomatoes"],
+    ["onion", "red onion"],
+    ["brown onion", "white onion"],
+    ["brown onion", "shallot"],
+    ["brown onion", "spring onion"],
+    ["brown onion", "large brown onions"],
+    ["brown onion", "onion powder"],
+    ["red pepper", "green pepper"],
+    ["fresh coriander", "ground coriander"],
+    ["cilantro", "coriander seeds"],
+    ["chickpeas", "tinned chickpeas"],
+    ["chilli", "chilli powder"],
+    ["baking soda", "baking powder"],
+    ["lemon", "lemon juice"],
+    ["garlic", "garlic cloves"],
+    ["egg", "large eggs"],
+  ]) {
+    expect(shoppingItemIdentityKey(first, "other")).not.toBe(
+      shoppingItemIdentityKey(second, "other"),
+    );
+  }
+  expect(shoppingItemIdentityKey("SCALLIONS", "other")).not.toBe(
+    shoppingItemIdentityKey("spring onion", "fruit_and_veg"),
+  );
+});
+
+test("mass-ingredient synonyms combine compatible weights without changing source notes", () => {
+  const [item] = deriveShoppingListItems([
+    {
+      recipeId: "one",
+      title: "One",
+      ingredients: [
+        {
+          id: "one",
+          name: "cilantro",
+          quantity: "10",
+          unit: "g",
+          note: "chopped",
+          shoppingCategory: "fruit_and_veg",
+        },
+        {
+          id: "two",
+          name: "fresh coriander",
+          quantity: "15",
+          unit: "g",
+          shoppingCategory: "fruit_and_veg",
+        },
+      ],
+    },
+  ]);
+  expect(item.displayName).toBe("25 g fresh coriander");
+  expect(item.detailLines).toEqual(["10 g, chopped · One", "15 g · One"]);
+});
+
+test("mapped plurals use singular display for one whole item and leave unknown names alone", () => {
+  for (const [name, expected] of [
+    ["tomatoes", "1 tomato"],
+    ["scallions", "1 spring onion"],
+    ["special apples", "1 special apples"],
+  ]) {
+    const [item] = deriveShoppingListItems([
+      {
+        recipeId: "one",
+        title: "One",
+        ingredients: [
+          { id: "one", name, quantity: "1", shoppingCategory: "other" },
+        ],
+      },
+    ]);
+    expect(item.displayName).toBe(expected);
+  }
 });

@@ -30,7 +30,7 @@ Do not require a separate structured `preparation` field until Cook or Shop need
 
 A canonical ingredient catalogue may be introduced when Shop or allergy assistance proves the need. Resolution must be optional enrichment: unresolved lines remain valid, and arbitrary user input must never create global taxonomy records automatically.
 
-Shopping aggregation should group confident canonical matches but add quantities only when units are compatible or a safe conversion exists. Otherwise show the related quantities together rather than inventing precision.
+Shopping aggregation should group confident canonical matches but add quantities only when units are compatible or a safe conversion exists. Otherwise show the related quantities together rather than inventing precision. The current lightweight enrichment is a code-owned, explicit whole-name alias table (`src/lib/domain/ingredient-names.ts`) for common plurals and synonyms, shared by grouping, reconciliation, legacy source lookup and display. It preserves shopping categories and authored recipe content, leaves unknown names valid, and never strips qualifiers or applies general stemming. This is not a global ingredient catalogue.
 
 Canonical and inferred allergen data can support warnings and filtering, but cannot guarantee that a user-authored recipe is allergen-free. Ambiguous or unresolved lines must remain visible as such.
 
