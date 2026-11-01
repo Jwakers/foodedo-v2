@@ -93,14 +93,36 @@ const destinations = (page: import("@playwright/test").Page) =>
     .locator("li a")
     .evaluateAll((links) => links.map((a) => a.getAttribute("href")));
 
+test("Home catalogue carousels use public web pages while the saved plan retains its private recipe link", async ({
+  page,
+}) => {
+  await page.goto("https://discovery.fixture/?full");
+  for (const name of ["Latest recipes", "Meals you might like"]) {
+    const carousel = page.getByRole("region", { name, exact: true });
+    await expect(carousel.getByRole("listitem").first()).toBeVisible();
+    const hrefs = await carousel
+      .locator("li a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) expect(href).toMatch(/^\/recipes\/meal-\d+$/);
+  }
+  const planRecipe = page
+    .getByRole("region", { name: "Meals in your plan" })
+    .getByRole("link", { name: "View recipe", exact: true });
+  await expect(planRecipe).toHaveAttribute(
+    "href",
+    /\/recipes\/view\?recipeId=planned-recipe&servings=\d+&planServings=\d+$/,
+  );
+});
+
 test("personal saves and the selected household plan are excluded; cards stay put until the next visit", async ({
   page,
 }) => {
   await page.goto("https://discovery.fixture/");
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
   const links = await destinations(page);
-  expect(links).not.toContain("/recipes/view?slug=meal-0");
-  expect(links).not.toContain("/recipes/view?slug=meal-2");
+  expect(links).not.toContain("/recipes/meal-0");
+  expect(links).not.toContain("/recipes/meal-2");
   const card = region(page).getByRole("listitem").first();
   const heart = card.getByRole("button");
   await heart.click();
@@ -130,8 +152,8 @@ test("switching spaces resets discovery and excludes the new space's plan", asyn
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
   await page.getByRole("button", { name: "Private space" }).click();
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
-  expect(await destinations(page)).not.toContain("/recipes/view?slug=meal-3");
-  expect(await destinations(page)).not.toContain("/recipes/view?slug=meal-0");
+  expect(await destinations(page)).not.toContain("/recipes/meal-3");
+  expect(await destinations(page)).not.toContain("/recipes/meal-0");
 });
 
 test("failed saves stay unsaved and can be retried", async ({ page }) => {
@@ -381,9 +403,11 @@ test("guest heart taps on mobile preserve save intent through sign-in", async ({
   ).toBeVisible();
   expect(page.url()).toBe("https://discovery.fixture/?role=guest&empty");
   await page.getByRole("button", { name: "Complete sign-in" }).click();
-  const id = new URL(href!, "https://discovery.fixture").searchParams.get(
-    "slug",
-  )!;
+  const id = decodeURIComponent(
+    new URL(href!, "https://discovery.fixture").pathname.slice(
+      "/recipes/".length,
+    ),
+  );
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -508,9 +532,7 @@ test("guest discovery excludes an elapsed local draft without changing it", asyn
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
   const actual = await destinations(page);
   for (const choice of draft.mealChoices)
-    expect(actual).not.toContain(
-      `/recipes/view?slug=${choice.catalogueMealId}`,
-    );
+    expect(actual).not.toContain(`/recipes/${choice.catalogueMealId}`);
   const stored = await page.evaluate(
     () =>
       new Promise((resolve, reject) => {
@@ -574,7 +596,7 @@ test("switching spaces while discovery is loading cannot show the previous space
     .toBe("1");
   await page.getByRole("button", { name: "Private space" }).tap();
   await expect(region(page).getByRole("listitem")).toHaveCount(6);
-  expect(await destinations(page)).not.toContain("/recipes/view?slug=meal-3");
+  expect(await destinations(page)).not.toContain("/recipes/meal-3");
   expect(
     await page.evaluate(() =>
       sessionStorage.getItem("fixture:discovery-requests"),

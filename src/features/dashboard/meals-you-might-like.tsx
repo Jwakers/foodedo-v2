@@ -17,7 +17,7 @@ import { useLocalPlanExclusions } from "@/features/dashboard/use-local-plan-excl
 import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
 import { todayPlanDate } from "@/lib/domain/plan-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import { catalogueBrowsePath } from "@/lib/routing/recipes";
 
 type DiscoveryProps = { className?: string; hasSavedPlan?: boolean };
 
@@ -145,7 +145,7 @@ function DiscoverySelection({
             <DashboardCarouselCard
               title={meal.title}
               imageSrc={meal.imageSrc}
-              href={recipeDetailPath(meal.slug)}
+              href={catalogueBrowsePath(meal.slug)}
               meal={meal}
             />
           </DashboardCarouselItem>

@@ -24,15 +24,64 @@ import { RecipeDetailHeaderActions } from "@/features/recipes/recipe-detail-head
 import { useCurrentCatalogueMeal } from "@/features/recipes/use-catalogue";
 import {
   isRecipeDetailPath,
+  isPublicRecipePath,
   parsePersonalRecipeId,
   parseRecipeDetailSlug,
 } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
+import type { CatalogueMeal } from "@/lib/domain/recipes";
 
 export function AppHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isAdmin = pathname.startsWith("/admin/");
+  const recipeSlug = parseRecipeDetailSlug(pathname, searchParams);
+  const personalRecipeId = parsePersonalRecipeId(searchParams);
+  const recipe = useCurrentCatalogueMeal(recipeSlug);
+  const isRecipeDetail =
+    isRecipeDetailPath(pathname) &&
+    (recipeSlug !== null || personalRecipeId !== null);
+  const isRecipeSubpage = isRecipeDetail || pathname === "/recipes/import";
+
+  return (
+    <AppHeaderFrame
+      pathname={pathname}
+      isAdmin={isAdmin}
+      isRecipeDetail={isRecipeDetail}
+      isRecipeSubpage={isRecipeSubpage}
+      recipe={recipe}
+    />
+  );
+}
+
+/** Keep header geometry while search parameters and client data hydrate. */
+export function AppHeaderFallback() {
+  const pathname = usePathname();
+  const isRecipeDetail = isRecipeDetailPath(pathname);
+  return (
+    <AppHeaderFrame
+      pathname={pathname}
+      isAdmin={pathname.startsWith("/admin/")}
+      isRecipeDetail={isRecipeDetail}
+      isRecipeSubpage={isRecipeDetail || pathname === "/recipes/import"}
+      recipe={undefined}
+    />
+  );
+}
+
+function AppHeaderFrame({
+  pathname,
+  isAdmin,
+  isRecipeDetail,
+  isRecipeSubpage,
+  recipe,
+}: {
+  pathname: string;
+  isAdmin: boolean;
+  isRecipeDetail: boolean;
+  isRecipeSubpage: boolean;
+  recipe: CatalogueMeal | null | undefined;
+}) {
   const router = useRouter();
   // Track prior in-app path so Back can distinguish SPA history from deep links.
   // (history.length / history.state.idx are unreliable across browsers and this Next version.)
@@ -43,13 +92,6 @@ export function AppHeader() {
   if (pathHistory.current !== pathname) {
     setPathHistory({ current: pathname, previous: pathHistory.current });
   }
-  const recipeSlug = parseRecipeDetailSlug(pathname, searchParams);
-  const personalRecipeId = parsePersonalRecipeId(searchParams);
-  const recipe = useCurrentCatalogueMeal(recipeSlug);
-  const isRecipeDetail =
-    isRecipeDetailPath(pathname) &&
-    (recipeSlug !== null || personalRecipeId !== null);
-  const isRecipeSubpage = isRecipeDetail || pathname === "/recipes/import";
 
   return (
     <header className="sticky top-0 z-40 bg-paper pt-[env(safe-area-inset-top)]">
@@ -107,8 +149,8 @@ export function AppHeader() {
           </HeaderModeSlot>
 
           <HeaderModeSlot active={isRecipeSubpage} className="gap-0.5">
-            {isRecipeDetail && recipe ? (
-              <RecipeDetailHeaderActions recipe={recipe} />
+            {isRecipeDetail && (recipe || isPublicRecipePath(pathname)) ? (
+              <RecipeDetailHeaderActions recipe={recipe ?? undefined} />
             ) : null}
           </HeaderModeSlot>
         </div>

@@ -9,6 +9,8 @@ import {
   useEffect,
   useRef,
   useState,
+  createContext,
+  useContext,
   type ReactNode,
 } from "react";
 import { LoaderCircle, RotateCw } from "lucide-react";
@@ -16,6 +18,17 @@ import { api } from "../../../convex/_generated/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { siteUrl } from "@/lib/seo/site-url";
 import { HomeLoading } from "@/components/home-loading";
+import { AccountReadinessContext } from "./account-readiness";
+import { isPublicRecipePath } from "@/lib/routing/recipes";
+import { RecipeDetailLoading } from "@/features/recipes/recipe-detail-loading";
+
+const AccountContentFallbackContext = createContext<ReactNode>(null);
+
+/** Private recipe loading/recovery replaces content, preserving shell geometry. */
+export function AccountSyncContent({ children }: { children: ReactNode }) {
+  const fallback = useContext(AccountContentFallbackContext);
+  return fallback ?? children;
+}
 
 /** Personal queries require a synced account, not only a valid Clerk token. */
 export function AccountSyncGate({ children }: { children: ReactNode }) {
@@ -24,14 +37,50 @@ export function AccountSyncGate({ children }: { children: ReactNode }) {
   const canReadAccount =
     isLoaded && isSignedIn && isAuthenticated && !isLoading;
   const account = useQuery(api.users.current, canReadAccount ? {} : "skip");
+  const pathname = usePathname();
+  const isPublicRecipe = isPublicRecipePath(pathname);
+  const isRecipeView = pathname === "/recipes/view";
+  const waiting =
+    canReadAccount && (!account || account.authSubject !== userId);
+  const ready = Boolean(canReadAccount && account?.authSubject === userId);
 
-  if (canReadAccount && (!account || account.authSubject !== userId)) {
-    return <AccountSyncWaiting key={userId} isMissing={account === null} />;
-  }
-  return children;
+  return (
+    <AccountReadinessContext.Provider value={{ userId: userId ?? null, ready }}>
+      <AccountContentFallbackContext.Provider
+        value={
+          isRecipeView && waiting ? (
+            <AccountSyncWaiting key={userId} isMissing={account === null} />
+          ) : null
+        }
+      >
+        {isPublicRecipe || isRecipeView ? (
+          <>
+            {children}
+            {isPublicRecipe && waiting ? (
+              <AccountSyncWaiting
+                key={userId}
+                isMissing={account === null}
+                presentation="notice"
+              />
+            ) : null}
+          </>
+        ) : waiting ? (
+          <AccountSyncWaiting key={userId} isMissing={account === null} />
+        ) : (
+          children
+        )}
+      </AccountContentFallbackContext.Provider>
+    </AccountReadinessContext.Provider>
+  );
 }
 
-function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
+function AccountSyncWaiting({
+  isMissing,
+  presentation = "page",
+}: {
+  isMissing: boolean;
+  presentation?: "page" | "notice";
+}) {
   const { signOut } = useClerk();
   const ensureCurrent = useMutation(api.users.ensureCurrent);
   const router = useRouter();
@@ -94,7 +143,7 @@ function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
     setSignOutFailed(false);
     try {
       await signOut();
-      router.replace("/?try=1");
+      if (presentation === "page") router.replace("/?try=1");
     } catch {
       if (!mounted.current) return;
       signingOut.current = false;
@@ -104,8 +153,56 @@ function AccountSyncWaiting({ isMissing }: { isMissing: boolean }) {
     }
   }
 
+  if (presentation === "notice") {
+    if (!isDelayed && !recoveryError && !signOutFailed) return null;
+    return (
+      <aside
+        aria-label="Account connection"
+        className="fixed inset-x-4 bottom-[calc(var(--app-nav-height)+1rem)] z-50 mx-auto max-w-175 rounded-lg border border-border bg-paper p-4 shadow-lg"
+      >
+        <div role="status">
+          <h2 className="font-display text-20 font-semibold text-ink">
+            {accountDeleted
+              ? "This account has been deleted"
+              : "We couldn’t finish connecting your account"}
+          </h2>
+          <p className="mt-2 text-14 leading-relaxed text-graphite">
+            {accountDeleted
+              ? "You can keep reading this recipe. Sign out to continue as a guest or sign in with another account."
+              : "You can keep reading this recipe. Saving and personal planning will be available when your account is ready."}
+          </p>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {!accountDeleted ? (
+            <Button
+              disabled={isSigningOut || isRecovering || !isMissing}
+              onClick={() => void recover()}
+            >
+              {isRecovering ? "Preparing account…" : "Try again"}
+            </Button>
+          ) : null}
+          <Button
+            variant="secondary"
+            disabled={isSigningOut}
+            onClick={() => void continueAsGuest()}
+          >
+            {isSigningOut ? "Signing out…" : "Sign out and continue as guest"}
+          </Button>
+        </div>
+        {signOutFailed ? (
+          <p role="alert" className="mt-2 text-14 text-danger">
+            We couldn’t sign you out. Check your connection and try again.
+          </p>
+        ) : null}
+      </aside>
+    );
+  }
+
   // An unresolved subscription is routine hydration, not account provisioning.
   // Keep the gate closed and its timer running; slow loading still offers help.
+  if (pathname === "/recipes/view" && !isMissing && !isDelayed) {
+    return <RecipeDetailLoading />;
+  }
   if (pathname === "/" && !isMissing && !isDelayed) {
     return <HomeLoading />;
   }

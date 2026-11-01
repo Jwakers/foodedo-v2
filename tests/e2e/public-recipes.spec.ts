@@ -4,6 +4,39 @@ import inventory from "../../docs/recipe-url-inventory.json";
 const origin = "https://www.foodedo.com";
 const recipePath = "/recipes/beef-lasagne";
 
+test("query recipe pages reserve the header and image space before hydration", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    const page = await context.newPage();
+    for (const query of [
+      "recipeId=private-recipe&servings=2&planServings=2",
+      "slug=beef-lasagne",
+    ]) {
+      await page.goto(`http://127.0.0.1:3100/recipes/view?${query}`);
+      await expect(
+        page.getByRole("link", { name: "Foodedo", exact: true }),
+      ).toBeVisible();
+      const header = await page.locator("header").boundingBox();
+      const loading = await page
+        .getByRole("main", { name: "Loading recipe" })
+        .boundingBox();
+      expect(header?.height).toBe(54);
+      expect(loading?.y).toBe(54);
+      await expect(
+        page.getByRole("navigation", { name: "Primary" }),
+      ).toBeVisible();
+      await expect(page.getByRole("status")).toHaveCSS("position", "absolute");
+    }
+  } finally {
+    await context.close();
+  }
+});
+
 test("the shared recipe list hydrates search from its server seed", async ({
   page,
 }) => {
@@ -48,6 +81,7 @@ test("recipe details retain ISR while the directory renders query-specific HTML"
   expect(html).toContain(`rel="canonical" href="${origin}${recipePath}"`);
   expect(html).toContain("Ingredients");
   expect(html).toContain("Method");
+  expect(html).toContain('aria-label="Save recipe"');
   expect((html.match(/<h1[ >]/g) ?? []).length).toBe(1);
   const match =
     /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
@@ -55,6 +89,22 @@ test("recipe details retain ISR while the directory renders query-specific HTML"
   expect(data).toMatchObject({ "@type": "Recipe", name: "Beef Lasagne" });
   expect(data.recipeIngredient.length).toBeGreaterThan(0);
   expect(data.recipeInstructions.length).toBeGreaterThan(0);
+});
+
+test("the favourite stays visible while recipe and session scripts are unavailable", async ({
+  page,
+}) => {
+  await page.route(/clerk|convex/, (route) => route.abort());
+  await page.goto(recipePath);
+  await expect(
+    page.getByRole("heading", { name: "Beef Lasagne", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save recipe", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save recipe", exact: true }),
+  ).toBeDisabled();
 });
 
 test("all legacy recipe URLs have a tested migration outcome and public discovery", async ({

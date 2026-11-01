@@ -9,7 +9,7 @@ import {
   DashboardCarouselList,
   DashboardCarouselItem,
 } from "@/features/dashboard/dashboard-carousel";
-import { recipeDetailPath } from "@/lib/routing/recipes";
+import { catalogueBrowsePath } from "@/lib/routing/recipes";
 
 export function LatestRecipesCarousel() {
   // The catalogue's default ordering is newest additions first, retaining
@@ -44,7 +44,7 @@ export function LatestRecipesCarousel() {
                 meal={meal}
                 title={meal.title}
                 imageSrc={meal.imageSrc}
-                href={recipeDetailPath(meal.slug)}
+                href={catalogueBrowsePath(meal.slug)}
               />
             </DashboardCarouselItem>
           ))}

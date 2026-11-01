@@ -1,7 +1,7 @@
 "use client";
 
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
-import { Heart } from "lucide-react";
+import { Heart, MoreVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useCatalogueRecipeLibrary } from "@/features/recipes/catalogue-recipe-library";
@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils/cn";
 export function RecipeDetailHeaderActions({
   recipe,
 }: {
-  recipe: CatalogueMeal;
+  recipe?: CatalogueMeal;
 }) {
   const { isSaved, isSaveDisabled, toggleSave } = useCatalogueRecipeLibrary();
-  const saved = isSaved(recipe.id);
+  const saved = recipe ? isSaved(recipe.id) : false;
+  const title = recipe ? formatRecipeHeading(recipe.title) : "recipe";
 
   return (
     <>
@@ -23,17 +24,14 @@ export function RecipeDetailHeaderActions({
         type="button"
         variant="ghost"
         size="headerIcon"
-        aria-label={
-          saved
-            ? `Unsave ${formatRecipeHeading(recipe.title)}`
-            : `Save ${formatRecipeHeading(recipe.title)}`
-        }
+        aria-label={saved ? `Unsave ${title}` : `Save ${title}`}
         aria-pressed={saved}
-        disabled={isSaveDisabled}
+        disabled={!recipe || isSaveDisabled}
         className={cn(
           saved && "bg-cadmium-soft text-cadmium hover:bg-cadmium-soft",
         )}
         onClick={() => {
+          if (!recipe) return;
           void toggleSave({
             catalogueMealId: recipe.id,
             catalogueVersion: recipe.version,
@@ -47,10 +45,21 @@ export function RecipeDetailHeaderActions({
           strokeWidth={1.8}
         />
       </Button>
-      <RecipeOverflowMenu
-        recipeTitle={formatRecipeHeading(recipe.title)}
-        recipeSlug={recipe.slug}
-      />
+      {recipe ? (
+        <RecipeOverflowMenu
+          recipeTitle={formatRecipeHeading(recipe.title)}
+          recipeSlug={recipe.slug}
+        />
+      ) : (
+        <Button
+          variant="ghost"
+          size="headerIcon"
+          disabled
+          aria-label="Recipe options"
+        >
+          <MoreVertical aria-hidden="true" className="size-5" />
+        </Button>
+      )}
     </>
   );
 }

@@ -105,6 +105,11 @@ function publicRecipeSlug(pathname: string): string | null {
     : null;
 }
 
+/** Canonical public catalogue pages only; never private or import app routes. */
+export function isPublicRecipePath(pathname: string): boolean {
+  return publicRecipeSlug(pathname) !== null;
+}
+
 /**
  * First segment after `/recipes/`, URL-decoded.
  * Returns null when the path is not a recipe detail path or the segment is empty.

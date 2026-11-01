@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   isRecipeDetailPath,
+  isPublicRecipePath,
   isRecipesSectionPath,
   parsePersonalRecipeId,
   parseRecipeDetailSlug,
@@ -13,6 +14,24 @@ import {
   catalogueBrowsePath,
   publicRecipePath,
 } from "@/lib/routing/recipes";
+
+test("only canonical catalogue details use public recipe account recovery", () => {
+  expect(
+    isPublicRecipePath("/recipes/sausage-tomato-and-spinach-gnocchi-bake"),
+  ).toBe(true);
+  for (const path of [
+    "/",
+    "/recipes",
+    "/recipes/import",
+    "/recipes/edit",
+    "/recipes/view",
+    "/recipes/cook",
+    "/recipes/beef-lasagne/edit",
+    "/week",
+    "/household/join",
+  ])
+    expect(isPublicRecipePath(path), path).toBe(false);
+});
 
 test("canonical browsing preserves native query routes and ignores conflicting slug queries on web", () => {
   const previous = process.env.NEXT_PUBLIC_CAPACITOR_BUILD;

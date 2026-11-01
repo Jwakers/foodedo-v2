@@ -136,6 +136,20 @@ reload. Pending attempts cannot be submitted twice, account changes reset recove
 state, and stale completions cannot open another account's gate. The ten-second
 slow-setup message, guest escape and local drafts remain available.
 
+Canonical public web recipe pages keep their reading content mounted during
+account hydration and recovery. Personal capabilities still wait for the matching
+account through `useFoodedoAuth`; their continuation effects mount only once that
+owner is ready. Failed/slow setup appears as an account notice, and signing out
+from it keeps the recipe open. The public body is independent of the personal
+space key, preserving reading choices across sign-in and household changes.
+The `/recipes/view` account boundary blocks only recipe content inside the
+persistent app shell. Header and navigation remain mounted through account
+hydration, provisioning and recovery. Its body is keyed by session owner rather
+than household selection, so late household hydration does not reset reading
+choices; changing accounts still clears private recipe state. Other private
+destinations retain their existing blocking behavior. Neither recipe exception
+authorizes early personal queries or writes.
+
 Release the backend mutation before the frontend that calls it. Verify recovery
 with a dedicated development Clerk account absent from development Convex, then
 confirm production sign-in after release. Keep production webhook delivery and

@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { api } from "../../../convex/_generated/api";
 export function AdminNavigationLink() {
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated } = useFoodedoAuth();
   const access = useQuery(
     api.catalogueAdmin.access,
     isAuthenticated ? {} : "skip",

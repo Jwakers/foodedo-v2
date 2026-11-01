@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { RecipeDetailPage } from "@/features/recipes/recipe-detail-page";
+import { RecipeDetailLoading } from "@/features/recipes/recipe-detail-loading";
 
 export const metadata: Metadata = {
   title: "Recipe · Foodedo",
@@ -11,13 +12,7 @@ export const metadata: Metadata = {
 
 export default function RecipeViewPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
-          Loading recipe…
-        </main>
-      }
-    >
+    <Suspense fallback={<RecipeDetailLoading />}>
       <RecipeDetailPage />
     </Suspense>
   );

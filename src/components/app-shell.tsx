@@ -6,7 +6,7 @@ import { useHouseholdSpace } from "@/features/household/household-context";
 import { NativeInviteLinks } from "@/features/household/native-invite-links";
 import { InviteContinuation } from "@/features/household/invite-continuation";
 import { FoodedoHelpProvider } from "@/features/onboarding/foodedo-help";
-import { AppHeader } from "@/components/app-header";
+import { AppHeader, AppHeaderFallback } from "@/components/app-header";
 import { AppNavigation } from "@/components/app-navigation";
 import { AppToaster } from "@/components/app-toaster";
 import { UnfinishedInteractionViewport } from "@/components/unfinished-interaction-viewport";
@@ -21,8 +21,10 @@ import { RecipeSaveConfirmationProvider } from "@/features/recipes/recipe-save-c
 import { RecipeImportIntentResume } from "@/features/recipes/recipe-import-intent-resume";
 import { RecipeImportNotifications } from "@/features/recipes/recipe-import-notifications";
 import { cn } from "@/lib/utils/cn";
-import { isCookPath } from "@/lib/routing/recipes";
+import { isCookPath, isPublicRecipePath } from "@/lib/routing/recipes";
 import { usePathname } from "next/navigation";
+import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { AccountSyncContent } from "@/features/auth/account-sync-gate";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -38,6 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function AppShellChrome({ children }: { children: ReactNode }) {
   const { spaceKey } = useHouseholdSpace();
+  const { userId } = useFoodedoAuth();
   const showChrome = useShowAppChrome();
   const pathname = usePathname();
   const isCooking = isCookPath(pathname);
@@ -48,28 +51,48 @@ function AppShellChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <CatalogueSaveIntentResume />
-      <RecipeImportIntentResume />
+      <AccountContinuations />
       <AppToaster dockVisible={showDock} />
-      <RecipeImportNotifications />
       {process.env.NODE_ENV === "development" ? (
         <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}
       <NativeInviteLinks />
-      <InviteContinuation />
-      <GuestPlanClaimResume />
       {showChrome && !isCooking ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<AppHeaderFallback />}>
           <AppHeader />
         </Suspense>
       ) : null}
       <div
-        key={spaceKey}
+        key={
+          isPublicRecipePath(pathname)
+            ? "public-recipe"
+            : pathname === "/recipes/view"
+              ? `recipe-view:${userId ?? "guest"}`
+              : spaceKey
+        }
         className={cn("flex-1", showDock && "pb-(--app-nav-height)")}
       >
-        {children}
+        <AccountSyncContent>{children}</AccountSyncContent>
       </div>
       {showDock ? <AppNavigation /> : null}
     </div>
+  );
+}
+
+/** Keep per-account effects isolated without remounting public reading content. */
+function AccountContinuations() {
+  const { isAuthenticated, userId } = useFoodedoAuth();
+  return isAuthenticated && userId ? <OwnerContinuations key={userId} /> : null;
+}
+
+function OwnerContinuations() {
+  return (
+    <>
+      <CatalogueSaveIntentResume />
+      <RecipeImportIntentResume />
+      <RecipeImportNotifications />
+      <InviteContinuation />
+      <GuestPlanClaimResume />
+    </>
   );
 }

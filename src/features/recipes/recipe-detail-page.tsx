@@ -12,6 +12,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { PlanThisMeal } from "@/features/plan/plan-this-meal";
 import { RecipeDetailContent } from "@/features/recipes/recipe-detail-content";
+import { RecipeDetailLoading } from "@/features/recipes/recipe-detail-loading";
 import { Button } from "@/components/ui/button";
 import { parseRecipeServings } from "@/lib/routing/recipes";
 import { useRecipeSource } from "@/features/recipes/use-recipe-source";
@@ -82,13 +83,7 @@ export function RecipeDetailPage() {
     );
   }
 
-  if (meal === undefined) {
-    return (
-      <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center text-14 text-graphite">
-        Loading recipe…
-      </main>
-    );
-  }
+  if (meal === undefined) return <RecipeDetailLoading />;
 
   return (
     <div className="mx-auto w-full max-w-175">
