@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import blogRedirects from "./config/blog-redirects";
 
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === "true";
 const requiredPublicEnvironment = [
@@ -74,6 +75,8 @@ const nextConfig: NextConfig = {
               destination: "/recipes/:slug",
               permanent: true,
             },
+            // Blog post redirects last so they are easy to spot and maintain.
+            ...blogRedirects,
           ];
         },
         async headers() {
