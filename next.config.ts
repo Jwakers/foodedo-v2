@@ -45,6 +45,7 @@ const nextConfig: NextConfig = {
           ];
         },
         async redirects() {
+          const { default: blogRedirects } = await import("./config/blog-redirects");
           return [
             { source: "/pricing", destination: "/faq", permanent: false },
             { source: "/beta", destination: "/", permanent: true },
@@ -74,6 +75,8 @@ const nextConfig: NextConfig = {
               destination: "/recipes/:slug",
               permanent: true,
             },
+            // Blog post redirects last so they are easy to spot and maintain.
+            ...blogRedirects,
           ];
         },
         async headers() {

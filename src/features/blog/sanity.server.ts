@@ -4,7 +4,7 @@ import { cache } from "react";
 import { z } from "zod";
 import { blogArticleSchema, blogSummarySchema } from "./content";
 import { getLocalGuide } from "./guides";
-import { applyReviewedContent } from "./reviewed-content";
+import { applyReviewedContent } from "./reviewed-content-disabled";
 import {
   publishedPostFilter,
   querySanity,
