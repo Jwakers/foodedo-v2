@@ -8,13 +8,30 @@ import {
   summaryProjection,
 } from "../../src/features/blog/sanity-query";
 import { load } from "cheerio";
+import blogRedirects from "../../config/blog-redirects";
+
+const redirectedPaths = new Set(blogRedirects.map(({ source }) => source));
+
+test("merged and removed posts permanently redirect to working destinations", async ({
+  request,
+}) => {
+  for (const { source, destination } of blogRedirects) {
+    const response = await request.get(source, { maxRedirects: 0 });
+    expect(response.status(), source).toBe(308);
+    expect(response.headers().location, source).toBe(destination);
+    expect(
+      (await request.get(destination, { maxRedirects: 0 })).status(),
+      destination,
+    ).toBe(200);
+  }
+});
 
 test("serves the index, articles and sitemap from the full route cache", async ({
   request,
 }) => {
   for (const route of [
     "/blog",
-    "/blog/stop-asking-whats-for-dinner-foodedo",
+    "/blog/how-to-build-a-weekly-meal-plan-in-15-minutes",
     "/sitemap.xml",
   ]) {
     await expect
@@ -41,7 +58,10 @@ test("blog HTML lists every migrated URL without app chrome or account providers
   const response = await request.get("/blog");
   expect(response.status()).toBe(200);
   const html = await response.text();
-  for (const article of [...inventory.cmsArticles, ...inventory.localGuides])
+  for (const article of [
+    ...inventory.cmsArticles,
+    ...inventory.localGuides,
+  ].filter(({ path }) => !redirectedPaths.has(path)))
     expect(html).toContain(`href="${article.path}"`);
   expect(html).toContain('rel="canonical" href="https://www.foodedo.com/blog"');
   expect(html).not.toMatch(/clerk\.browser|clerk-js|clerk\.accounts/);
@@ -81,38 +101,42 @@ test("preserved and current articles serve initial HTML and source metadata", as
     ),
   );
   await Promise.all(
-    [...articles.values()].map(async (article) => {
-      let html = "";
-      // Both the data and route caches revalidate after 60 seconds on demand.
-      await expect(async () => {
-        const response = await request.get(article.path);
-        expect(response.status(), article.path).toBe(200);
-        html = await response.text();
-        const structured =
-          /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(
-            html,
-          );
-        expect(structured, article.path).not.toBeNull();
-        expect(JSON.parse(structured![1])).toMatchObject({
-          "@type": "BlogPosting",
-          headline: article.title,
-        });
-      }).toPass({ timeout: 150_000, intervals: [1_000, 2_000, 5_000] });
-      expect(html, article.path).toContain(
-        `href="https://www.foodedo.com${article.path}"`,
-      );
-      expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
-      // Local guidance is maintained here; CMS wording is maintained in Sanity.
-      if (localGuides.some((guide) => `/blog/${guide.slug}` === article.path)) {
-        const text = load(html)("main").text();
-        expect(text, article.path).not.toMatch(
-          /chalkboard|Discover (?:feature|tab|section)|share your Foodedo account|90%|free trial/i,
+    [...articles.values()]
+      .filter(({ path }) => !redirectedPaths.has(path))
+      .map(async (article) => {
+        let html = "";
+        // Both the data and route caches revalidate after 60 seconds on demand.
+        await expect(async () => {
+          const response = await request.get(article.path);
+          expect(response.status(), article.path).toBe(200);
+          html = await response.text();
+          const structured =
+            /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(
+              html,
+            );
+          expect(structured, article.path).not.toBeNull();
+          expect(JSON.parse(structured![1])).toMatchObject({
+            "@type": "BlogPosting",
+            headline: article.title,
+          });
+        }).toPass({ timeout: 150_000, intervals: [1_000, 2_000, 5_000] });
+        expect(html, article.path).toContain(
+          `href="https://www.foodedo.com${article.path}"`,
         );
-      }
-      expect(html, article.path).not.toMatch(
-        /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
-      );
-    }),
+        expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
+        // Local guidance is maintained here; CMS wording is maintained in Sanity.
+        if (
+          localGuides.some((guide) => `/blog/${guide.slug}` === article.path)
+        ) {
+          const text = load(html)("main").text();
+          expect(text, article.path).not.toMatch(
+            /chalkboard|Discover (?:feature|tab|section)|share your Foodedo account|90%|free trial/i,
+          );
+        }
+        expect(html, article.path).not.toMatch(
+          /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
+        );
+      }),
   );
   expect(
     (await request.get("/blog/this-article-does-not-exist")).status(),
@@ -125,7 +149,10 @@ test("sitemap and robots expose every article while preserving catalogue URLs", 
   const response = await request.get("/sitemap.xml");
   expect(response.status()).toBe(200);
   const xml = await response.text();
-  for (const article of [...inventory.cmsArticles, ...inventory.localGuides])
+  for (const article of [
+    ...inventory.cmsArticles,
+    ...inventory.localGuides,
+  ].filter(({ path }) => !redirectedPaths.has(path)))
     expect(xml).toContain(`<loc>https://www.foodedo.com${article.path}</loc>`);
   expect(xml).toContain("/recipes/");
   const robots = await request.get("/robots.txt");

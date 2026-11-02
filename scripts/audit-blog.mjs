@@ -53,6 +53,33 @@ const articles = [...entries.values()];
 for (let offset = 0; offset < articles.length; offset += 4) {
   await Promise.all(
     articles.slice(offset, offset + 4).map(async ({ path, title }) => {
+      const originalUrl = new URL(path, base);
+      const original = await fetch(originalUrl, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (original.status === 308) {
+        const destination = new URL(
+          original.headers.get("location"),
+          originalUrl,
+        );
+        assert.equal(
+          destination.origin,
+          base.origin,
+          `External redirect: ${path}`,
+        );
+        const target = await fetch(destination, {
+          redirect: "manual",
+          signal: AbortSignal.timeout(20_000),
+        });
+        assert.equal(
+          target.status,
+          200,
+          `Invalid redirect destination: ${path}`,
+        );
+        return;
+      }
+      assert.equal(original.status, 200, `${path}: HTTP ${original.status}`);
       assert.ok(
         index.includes(`href="${path}"`),
         `Not linked from the index: ${path}`,

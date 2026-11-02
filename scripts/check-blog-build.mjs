@@ -20,6 +20,10 @@ assert.equal(
 );
 
 if (mode === "web") {
+  const { redirects } = JSON.parse(
+    await readFile(".next/routes-manifest.json", "utf8"),
+  );
+  const redirectedPaths = new Set(redirects.map(({ source }) => source));
   const inventory = JSON.parse(
     await readFile("docs/blog-url-inventory.json", "utf8"),
   );
@@ -30,6 +34,7 @@ if (mode === "web") {
     ...inventory.localGuides.map(({ path }) => path),
   ];
   for (const route of routes) {
+    if (redirectedPaths.has(route)) continue;
     assert.equal(
       manifest.routes[route]?.compute,
       "static",
@@ -51,7 +56,7 @@ if (mode === "web") {
     "New articles must not require a rebuild",
   );
   console.log(
-    "Blog index, all 33 preserved articles and sitemap are prerendered with 60-second ISR; new article paths remain enabled.",
+    "Blog index, preserved articles without redirects and sitemap are prerendered with 60-second ISR; new article paths remain enabled.",
   );
 } else {
   assert.ok(
