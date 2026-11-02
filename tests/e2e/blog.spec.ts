@@ -67,7 +67,7 @@ test("blog HTML lists every migrated URL without app chrome or account providers
 test("preserved and current articles serve initial HTML and source metadata", async ({
   request,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const source = (await querySanity(
     `*[${publishedPostFilter}]{${summaryProjection}}`,
   )) as { result: unknown[] };
@@ -80,32 +80,40 @@ test("preserved and current articles serve initial HTML and source metadata", as
       (article) => [article.path, article],
     ),
   );
-  for (const article of articles.values()) {
-    const response = await request.get(article.path);
-    expect(response.status(), article.path).toBe(200);
-    const html = await response.text();
-    expect(html, article.path).toContain(
-      `href="https://www.foodedo.com${article.path}"`,
-    );
-    const structured =
-      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
-    expect(structured, article.path).not.toBeNull();
-    expect(JSON.parse(structured![1])).toMatchObject({
-      "@type": "BlogPosting",
-      headline: article.title,
-    });
-    expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
-    // Local guidance is maintained here; CMS wording is maintained in Sanity.
-    if (localGuides.some((guide) => `/blog/${guide.slug}` === article.path)) {
-      const text = load(html)("main").text();
-      expect(text, article.path).not.toMatch(
-        /chalkboard|Discover (?:feature|tab|section)|share your Foodedo account|90%|free trial/i,
+  await Promise.all(
+    [...articles.values()].map(async (article) => {
+      let html = "";
+      // Both the data and route caches revalidate after 60 seconds on demand.
+      await expect(async () => {
+        const response = await request.get(article.path);
+        expect(response.status(), article.path).toBe(200);
+        html = await response.text();
+        const structured =
+          /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(
+            html,
+          );
+        expect(structured, article.path).not.toBeNull();
+        expect(JSON.parse(structured![1])).toMatchObject({
+          "@type": "BlogPosting",
+          headline: article.title,
+        });
+      }).toPass({ timeout: 150_000, intervals: [1_000, 2_000, 5_000] });
+      expect(html, article.path).toContain(
+        `href="https://www.foodedo.com${article.path}"`,
       );
-    }
-    expect(html, article.path).not.toMatch(
-      /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
-    );
-  }
+      expect((html.match(/<h1[ >]/g) ?? []).length, article.path).toBe(1);
+      // Local guidance is maintained here; CMS wording is maintained in Sanity.
+      if (localGuides.some((guide) => `/blog/${guide.slug}` === article.path)) {
+        const text = load(html)("main").text();
+        expect(text, article.path).not.toMatch(
+          /chalkboard|Discover (?:feature|tab|section)|share your Foodedo account|90%|free trial/i,
+        );
+      }
+      expect(html, article.path).not.toMatch(
+        /href="(?:https:\/\/(?:www\.)?foodedo\.com)?\/(?:dashboard|sign-up|pricing)(?:[/?"#])/,
+      );
+    }),
+  );
   expect(
     (await request.get("/blog/this-article-does-not-exist")).status(),
   ).toBe(404);

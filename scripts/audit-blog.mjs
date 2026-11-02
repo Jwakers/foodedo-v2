@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { setTimeout } from "node:timers/promises";
 
 // Read-only migration check. Run against a local build, preview or production.
 const base = new URL(process.argv[2] || "http://127.0.0.1:3100");
@@ -60,7 +61,28 @@ for (let offset = 0; offset < articles.length; offset += 4) {
         sitemap.includes(`<loc>${new URL(path, canonical)}</loc>`),
         `Missing sitemap entry: ${path}`,
       );
-      const html = await (await get(new URL(path, base))).text();
+      // Allow both 60-second data/route caches to revalidate on demand.
+      const deadline = Date.now() + 150_000;
+      let html;
+      while (true) {
+        html = await (await get(new URL(path, base))).text();
+        const json =
+          /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(
+            html,
+          );
+        assert.ok(json, `Missing structured data: ${path}`);
+        try {
+          assert.equal(
+            JSON.parse(json[1]).headline,
+            title,
+            `Changed title: ${path}`,
+          );
+          break;
+        } catch (error) {
+          if (Date.now() >= deadline) throw error;
+          await setTimeout(2_000);
+        }
+      }
       assert.ok(
         html.includes(`rel="canonical" href="${new URL(path, canonical)}"`),
         `Wrong canonical: ${path}`,
@@ -69,14 +91,6 @@ for (let offset = 0; offset < articles.length; offset += 4) {
         (html.match(/<h1[ >]/g) || []).length,
         1,
         `Expected one H1: ${path}`,
-      );
-      const json =
-        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html);
-      assert.ok(json, `Missing structured data: ${path}`);
-      assert.equal(
-        JSON.parse(json[1]).headline,
-        title,
-        `Changed title: ${path}`,
       );
       assert.doesNotMatch(
         html,

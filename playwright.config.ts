@@ -1,4 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { loadEnvFile } from "node:process";
+
+const localEnvironment = resolve(__dirname, ".env.local");
+if (existsSync(localEnvironment)) loadEnvFile(localEnvironment);
 
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
