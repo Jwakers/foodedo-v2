@@ -1,0 +1,390 @@
+[
+  {
+    "slug": "key-principles-cooking-delicious-meals",
+    "cms": {
+      "title": "Key Principles for Cooking Delicious Meals at Home",
+      "excerpt": "Discover essential cooking principles that will elevate your home meals, from balancing flavors to mastering techniques. Learn more!"
+    },
+    "override": {
+      "title": "Key Principles for Cooking Delicious Meals at Home",
+      "excerpt": "Discover essential cooking principles that will elevate your home meals, from balancing flavors to mastering techniques. Learn more!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "why-i-built-foodedo-making-meal-planning-simple-again",
+    "cms": {
+      "title": "Why I Built Foodedo: Making Meal Planning Simple Again",
+      "excerpt": "Meal planning made easy. Foodedo creates weekly meal plans, builds shopping lists, and saves recipes so you can spend less time planning and more time cooking."
+    },
+    "override": {
+      "title": "Why I Built Foodedo: Making Meal Planning Simple Again",
+      "excerpt": "Meal planning made easy. Foodedo creates weekly meal plans, builds shopping lists, and saves recipes so you can spend less time planning and more time cooking."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "how-to-save-and-organise-recipes-from-websites",
+    "cms": {
+      "title": "How to Save and Organise Recipes from Any Website",
+      "excerpt": "Stop losing recipes in bookmarks. Learn how to save and organise recipes from websites in one place—with a consistent format you can search and use in your meal plan."
+    },
+    "override": {
+      "title": "How to Save and Organise Recipes from Websites",
+      "excerpt": "Import supported recipe links or pasted text into Yours, check the result and find useful dinners without custom tags or folders."
+    },
+    "changedFields": [
+      "title",
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "how-to-cook-chicken-thighs-perfectly-every-time",
+    "cms": {
+      "title": "How to Cook Chicken Thighs Perfectly Every Time",
+      "excerpt": "Master the art of cooking chicken thighs with crispy skin and various techniques. Enjoy delicious, juicy results every time!"
+    },
+    "override": {
+      "title": "How to Cook Chicken Thighs Perfectly Every Time",
+      "excerpt": "Master the art of cooking chicken thighs with crispy skin and various techniques. Enjoy delicious, juicy results every time!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "keeping-kitchen-cupboards-organised",
+    "cms": {
+      "title": "Top Tips for Keeping Your Kitchen Cupboards Organised",
+      "excerpt": "Discover practical tips for organising your kitchen cupboards efficiently. Make meal prep easier with Foodedo!"
+    },
+    "override": {
+      "title": "Top Tips for Keeping Your Kitchen Cupboards Organised",
+      "excerpt": "Discover practical tips for organising your kitchen cupboards efficiently. Make meal prep easier with Foodedo!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "how-to-use-foodedo-weekly-meal-plan",
+    "cms": {
+      "title": "How to Use the Foodedo Weekly Meal Plan (Step-by-Step)",
+      "excerpt": "Plan your week of meals in Foodedo in three steps: add recipes to each day, generate your shopping list, and share with your household. Here’s how to use the Foodedo weekly meal plan."
+    },
+    "override": {
+      "title": "How to Use the Foodedo Weekly Meal Plan (Step-by-Step)",
+      "excerpt": "Set up your days and servings, review suggested dinners, then save your Foodedo plan to create its linked shopping list."
+    },
+    "changedFields": [
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "how-to-start-meal-planning",
+    "cms": {
+      "title": "How to Start Meal Planning (Without It Taking Over Your Week)",
+      "excerpt": "Learn how to start meal planning in three simple steps. Get a clear system that saves time and cuts down \"what's for dinner?\" stress—without it taking over your week."
+    },
+    "override": {
+      "title": "How to Start Meal Planning (Without It Taking Over Your Week)",
+      "excerpt": "Learn how to start meal planning in three simple steps. Get a clear system that saves time and cuts down \"what's for dinner?\" stress—without it taking over your week."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "cheap-weekly-meal-plan-uk-family-of-4",
+    "cms": {
+      "title": "Cheap Weekly Meal Plan UK (Family of 4)",
+      "excerpt": "Discover a cheap weekly meal plan for UK families and reduce food costs with our practical tips. Plan meals to save money and reduce waste."
+    },
+    "override": {
+      "title": "Cheap Weekly Meal Plan UK (Family of 4)",
+      "excerpt": "Discover a cheap weekly meal plan for UK families and reduce food costs with our practical tips. Plan meals to save money and reduce waste."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "weekly-meal-plan-family-of-4-shopping-list",
+    "cms": {
+      "title": "Weekly Meal Plan for a Family of 4 with Shopping List",
+      "excerpt": "Discover how Foodedo effortlessly generates meal plans for a family of four with one click."
+    },
+    "override": {
+      "title": "Weekly Meal Plan for a Family of 4 with Shopping List",
+      "excerpt": "Plan dinners for four by choosing servings, reviewing suggestions and checking the shopping list linked to your saved plan."
+    },
+    "changedFields": [
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "meal-planning-for-busy-families",
+    "cms": {
+      "title": "Meal Planning for Busy Families: Save Time and Reduce Stress",
+      "excerpt": "Meal planning for busy families doesn't have to take hours. Get a simple weekly routine, fewer \"what's for dinner?\" moments, and less stress—in 20 minutes or less."
+    },
+    "override": {
+      "title": "Meal Planning for Busy Families: Save Time and Reduce Stress",
+      "excerpt": "Meal planning for busy families doesn't have to take hours. Get a simple weekly routine, fewer \"what's for dinner?\" moments, and less stress—in 20 minutes or less."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "involve-kids-meal-planning-busy-families",
+    "cms": {
+      "title": "How to Involve Kids in Meal Planning for Busy Families",
+      "excerpt": "Discover fun ways to involve your kids in meal planning. Make family dinners stress-free with Foodedo!"
+    },
+    "override": {
+      "title": "How to Involve Kids in Meal Planning for Busy Families",
+      "excerpt": "Discover fun ways to involve your kids in meal planning. Make family dinners stress-free with Foodedo!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "use-foodedo-for-stress-free-family-dinners",
+    "cms": {
+      "title": "How to Use Foodedo for Stress-Free Family Dinners",
+      "excerpt": "Discover how Foodedo simplifies family dinners with meal planning and recipe management. Start enjoying stress-free evenings today!"
+    },
+    "override": {
+      "title": "How to Use Foodedo for Stress-Free Family Dinners",
+      "excerpt": "Discover how Foodedo simplifies family dinners with meal planning and recipe management. Start enjoying stress-free evenings today!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "tips-for-planning-family-friendly-weekly-meal-plan",
+    "cms": {
+      "title": "Tips for Planning a Family-Friendly Weekly Meal Plan",
+      "excerpt": "Discover practical tips for creating a family-friendly weekly meal plan that saves time and reduces stress. Start planning today with Foodedo!"
+    },
+    "override": {
+      "title": "Tips for Planning a Family-Friendly Weekly Meal Plan",
+      "excerpt": "Discover practical tips for creating a family-friendly weekly meal plan that saves time and reduces stress. Start planning today with Foodedo!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "what-to-cook-this-week-meal-plan-generator",
+    "cms": {
+      "title": "What to Cook This Week: Free Meal Plan Generator",
+      "excerpt": "Discover how a free meal plan generator helps you decide what to cook this week. Simplify meal planning with Foodedo."
+    },
+    "override": {
+      "title": "What to Cook This Week: Free Meal Plan Generator",
+      "excerpt": "Discover how a free meal plan generator helps you decide what to cook this week. Simplify meal planning with Foodedo."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "meal-planning-as-a-couple-or-household",
+    "cms": {
+      "title": "Meal Planning as a Couple (or Household): How to Share the Load",
+      "excerpt": "Meal planning as a couple or household is easier with one shared plan and one shopping list. Learn how to share the load and cut down \"what's for dinner?\" for everyone."
+    },
+    "override": {
+      "title": "Meal Planning as a Couple (or Household): How to Share the Load",
+      "excerpt": "Meal planning as a couple or household is easier with one shared plan and one shopping list. Learn how to share the load and cut down \"what's for dinner?\" for everyone."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "simplified-meal-planning-for-those-who-hate-it",
+    "cms": {
+      "title": "Simplified Meal Planning for Those Who Hate It",
+      "excerpt": "Struggling with meal planning? Discover stress-free tips to make the process easy and efficient with Foodedo."
+    },
+    "override": {
+      "title": "Simplified Meal Planning for Those Who Hate It",
+      "excerpt": "Struggling with meal planning? Discover stress-free tips to make the process easy and efficient with Foodedo."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "meal-planning-busy-families-simple-weekly-system",
+    "cms": {
+      "title": "Meal Planning for Busy Families: A Simple Weekly System",
+      "excerpt": "Discover a simple weekly meal planning system for busy families to reduce stress and save time. Get practical tips and a sample plan."
+    },
+    "override": {
+      "title": "Meal Planning for Busy Families: A Simple Weekly System",
+      "excerpt": "Discover a simple weekly meal planning system for busy families to reduce stress and save time. Get practical tips and a sample plan."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "why-you-need-a-rice-cooker-for-family-meal-planning",
+    "cms": {
+      "title": "Why You Need a Rice Cooker for Family Meal Planning",
+      "excerpt": "Discover why a rice cooker is essential for meal prepping, cooking for large families, and achieving perfect rice every time. Learn helpful tips!"
+    },
+    "override": {
+      "title": "Why You Need a Rice Cooker for Family Meal Planning",
+      "excerpt": "Discover why a rice cooker is essential for meal prepping, cooking for large families, and achieving perfect rice every time. Learn helpful tips!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "healthy-weekly-meal-plan-ideas-shopping-list",
+    "cms": {
+      "title": "Healthy Weekly Meal Plan Ideas (with Shopping List)",
+      "excerpt": "Discover a simple and balanced 7-day healthy meal plan with a structured shopping list to make healthy eating easier."
+    },
+    "override": {
+      "title": "Healthy Weekly Meal Plan Ideas (with Shopping List)",
+      "excerpt": "Discover a simple and balanced 7-day healthy meal plan with a structured shopping list to make healthy eating easier."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "quick-weeknight-dinners-busy-families",
+    "cms": {
+      "title": "Quick Weeknight Dinners: Tips for Busy Families",
+      "excerpt": "Discover quick weeknight dinners for busy families with Foodedo. Save time and enjoy delicious meals together."
+    },
+    "override": {
+      "title": "Quick Weeknight Dinners: Tips for Busy Families",
+      "excerpt": "Discover quick weeknight dinners for busy families with Foodedo. Save time and enjoy delicious meals together."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "how-to-build-shopping-list-from-meal-plan",
+    "cms": {
+      "title": "How to Build a Shopping List from Your Meal Plan",
+      "excerpt": "Turn your meal plan into one shopping list in minutes. Fewer trips, less waste, and no more forgetting ingredients—here’s how to build a shopping list from your meal plan."
+    },
+    "override": {
+      "title": "How to Build a Shopping List from Your Meal Plan",
+      "excerpt": "Turn your meal plan into one shopping list in minutes. Fewer trips, less waste, and no more forgetting ingredients—here’s how to build a shopping list from your meal plan."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "why-foodedo-is-best-choice-over-paprika",
+    "cms": {
+      "title": "Why Foodedo is the Best Choice Over Paprika for Meal Planning",
+      "excerpt": "Discover why Foodedo outshines Paprika for family meal planning. Explore features, ease of use, and more!"
+    },
+    "override": {
+      "title": "Foodedo and Paprika: Choosing a Meal Planning Workflow",
+      "excerpt": "Understand Foodedo’s current planning, recipe-import and household workflow when comparing meal-planning apps."
+    },
+    "changedFields": [
+      "title",
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "sneak-healthy-foods-into-kids-meals",
+    "cms": {
+      "title": "How to Sneak Healthy Foods into Kids' Meals",
+      "excerpt": "Discover clever tips to sneak healthy foods into your kids' meals and make veggies appealing. Transform family dinners with Foodedo!"
+    },
+    "override": {
+      "title": "How to Sneak Healthy Foods into Kids' Meals",
+      "excerpt": "Discover clever tips to sneak healthy foods into your kids' meals and make veggies appealing. Transform family dinners with Foodedo!"
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "overcoming-meal-planning-challenges-busy-families",
+    "cms": {
+      "title": "Overcoming Meal Planning Challenges: Tips for Busy Families",
+      "excerpt": "Discover why meal planning can be tough and how Foodedo helps families simplify their weekly meals with ease."
+    },
+    "override": {
+      "title": "Overcoming Meal Planning Challenges: Tips for Busy Families",
+      "excerpt": "Discover why meal planning can be tough and how Foodedo helps families simplify their weekly meals with ease."
+    },
+    "changedFields": [
+      "body"
+    ]
+  },
+  {
+    "slug": "efficiently-organise-recipe-collection",
+    "cms": {
+      "title": "How to Efficiently Organise Your Recipe Collection",
+      "excerpt": "Learn how to efficiently organise your recipe collection with Foodedo. Save time and easily access your favorite meals."
+    },
+    "override": {
+      "title": "How to Efficiently Organise Your Recipe Collection",
+      "excerpt": "Find catalogue meals in All, favourites in Saved and personal recipes in Yours. Start planning without organising a recipe database first."
+    },
+    "changedFields": [
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "eliminate-weekly-food-decisions-meal-planning",
+    "cms": {
+      "title": "Eliminate 90% of Weekly Food Decisions with Meal Planning",
+      "excerpt": "Learn how to cut out most of your weekly food decisions through effective meal planning. Simplify your week with Foodedo's easy tips."
+    },
+    "override": {
+      "title": "Reduce Weekly Food Decisions with Meal Planning",
+      "excerpt": "Use a reviewed dinner plan to reduce repeated decisions without promising a measured percentage saving."
+    },
+    "changedFields": [
+      "title",
+      "excerpt",
+      "body"
+    ]
+  },
+  {
+    "slug": "stop-asking-whats-for-dinner-foodedo",
+    "cms": {
+      "title": "Stop Asking ‘What’s for Dinner?’ with Foodedo",
+      "excerpt": "Discover how Foodedo ends the daily 'what's for dinner?' dilemma with easy meal planning."
+    },
+    "override": {
+      "title": "Stop Asking ‘What’s for Dinner?’ with Foodedo",
+      "excerpt": "Start with suggested dinners, review the week and keep a useful plan with its linked shopping list."
+    },
+    "changedFields": [
+      "excerpt",
+      "body"
+    ]
+  }
+]
