@@ -8,7 +8,6 @@ import {
 } from "../../src/features/public-pages/shopping-list-example";
 import { classifyShoppingIngredient } from "../../src/lib/domain/shopping-list";
 import { assertExampleSource } from "../../scripts/audit-shopping-list-example.mjs";
-import reviewedArticles from "../../src/features/blog/reviewed-articles.json";
 import { localGuides } from "../../src/features/blog/guides";
 import { ArticleBody } from "../../src/features/blog/article-body";
 import type { BlogArticle } from "../../src/features/blog/content";
@@ -79,19 +78,12 @@ test("the example provides recipe links and all source details in its HTML", () 
   expect(html).toContain("15 ml · Teriyaki Salmon");
 });
 
-test("weeknight and meal-planning articles render links to the reviewed public recipes", () => {
-  const articles = [
-    ...reviewedArticles.filter(
-      (article) =>
-        article.slug === "quick-weeknight-dinners-busy-families" ||
-        article.slug.includes("meal-plan"),
-    ),
-    ...localGuides.filter(
-      (article) =>
-        article.slug.includes("meal-plan") ||
-        article.slug.includes("meals-varied"),
-    ),
-  ];
+test("local meal-planning guides render links to the reviewed public recipes", () => {
+  const articles = localGuides.filter(
+    (article) =>
+      article.slug.includes("meal-plan") ||
+      article.slug.includes("meals-varied"),
+  );
   const destinations = new Set(
     exampleRecipes.map((recipe) => `/recipes/${recipe.slug}`),
   );

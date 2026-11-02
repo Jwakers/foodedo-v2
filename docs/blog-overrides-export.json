@@ -68,9 +68,7 @@
           {
             "_key": "s-8",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Fat"
           },
           {
@@ -92,9 +90,7 @@
           {
             "_key": "s-b",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Acid"
           },
           {
@@ -116,9 +112,7 @@
           {
             "_key": "s-e",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Sweet"
           },
           {
@@ -140,9 +134,7 @@
           {
             "_key": "s-h",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Savory"
           },
           {
@@ -276,9 +268,7 @@
           {
             "_key": "s-10",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Searing"
           },
           {
@@ -300,9 +290,7 @@
           {
             "_key": "s-13",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Deglazing"
           },
           {
@@ -372,9 +360,7 @@
           {
             "_key": "s-1d",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "Foodedo"
           },
           {
@@ -414,9 +400,7 @@
           {
             "_key": "s-1i",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "meal planning strategies"
           }
         ],
@@ -454,9 +438,7 @@
           {
             "_key": "s-1m",
             "_type": "span",
-            "marks": [
-              "link-3"
-            ],
+            "marks": ["link-3"],
             "text": "Tips for Planning a Family-Friendly Weekly Meal Plan"
           }
         ],
@@ -493,9 +475,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "lemon and herb roasted chicken thighs",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -560,9 +540,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -574,9 +552,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -588,9 +564,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -669,9 +643,7 @@
           {
             "_key": "1bc17b4a8f23",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Foodedo"
           },
           {
@@ -1093,9 +1065,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "chicken and spinach pasta",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -1205,9 +1175,7 @@
           {
             "_key": "s-c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Pat Dry"
           },
           {
@@ -1229,9 +1197,7 @@
           {
             "_key": "s-f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Salt"
           },
           {
@@ -1253,9 +1219,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "High Heat"
           },
           {
@@ -1277,9 +1241,7 @@
           {
             "_key": "s-l",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Use a Cast Iron Skillet"
           },
           {
@@ -1301,9 +1263,7 @@
           {
             "_key": "s-o",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Finish Under the Broiler"
           },
           {
@@ -1345,9 +1305,7 @@
           {
             "_key": "s-u",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Baking"
           }
         ],
@@ -1361,9 +1319,7 @@
           {
             "_key": "s-w",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Method"
           },
           {
@@ -1385,9 +1341,7 @@
           {
             "_key": "s-z",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Tip"
           },
           {
@@ -1415,9 +1369,7 @@
           {
             "_key": "s-13",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Grilling"
           }
         ],
@@ -1431,9 +1383,7 @@
           {
             "_key": "s-15",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Method"
           },
           {
@@ -1455,9 +1405,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Tip"
           },
           {
@@ -1485,9 +1433,7 @@
           {
             "_key": "s-1c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Searing and Braising"
           }
         ],
@@ -1501,9 +1447,7 @@
           {
             "_key": "s-1e",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Method"
           },
           {
@@ -1525,9 +1469,7 @@
           {
             "_key": "s-1h",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Tip"
           },
           {
@@ -1555,9 +1497,7 @@
           {
             "_key": "s-1l",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Slow Cooking"
           }
         ],
@@ -1571,9 +1511,7 @@
           {
             "_key": "s-1n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Method"
           },
           {
@@ -1595,9 +1533,7 @@
           {
             "_key": "s-1q",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Tip"
           },
           {
@@ -1633,9 +1569,7 @@
           {
             "_key": "s-1v",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Rest Before Serving"
           },
           {
@@ -1657,9 +1591,7 @@
           {
             "_key": "s-1y",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Experiment with Flavors"
           },
           {
@@ -1681,9 +1613,7 @@
           {
             "_key": "s-21",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Involve Your Family"
           },
           {
@@ -1734,9 +1664,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "lemon and herb roasted chicken thighs",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -2042,9 +1970,7 @@
           {
             "_key": "s-14",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "weekly meal plan"
           }
         ],
@@ -2066,9 +1992,7 @@
           {
             "_key": "s-16",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "Try Foodedo"
           }
         ],
@@ -2121,9 +2045,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "creamy coconut chickpea curry",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -2188,9 +2110,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -2202,9 +2122,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -2216,9 +2134,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -2451,9 +2367,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -2465,9 +2379,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -2479,9 +2391,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -2518,9 +2428,7 @@
           {
             "_key": "f045387f1d75",
             "_type": "span",
-            "marks": [
-              "em"
-            ],
+            "marks": ["em"],
             "text": "planning"
           },
           {
@@ -2666,9 +2574,7 @@
           {
             "_key": "b385da7f251c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Start small."
           },
           {
@@ -2690,9 +2596,7 @@
           {
             "_key": "cf583419f865",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Use what you know."
           },
           {
@@ -2714,9 +2618,7 @@
           {
             "_key": "0a09f4467498",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Leave slack."
           },
           {
@@ -2738,9 +2640,7 @@
           {
             "_key": "ddc6c1e67b8d",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Review after a few weeks."
           },
           {
@@ -2847,9 +2747,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -2861,9 +2759,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -2886,9 +2782,7 @@
           {
             "_key": "s-5",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "cheap weekly meal plan UK"
           },
           {
@@ -2936,9 +2830,7 @@
           {
             "_key": "s-c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -2960,9 +2852,7 @@
           {
             "_key": "s-f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -2984,9 +2874,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3022,9 +2910,7 @@
           {
             "_key": "s-n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3046,9 +2932,7 @@
           {
             "_key": "s-q",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3070,9 +2954,7 @@
           {
             "_key": "s-t",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3108,9 +2990,7 @@
           {
             "_key": "s-y",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3132,9 +3012,7 @@
           {
             "_key": "s-11",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3156,9 +3034,7 @@
           {
             "_key": "s-14",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3194,9 +3070,7 @@
           {
             "_key": "s-19",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3218,9 +3092,7 @@
           {
             "_key": "s-1c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3242,9 +3114,7 @@
           {
             "_key": "s-1f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3280,9 +3150,7 @@
           {
             "_key": "s-1k",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3304,9 +3172,7 @@
           {
             "_key": "s-1n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3328,9 +3194,7 @@
           {
             "_key": "s-1q",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3366,9 +3230,7 @@
           {
             "_key": "s-1v",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3390,9 +3252,7 @@
           {
             "_key": "s-1y",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3414,9 +3274,7 @@
           {
             "_key": "s-21",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3452,9 +3310,7 @@
           {
             "_key": "s-26",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -3476,9 +3332,7 @@
           {
             "_key": "s-29",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -3500,9 +3354,7 @@
           {
             "_key": "s-2c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -3980,9 +3832,7 @@
           {
             "_key": "s-42",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "weekly shopping list"
           },
           {
@@ -4078,9 +3928,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -4092,9 +3940,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -4106,9 +3952,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -4313,9 +4157,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -4327,9 +4169,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -4341,9 +4181,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -4430,9 +4268,7 @@
           {
             "_key": "9febbe7d31be",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Pick your planning day."
           },
           {
@@ -4454,9 +4290,7 @@
           {
             "_key": "ae7cba838170",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Decide how many meals to plan."
           },
           {
@@ -4478,9 +4312,7 @@
           {
             "_key": "57a3c80bd25f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Choose recipes from your usual rotation."
           },
           {
@@ -4502,9 +4334,7 @@
           {
             "_key": "09800441ad69",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Write your shopping list"
           },
           {
@@ -4526,9 +4356,7 @@
           {
             "_key": "77f1634147b0",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Put the plan where everyone can see it."
           },
           {
@@ -4710,9 +4538,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -4724,9 +4550,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -4738,9 +4562,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -4785,9 +4607,7 @@
           {
             "_key": "s-8",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Skills development:"
           },
           {
@@ -4809,9 +4629,7 @@
           {
             "_key": "s-b",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Empowerment:"
           },
           {
@@ -4833,9 +4651,7 @@
           {
             "_key": "s-e",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Family bonding:"
           },
           {
@@ -4997,9 +4813,7 @@
           {
             "_key": "s-15",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Be Patient:"
           },
           {
@@ -5021,9 +4835,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Stay Positive:"
           },
           {
@@ -5045,9 +4857,7 @@
           {
             "_key": "s-1b",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Adapt Recipes:"
           },
           {
@@ -5075,9 +4885,7 @@
           {
             "_key": "s-1f",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "Try Foodedo"
           },
           {
@@ -5258,9 +5066,7 @@
           {
             "_key": "s-p",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Set Aside Planning Time:"
           },
           {
@@ -5282,9 +5088,7 @@
           {
             "_key": "s-s",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Involve the Family:"
           },
           {
@@ -5306,9 +5110,7 @@
           {
             "_key": "s-v",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Stick to Simple Recipes:"
           },
           {
@@ -5364,9 +5166,7 @@
           {
             "_key": "s-13",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "trying Foodedo"
           },
           {
@@ -5434,9 +5234,7 @@
           {
             "_key": "s-1g",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Is it easy to adapt plans if something changes?"
           },
           {
@@ -5485,9 +5283,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "chicken fajitas",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -5566,9 +5362,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -5580,9 +5374,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -5594,9 +5386,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -5843,9 +5633,7 @@
           {
             "_key": "s-13",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "Foodedo"
           },
           {
@@ -5885,9 +5673,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "Browse recipes"
           }
         ],
@@ -5925,9 +5711,7 @@
           {
             "_key": "s-1c",
             "_type": "span",
-            "marks": [
-              "link-4"
-            ],
+            "marks": ["link-4"],
             "text": "adjust your meal plans"
           }
         ],
@@ -5997,9 +5781,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -6011,9 +5793,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -6025,9 +5805,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -6232,9 +6010,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -6246,9 +6022,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -6260,9 +6034,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -6433,9 +6205,7 @@
           {
             "_key": "6a0b8fd2c965",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "How do we agree on meals?"
           },
           {
@@ -6455,9 +6225,7 @@
           {
             "_key": "cc2e69c86877",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Who does the shopping?"
           },
           {
@@ -6477,9 +6245,7 @@
           {
             "_key": "f2ebba5ed5d2",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "What if we don’t stick to the plan?"
           },
           {
@@ -6589,9 +6355,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -6603,9 +6367,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -6617,9 +6379,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -6678,9 +6438,7 @@
           {
             "_key": "s-a",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Set Realistic Goals"
           },
           {
@@ -6718,9 +6476,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Involve the Family"
           },
           {
@@ -6756,9 +6512,7 @@
           {
             "_key": "s-n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Batch Cooking"
           },
           {
@@ -6796,9 +6550,7 @@
           {
             "_key": "s-v",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Pre-Made Ingredients"
           },
           {
@@ -6994,9 +6746,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -7008,9 +6758,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -7022,9 +6770,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -7083,9 +6829,7 @@
           {
             "_key": "s-a",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Time Constraints:"
           },
           {
@@ -7107,9 +6851,7 @@
           {
             "_key": "s-d",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Mental Load:"
           },
           {
@@ -7131,9 +6873,7 @@
           {
             "_key": "s-g",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Repetition:"
           },
           {
@@ -7337,9 +7077,7 @@
           {
             "_key": "s-19",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Monday:"
           },
           {
@@ -7361,9 +7099,7 @@
           {
             "_key": "s-1c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Tuesday:"
           },
           {
@@ -7385,9 +7121,7 @@
           {
             "_key": "s-1f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Wednesday:"
           },
           {
@@ -7409,9 +7143,7 @@
           {
             "_key": "s-1i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Thursday:"
           },
           {
@@ -7433,9 +7165,7 @@
           {
             "_key": "s-1l",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Friday:"
           },
           {
@@ -7457,9 +7187,7 @@
           {
             "_key": "s-1o",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Saturday:"
           },
           {
@@ -7481,9 +7209,7 @@
           {
             "_key": "s-1r",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Sunday:"
           },
           {
@@ -7791,9 +7517,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -7805,9 +7529,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -7819,9 +7541,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -7950,9 +7670,7 @@
           {
             "_key": "s-k",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Use Stocks Instead of Water:"
           },
           {
@@ -7974,9 +7692,7 @@
           {
             "_key": "s-n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Add Herbs and Spices:"
           },
           {
@@ -7998,9 +7714,7 @@
           {
             "_key": "s-q",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Mix in Vegetables:"
           },
           {
@@ -8056,9 +7770,7 @@
           {
             "_key": "s-y",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "Foodedo"
           },
           {
@@ -8146,9 +7858,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -8160,9 +7870,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -8174,9 +7882,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -8221,9 +7927,7 @@
           {
             "_key": "s-8",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8245,9 +7949,7 @@
           {
             "_key": "s-b",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8269,9 +7971,7 @@
           {
             "_key": "s-e",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8307,9 +8007,7 @@
           {
             "_key": "s-j",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8331,9 +8029,7 @@
           {
             "_key": "s-m",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8355,9 +8051,7 @@
           {
             "_key": "s-p",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8393,9 +8087,7 @@
           {
             "_key": "s-u",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8417,9 +8109,7 @@
           {
             "_key": "s-x",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8441,9 +8131,7 @@
           {
             "_key": "s-10",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8479,9 +8167,7 @@
           {
             "_key": "s-15",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8503,9 +8189,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8527,9 +8211,7 @@
           {
             "_key": "s-1b",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8565,9 +8247,7 @@
           {
             "_key": "s-1g",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8589,9 +8269,7 @@
           {
             "_key": "s-1j",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8613,9 +8291,7 @@
           {
             "_key": "s-1m",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8651,9 +8327,7 @@
           {
             "_key": "s-1r",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8675,9 +8349,7 @@
           {
             "_key": "s-1u",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8699,9 +8371,7 @@
           {
             "_key": "s-1x",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -8737,9 +8407,7 @@
           {
             "_key": "s-22",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Breakfast:"
           },
           {
@@ -8761,9 +8429,7 @@
           {
             "_key": "s-25",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Lunch:"
           },
           {
@@ -8785,9 +8451,7 @@
           {
             "_key": "s-28",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Dinner:"
           },
           {
@@ -9329,9 +8993,7 @@
           {
             "_key": "s-46",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "healthy weekly meal plan"
           },
           {
@@ -9482,9 +9144,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Prep in Advance:"
           },
           {
@@ -9531,9 +9191,7 @@
             "_type": "span",
             "_key": "title",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe"
-            ]
+            "marks": ["recipe"]
           },
           {
             "_type": "span",
@@ -9561,9 +9219,7 @@
             "_type": "span",
             "_key": "title",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe"
-            ]
+            "marks": ["recipe"]
           },
           {
             "_type": "span",
@@ -9591,9 +9247,7 @@
             "_type": "span",
             "_key": "title",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe"
-            ]
+            "marks": ["recipe"]
           },
           {
             "_type": "span",
@@ -9624,9 +9278,7 @@
           {
             "_key": "s-10",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "More Family Time:"
           },
           {
@@ -9648,9 +9300,7 @@
           {
             "_key": "s-13",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Reduced Stress:"
           },
           {
@@ -9672,9 +9322,7 @@
           {
             "_key": "s-16",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Healthy Eating:"
           },
           {
@@ -9702,9 +9350,7 @@
           {
             "_key": "s-1a",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "weekly meal plan"
           },
           {
@@ -9778,9 +9424,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -9792,9 +9436,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -9806,9 +9448,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -9903,9 +9543,7 @@
           {
             "_type": "span",
             "_key": "worked-example-text",
-            "marks": [
-              "worked-example"
-            ],
+            "marks": ["worked-example"],
             "text": "See how three real recipes become one shopping list, with quantities and source details."
           }
         ]
@@ -10221,9 +9859,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "pasta primavera",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -10325,9 +9961,7 @@
           {
             "_key": "s-b",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "Foodedo"
           },
           {
@@ -10381,9 +10015,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Roasting:"
           },
           {
@@ -10405,9 +10037,7 @@
           {
             "_key": "s-l",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Grilling:"
           },
           {
@@ -10429,9 +10059,7 @@
           {
             "_key": "s-o",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Stir-Frying:"
           },
           {
@@ -10557,9 +10185,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "Foodedo"
           },
           {
@@ -10599,9 +10225,7 @@
           {
             "_key": "s-1d",
             "_type": "span",
-            "marks": [
-              "link-3"
-            ],
+            "marks": ["link-3"],
             "text": "Try Foodedo"
           }
         ],
@@ -10639,9 +10263,7 @@
           {
             "_key": "s-1h",
             "_type": "span",
-            "marks": [
-              "link-5"
-            ],
+            "marks": ["link-5"],
             "text": "How to use the Foodedo weekly meal plan"
           }
         ],
@@ -10678,9 +10300,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "beef lasagne",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -10726,9 +10346,7 @@
           {
             "_key": "s-3",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "decision fatigue"
           },
           {
@@ -10740,9 +10358,7 @@
           {
             "_key": "s-5",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Foodedo"
           },
           {
@@ -10787,9 +10403,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -10801,9 +10415,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -10815,9 +10427,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -10862,9 +10472,7 @@
           {
             "_key": "s-c",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "A Busy Lifestyle:"
           },
           {
@@ -10886,9 +10494,7 @@
           {
             "_key": "s-f",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Endless Options:"
           },
           {
@@ -10910,9 +10516,7 @@
           {
             "_key": "s-i",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Pressure to Please Everyone:"
           },
           {
@@ -10962,9 +10566,7 @@
           {
             "_key": "s-p",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Saves Time:"
           },
           {
@@ -10986,9 +10588,7 @@
           {
             "_key": "s-s",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Reduces Waste:"
           },
           {
@@ -11010,9 +10610,7 @@
           {
             "_key": "s-v",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Promotes Healthier Eating:"
           },
           {
@@ -11054,9 +10652,7 @@
           {
             "_key": "s-11",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Foodedo"
           },
           {
@@ -11124,9 +10720,7 @@
           {
             "_key": "s-1d",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Household Sharing:"
           },
           {
@@ -11176,9 +10770,7 @@
           {
             "_key": "s-1k",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Choose Simple Recipes:"
           },
           {
@@ -11200,9 +10792,7 @@
           {
             "_key": "s-1n",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Plan for Leftovers:"
           },
           {
@@ -11224,9 +10814,7 @@
           {
             "_key": "s-1q",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Involve the Family:"
           },
           {
@@ -11268,9 +10856,7 @@
           {
             "_key": "s-1w",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Foodedo"
           },
           {
@@ -11282,9 +10868,7 @@
           {
             "_key": "s-1y",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "signing up for Foodedo"
           },
           {
@@ -11324,9 +10908,7 @@
           {
             "_key": "s-23",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "tips for family meal planning"
           }
         ],
@@ -11348,9 +10930,7 @@
           {
             "_key": "s-25",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "explore more recipes"
           }
         ],
@@ -11372,9 +10952,7 @@
           {
             "_key": "s-27",
             "_type": "span",
-            "marks": [
-              "link-3"
-            ],
+            "marks": ["link-3"],
             "text": "how to organize your recipes"
           }
         ],
@@ -11475,9 +11053,7 @@
           {
             "_key": "s-a",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Gather Your Recipes"
           },
           {
@@ -11547,9 +11123,7 @@
           {
             "_key": "s-o",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Regularly Update and Review"
           },
           {
@@ -11662,9 +11236,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "tofu stir-fry with broccoli and peppers",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",
@@ -11743,9 +11315,7 @@
             "_type": "span",
             "_key": "recipe-0",
             "text": "Chicken Shawarma Pitta Wraps",
-            "marks": [
-              "recipe-0"
-            ]
+            "marks": ["recipe-0"]
           },
           {
             "_type": "span",
@@ -11757,9 +11327,7 @@
             "_type": "span",
             "_key": "recipe-1",
             "text": "Tofu Stir-Fry with Broccoli, Pepper and Rice",
-            "marks": [
-              "recipe-1"
-            ]
+            "marks": ["recipe-1"]
           },
           {
             "_type": "span",
@@ -11771,9 +11339,7 @@
             "_type": "span",
             "_key": "recipe-2",
             "text": "Teriyaki Salmon with Jasmine Rice and Steamed Broccoli",
-            "marks": [
-              "recipe-2"
-            ]
+            "marks": ["recipe-2"]
           },
           {
             "_type": "span",
@@ -11886,9 +11452,7 @@
           {
             "_key": "s-h",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "Foodedo"
           },
           {
@@ -11968,9 +11532,7 @@
           {
             "_key": "s-u",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "weekly meal plan"
           },
           {
@@ -12010,9 +11572,7 @@
           {
             "_key": "s-z",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Choose a Planning Day:"
           },
           {
@@ -12034,9 +11594,7 @@
           {
             "_key": "s-12",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Select Recipes:"
           },
           {
@@ -12074,9 +11632,7 @@
           {
             "_key": "s-18",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Batch Cook:"
           },
           {
@@ -12132,9 +11688,7 @@
           {
             "_key": "s-1g",
             "_type": "span",
-            "marks": [
-              "link-2"
-            ],
+            "marks": ["link-2"],
             "text": "Learn more about starting meal planning"
           },
           {
@@ -12273,9 +11827,7 @@
           {
             "_key": "s-9",
             "_type": "span",
-            "marks": [
-              "link-0"
-            ],
+            "marks": ["link-0"],
             "text": "Start meal planning"
           },
           {
@@ -12345,9 +11897,7 @@
           {
             "_key": "s-j",
             "_type": "span",
-            "marks": [
-              "strong"
-            ],
+            "marks": ["strong"],
             "text": "Recipe Management"
           },
           {
@@ -12405,9 +11955,7 @@
           {
             "_key": "s-s",
             "_type": "span",
-            "marks": [
-              "link-1"
-            ],
+            "marks": ["link-1"],
             "text": "Build your weekly meal plan"
           },
           {
@@ -12532,9 +12080,7 @@
             "_type": "span",
             "_key": "example-link",
             "text": "chicken shawarma wraps",
-            "marks": [
-              "catalogue-dinner"
-            ]
+            "marks": ["catalogue-dinner"]
           },
           {
             "_type": "span",

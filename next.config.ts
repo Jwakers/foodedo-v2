@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import blogRedirects from "./config/blog-redirects";
 
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === "true";
 const requiredPublicEnvironment = [
@@ -45,7 +46,6 @@ const nextConfig: NextConfig = {
           ];
         },
         async redirects() {
-          const { default: blogRedirects } = await import("./config/blog-redirects");
           return [
             { source: "/pricing", destination: "/faq", permanent: false },
             { source: "/beta", destination: "/", permanent: true },

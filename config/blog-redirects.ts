@@ -1,7 +1,7 @@
 import type { Redirect } from "next/dist/lib/load-custom-routes";
 
 /**
- * Define blog-specific 301 redirects for merged or removed posts.
+ * Define blog-specific permanent (308) redirects for merged or removed posts.
  *
  * Example:
  *   { source: "/blog/old-slug", destination: "/blog/new-slug", permanent: true }
@@ -13,4 +13,3 @@ const blogRedirects: Redirect[] = [
 ];
 
 export default blogRedirects;
-

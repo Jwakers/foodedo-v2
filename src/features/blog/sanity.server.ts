@@ -4,7 +4,6 @@ import { cache } from "react";
 import { z } from "zod";
 import { blogArticleSchema, blogSummarySchema } from "./content";
 import { getLocalGuide } from "./guides";
-import { applyReviewedContent } from "./reviewed-content-disabled";
 import {
   publishedPostFilter,
   querySanity,
@@ -15,10 +14,8 @@ export const getPublishedPosts = cache(async () => {
   const response = await querySanity(
     `*[${publishedPostFilter}] | order(publishedAt desc, _id asc){${summaryProjection}}`,
   );
-  return z
-    .object({ result: z.array(blogSummarySchema) })
-    .parse(response)
-    .result.map(applyReviewedContent);
+  return z.object({ result: z.array(blogSummarySchema) }).parse(response)
+    .result;
 });
 
 export const getBlogArticle = cache(async (slug: string) => {
@@ -33,5 +30,5 @@ export const getBlogArticle = cache(async (slug: string) => {
   const article = z
     .object({ result: blogArticleSchema.nullable() })
     .parse(response).result;
-  return article ? applyReviewedContent(article) : null;
+  return article;
 });

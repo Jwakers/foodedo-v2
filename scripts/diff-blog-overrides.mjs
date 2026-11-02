@@ -33,8 +33,13 @@ function portableTextToPlain(blocks) {
   if (!Array.isArray(blocks)) return "";
   return blocks
     .map((b) =>
-      b && typeof b === "object" && b._type === "block" && Array.isArray(b.children)
-        ? b.children.map((s) => (typeof s.text === "string" ? s.text : "")).join("")
+      b &&
+      typeof b === "object" &&
+      b._type === "block" &&
+      Array.isArray(b.children)
+        ? b.children
+            .map((s) => (typeof s.text === "string" ? s.text : ""))
+            .join("")
         : "",
     )
     .join("\n")
@@ -67,7 +72,8 @@ async function main() {
     }
     const fields = [];
     if ((cms.title || "") !== (override.title || "")) fields.push("title");
-    if ((cms.excerpt || "") !== (override.excerpt || "")) fields.push("excerpt");
+    if ((cms.excerpt || "") !== (override.excerpt || ""))
+      fields.push("excerpt");
     const cmsText = portableTextToPlain(cms.body);
     const overrideText = portableTextToPlain(override.body);
     if (cmsText !== overrideText) fields.push("body");
@@ -90,4 +96,3 @@ main().catch((err) => {
   console.error(err);
   process.exitCode = 1;
 });
-

@@ -13,15 +13,6 @@ const inventory = JSON.parse(
     "utf8",
   ),
 );
-const reviewedArticles = JSON.parse(
-  await readFile(
-    new URL("../src/features/blog/reviewed-articles.json", import.meta.url),
-    "utf8",
-  ),
-);
-const reviewedByPath = new Map(
-  reviewedArticles.map((article) => [`/blog/${article.slug}`, article]),
-);
 const project = process.env.SANITY_PROJECT_ID || "i8ook8b1";
 const dataset = process.env.SANITY_DATASET || "production";
 const sourceUrl = new URL(
@@ -60,7 +51,7 @@ assert.ok(sitemap.includes("/recipes/"), "Catalogue sitemap entries were lost");
 const articles = [...entries.values()];
 for (let offset = 0; offset < articles.length; offset += 4) {
   await Promise.all(
-    articles.slice(offset, offset + 4).map(async ({ path, title, _id }) => {
+    articles.slice(offset, offset + 4).map(async ({ path, title }) => {
       assert.ok(
         index.includes(`href="${path}"`),
         `Not linked from the index: ${path}`,
@@ -84,9 +75,7 @@ for (let offset = 0; offset < articles.length; offset += 4) {
       assert.ok(json, `Missing structured data: ${path}`);
       assert.equal(
         JSON.parse(json[1]).headline,
-        _id && reviewedByPath.get(path)?.sourceId === _id
-          ? reviewedByPath.get(path).title
-          : title,
+        title,
         `Changed title: ${path}`,
       );
       assert.doesNotMatch(
