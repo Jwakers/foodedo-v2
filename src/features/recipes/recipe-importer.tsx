@@ -76,6 +76,21 @@ export function RecipeImporter() {
   const activeSource: RecipeImportIntentV1["source"] =
     mode === "url" ? { type: "url", url } : { type: "text", text };
 
+  async function pasteFromClipboard(into: ImportMode) {
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!value.trim()) {
+        toast.error("Clipboard is empty.");
+        return;
+      }
+      if (into === "url") setUrl(value.trim());
+      else setText(value);
+    } catch (error) {
+      console.error("Failed to read clipboard.", error);
+      toast.error("Foodedo couldn’t read your clipboard here.");
+    }
+  }
+
   async function submitImport() {
     if (submitting) return;
     const preparedSource = prepareClientSource(activeSource);
@@ -302,17 +317,39 @@ export function RecipeImporter() {
               placeholder="https://www.example.com/recipe"
               className="mt-2 min-h-20 w-full resize-none rounded-surface border border-transparent bg-mist px-4 py-4 text-16 leading-5.5 text-ink outline-none placeholder:text-graphite focus:border-ink"
             />
+            <Button
+              variant="inline"
+              size="block"
+              className="mt-2 text-graphite"
+              onClick={() => void pasteFromClipboard("url")}
+            >
+              Paste from clipboard
+            </Button>
+            <p className="mt-3 text-13 leading-5 text-graphite">
+              From YouTube, TikTok, or Instagram? If the link doesn’t import,
+              paste the caption or description instead.
+            </p>
           </div>
         ) : (
-          <textarea
-            aria-label="Recipe text"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder={
-              "Lemon herb chicken\nServes 4\n\nIngredients\n4 chicken thighs\n1 lemon\n\nMethod\n1. Season the chicken…"
-            }
-            className="mt-5 min-h-80 w-full resize-y rounded-surface border border-border bg-mist px-4 py-4 text-16 leading-6 text-ink outline-none placeholder:text-graphite focus:border-ink"
-          />
+          <>
+            <textarea
+              aria-label="Recipe text"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={
+                "Lemon herb chicken\nServes 4\n\nIngredients\n4 chicken thighs\n1 lemon\n\nMethod\n1. Season the chicken…"
+              }
+              className="mt-5 min-h-80 w-full resize-y rounded-surface border border-border bg-mist px-4 py-4 text-16 leading-6 text-ink outline-none placeholder:text-graphite focus:border-ink"
+            />
+            <Button
+              variant="inline"
+              size="block"
+              className="mt-2 text-graphite"
+              onClick={() => void pasteFromClipboard("text")}
+            >
+              Paste from clipboard
+            </Button>
+          </>
         )}
 
         <Button
@@ -447,7 +484,7 @@ function ImportFailure({
   onRetry: () => void;
   onPasteText: () => void;
 }) {
-  const message = importFailureMessage(failureCode, failureDetails);
+  const message = importFailureMessage(failureCode, failureDetails, sourceUrl);
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-4">
       <h1 className="font-display text-32 font-semibold tracking-heading text-ink">
@@ -632,33 +669,57 @@ function prepareClientSource(source: RecipeImportIntentV1["source"]) {
 export function importFailureMessage(
   failureCode: string | undefined,
   failureDetails: string[] = [],
+  sourceUrl?: string,
 ) {
+  const platform = detectSocialPlatform(sourceUrl);
+
   if (failureCode === "source_blocked") {
     return {
-      title: "This website blocked the import",
+      title:
+        platform === "youtube"
+          ? "YouTube blocked the import"
+          : "This website blocked the import",
       description:
-        "We could not read the recipe page from this website. Paste the recipe text and we’ll organise it instead.",
+        platform === "youtube"
+          ? "We could not read enough recipe text from this video link. Paste the video description or a linked recipe page instead."
+          : "We could not read the recipe page from this website. Paste the recipe text and we’ll organise it instead.",
     };
   }
   if (failureCode === "source_unreachable") {
     return {
       title: "We couldn’t reach that recipe page",
       description:
-        "The website may be temporarily unavailable. Try again, or paste the recipe text if the page opens for you.",
+        platform === "youtube"
+          ? "YouTube may be temporarily unavailable. Try again, or paste the video description (or a linked recipe page) to import it."
+          : "The website may be temporarily unavailable. Try again, or paste the recipe text if the page opens for you.",
     };
   }
   if (failureCode === "unsupported_content") {
     return {
-      title: "That link isn’t a readable recipe page",
+      title:
+        platform === "youtube"
+          ? "That YouTube link needs the description"
+          : platform
+            ? "That link needs the caption"
+            : "That link isn’t a readable recipe page",
       description:
-        "We can import public web pages and pasted recipe text. Try pasting the ingredients and method instead.",
+        platform === "youtube"
+          ? "We can import linked recipe pages, or the video description if it includes ingredients and method. Paste the description text, or paste the recipe link from the description."
+          : platform
+            ? "We can import linked recipe pages, or caption text if it includes ingredients and method. Paste the caption text instead."
+            : "We can import public web pages and pasted recipe text. Try pasting the ingredients and method instead.",
     };
   }
   if (failureCode === "no_recipe") {
     return {
-      title: "We couldn’t find a recipe",
+      title:
+        platform === "youtube"
+          ? "We couldn’t find a written recipe"
+          : "We couldn’t find a recipe",
       description:
-        "We couldn’t identify a recipe in that content. Paste the ingredients and cooking instructions to organise them instead.",
+        platform === "youtube"
+          ? "We couldn’t find enough ingredients and method in the description. Paste the recipe text, or a linked recipe page, and we’ll organise it."
+          : "We couldn’t identify a recipe in that content. Paste the ingredients and cooking instructions to organise them instead.",
     };
   }
   if (failureCode === "ai_unavailable") {
@@ -720,8 +781,9 @@ export function importFailureMessage(
   if (failureCode === "timed_out") {
     return {
       title: "That import took too long",
-      description:
-        "Nothing was saved. Try again, or paste the recipe text for a quicker import.",
+      description: platform
+        ? "Nothing was saved. Try again, or paste the caption/description text for a quicker import."
+        : "Nothing was saved. Try again, or paste the recipe text for a quicker import.",
     };
   }
   return {
@@ -729,4 +791,21 @@ export function importFailureMessage(
     description:
       "Nothing was saved. Try again, or paste the recipe text instead.",
   };
+}
+
+function detectSocialPlatform(
+  url: string | undefined,
+): "youtube" | "tiktok" | "instagram" | null {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    if (hostname === "youtube.com" || hostname === "youtu.be") return "youtube";
+    if (hostname === "tiktok.com" || hostname.endsWith(".tiktok.com"))
+      return "tiktok";
+    if (hostname === "instagram.com" || hostname.endsWith(".instagram.com"))
+      return "instagram";
+  } catch {
+    return null;
+  }
+  return null;
 }
