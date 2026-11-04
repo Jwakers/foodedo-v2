@@ -1170,5 +1170,78 @@
         "durationSeconds": 120
       }
     ]
+  },
+  {
+    "id": "youtube-linked-chicken-tikka-masala",
+    "kind": "url",
+    "source": "https://www.youtube.com/watch?v=l8DMvfFUVQM&t=1s",
+    "expect": "succeeded",
+    "expectedProtein": "chicken",
+    "expectedServings": 6,
+    "minimumIngredients": 30,
+    "expectedMethodPatterns": [
+      "marina",
+      "mustard.{0,90}smok|smok.{0,90}mustard",
+      "cool.{0,80}10.{1,6}15",
+      "refrigerat|chill",
+      "1.{1,6}3 hours",
+      "cardamom",
+      "onion",
+      "cashew",
+      "30 minutes",
+      "grill|barbecue|bbq",
+      "per side",
+      "bay leaves",
+      "blend",
+      "butter",
+      "cream",
+      "simmer",
+      "cooked through",
+      "salt",
+      "rice",
+      "naan"
+    ],
+    "expectedIngredientPatterns": [
+      {
+        "name": "chicken",
+        "measurement": {
+          "kind": "exact",
+          "value": 1000,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "cashew",
+        "measurement": {
+          "kind": "exact",
+          "value": 30,
+          "unit": "g",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "water",
+        "measurement": {
+          "kind": "exact",
+          "value": 150,
+          "unit": "ml",
+          "qualifier": null,
+          "equivalents": []
+        }
+      },
+      {
+        "name": "cream",
+        "measurement": {
+          "kind": "exact",
+          "value": 30,
+          "unit": "ml",
+          "qualifier": null,
+          "equivalents": []
+        }
+      }
+    ]
   }
 ]

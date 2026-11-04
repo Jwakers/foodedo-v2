@@ -16,6 +16,7 @@ const recipe = importedRecipeSchema.parse({
   titleSourceIds: [],
   description: null,
   servings: null,
+  minimumServings: null,
   prepMinutes: null,
   cookMinutes: { value: 21, origin: "estimated", sourceIds: [] },
   proteinCategory: "meat-free",

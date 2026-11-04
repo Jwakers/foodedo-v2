@@ -49,6 +49,7 @@ import type * as lib_recipeImport_source from "../lib/recipeImport/source.js";
 import type * as lib_recipeImport_sourceImages from "../lib/recipeImport/sourceImages.js";
 import type * as lib_recipeImport_sources from "../lib/recipeImport/sources.js";
 import type * as lib_recipeImport_validation from "../lib/recipeImport/validation.js";
+import type * as lib_recipeImport_youtube from "../lib/recipeImport/youtube.js";
 import type * as lib_recipeListing from "../lib/recipeListing.js";
 import type * as lib_recipeProtein from "../lib/recipeProtein.js";
 import type * as lib_recipeTimers from "../lib/recipeTimers.js";
@@ -112,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   "lib/recipeImport/sourceImages": typeof lib_recipeImport_sourceImages;
   "lib/recipeImport/sources": typeof lib_recipeImport_sources;
   "lib/recipeImport/validation": typeof lib_recipeImport_validation;
+  "lib/recipeImport/youtube": typeof lib_recipeImport_youtube;
   "lib/recipeListing": typeof lib_recipeListing;
   "lib/recipeProtein": typeof lib_recipeProtein;
   "lib/recipeTimers": typeof lib_recipeTimers;

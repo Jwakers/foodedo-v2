@@ -69,6 +69,7 @@ function recipeFor(source: RecipeSourceCandidate): ImportedRecipe {
     titleSourceIds: [id("Pepper salad")],
     description: null,
     servings: null,
+    minimumServings: null,
     prepMinutes: null,
     cookMinutes: null,
     proteinCategory: "meat-free",

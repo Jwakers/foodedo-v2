@@ -69,8 +69,13 @@ Open the **Foodedo V2 development deployment**, then **Settings → Environment 
 | `CLERK_FRONTEND_API_URL` | Clerk Frontend API URL, including `https://`               |
 | `CLERK_WEBHOOK_SECRET`   | Add after creating the Clerk webhook; starts with `whsec_` |
 | `AI_GATEWAY_API_KEY`     | Vercel AI Gateway key used only by Convex import actions   |
+| `YOUTUBE_DATA_API_KEY`   | Optional YouTube Data API key for description/link imports |
 
-Recipe-import model assignments and Gateway fallbacks are versioned in `convex/lib/recipeImport/models.ts`. Change them through the normal evaluation, review, and deployment path rather than deployment environment overrides. Only the `AI_GATEWAY_API_KEY` belongs in the Convex environment; do not expose it through a `NEXT_PUBLIC_` variable or include it in the Capacitor bundle.
+Recipe-import model assignments and Gateway fallbacks are versioned in `convex/lib/recipeImport/models.ts`. Change them through the normal evaluation, review, and deployment path rather than deployment environment overrides. Keep importer credentials (`AI_GATEWAY_API_KEY` and the optional `YOUTUBE_DATA_API_KEY`) in the Convex server environment; do not expose them through `NEXT_PUBLIC_` variables or include them in the Capacitor bundle.
+
+Import actions execute on Convex even when the app is open at `localhost:3000`. Putting `YOUTUBE_DATA_API_KEY` in `.env.local` does not configure those actions. Set it on the V2 development deployment with `pnpm exec convex env set YOUTUBE_DATA_API_KEY` and pipe or enter the existing key securely. Without it, YouTube imports use best-effort public watch-page metadata, which can be blocked from the backend even when the page opens locally. Backend code changes also need `pnpm exec convex dev --once`, or a running `pnpm dev` / `pnpm dev:convex` watcher; `pnpm dev:web` starts only the frontend. Failed imports retain their failure state until explicitly retried.
+
+Use a dedicated server key restricted to **YouTube Data API v3**. A key restricted to **Websites / HTTP referrers** cannot authenticate Convex's server requests: Google returns `403` with `API_KEY_HTTP_REFERRER_BLOCKED`. Keep existing browser keys unchanged and configure the separate server key only on Convex. The public watch-page fallback succeeding on a developer's machine does not establish that either API access or fallback access works from the Convex runtime; verify a fresh import through the app.
 
 The Convex CLI has already written the ignored V2 `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` values to `.env.local`.
 

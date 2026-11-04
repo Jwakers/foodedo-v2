@@ -33,6 +33,7 @@ const normalized = importedRecipeSchema.parse({
   titleSourceIds: [],
   description: null,
   servings: null,
+  minimumServings: null,
   prepMinutes: null,
   cookMinutes: null,
   proteinCategory: "meat-free",

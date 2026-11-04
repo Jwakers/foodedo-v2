@@ -20,6 +20,14 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+test("an expired acquisition deadline starts no request and releases the dispatcher", async () => {
+  await expect(
+    safeFetch("https://public.example/recipe", 100, "html", Date.now() - 1),
+  ).rejects.toMatchObject({ code: "timed_out" });
+  expect(transport.fetch).not.toHaveBeenCalled();
+  expect(transport.destroy).toHaveBeenCalled();
+});
+
 function response(options: ResponseInit = {}) {
   const cancel = vi.fn();
   const body = new ReadableStream<Uint8Array>({

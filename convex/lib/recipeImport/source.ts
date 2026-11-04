@@ -414,11 +414,13 @@ export function extractHtmlCandidate(
 }
 export async function extractUrlCandidate(
   rawUrl: string,
+  deadline?: number,
 ): Promise<RecipeSourceCandidate> {
   const response = await safeFetch(
     rawUrl,
     RECIPE_IMPORT_LIMITS.htmlBytes,
     "html",
+    deadline,
   );
   if (
     !/text\/html|application\/xhtml\+xml/.test(

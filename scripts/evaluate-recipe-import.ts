@@ -4,9 +4,9 @@ import { resolve } from "node:path";
 import {
   extractHtmlCandidate,
   extractTextCandidate,
-  extractUrlCandidate,
   organiseCandidate,
 } from "../convex/lib/recipeImport/pipeline";
+import { acquireRecipeSource } from "../convex/lib/recipeImport/sources";
 import {
   createGatewayRecipeImportModelClient,
   type RecipeImportModelTelemetry,
@@ -324,7 +324,7 @@ async function candidateFor(item: CorpusItem): Promise<RecipeSourceCandidate> {
       await readFile(resolve(fixtureDirectory, item.fixture), "utf8"),
     );
   if (item.kind === "url" && item.source)
-    return extractUrlCandidate(item.source);
+    return acquireRecipeSource({ type: "url", url: item.source });
   if (item.kind === "text" && item.source) {
     return extractTextCandidate(item.source);
   }

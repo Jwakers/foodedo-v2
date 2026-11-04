@@ -62,7 +62,8 @@ function publicNetworkDispatcher(): Dispatcher {
 export async function safeFetch(
   rawUrl: string,
   maximumBytes: number,
-  expected: "html" | "image",
+  expected: "html" | "image" | "json",
+  deadline?: number,
 ): Promise<ImportResponse> {
   let current: URL;
   try {
@@ -79,17 +80,26 @@ export async function safeFetch(
       redirects += 1
     ) {
       assertPublicUrlShape(current);
+      const timeout = Math.min(
+        RECIPE_IMPORT_LIMITS.fetchTimeoutMs,
+        deadline === undefined ? Infinity : deadline - Date.now(),
+      );
+      if (timeout <= 0) {
+        throw new ImportFailure("timed_out", "Source acquisition timed out.");
+      }
       let response: ImportResponse;
       try {
         response = await fetch(current, {
           dispatcher,
           redirect: "manual",
-          signal: AbortSignal.timeout(RECIPE_IMPORT_LIMITS.fetchTimeoutMs),
+          signal: AbortSignal.timeout(Math.ceil(timeout)),
           headers: {
             accept:
               expected === "html"
                 ? "text/html,application/xhtml+xml"
-                : "image/avif,image/webp,image/png,image/jpeg",
+                : expected === "json"
+                  ? "application/json"
+                  : "image/avif,image/webp,image/png,image/jpeg",
             "user-agent": "FoodedoRecipeImporter/2.0 (+https://foodedo.com)",
           },
         });

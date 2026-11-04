@@ -62,8 +62,7 @@ export const importedRecipeSchema = z.object({
       origin,
       sourceIds: refs,
     })
-    .nullable()
-    .optional(),
+    .nullable(),
   prepMinutes: metadata,
   cookMinutes: metadata,
   proteinCategory: z.enum(PROTEIN_CATEGORIES),
@@ -199,7 +198,7 @@ export const correctionOutputSchema = z.object({
         }),
       ]),
     )
-    .max(10),
+    .max(11),
   issues: z.array(importIssueSchema).max(30),
 });
 export type ImportCorrection = z.infer<typeof correctionOutputSchema>;

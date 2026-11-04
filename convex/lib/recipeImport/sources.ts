@@ -5,6 +5,7 @@ import {
   extractUrlCandidate,
   type RecipeSourceCandidate,
 } from "./source";
+import { maybeAcquireYouTubeSource } from "./youtube";
 
 export type RecipeSourceInput =
   { type: "url"; url: string } | { type: "text"; text: string };
@@ -25,8 +26,9 @@ export const pastedRecipeSource: RecipeSourceAdapter<{ text: string }> = {
   acquire: async ({ text }) => extractTextCandidate(text),
 };
 
-export function acquireRecipeSource(input: RecipeSourceInput) {
-  return input.type === "url"
-    ? urlRecipeSource.acquire(input)
-    : pastedRecipeSource.acquire(input);
+export async function acquireRecipeSource(input: RecipeSourceInput) {
+  if (input.type === "text") return pastedRecipeSource.acquire(input);
+  const youTubeCandidate = await maybeAcquireYouTubeSource(input.url);
+  if (youTubeCandidate) return youTubeCandidate;
+  return urlRecipeSource.acquire(input);
 }
