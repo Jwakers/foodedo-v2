@@ -1,5 +1,8 @@
 import type { CookRecipeContext, CookSession } from "../domain/cook-session";
-import { restoreCookSession } from "../domain/cook-session";
+import {
+  recoverCookSession,
+  storeCookSession,
+} from "../domain/cook-session-recovery";
 import {
   localObjectStores,
   openFoodedoDatabase,
@@ -18,18 +21,19 @@ export async function readCookSession(context: CookRecipeContext) {
     const request = transaction.objectStore(storeName).get(context.meal.slug);
     const result: unknown = await requestResult(request);
     await transactionComplete(transaction);
-    return restoreCookSession(result, context);
+    return recoverCookSession(result, context);
   } finally {
     database.close();
   }
 }
 
 export function writeCookSession(session: CookSession) {
+  const stored = storeCookSession(session);
   return enqueue(session.recipeSlug, async () => {
     const database = await openFoodedoDatabase();
     try {
       const transaction = database.transaction(storeName, "readwrite");
-      transaction.objectStore(storeName).put(session, session.recipeSlug);
+      transaction.objectStore(storeName).put(stored, session.recipeSlug);
       await transactionComplete(transaction);
     } finally {
       database.close();

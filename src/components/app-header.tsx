@@ -21,7 +21,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { HeaderModeSlot } from "@/components/header-mode-slot";
 import { Button } from "@/components/ui/button";
 import { RecipeDetailHeaderActions } from "@/features/recipes/recipe-detail-header-actions";
-import { useCurrentCatalogueMeal } from "@/features/recipes/use-catalogue";
+import { useRecipeHeader } from "@/features/recipes/use-recipe-header";
 import {
   isRecipeDetailPath,
   isPublicRecipePath,
@@ -37,7 +37,7 @@ export function AppHeader() {
   const isAdmin = pathname.startsWith("/admin/");
   const recipeSlug = parseRecipeDetailSlug(pathname, searchParams);
   const personalRecipeId = parsePersonalRecipeId(searchParams);
-  const recipe = useCurrentCatalogueMeal(recipeSlug);
+  const recipe = useRecipeHeader(pathname, searchParams);
   const isRecipeDetail =
     isRecipeDetailPath(pathname) &&
     (recipeSlug !== null || personalRecipeId !== null);

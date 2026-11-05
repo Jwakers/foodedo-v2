@@ -89,3 +89,25 @@ test("hydrated schema preserves the server canonical and resolves image URLs", (
     image: "https://preview.example/photo.jpg",
   });
 });
+
+test("social previews use a compact recipe-specific JPEG while schema keeps the original photo", () => {
+  const withImage = { ...recipe, imageSrc: "https://images.example/large.png" };
+  const metadata = recipeMetadata(withImage);
+  expect(metadata.openGraph).toMatchObject({
+    images: [
+      {
+        url: "https://www.foodedo.com/recipes/one-pot-dinner/social-image",
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: recipe.title,
+      },
+    ],
+  });
+  expect(metadata.twitter).toMatchObject({
+    card: "summary_large_image",
+    images: ["https://www.foodedo.com/recipes/one-pot-dinner/social-image"],
+  });
+  expect(recipeStructuredData(withImage).image).toBe(withImage.imageSrc);
+  expect(recipeMetadata(recipe).openGraph).toMatchObject({ images: undefined });
+});

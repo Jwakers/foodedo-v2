@@ -8,8 +8,10 @@ import { useCatalogueMeal, useCurrentCatalogueMeal } from "./use-catalogue";
 import { usePersonalRecipe } from "./use-personal-recipe";
 
 /** Detail and Cook share identity/revision selection, not their presentation. */
-export function useRecipeSource(searchParams: Pick<URLSearchParams, "get">) {
-  const slug = searchParams.get("slug")?.trim() || null;
+export function useRecipeSource(
+  searchParams: Pick<URLSearchParams, "get">,
+  slug = searchParams.get("slug")?.trim() || null,
+) {
   const personalRecipeId = parsePersonalRecipeId(searchParams);
   const reference = parseRecipeCatalogueReference(searchParams);
   const pinnedMeal = useCatalogueMeal(

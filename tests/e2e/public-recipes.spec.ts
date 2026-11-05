@@ -229,3 +229,26 @@ test("mobile reading and Start cooking retain the displayed revision and selecte
   );
   expect(url.searchParams.get("servings")).toBe(expectedServings);
 });
+
+test("recipe sharing serves a compact JPEG through the Open Graph image URL", async ({
+  request,
+}) => {
+  const response = await request.get(recipePath, {
+    headers: { "User-Agent": "WhatsApp/2.0" },
+  });
+  const html = await response.text();
+  const imagePath = `${recipePath}/social-image`;
+  expect(html).toContain(`property="og:image" content="${origin}${imagePath}"`);
+  expect(html).toContain('property="og:image:width" content="1200"');
+  expect(html).toContain('property="og:image:height" content="630"');
+  const image = await request.get(imagePath);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toBe("image/jpeg");
+  const body = await image.body();
+  expect(body[0]).toBe(0xff);
+  expect(body[1]).toBe(0xd8);
+  expect(body.byteLength).toBeLessThan(300_000);
+  expect(
+    (await request.get("/recipes/no-such-recipe/social-image")).status(),
+  ).toBe(404);
+});

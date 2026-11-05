@@ -19,6 +19,7 @@ export function recipeMetadata(recipe: CatalogueMeal): Metadata {
   const title = `${formatRecipeHeading(recipe.title)} | Foodedo`;
   const description = recipeDescription(recipe);
   const url = siteUrl(publicRecipePath(recipe.slug));
+  const imageUrl = recipe.imageSrc ? `${url}/social-image` : undefined;
   return {
     title,
     description,
@@ -30,10 +31,13 @@ export function recipeMetadata(recipe: CatalogueMeal): Metadata {
       siteName: "Foodedo",
       locale: "en_GB",
       type: "article",
-      images: recipe.imageSrc
+      images: imageUrl
         ? [
             {
-              url: new URL(recipe.imageSrc, url).toString(),
+              url: imageUrl,
+              width: 1200,
+              height: 630,
+              type: "image/jpeg",
               alt: formatRecipeHeading(recipe.title),
             },
           ]
@@ -43,9 +47,7 @@ export function recipeMetadata(recipe: CatalogueMeal): Metadata {
       card: recipe.imageSrc ? "summary_large_image" : "summary",
       title,
       description,
-      images: recipe.imageSrc
-        ? [new URL(recipe.imageSrc, url).toString()]
-        : undefined,
+      images: imageUrl ? [imageUrl] : undefined,
     },
   };
 }
