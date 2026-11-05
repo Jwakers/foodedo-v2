@@ -8,7 +8,8 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const recipe = await getPublicRecipe((await params).slug);
+  // Keep the source lookup on the same lifetime so it cannot shorten image ISR.
+  const recipe = await getPublicRecipe((await params).slug, 2_592_000);
   if (!recipe?.imageSrc) return new Response(null, { status: 404 });
 
   const source = await fetch(recipe.imageSrc, {
@@ -24,7 +25,7 @@ export async function GET(
   return new Response(new Uint8Array(image), {
     headers: {
       "Content-Type": "image/jpeg",
-      "Cache-Control": "public, max-age=86400",
+      "Cache-Control": "public, max-age=2592000",
     },
   });
 }

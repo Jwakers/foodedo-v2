@@ -53,7 +53,10 @@ export const getPublishedRecipes = cache(
 );
 
 export const getPublicRecipe = cache(
-  async (slug: string): Promise<CatalogueMeal | null> => {
+  async (
+    slug: string,
+    revalidateSeconds = recipeRevalidateSeconds,
+  ): Promise<CatalogueMeal | null> => {
     if (slug.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
       return null;
     const url = deploymentUrl();
@@ -65,8 +68,14 @@ export const getPublicRecipe = cache(
           slug: recipeSlug,
         });
       },
-      ["public-recipe-detail-v1", url],
-      { revalidate: recipeRevalidateSeconds },
+      [
+        "public-recipe-detail-v1",
+        url,
+        ...(revalidateSeconds === recipeRevalidateSeconds
+          ? []
+          : [String(revalidateSeconds)]),
+      ],
+      { revalidate: revalidateSeconds },
     )(slug);
   },
 );

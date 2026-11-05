@@ -244,6 +244,7 @@ test("recipe sharing serves a compact JPEG through the Open Graph image URL", as
   const image = await request.get(imagePath);
   expect(image.status()).toBe(200);
   expect(image.headers()["content-type"]).toBe("image/jpeg");
+  expect(image.headers()["cache-control"]).toContain("max-age=2592000");
   const body = await image.body();
   expect(body[0]).toBe(0xff);
   expect(body[1]).toBe(0xd8);
