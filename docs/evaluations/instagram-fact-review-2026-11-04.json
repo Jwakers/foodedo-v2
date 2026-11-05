@@ -1,0 +1,357 @@
+{
+  "evaluatedAt": "2026-11-04",
+  "normalizationVersion": 15,
+  "scope": "Two focused Instagram checks, followed by one explicitly publisher-only recipe diagnostic. No recipe writes. Publisher-only success is not an Instagram acquisition success.",
+  "rawInstagramSummary": {
+    "provider": "apify",
+    "scope": "acquisition + shared normalization, no recipe writes",
+    "distinctPosts": 2,
+    "distinctSupportedPosts": 2,
+    "attempts": 2,
+    "supportedAttempts": 2,
+    "acquisitionSuccessRate": 0.5,
+    "usableRecipeSuccessRate": 0.5,
+    "p95AcquisitionMs": 40583,
+    "harnessFailures": 0,
+    "negativeRecipeFailures": 0,
+    "qualified": false
+  },
+  "instagramAttempts": [
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": false,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 41761,
+      "acquisitionMs": 40583,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 49858,
+      "acquisitionMs": 19051,
+      "normalizationOutcome": "usable",
+      "totalMs": 47600,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "1 head",
+              "name": "small head cauliflower",
+              "quantity": "1",
+              "unit": "head"
+            }
+          ],
+          "expectedAmounts": ["1", "1 head", "1 small head"],
+          "name": "cauliflower"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "gochujang paste",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "gochujang"
+        }
+      ],
+      "observedIngredients": [
+        {
+          "amountText": "1 head",
+          "name": "small head cauliflower",
+          "quantity": "1",
+          "unit": "head"
+        },
+        {
+          "amountText": "1 cup",
+          "name": "all-purpose flour",
+          "quantity": "1",
+          "unit": "cup"
+        },
+        {
+          "amountText": "1 cup",
+          "name": "almond milk",
+          "quantity": "1",
+          "unit": "cup"
+        },
+        {
+          "amountText": "1 tsp",
+          "name": "garlic powder",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "0.5 tsp",
+          "name": "salt",
+          "quantity": "0.5",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "1 cup",
+          "name": "breadcrumbs",
+          "quantity": "1",
+          "unit": "cup"
+        },
+        {
+          "amountText": "1 clove",
+          "name": "garlic",
+          "quantity": "1",
+          "unit": "clove"
+        },
+        {
+          "amountText": "1 tsp",
+          "name": "fresh ginger",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "0.25 cup",
+          "name": "soy sauce",
+          "quantity": "0.25",
+          "unit": "cup"
+        },
+        {
+          "amountText": "1 tbsp",
+          "name": "maple syrup",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1 tbsp",
+          "name": "sesame oil",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1 tbsp",
+          "name": "rice vinegar",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "2 tbsp",
+          "name": "gochujang paste",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1 tbsp",
+          "name": "sriracha",
+          "quantity": "1",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1 tsp",
+          "name": "sesame seeds",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "2 tbsp",
+          "name": "green onions",
+          "quantity": "2",
+          "unit": "tbsp"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.05988399999999999,
+      "missingFactCount": 0
+    }
+  ],
+  "publisherDiagnostic": {
+    "acquired": true,
+    "acquisitionMode": "publisher_diagnostic",
+    "extractor": "html",
+    "latencyMs": 2482,
+    "missingFragments": [],
+    "normalization": {
+      "blockingIssues": 0,
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "ginger",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "ginger"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tsp",
+              "name": "cornflour",
+              "quantity": "2",
+              "unit": "tsp"
+            }
+          ],
+          "expectedAmounts": ["2 tsp"],
+          "name": "corn starch"
+        }
+      ],
+      "ingredients": 19,
+      "latencyMs": 59568,
+      "missingFacts": [],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.14875300000000002,
+      "observedIngredients": [
+        {
+          "amountText": "454 g",
+          "name": "soft tofu",
+          "quantity": "454",
+          "unit": "g"
+        },
+        {
+          "amountText": "3 tbsp",
+          "name": "neutral cooking oil",
+          "quantity": "3",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "2 tbsp",
+          "name": "ginger",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "2 tbsp",
+          "name": "garlic",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "6",
+          "name": "dried chillies",
+          "quantity": "6",
+          "unit": null
+        },
+        {
+          "amountText": "3 tsp",
+          "name": "ground Sichuan peppercorns",
+          "quantity": "3",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "170 g",
+          "name": "plant-based ground alternative",
+          "quantity": "170",
+          "unit": "g"
+        },
+        {
+          "amountText": "1.5 tbsp",
+          "name": "doubanjiang or Chinese spicy broad bean paste",
+          "quantity": "1.5",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1 cup",
+          "name": "vegetable broth or water",
+          "quantity": "1",
+          "unit": "cup"
+        },
+        {
+          "amountText": "1 tsp",
+          "name": "sugar",
+          "quantity": "1",
+          "unit": "tsp"
+        },
+        {
+          "amountText": "0.5 tbsp",
+          "name": "soy sauce",
+          "quantity": "0.5",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "1–2 tbsp",
+          "name": "homemade chilli oil or red chilli oil of choice",
+          "quantity": "1–2",
+          "unit": "tbsp"
+        },
+        {
+          "amountText": "0.25 cup",
+          "name": "water",
+          "quantity": "0.25",
+          "unit": "cup"
+        },
+        {
+          "amountText": "2 tsp",
+          "name": "cornflour",
+          "quantity": "2",
+          "unit": "tsp"
+        },
+        {
+          "amountText": null,
+          "name": "green onions or scallions",
+          "quantity": null,
+          "unit": null
+        },
+        {
+          "amountText": null,
+          "name": "homemade chilli oil or red chilli oil of choice",
+          "quantity": null,
+          "unit": null
+        },
+        {
+          "amountText": null,
+          "name": "toasted sesame oil",
+          "quantity": null,
+          "unit": null
+        },
+        {
+          "amountText": null,
+          "name": "ground Sichuan pepper",
+          "quantity": null,
+          "unit": null
+        },
+        {
+          "amountText": null,
+          "name": "steamed rice",
+          "quantity": null,
+          "unit": null
+        }
+      ],
+      "outcome": "usable",
+      "steps": 10,
+      "usable": true,
+      "verified": true
+    },
+    "sourceUrl": "https://thefoodietakesflight.com/mapo-tofu-vegan/",
+    "textCharacters": 13925
+  },
+  "findings": [
+    {
+      "case": "DB1gm_2oVO2",
+      "result": "The independently authored 1 small head cauliflower is preserved as quantity 1, unit head. Both the earlier observed facts and the focused retest confirm the quantity. The original scalar-only oracle was incomplete."
+    },
+    {
+      "case": "DBEq4G9Si8D",
+      "result": "The additional Instagram acquisition timed out and remains a failure. The separate protected publisher diagnostic returned a usable recipe preserving 2 tsp cornflour, satisfying the source 2 tsp corn starch under the explicit UK-naming policy. This verifies the name equivalence; it does not retroactively prove the exact original generated ingredient list, which was not retained."
+    }
+  ],
+  "budgetReconciliation": {
+    "providerAccountRunsToday": 196,
+    "providerAccountReportedCostUsd": 0.4887,
+    "providerRunningRuns": 0,
+    "initialAuditModelReservationUpperUsd": 11.2,
+    "followupModelUsageUpperEstimateUsd": 1.70362775,
+    "focusedInstagramModelUsageUpperEstimateUsd": 0.05988399999999999,
+    "publisherDiagnosticModelUsageUpperEstimateUsd": 0.14875300000000002,
+    "note": "Provider total covers account runs today, including earlier tests. Model figures use captured conservative rates, not invoices; the original audit uses reservation ceilings because per-call usage was not retained. Combined conservative accounting remains below the $20 pilot budget."
+  }
+}

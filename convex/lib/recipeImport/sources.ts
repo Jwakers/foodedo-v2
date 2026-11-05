@@ -1,34 +1,32 @@
 "use node";
 
-import {
-  extractTextCandidate,
-  extractUrlCandidate,
-  type RecipeSourceCandidate,
-} from "./source";
+import { extractTextCandidate, extractUrlCandidate } from "./source";
 import { maybeAcquireYouTubeSource } from "./youtube";
+import { socialImportPlatform } from "../../../src/lib/domain/social-import";
+import {
+  acquireInstagramSource,
+  type InstagramAcquisitionSummary,
+} from "./instagram";
 
 export type RecipeSourceInput =
-  { type: "url"; url: string } | { type: "text"; text: string };
+  | { type: "url"; url: string; sharedText?: string }
+  | { type: "text"; text: string };
 
-/** Future rendered HTML/transcript adapters produce evidence, never a saved recipe. */
-export interface RecipeSourceAdapter<Input> {
-  acquire(input: Input): Promise<RecipeSourceCandidate>;
-}
-export type RenderedPageAdapter = RecipeSourceAdapter<{
-  url: string;
-  deadline: number;
-}>;
-
-export const urlRecipeSource: RecipeSourceAdapter<{ url: string }> = {
-  acquire: ({ url }) => extractUrlCandidate(url),
-};
-export const pastedRecipeSource: RecipeSourceAdapter<{ text: string }> = {
-  acquire: async ({ text }) => extractTextCandidate(text),
-};
-
-export async function acquireRecipeSource(input: RecipeSourceInput) {
-  if (input.type === "text") return pastedRecipeSource.acquire(input);
+export async function acquireRecipeSource(
+  input: RecipeSourceInput,
+  options?: {
+    onRunStarted?: (runId: string) => Promise<void>;
+    onAcquired?: (summary: InstagramAcquisitionSummary) => Promise<void>;
+  },
+) {
+  if (input.type === "text") return extractTextCandidate(input.text);
+  if (socialImportPlatform(input.url) === "instagram") {
+    return acquireInstagramSource(input.url, input.sharedText, {
+      deadline: Date.now() + 45_000,
+      ...options,
+    });
+  }
   const youTubeCandidate = await maybeAcquireYouTubeSource(input.url);
   if (youTubeCandidate) return youTubeCandidate;
-  return urlRecipeSource.acquire(input);
+  return extractUrlCandidate(input.url);
 }

@@ -116,6 +116,7 @@ export const importOutputSchema = z.object({
       issues: z.array(importIssueSchema).max(30),
     }),
     z.object({ status: z.literal("no_recipe") }),
+    z.object({ status: z.literal("video_only_unsupported") }),
   ]),
 });
 
@@ -246,6 +247,7 @@ export type RecipeImportModelTelemetry = {
 export function createGatewayRecipeImportModelClient(
   onTelemetry?: (telemetry: RecipeImportModelTelemetry) => void,
   run: typeof generateText = generateText,
+  limits?: { maxOutputTokens: number },
 ): RecipeImportModelClient {
   return {
     async generate<T>({
@@ -266,6 +268,7 @@ export function createGatewayRecipeImportModelClient(
         result = await run({
           model: primaryModel,
           maxRetries: 0,
+          ...(limits ? { maxOutputTokens: limits.maxOutputTokens } : {}),
           abortSignal: AbortSignal.timeout(
             Math.max(1, (deadline ?? Date.now() + 90_000) - Date.now()),
           ),

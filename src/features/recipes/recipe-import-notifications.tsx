@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
+import { parsePersonalRecipeId } from "@/lib/routing/recipes";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import {
   acknowledgeImportNotification,
@@ -20,12 +21,20 @@ import {
 export function RecipeImportNotifications() {
   const { isAuthenticated, userId } = useFoodedoAuth();
   return isAuthenticated && userId ? (
-    <OwnerImportNotifications key={userId} userId={userId} />
+    <Suspense fallback={null}>
+      <OwnerImportNotifications key={userId} userId={userId} />
+    </Suspense>
   ) : null;
 }
 
 function OwnerImportNotifications({ userId }: { userId: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const viewedRecipeId =
+    pathname === "/recipes/view" || pathname === "/recipes/cook"
+      ? parsePersonalRecipeId(searchParams)
+      : null;
   const jobs = useQuery(api.recipeImports.notificationJobs, {});
   const ledger = useRef<ImportNotificationLedger | null>(null);
   const shown = useRef(new Map<string, string>());
@@ -41,13 +50,7 @@ function OwnerImportNotifications({ userId }: { userId: string }) {
         continue;
       }
       const notification = importNotification(job);
-      if (
-        !notification ||
-        !shouldNotifyImport(job, ledger.current) ||
-        shown.current.get(toastId) === notification.key
-      )
-        continue;
-      shown.current.set(toastId, notification.key);
+      if (!notification) continue;
       const acknowledge = () => {
         ledger.current = acknowledgeImportNotification(
           ledger.current!,
@@ -55,6 +58,24 @@ function OwnerImportNotifications({ userId }: { userId: string }) {
         );
         saveImportNotifications(userId, ledger.current);
       };
+      // Arriving independently also consumes the ready notification. Persist
+      // that acknowledgement so it stays dismissed after leaving or reloading.
+      if (
+        (job.status === "succeeded" || job.status === "needs_review") &&
+        job.resultRecipeId === viewedRecipeId
+      ) {
+        if (!ledger.current.acknowledged.includes(notification.key))
+          acknowledge();
+        shown.current.delete(toastId);
+        toast.dismiss(toastId);
+        continue;
+      }
+      if (
+        !shouldNotifyImport(job, ledger.current) ||
+        shown.current.get(toastId) === notification.key
+      )
+        continue;
+      shown.current.set(toastId, notification.key);
       toast(notification.title, {
         id: toastId,
         duration: Infinity,
@@ -71,7 +92,7 @@ function OwnerImportNotifications({ userId }: { userId: string }) {
         onDismiss: acknowledge,
       });
     }
-  }, [jobs, router, userId]);
+  }, [jobs, router, userId, viewedRecipeId]);
 
   useEffect(() => {
     const notifications = shown.current;

@@ -1,0 +1,922 @@
+{
+  "evaluatedAt": "2026-11-04",
+  "normalizationVersion": 15,
+  "stage": "All supported sources after hardening, plus pancake partial-recipe regression",
+  "scope": "One new round; 20 supported sources plus one partial source; no recipe writes; not a full repeat of the 40-case qualification corpus",
+  "budgetReservationUsd": 7.9,
+  "rawSummary": {
+    "provider": "apify",
+    "scope": "acquisition + shared normalization, no recipe writes",
+    "distinctPosts": 21,
+    "distinctSupportedPosts": 20,
+    "attempts": 21,
+    "supportedAttempts": 20,
+    "acquisitionSuccessRate": 1,
+    "usableRecipeSuccessRate": 0.9,
+    "p95AcquisitionMs": 34789,
+    "harnessFailures": 0,
+    "negativeRecipeFailures": 0,
+    "qualified": false
+  },
+  "verificationReviews": [
+    {
+      "case": "DB1gm_2oVO2",
+      "originalAcceptedAmounts": ["1"],
+      "actualAmount": "1 head",
+      "reviewedAcceptedAmounts": ["1", "1 head", "1 small head"],
+      "evidence": "Independently archived source specifies 1 small head cauliflower. Diagnostic quantity=1 and unit=head preserve that source quantity.",
+      "reviewedRecipePassed": true
+    },
+    {
+      "case": "DBEq4G9Si8D",
+      "status": "Source-backed UK name equivalence verified by separate publisher diagnostic: 2 tsp cornflour. Original raw missing-name-match score is retained, not silently regraded. Additional Instagram retry timed out.",
+      "evidenceReport": "instagram-fact-review-2026-11-04.json",
+      "freshPublisherVerificationPassed": true,
+      "originalRecipeRegraded": false
+    }
+  ],
+  "results": [
+    {
+      "id": "DUx8T2KDRG-",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 43725,
+      "acquisitionMs": 3595,
+      "normalizationOutcome": "usable",
+      "totalMs": 40891,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "300 g",
+              "name": "red lentils",
+              "quantity": "300",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["300 g"],
+          "name": "lentil"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "200 ml",
+              "name": "coconut milk",
+              "quantity": "200",
+              "unit": "ml"
+            }
+          ],
+          "expectedAmounts": ["200 ml"],
+          "name": "coconut milk"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06774075000000002,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DQFu9VuEftI",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 46561,
+      "acquisitionMs": 18029,
+      "normalizationOutcome": "usable",
+      "totalMs": 44988,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 cup",
+              "name": "almond milk",
+              "quantity": "2",
+              "unit": "cup"
+            }
+          ],
+          "expectedAmounts": ["2 cup"],
+          "name": "almond milk"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 cup",
+              "name": "rolled oats",
+              "quantity": "2",
+              "unit": "cup"
+            }
+          ],
+          "expectedAmounts": ["2 cup"],
+          "name": "oat"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.0561275,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 52630,
+      "acquisitionMs": 11452,
+      "normalizationOutcome": "usable",
+      "totalMs": 48977,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "30 g",
+              "name": "wheat flour, wholewheat flour, rye flour or buckwheat flour",
+              "quantity": "30",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["30 g"],
+          "name": "flour"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "30 ml",
+              "name": "filtered water",
+              "quantity": "30",
+              "unit": "ml"
+            }
+          ],
+          "expectedAmounts": ["30 ml"],
+          "name": "water"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06670400000000001,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 66534,
+      "acquisitionMs": 28395,
+      "normalizationOutcome": "usable",
+      "totalMs": 63407,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "100 g",
+              "name": "caster sugar",
+              "quantity": "100",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["100 g"],
+          "name": "caster sugar"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "150 g",
+              "name": "flour",
+              "quantity": "150",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["150 g"],
+          "name": "flour"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06491374999999999,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 47074,
+      "acquisitionMs": 14543,
+      "normalizationOutcome": "usable",
+      "totalMs": 45789,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "600 g",
+              "name": "sweet potatoes",
+              "quantity": "600",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["600 g"],
+          "name": "sweet potato"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "400 ml",
+              "name": "organic coconut milk",
+              "quantity": "400",
+              "unit": "ml"
+            }
+          ],
+          "expectedAmounts": ["400 ml"],
+          "name": "coconut milk"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.05624575000000001,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 48385,
+      "acquisitionMs": 13664,
+      "normalizationOutcome": "usable",
+      "totalMs": 47309,
+      "missingFacts": ["ingredient:cauliflower"],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "1 head",
+              "name": "small cauliflower",
+              "quantity": "1",
+              "unit": "head"
+            }
+          ],
+          "expectedAmounts": ["1"],
+          "name": "cauliflower"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "gochujang paste",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "gochujang"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.0650375,
+      "missingFactCount": 1
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 43315,
+      "acquisitionMs": 7425,
+      "normalizationOutcome": "usable",
+      "totalMs": 42005,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "4 tbsp",
+              "name": "Thai red curry paste",
+              "quantity": "4",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["4 tbsp"],
+          "name": "curry paste"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "1",
+              "name": "yellow onion",
+              "quantity": "1",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["1"],
+          "name": "onion"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06775175,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 56174,
+      "acquisitionMs": 20213,
+      "normalizationOutcome": "usable",
+      "totalMs": 55030,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "3 clove",
+              "name": "garlic",
+              "quantity": "3",
+              "unit": "clove"
+            }
+          ],
+          "expectedAmounts": ["3", "3 cloves"],
+          "name": "garlic"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tsp",
+              "name": "chilli oil",
+              "quantity": "2",
+              "unit": "tsp"
+            }
+          ],
+          "expectedAmounts": ["2 tsp"],
+          "name": "chili oil"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.11265649999999999,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 88221,
+      "acquisitionMs": 33017,
+      "normalizationOutcome": "usable",
+      "totalMs": 86872,
+      "missingFacts": ["ingredient:corn starch"],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "ginger",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "ginger"
+        },
+        {
+          "actual": [],
+          "expectedAmounts": ["2 tsp"],
+          "name": "corn starch"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.14095949999999996,
+      "missingFactCount": 1
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 77068,
+      "acquisitionMs": 35225,
+      "normalizationOutcome": "usable",
+      "totalMs": 75426,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "200 g",
+              "name": "dry chickpeas",
+              "quantity": "200",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["200 g"],
+          "name": "chickpea"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "400–500 ml",
+              "name": "water",
+              "quantity": "400–500",
+              "unit": "ml"
+            }
+          ],
+          "expectedAmounts": ["400-500 ml", "400–500 ml"],
+          "name": "water"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.08198849999999999,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 47618,
+      "acquisitionMs": 16523,
+      "normalizationOutcome": "draft",
+      "totalMs": 46576,
+      "missingFacts": [],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.058352249999999994,
+      "missingFactCount": 0
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 92129,
+      "acquisitionMs": 34789,
+      "normalizationOutcome": "usable",
+      "totalMs": 90812,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "3 cup",
+              "name": "all-purpose flour",
+              "quantity": "3",
+              "unit": "cup"
+            }
+          ],
+          "expectedAmounts": ["3 cup"],
+          "name": "flour"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tsp",
+              "name": "instant dry yeast",
+              "quantity": "2",
+              "unit": "tsp"
+            }
+          ],
+          "expectedAmounts": ["2 tsp"],
+          "name": "yeast"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.15243249999999997,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DR0B05xj30K",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 47509,
+      "acquisitionMs": 12179,
+      "normalizationOutcome": "usable",
+      "totalMs": 46267,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "1",
+              "name": "medium yellow onion",
+              "quantity": "1",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["1"],
+          "name": "onion"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2",
+              "name": "large eggs",
+              "quantity": "2",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["2"],
+          "name": "egg"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06932474999999999,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 78538,
+      "acquisitionMs": 24293,
+      "normalizationOutcome": "usable",
+      "totalMs": 77362,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 clove",
+              "name": "black garlic",
+              "quantity": "2",
+              "unit": "clove"
+            },
+            {
+              "amountText": null,
+              "name": "black garlic miso sauce",
+              "quantity": null,
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["2", "2 cloves"],
+          "name": "black garlic"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "1 tbsp",
+              "name": "vegan mayonnaise",
+              "quantity": "1",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["1 tbsp"],
+          "name": "mayo"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.15771800000000002,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DDXV600IEdj",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 50906,
+      "acquisitionMs": 14750,
+      "normalizationOutcome": "usable",
+      "totalMs": 49598,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "1000 g",
+              "name": "lion’s mane mushrooms",
+              "quantity": "1000",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["1000 g"],
+          "name": "mane"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "4 tbsp",
+              "name": "soy sauce or tamari",
+              "quantity": "4",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["4 tbsp"],
+          "name": "soy sauce"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.06388525,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DBEQxIwo_BF",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 60216,
+      "acquisitionMs": 15178,
+      "normalizationOutcome": "usable",
+      "totalMs": 59092,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "red curry paste",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "curry paste"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2",
+              "name": "carrots",
+              "quantity": "2",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["2"],
+          "name": "carrot"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.08180699999999999,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DACCkaqSiJd",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 42230,
+      "acquisitionMs": 16674,
+      "normalizationOutcome": "usable",
+      "totalMs": 40563,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "0.5 cup",
+              "name": "peanut butter",
+              "quantity": "0.5",
+              "unit": "cup"
+            },
+            {
+              "amountText": "0.5 cup",
+              "name": "chocolate peanut butter protein powder",
+              "quantity": "0.5",
+              "unit": "cup"
+            }
+          ],
+          "expectedAmounts": ["0.5 cup"],
+          "name": "peanut butter"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "0.5 cup",
+              "name": "maple syrup",
+              "quantity": "0.5",
+              "unit": "cup"
+            }
+          ],
+          "expectedAmounts": ["0.5 cup"],
+          "name": "maple syrup"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.05442524999999998,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_s3NSBoXOc",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 57462,
+      "acquisitionMs": 14430,
+      "normalizationOutcome": "usable",
+      "totalMs": 56231,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "soy sauce",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "soy sauce"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 tbsp",
+              "name": "peanut butter",
+              "quantity": "2",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["2 tbsp"],
+          "name": "peanut butter"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.08969950000000002,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_ndl1pIXdY",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 38470,
+      "acquisitionMs": 14578,
+      "normalizationOutcome": "usable",
+      "totalMs": 37093,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "1",
+              "name": "sweet potato",
+              "quantity": "1",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["1"],
+          "name": "sweet potato"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "0.5 tbsp",
+              "name": "olive oil",
+              "quantity": "0.5",
+              "unit": "tbsp"
+            }
+          ],
+          "expectedAmounts": ["0.5 tbsp"],
+          "name": "olive oil"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.046266,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C-2wMbtKL8K",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 52665,
+      "acquisitionMs": 15288,
+      "normalizationOutcome": "usable",
+      "totalMs": 51512,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "2",
+              "name": "shallots",
+              "quantity": "2",
+              "unit": null
+            }
+          ],
+          "expectedAmounts": ["2"],
+          "name": "shallot"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "2 can",
+              "name": "butter beans",
+              "quantity": "2",
+              "unit": "can"
+            }
+          ],
+          "expectedAmounts": ["2 can"],
+          "name": "butter bean"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.0678755,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C9Hu7kzt8aH",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 56643,
+      "acquisitionMs": 7317,
+      "normalizationOutcome": "usable",
+      "totalMs": 55371,
+      "missingFacts": [],
+      "factDiagnostics": [
+        {
+          "actual": [
+            {
+              "amountText": "250 g",
+              "name": "penne pasta",
+              "quantity": "250",
+              "unit": "g"
+            }
+          ],
+          "expectedAmounts": ["250 g"],
+          "name": "penne"
+        },
+        {
+          "actual": [
+            {
+              "amountText": "100 ml",
+              "name": "coconut milk",
+              "quantity": "100",
+              "unit": "ml"
+            }
+          ],
+          "expectedAmounts": ["100 ml", "350 ml"],
+          "name": "coconut milk"
+        }
+      ],
+      "modelCalls": 2,
+      "modelCostUpperEstimateUsd": 0.08171624999999999,
+      "missingFactCount": 0
+    }
+  ]
+}

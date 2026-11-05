@@ -18,6 +18,8 @@ import { validateDownloadedRecipeImage } from "./images";
 import { type RecipeSourceCandidate } from "./source";
 import { organiseCandidate } from "./extraction";
 import { acquireRecipeSource } from "./sources";
+import { socialImportPlatform } from "../../../src/lib/domain/social-import";
+import { InstagramAcquisitionFailure } from "./instagramProvider";
 import { createGatewayRecipeImportModelClient } from "./models";
 export {
   extractHtmlCandidate,
@@ -57,10 +59,35 @@ export async function processImportHandler(
       if (!payload.sourceUrl) {
         throw new ImportFailure("invalid_url", "Recipe URL is missing.");
       }
-      candidate = await acquireRecipeSource({
-        type: "url",
-        url: payload.sourceUrl,
-      });
+      candidate = await acquireRecipeSource(
+        { type: "url", url: payload.sourceUrl, sharedText: payload.sharedText },
+        {
+          onRunStarted: async (runId) => {
+            const accepted = await ctx.runMutation(
+              internal.recipeImports.recordAcquisition,
+              { importId, attempt, runId },
+            );
+            if (!accepted)
+              throw new ImportFailure(
+                "timed_out",
+                "Import attempt is no longer active.",
+              );
+          },
+          onAcquired: async ({ platform, ...summary }) => {
+            console.info("recipe_import_source_acquired", {
+              importId,
+              attempt,
+              platform,
+              ...summary,
+            });
+            await ctx.runMutation(internal.recipeImports.recordAcquisition, {
+              importId,
+              attempt,
+              summary,
+            });
+          },
+        },
+      );
     } else {
       if (!payload.inputText) {
         throw new ImportFailure("no_recipe", "Recipe text is missing.");
@@ -78,6 +105,13 @@ export async function processImportHandler(
         candidate.sourceImageUrls = payload.sourceImageUrls;
     }
 
+    if (candidate.sourceUrl) {
+      const active = await ctx.runMutation(
+        internal.recipeImports.recordAcquisition,
+        { importId, attempt, resolvedUrl: candidate.sourceUrl },
+      );
+      if (!active) return null;
+    }
     sourceMs = Date.now() - startedAt;
     await ctx.runMutation(internal.recipeImports.setPhase, {
       importId,
@@ -97,7 +131,9 @@ export async function processImportHandler(
     const outcome = await organiseCandidate(
       candidate,
       modelClient,
-      startedAt + 110_000,
+      socialImportPlatform(payload.sourceUrl) === "instagram"
+        ? Math.min(startedAt + 165_000, normalizationStartedAt + 110_000)
+        : startedAt + 110_000,
     );
     normalizationMs = Date.now() - normalizationStartedAt;
     const persistenceStartedAt = Date.now();
@@ -195,6 +231,17 @@ export async function processImportHandler(
       ),
     });
   } catch (error) {
+    if (error instanceof InstagramAcquisitionFailure) {
+      await ctx.runMutation(internal.recipeImports.recordAcquisition, {
+        importId,
+        attempt,
+        summary: {
+          provider: "apify",
+          outcome: error.acquisitionOutcome,
+          durationMs: Date.now() - startedAt,
+        },
+      });
+    }
     const failureCode = importFailureCode(error);
     console.error("recipe_import_failed", {
       importId,

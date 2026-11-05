@@ -1,0 +1,366 @@
+{
+  "evaluatedAt": "2026-11-04",
+  "runtime": "Foodedo V2 Convex development",
+  "qualificationScope": "Acquisition only; no AI calls or recipe writes",
+  "caseReview": "Public archived captions and independent publisher recipe pages; current post accessibility is measured by the pilot, not assumed from the archive.",
+  "probeErrorNote": "probe_unavailable is a CLI/transport/parse/60-second harness failure, not proof of a video-only or inaccessible post. Its latency is a harness ceiling, not a measured acquisition duration.",
+  "summary": {
+    "provider": "apify",
+    "supportedSuccessRate": 0.875,
+    "p95Ms": 60000,
+    "qualified": false,
+    "costNote": "Actor caps are configured; reconcile actual provider-account charges before spending beyond the $20 pilot budget."
+  },
+  "results": [
+    {
+      "id": "DQFu9VuEftI",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 8341
+    },
+    {
+      "id": "DQFu9VuEftI",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 9037
+    },
+    {
+      "id": "DUx8T2KDRG-",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 5916
+    },
+    {
+      "id": "DUx8T2KDRG-",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 8563
+    },
+    {
+      "id": "DG5ZyMqphsR",
+      "category": "caption",
+      "repeat": 1,
+      "passed": false,
+      "latencyMs": 39722,
+      "outcome": "invalid_response"
+    },
+    {
+      "id": "DG5ZyMqphsR",
+      "category": "caption",
+      "repeat": 2,
+      "passed": false,
+      "latencyMs": 36806,
+      "outcome": "invalid_response"
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 12725
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 13600
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 21783
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 8216
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 33259
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 8070
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 9065
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 11060
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "category": "caption",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 8373
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "category": "caption",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 20137
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "category": "linked",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 34230
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "category": "linked",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 22852
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 19910
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 17367
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "category": "linked",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 29862
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "category": "linked",
+      "repeat": 2,
+      "passed": false,
+      "latencyMs": 40354,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "category": "linked",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 26018
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "category": "linked",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 20020
+    },
+    {
+      "id": "DU09LToEUhE",
+      "category": "partial",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 3862
+    },
+    {
+      "id": "DU09LToEUhE",
+      "category": "partial",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 3549
+    },
+    {
+      "id": "DSkyy_BEcMO",
+      "category": "partial",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 5323
+    },
+    {
+      "id": "DSkyy_BEcMO",
+      "category": "partial",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 5518
+    },
+    {
+      "id": "DRvFv0Hk8fL",
+      "category": "partial",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 21183
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "category": "partial",
+      "repeat": 1,
+      "passed": false,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "DRvFv0Hk8fL",
+      "category": "partial",
+      "repeat": 2,
+      "passed": false,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "DTavZ1Lkv80",
+      "category": "media_only",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 4645
+    },
+    {
+      "id": "DTavZ1Lkv80",
+      "category": "media_only",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 6109
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "category": "partial",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 15213
+    },
+    {
+      "id": "DTA-S7wjskR",
+      "category": "media_only",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 9429
+    },
+    {
+      "id": "DTA-S7wjskR",
+      "category": "media_only",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 7713
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "category": "media_only",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 16220
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "category": "media_only",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 24483
+    },
+    {
+      "id": "DRPu2DNDbVM",
+      "category": "media_only",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 13893
+    },
+    {
+      "id": "unsupported-profile",
+      "category": "inaccessible",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 1,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-profile",
+      "category": "inaccessible",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-story",
+      "category": "inaccessible",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-story",
+      "category": "inaccessible",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "missing-post-1",
+      "category": "inaccessible",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "DRPu2DNDbVM",
+      "category": "media_only",
+      "repeat": 2,
+      "passed": false,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "missing-post-2",
+      "category": "inaccessible",
+      "repeat": 1,
+      "passed": true,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "missing-post-1",
+      "category": "inaccessible",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 60000,
+      "outcome": "probe_unavailable"
+    },
+    {
+      "id": "missing-post-2",
+      "category": "inaccessible",
+      "repeat": 2,
+      "passed": true,
+      "latencyMs": 39103,
+      "outcome": "invalid_response"
+    }
+  ]
+}

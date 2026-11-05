@@ -1,0 +1,714 @@
+[
+  {
+    "id": "DQFu9VuEftI",
+    "url": "https://instagram.com/p/DQFu9VuEftI",
+    "category": "caption",
+    "expectedFragments": [
+      "2 cups almond milk",
+      "1/2 cup chopped walnuts",
+      "30 min"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/healthygirlkitchen_21-10-2025_2323/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "almond milk",
+          "amounts": ["2 cup"]
+        },
+        {
+          "name": "oat",
+          "amounts": ["2 cup"]
+        }
+      ],
+      "methodFacts": ["bake", "30"]
+    }
+  },
+  {
+    "id": "DUx8T2KDRG-",
+    "url": "https://instagram.com/p/DUx8T2KDRG-",
+    "category": "caption",
+    "expectedFragments": [
+      "300g red lentils",
+      "200ml coconut milk",
+      "simmer gently"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_15-02-2026_1332/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 3,
+      "ingredients": [
+        {
+          "name": "lentil",
+          "amounts": ["300 g"]
+        },
+        {
+          "name": "coconut milk",
+          "amounts": ["200 ml"]
+        }
+      ],
+      "methodFacts": ["simmer"]
+    }
+  },
+  {
+    "id": "DG5ZyMqphsR",
+    "url": "https://instagram.com/p/DG5ZyMqphsR",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/foodypopz_07-03-2025_1145/",
+    "expectedOutcome": "not_found",
+    "evidenceNote": "2026-11-04: explicit Apify not_found results; independent signed-in Instagram navigation displayed page unavailable. Historical caption is retained only as provenance, not current accessibility evidence."
+  },
+  {
+    "id": "DHIzKs7t8rz",
+    "url": "https://instagram.com/p/DHIzKs7t8rz",
+    "category": "caption",
+    "expectedFragments": ["30ml", "30g", "24 horas"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/abeautifulmess.es_13-03-2025_1127/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 2,
+      "minimumSteps": 2,
+      "ingredients": [
+        {
+          "name": "flour",
+          "amounts": ["30 g"],
+          "aliases": ["harina"]
+        },
+        {
+          "name": "water",
+          "amounts": ["30 ml"],
+          "aliases": ["agua"]
+        }
+      ],
+      "methodFacts": ["24"]
+    }
+  },
+  {
+    "id": "DFwrARtyUiv",
+    "url": "https://instagram.com/p/DFwrARtyUiv",
+    "category": "caption",
+    "expectedFragments": ["100g caster sugar", "150g flour", "30-40 mins"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_07-02-2025_0600/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 5,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "caster sugar",
+          "amounts": ["100 g"]
+        },
+        {
+          "name": "flour",
+          "amounts": ["150 g"]
+        }
+      ],
+      "methodFacts": ["bake", "30"]
+    }
+  },
+  {
+    "id": "DFqEfZQtCtu",
+    "url": "https://instagram.com/p/DFqEfZQtCtu",
+    "category": "caption",
+    "expectedFragments": [
+      "600g sweet potatoes",
+      "400ml organic coconut milk",
+      "Freeze for 24 hours"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_04-02-2025_1622/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 5,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "sweet potato",
+          "amounts": ["600 g"]
+        },
+        {
+          "name": "coconut milk",
+          "amounts": ["400 ml"]
+        }
+      ],
+      "methodFacts": ["freeze", "24"]
+    }
+  },
+  {
+    "id": "DB1gm_2oVO2",
+    "url": "https://instagram.com/p/DB1gm_2oVO2",
+    "category": "caption",
+    "expectedFragments": [
+      "1 small head cauliflower",
+      "2 tbsp gochujang paste",
+      "10-15 minutes"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_01-11-2024_1653/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "cauliflower",
+          "amounts": ["1", "1 head", "1 small head"]
+        },
+        {
+          "name": "gochujang",
+          "amounts": ["2 tbsp"]
+        }
+      ],
+      "methodFacts": ["200", "10"]
+    },
+    "verificationReviewNote": "The independently archived source specifies 1 small head cauliflower. The audit accepted only bare 1; the diagnostic returned amountText=1 head, quantity=1, unit=head. These are authored count equivalents, not permission to change the quantity."
+  },
+  {
+    "id": "DA6P3p3IBev",
+    "url": "https://instagram.com/p/DA6P3p3IBev",
+    "category": "caption",
+    "expectedFragments": [
+      "4 Tbsp Thai red curry paste",
+      "1 yellow onion",
+      "15 minutes"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_09-10-2024_1630/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 8,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "curry paste",
+          "amounts": ["4 tbsp"]
+        },
+        {
+          "name": "onion",
+          "amounts": ["1"]
+        }
+      ],
+      "methodFacts": ["simmer", "15"]
+    }
+  },
+  {
+    "id": "C_VsDRvJ6x4",
+    "url": "https://instagram.com/p/C_VsDRvJ6x4",
+    "category": "linked",
+    "expectedFragments": ["3 cloves garlic", "vegan butter", "mushrooms"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_31-08-2024_1508/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 9,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "garlic",
+          "amounts": ["3", "3 cloves"]
+        },
+        {
+          "name": "chili oil",
+          "amounts": ["2 tsp"]
+        }
+      ],
+      "methodFacts": ["foil"],
+      "methodAlternatives": [["350", "180"]]
+    },
+    "verificationReviewNote": "Publisher explicitly supplies both 350 F and 180 C. Accept either authored temperature; the original audit asserted only the Fahrenheit number. Original expectations are retained in the audit snapshot."
+  },
+  {
+    "id": "DBEq4G9Si8D",
+    "url": "https://instagram.com/p/DBEq4G9Si8D",
+    "category": "linked",
+    "expectedFragments": ["soft tofu", "minced ginger", "dried chiles"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_13-10-2024_1741/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 13,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "ginger",
+          "amounts": ["2 tbsp"]
+        },
+        {
+          "name": "corn starch",
+          "amounts": ["2 tsp"],
+          "aliases": ["cornstarch", "cornflour", "corn flour"]
+        }
+      ],
+      "methodFacts": ["tofu"]
+    },
+    "verificationReviewNote": "The source calls for corn starch. The normalization policy explicitly uses UK ingredient names, so accept the British cornflour spelling too; the required 2 tsp quantity remains unchanged. Diagnostic inspection is required before accepting the earlier name-match failure."
+  },
+  {
+    "id": "CY__LnYJmzU",
+    "url": "https://instagram.com/p/CY__LnYJmzU",
+    "category": "linked",
+    "expectedFragments": ["200 g dry chickpeas", "water", "blend"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/veggieanh_21-01-2022_1701/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 2,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "chickpea",
+          "amounts": ["200 g"]
+        },
+        {
+          "name": "water",
+          "amounts": ["400-500 ml", "400–500 ml"]
+        }
+      ],
+      "methodFacts": ["soak", "blend"]
+    }
+  },
+  {
+    "id": "CsL_SBOP7Yp",
+    "url": "https://instagram.com/p/CsL_SBOP7Yp",
+    "category": "linked",
+    "expectedFragments": ["warm soy milk", "sesame oil", "knead"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_13-05-2023_1405/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 6,
+      "ingredients": [
+        {
+          "name": "flour",
+          "amounts": ["3 cup"]
+        },
+        {
+          "name": "yeast",
+          "amounts": ["2 tsp"]
+        }
+      ],
+      "methodFacts": ["knead"]
+    }
+  },
+  {
+    "id": "DU09LToEUhE",
+    "url": "https://instagram.com/p/DU09LToEUhE",
+    "category": "partial",
+    "expectedFragments": ["chickpea", "spinach"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_16-02-2026_1737/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DSkyy_BEcMO",
+    "url": "https://instagram.com/p/DSkyy_BEcMO",
+    "category": "partial",
+    "expectedFragments": ["3/4 cup white jasmine rice", "6 cups water"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_22-12-2025_1756/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DRvFv0Hk8fL",
+    "url": "https://instagram.com/p/DRvFv0Hk8fL",
+    "category": "partial",
+    "expectedFragments": ["nut roast"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_01-12-2025_2126/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DRWT7b2jqH5",
+    "url": "https://instagram.com/p/DRWT7b2jqH5",
+    "category": "partial",
+    "expectedFragments": ["pancake"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_22-11-2025_0641/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DTavZ1Lkv80",
+    "url": "https://instagram.com/p/DTavZ1Lkv80",
+    "category": "media_only",
+    "expectedFragments": ["seasonal produce"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_12-01-2026_1645/",
+    "expectedOutcome": "not_usable"
+  },
+  {
+    "id": "DTA-S7wjskR",
+    "url": "https://instagram.com/p/DTA-S7wjskR",
+    "category": "media_only",
+    "expectedFragments": ["Japanese curry bread"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/okonomikitchen_02-01-2026_1637/",
+    "expectedOutcome": "not_usable"
+  },
+  {
+    "id": "DSFrhwmifp3",
+    "url": "https://instagram.com/p/DSFrhwmifp3",
+    "category": "linked",
+    "expectedFragments": ["black garlic", "miso", "rice"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_10-12-2025_1558/",
+    "evidenceNote": "Caption explicitly writes www.thefoodietakesflight.com/maitake-mushroom-pot-rice-with-black-garlic-miso-sauce. Verified publisher Recipe markup HTTP 200. Previous media-only classification was incorrect.",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 13,
+      "minimumSteps": 6,
+      "ingredients": [
+        {
+          "name": "black garlic",
+          "amounts": ["2", "2 cloves"]
+        },
+        {
+          "name": "mayo",
+          "amounts": ["1 tbsp"]
+        }
+      ],
+      "methodFacts": ["soak"]
+    }
+  },
+  {
+    "id": "DRPu2DNDbVM",
+    "url": "https://instagram.com/p/DRPu2DNDbVM",
+    "category": "media_only",
+    "expectedFragments": ["miso mushroom noodle soup"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/symproveyourlife_19-11-2025_1706/",
+    "expectedOutcome": "not_usable"
+  },
+  {
+    "id": "unsupported-profile",
+    "url": "https://www.instagram.com/foodedo/",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+    "expectedOutcome": "invalid_url"
+  },
+  {
+    "id": "unsupported-story",
+    "url": "https://www.instagram.com/stories/foodedo/12345/",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+    "expectedOutcome": "invalid_url"
+  },
+  {
+    "id": "missing-post-1",
+    "url": "https://www.instagram.com/p/FoodedoMissing000001/",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+    "expectedOutcome": "not_found"
+  },
+  {
+    "id": "missing-post-2",
+    "url": "https://www.instagram.com/reel/FoodedoMissing000002/",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+    "expectedOutcome": "not_found"
+  },
+  {
+    "id": "DTlMUfsEbXV",
+    "url": "https://instagram.com/p/DTlMUfsEbXV",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_16-01-2026_1811/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DK1TKqeimw-",
+    "url": "https://instagram.com/p/DK1TKqeimw-",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/tomseniorfitness_13-06-2025_0738/",
+    "expectedOutcome": "recipe_or_draft",
+    "evidenceNote": "2026-11-04 independent public Instagram browser visit showed the caption and quantities. The two provider timeouts are genuine acquisition failures, not grounds to reclassify the source as inaccessible."
+  },
+  {
+    "id": "DH80SqjRvNX",
+    "url": "https://instagram.com/p/DH80SqjRvNX",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_02-04-2025_1606/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DHZ5EBgyJ-K",
+    "url": "https://instagram.com/p/DHZ5EBgyJ-K",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_20-03-2025_0235/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DR0B05xj30K",
+    "url": "https://instagram.com/p/DR0B05xj30K",
+    "category": "linked",
+    "expectedFragments": ["russet potatoes", "yellow onion", "golden brown"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/carolinagelen_03-12-2025_1926/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 8,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "onion",
+          "amounts": ["1"]
+        },
+        {
+          "name": "egg",
+          "amounts": ["2"]
+        }
+      ],
+      "methodFacts": ["fry", "golden"]
+    }
+  },
+  {
+    "id": "DIB2aSJRYxm",
+    "url": "https://instagram.com/p/DIB2aSJRYxm",
+    "category": "inaccessible",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefeedfeed.vegan_04-04-2025_1500/",
+    "expectedOutcome": "not_found",
+    "evidenceNote": "2026-11-04 post-audit review: Apify twice returned not_found; an independent public Instagram browser visit displayed Post is not available. The original linked_unavailable classification is retained in the immutable audit snapshot; future runs expect explicit not_found."
+  },
+  {
+    "id": "DD7pRv4IexK",
+    "url": "https://instagram.com/p/DD7pRv4IexK",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/gloriacarrion__23-12-2024_1905/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DDXV600IEdj",
+    "url": "https://instagram.com/p/DDXV600IEdj",
+    "category": "caption",
+    "expectedFragments": ["1kg", "4 tbsp soy sauce", "15–20 minutes"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/rachelama__09-12-2024_1650/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 3,
+      "ingredients": [
+        {
+          "name": "mane",
+          "amounts": ["1000 g"]
+        },
+        {
+          "name": "soy sauce",
+          "amounts": ["4 tbsp"]
+        }
+      ],
+      "methodFacts": ["roast", "190"]
+    }
+  },
+  {
+    "id": "DDFPQFeoA_p",
+    "url": "https://instagram.com/p/DDFPQFeoA_p",
+    "category": "partial",
+    "expectedFragments": [],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/nomeatdisco_02-12-2024_1559/",
+    "expectedOutcome": "recipe_or_draft"
+  },
+  {
+    "id": "DBEQxIwo_BF",
+    "url": "https://instagram.com/p/DBEQxIwo_BF",
+    "category": "caption",
+    "expectedFragments": [
+      "2 tbsp Red curry paste",
+      "2 carrots",
+      "form into balls"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_13-10-2024_1355/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 15,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "curry paste",
+          "amounts": ["2 tbsp"]
+        },
+        {
+          "name": "carrot",
+          "amounts": ["2"]
+        }
+      ],
+      "methodFacts": ["fry"]
+    }
+  },
+  {
+    "id": "DACCkaqSiJd",
+    "url": "https://instagram.com/p/DACCkaqSiJd",
+    "category": "caption",
+    "expectedFragments": [
+      "1/2 cup peanut butter",
+      "1/2 cup maple syrup",
+      "25 minutes"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/healthygirlkitchen_17-09-2024_2036/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 10,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "peanut butter",
+          "amounts": ["0.5 cup"]
+        },
+        {
+          "name": "maple syrup",
+          "amounts": ["0.5 cup"]
+        }
+      ],
+      "methodFacts": ["bake", "25"]
+    }
+  },
+  {
+    "id": "C_s3NSBoXOc",
+    "url": "https://instagram.com/p/C_s3NSBoXOc",
+    "category": "caption",
+    "expectedFragments": ["2 tbsp soy sauce", "2 tbsp peanut butter", "simmer"],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/nomeatdisco_09-09-2024_1509/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 15,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "soy sauce",
+          "amounts": ["2 tbsp"]
+        },
+        {
+          "name": "peanut butter",
+          "amounts": ["2 tbsp"]
+        }
+      ],
+      "methodFacts": ["simmer", "lime"]
+    }
+  },
+  {
+    "id": "C_ndl1pIXdY",
+    "url": "https://instagram.com/p/C_ndl1pIXdY",
+    "category": "caption",
+    "expectedFragments": [
+      "1 sweet potato",
+      "0,5 tbsp olive oil",
+      "4-6 minutes"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_07-09-2024_1300/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 6,
+      "minimumSteps": 3,
+      "ingredients": [
+        {
+          "name": "sweet potato",
+          "amounts": ["1"]
+        },
+        {
+          "name": "olive oil",
+          "amounts": ["0.5 tbsp"]
+        }
+      ],
+      "methodFacts": ["microwave"]
+    }
+  },
+  {
+    "id": "C-2wMbtKL8K",
+    "url": "https://instagram.com/p/C-2wMbtKL8K",
+    "category": "caption",
+    "expectedFragments": [
+      "2 shallots",
+      "2 cans butter beans",
+      "Simmer until thick"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_19-08-2024_1502/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 13,
+      "minimumSteps": 4,
+      "ingredients": [
+        {
+          "name": "shallot",
+          "amounts": ["2"]
+        },
+        {
+          "name": "butter bean",
+          "amounts": ["2 can"]
+        }
+      ],
+      "methodFacts": ["simmer"]
+    }
+  },
+  {
+    "id": "C9Hu7kzt8aH",
+    "url": "https://instagram.com/p/C9Hu7kzt8aH",
+    "category": "caption",
+    "expectedFragments": [
+      "250g penne pasta",
+      "100ml coconut milk",
+      "8-10 minutes"
+    ],
+    "reviewed": true,
+    "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_07-07-2024_1207/",
+    "expectedOutcome": "usable",
+    "verification": {
+      "minimumIngredients": 13,
+      "minimumSteps": 5,
+      "ingredients": [
+        {
+          "name": "penne",
+          "amounts": ["250 g"]
+        },
+        {
+          "name": "coconut milk",
+          "amounts": ["100 ml", "350 ml"]
+        }
+      ],
+      "methodFacts": ["simmer", "ackee"]
+    }
+  },
+  {
+    "id": "DZIY8A-iEZm",
+    "url": "https://www.instagram.com/p/DZIY8A-iEZm/",
+    "category": "bio_only",
+    "expectedFragments": ["SCALLOP", "CHORIZO", "link in bio"],
+    "reviewed": true,
+    "evidenceUrl": "https://www.instagram.com/p/DZIY8A-iEZm/",
+    "evidenceNote": "Direct public caption reviewed 2026-11-04: promotional caption, no quantities or method, points to profile bio.",
+    "expectedOutcome": "not_usable"
+  }
+]

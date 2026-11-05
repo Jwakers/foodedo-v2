@@ -1,4 +1,4 @@
-export const RECIPE_NORMALIZATION_VERSION = 14;
+export const RECIPE_NORMALIZATION_VERSION = 15;
 
 export const RECIPE_IMPORT_LIMITS = {
   htmlBytes: 2_000_000,
@@ -12,9 +12,11 @@ export const CURRENT_IMPORT_FAILURE_CODES = [
   "invalid_url",
   "unsafe_url",
   "source_unreachable",
+  "instagram_unavailable",
   "source_blocked",
   "unsupported_content",
   "no_recipe",
+  "video_only_unsupported",
   "incomplete_recipe",
   "unsafe_result",
   "ai_unavailable",

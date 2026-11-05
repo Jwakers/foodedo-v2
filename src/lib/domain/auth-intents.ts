@@ -32,7 +32,13 @@ export type RecipeImportIntentV1 = {
   schemaVersion: typeof RECIPE_IMPORT_INTENT_SCHEMA_VERSION;
   type: "import-recipe";
   clientRequestId: string;
-  source: { type: "url"; url: string } | { type: "text"; text: string };
+  source:
+    | { type: "url"; url: string; sharedText?: string }
+    | {
+        type: "text";
+        text: string;
+        resume?: { importId: string; attempt: number };
+      };
   requestedAt: number;
 };
 
@@ -170,7 +176,20 @@ export function readRecipeImportIntent(
     input.source.url.trim().length > 0 &&
     input.source.url.length <= RECIPE_IMPORT_INPUT_LIMITS.urlCharacters
   ) {
-    source = { type: "url", url: input.source.url.trim() };
+    if (
+      input.source.sharedText !== undefined &&
+      (typeof input.source.sharedText !== "string" ||
+        input.source.sharedText.length >
+          RECIPE_IMPORT_INPUT_LIMITS.textCharacters)
+    )
+      return null;
+    source = {
+      type: "url",
+      url: input.source.url.trim(),
+      ...(typeof input.source.sharedText === "string"
+        ? { sharedText: input.source.sharedText.trim() }
+        : {}),
+    };
   } else if (
     input.source.type === "text" &&
     typeof input.source.text === "string" &&
@@ -178,7 +197,29 @@ export function readRecipeImportIntent(
       RECIPE_IMPORT_INPUT_LIMITS.minimumTextCharacters &&
     input.source.text.length <= RECIPE_IMPORT_INPUT_LIMITS.textCharacters
   ) {
-    source = { type: "text", text: input.source.text.trim() };
+    const resume = input.source.resume;
+    if (
+      resume !== undefined &&
+      (!isRecord(resume) ||
+        typeof resume.importId !== "string" ||
+        !resume.importId ||
+        resume.importId.length > 100 ||
+        !Number.isSafeInteger(resume.attempt) ||
+        Number(resume.attempt) < 1)
+    )
+      return null;
+    source = {
+      type: "text",
+      text: input.source.text.trim(),
+      ...(isRecord(resume)
+        ? {
+            resume: {
+              importId: resume.importId as string,
+              attempt: resume.attempt as number,
+            },
+          }
+        : {}),
+    };
   } else {
     return null;
   }

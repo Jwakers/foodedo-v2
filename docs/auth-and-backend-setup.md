@@ -77,6 +77,8 @@ Import actions execute on Convex even when the app is open at `localhost:3000`. 
 
 Use a dedicated server key restricted to **YouTube Data API v3**. A key restricted to **Websites / HTTP referrers** cannot authenticate Convex's server requests: Google returns `403` with `API_KEY_HTTP_REFERRER_BLOCKED`. Keep existing browser keys unchanged and configure the separate server key only on Convex. The public watch-page fallback succeeding on a developer's machine does not establish that either API access or fallback access works from the Convex runtime; verify a fresh import through the app.
 
+Instagram acquisition requires `APIFY_API_TOKEN` on the intended V2 Convex deployment; there is no separate enable switch. A missing token produces an explicit unavailable result. See [Instagram import](./instagram-import.md) for supported content, safeguards, evaluation and iOS App Group provisioning. No extraction-provider credentials belong in the browser or extension.
+
 The Convex CLI has already written the ignored V2 `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL`, and `NEXT_PUBLIC_CONVEX_SITE_URL` values to `.env.local`.
 
 Set `SITE_URL` in the Next.js/Vercel build environment to the canonical web origin used by `app/sitemap.ts`. Local builds default to `https://foodedo.com`.

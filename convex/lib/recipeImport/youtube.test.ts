@@ -189,15 +189,22 @@ it("caps link attempts and falls back to description evidence with creator attri
   expect(candidate?.sourceText).toContain("500 g chicken");
   expect(network.fetch).toHaveBeenCalledTimes(4);
 });
-it("does not send unavailable video pages or title-only metadata through the recipe model", async () => {
+it("rejects unavailable pages but retains accessible title-only video context for classification", async () => {
   respond("<h1>Sign in</h1>");
   await expect(
     maybeAcquireYouTubeSource(`https://youtu.be/${id}`),
   ).rejects.toMatchObject({ code: "unsupported_content" });
   respond(watchPage(""));
-  await expect(
-    maybeAcquireYouTubeSource(`https://youtu.be/${id}`),
-  ).rejects.toMatchObject({ code: "no_recipe" });
+  expect(
+    await maybeAcquireYouTubeSource(`https://youtu.be/${id}`),
+  ).toMatchObject({
+    socialEvidence: {
+      platform: "youtube",
+      mediaType: "video",
+      captionComplete: true,
+      linkedContentUnavailable: false,
+    },
+  });
 });
 it("leaves ordinary websites with the existing adapter", async () => {
   expect(

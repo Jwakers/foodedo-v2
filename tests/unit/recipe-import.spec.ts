@@ -549,10 +549,11 @@ test("non-recipes and AI outages fail without manufacturing recipe content", asy
     }),
   ).rejects.toMatchObject({ code: "ai_unavailable" });
 });
-test("new format failures give truthful retry and pasted-text recovery copy", () => {
-  expect(importFailureMessage("invalid_model_output").description).toContain(
-    "format",
-  );
+test("format failures offer fresh content instead of encouraging a blind retry", () => {
+  const description = importFailureMessage("invalid_model_output").description;
+  expect(description).toContain("another recipe link");
+  expect(description).toContain("ingredients and method");
+  expect(description).not.toContain("Try again");
   expect(importFailureMessage("source_blocked").description).toContain("Paste");
 });
 test("expired jobs do not call models", async () => {

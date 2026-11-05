@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 import { RECIPE_IMPORT_LIMITS, ImportFailure } from "./contracts";
 import { safeFetch, readBoundedBytes, discardResponse } from "./network";
 import { selectSourceImages } from "./sourceImages";
+import type { SocialSourceEvidence } from "../../../src/lib/domain/social-import";
 
 export type RecipeEvidenceBlock = {
   id: string;
@@ -21,6 +22,7 @@ export type RecipeSourceCandidate = {
   sourceName?: string;
   sourceAuthor?: string;
   sourceImageUrls?: string[];
+  socialEvidence?: SocialSourceEvidence;
 };
 type SourceInput = Omit<RecipeEvidenceBlock, "id"> & { priority?: number };
 // Keep recipe evidence, not linked publisher/site graphs or unrelated entities.
@@ -122,6 +124,9 @@ function packageSource(
 }
 export function serializeRecipeEvidence(candidate: RecipeSourceCandidate) {
   return JSON.stringify({
+    ...(candidate.socialEvidence
+      ? { socialEvidence: candidate.socialEvidence }
+      : {}),
     sourceType: candidate.extractor === "text" ? "pasted_text" : "web_page",
     truncated: candidate.truncated,
     omittedBlocks: candidate.omittedBlocks ?? [],

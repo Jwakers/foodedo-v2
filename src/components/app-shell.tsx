@@ -20,6 +20,7 @@ import { CatalogueSaveIntentResume } from "@/features/recipes/catalogue-recipe-l
 import { RecipeSaveConfirmationProvider } from "@/features/recipes/recipe-save-confirmation";
 import { RecipeImportIntentResume } from "@/features/recipes/recipe-import-intent-resume";
 import { RecipeImportNotifications } from "@/features/recipes/recipe-import-notifications";
+import { NativeRecipeCaptures } from "@/features/recipes/native-recipe-captures";
 import { cn } from "@/lib/utils/cn";
 import { isCookPath, isPublicRecipePath } from "@/lib/routing/recipes";
 import { usePathname } from "next/navigation";
@@ -57,6 +58,7 @@ function AppShellChrome({ children }: { children: ReactNode }) {
         <UnfinishedInteractionViewport dockVisible={showDock} />
       ) : null}
       <NativeInviteLinks />
+      <NativeRecipeCaptures />
       {showChrome && !isCooking ? (
         <Suspense fallback={<AppHeaderFallback />}>
           <AppHeader />

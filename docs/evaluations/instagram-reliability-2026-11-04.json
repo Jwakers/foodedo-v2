@@ -1,0 +1,1762 @@
+{
+  "evaluatedAt": "2026-11-04",
+  "stage": "Expanded audit before final written-quantity guard and response projection",
+  "runtime": "Foodedo V2 Convex development",
+  "normalizationVersion": 14,
+  "scope": "40 distinct cases; acquisition twice and shared normalization once; no recipe writes",
+  "caseSnapshotSha256": "97b060f7e26d04bfa08f50d96d2e110cde6b42d742e41a365284e7a0b21eabb3",
+  "preRegisteredCases": [
+    {
+      "id": "DQFu9VuEftI",
+      "url": "https://instagram.com/p/DQFu9VuEftI",
+      "category": "caption",
+      "expectedFragments": [
+        "2 cups almond milk",
+        "1/2 cup chopped walnuts",
+        "30 min"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/healthygirlkitchen_21-10-2025_2323/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "almond milk",
+            "amounts": ["2 cup"]
+          },
+          {
+            "name": "oat",
+            "amounts": ["2 cup"]
+          }
+        ],
+        "methodFacts": ["bake", "30"]
+      }
+    },
+    {
+      "id": "DUx8T2KDRG-",
+      "url": "https://instagram.com/p/DUx8T2KDRG-",
+      "category": "caption",
+      "expectedFragments": [
+        "300g red lentils",
+        "200ml coconut milk",
+        "simmer gently"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_15-02-2026_1332/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 3,
+        "ingredients": [
+          {
+            "name": "lentil",
+            "amounts": ["300 g"]
+          },
+          {
+            "name": "coconut milk",
+            "amounts": ["200 ml"]
+          }
+        ],
+        "methodFacts": ["simmer"]
+      }
+    },
+    {
+      "id": "DG5ZyMqphsR",
+      "url": "https://instagram.com/p/DG5ZyMqphsR",
+      "category": "inaccessible",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/foodypopz_07-03-2025_1145/",
+      "expectedOutcome": "not_found",
+      "evidenceNote": "2026-11-04: explicit Apify not_found results; independent signed-in Instagram navigation displayed page unavailable. Historical caption is retained only as provenance, not current accessibility evidence."
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "url": "https://instagram.com/p/DHIzKs7t8rz",
+      "category": "caption",
+      "expectedFragments": ["30ml", "30g", "24 horas"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/abeautifulmess.es_13-03-2025_1127/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 2,
+        "minimumSteps": 2,
+        "ingredients": [
+          {
+            "name": "flour",
+            "amounts": ["30 g"],
+            "aliases": ["harina"]
+          },
+          {
+            "name": "water",
+            "amounts": ["30 ml"],
+            "aliases": ["agua"]
+          }
+        ],
+        "methodFacts": ["24"]
+      }
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "url": "https://instagram.com/p/DFwrARtyUiv",
+      "category": "caption",
+      "expectedFragments": ["100g caster sugar", "150g flour", "30-40 mins"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_07-02-2025_0600/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 5,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "caster sugar",
+            "amounts": ["100 g"]
+          },
+          {
+            "name": "flour",
+            "amounts": ["150 g"]
+          }
+        ],
+        "methodFacts": ["bake", "30"]
+      }
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "url": "https://instagram.com/p/DFqEfZQtCtu",
+      "category": "caption",
+      "expectedFragments": [
+        "600g sweet potatoes",
+        "400ml organic coconut milk",
+        "Freeze for 24 hours"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_04-02-2025_1622/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 5,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "sweet potato",
+            "amounts": ["600 g"]
+          },
+          {
+            "name": "coconut milk",
+            "amounts": ["400 ml"]
+          }
+        ],
+        "methodFacts": ["freeze", "24"]
+      }
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "url": "https://instagram.com/p/DB1gm_2oVO2",
+      "category": "caption",
+      "expectedFragments": [
+        "1 small head cauliflower",
+        "2 tbsp gochujang paste",
+        "10-15 minutes"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_01-11-2024_1653/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "cauliflower",
+            "amounts": ["1"]
+          },
+          {
+            "name": "gochujang",
+            "amounts": ["2 tbsp"]
+          }
+        ],
+        "methodFacts": ["200", "10"]
+      }
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "url": "https://instagram.com/p/DA6P3p3IBev",
+      "category": "caption",
+      "expectedFragments": [
+        "4 Tbsp Thai red curry paste",
+        "1 yellow onion",
+        "15 minutes"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_09-10-2024_1630/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 8,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "curry paste",
+            "amounts": ["4 tbsp"]
+          },
+          {
+            "name": "onion",
+            "amounts": ["1"]
+          }
+        ],
+        "methodFacts": ["simmer", "15"]
+      }
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "url": "https://instagram.com/p/C_VsDRvJ6x4",
+      "category": "linked",
+      "expectedFragments": ["3 cloves garlic", "vegan butter", "mushrooms"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_31-08-2024_1508/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 9,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "garlic",
+            "amounts": ["3", "3 cloves"]
+          },
+          {
+            "name": "chili oil",
+            "amounts": ["2 tsp"]
+          }
+        ],
+        "methodFacts": ["foil", "350"]
+      }
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "url": "https://instagram.com/p/DBEq4G9Si8D",
+      "category": "linked",
+      "expectedFragments": ["soft tofu", "minced ginger", "dried chiles"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_13-10-2024_1741/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 13,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "ginger",
+            "amounts": ["2 tbsp"]
+          },
+          {
+            "name": "corn starch",
+            "amounts": ["2 tsp"],
+            "aliases": ["cornstarch"]
+          }
+        ],
+        "methodFacts": ["tofu"]
+      }
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "url": "https://instagram.com/p/CY__LnYJmzU",
+      "category": "linked",
+      "expectedFragments": ["200 g dry chickpeas", "water", "blend"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/veggieanh_21-01-2022_1701/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 2,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "chickpea",
+            "amounts": ["200 g"]
+          },
+          {
+            "name": "water",
+            "amounts": ["400-500 ml", "400–500 ml"]
+          }
+        ],
+        "methodFacts": ["soak", "blend"]
+      }
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "url": "https://instagram.com/p/CsL_SBOP7Yp",
+      "category": "linked",
+      "expectedFragments": ["warm soy milk", "sesame oil", "knead"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_13-05-2023_1405/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 6,
+        "ingredients": [
+          {
+            "name": "flour",
+            "amounts": ["3 cup"]
+          },
+          {
+            "name": "yeast",
+            "amounts": ["2 tsp"]
+          }
+        ],
+        "methodFacts": ["knead"]
+      }
+    },
+    {
+      "id": "DU09LToEUhE",
+      "url": "https://instagram.com/p/DU09LToEUhE",
+      "category": "partial",
+      "expectedFragments": ["chickpea", "spinach"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_16-02-2026_1737/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DSkyy_BEcMO",
+      "url": "https://instagram.com/p/DSkyy_BEcMO",
+      "category": "partial",
+      "expectedFragments": ["3/4 cup white jasmine rice", "6 cups water"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_22-12-2025_1756/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DRvFv0Hk8fL",
+      "url": "https://instagram.com/p/DRvFv0Hk8fL",
+      "category": "partial",
+      "expectedFragments": ["nut roast"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_01-12-2025_2126/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "url": "https://instagram.com/p/DRWT7b2jqH5",
+      "category": "partial",
+      "expectedFragments": ["pancake"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_22-11-2025_0641/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DTavZ1Lkv80",
+      "url": "https://instagram.com/p/DTavZ1Lkv80",
+      "category": "media_only",
+      "expectedFragments": ["seasonal produce"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_12-01-2026_1645/",
+      "expectedOutcome": "not_usable"
+    },
+    {
+      "id": "DTA-S7wjskR",
+      "url": "https://instagram.com/p/DTA-S7wjskR",
+      "category": "media_only",
+      "expectedFragments": ["Japanese curry bread"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/okonomikitchen_02-01-2026_1637/",
+      "expectedOutcome": "not_usable"
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "url": "https://instagram.com/p/DSFrhwmifp3",
+      "category": "linked",
+      "expectedFragments": ["black garlic", "miso", "rice"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefoodietakesflight_10-12-2025_1558/",
+      "evidenceNote": "Caption explicitly writes www.thefoodietakesflight.com/maitake-mushroom-pot-rice-with-black-garlic-miso-sauce. Verified publisher Recipe markup HTTP 200. Previous media-only classification was incorrect.",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 13,
+        "minimumSteps": 6,
+        "ingredients": [
+          {
+            "name": "black garlic",
+            "amounts": ["2", "2 cloves"]
+          },
+          {
+            "name": "mayo",
+            "amounts": ["1 tbsp"]
+          }
+        ],
+        "methodFacts": ["soak"]
+      }
+    },
+    {
+      "id": "DRPu2DNDbVM",
+      "url": "https://instagram.com/p/DRPu2DNDbVM",
+      "category": "media_only",
+      "expectedFragments": ["miso mushroom noodle soup"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/symproveyourlife_19-11-2025_1706/",
+      "expectedOutcome": "not_usable"
+    },
+    {
+      "id": "unsupported-profile",
+      "url": "https://www.instagram.com/foodedo/",
+      "category": "inaccessible",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+      "expectedOutcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-story",
+      "url": "https://www.instagram.com/stories/foodedo/12345/",
+      "category": "inaccessible",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+      "expectedOutcome": "invalid_url"
+    },
+    {
+      "id": "missing-post-1",
+      "url": "https://www.instagram.com/p/FoodedoMissing000001/",
+      "category": "inaccessible",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+      "expectedOutcome": "not_found"
+    },
+    {
+      "id": "missing-post-2",
+      "url": "https://www.instagram.com/reel/FoodedoMissing000002/",
+      "category": "inaccessible",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceNote": "Deliberately unsupported or non-existent URL; no claim of private-account access.",
+      "expectedOutcome": "not_found"
+    },
+    {
+      "id": "DTlMUfsEbXV",
+      "url": "https://instagram.com/p/DTlMUfsEbXV",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_16-01-2026_1811/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DK1TKqeimw-",
+      "url": "https://instagram.com/p/DK1TKqeimw-",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/tomseniorfitness_13-06-2025_0738/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DH80SqjRvNX",
+      "url": "https://instagram.com/p/DH80SqjRvNX",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/frommybowl_02-04-2025_1606/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DHZ5EBgyJ-K",
+      "url": "https://instagram.com/p/DHZ5EBgyJ-K",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/itslizmiu_20-03-2025_0235/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DR0B05xj30K",
+      "url": "https://instagram.com/p/DR0B05xj30K",
+      "category": "linked",
+      "expectedFragments": ["russet potatoes", "yellow onion", "golden brown"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/carolinagelen_03-12-2025_1926/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 8,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "onion",
+            "amounts": ["1"]
+          },
+          {
+            "name": "egg",
+            "amounts": ["2"]
+          }
+        ],
+        "methodFacts": ["fry", "golden"]
+      }
+    },
+    {
+      "id": "DIB2aSJRYxm",
+      "url": "https://instagram.com/p/DIB2aSJRYxm",
+      "category": "linked_unavailable",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/thefeedfeed.vegan_04-04-2025_1500/",
+      "expectedOutcome": "not_usable",
+      "evidenceNote": "Explicit publisher link; publisher currently returns HTTP 403. Pre-registered blocked-link coverage case; do not invent a usable recipe from the promotional caption."
+    },
+    {
+      "id": "DD7pRv4IexK",
+      "url": "https://instagram.com/p/DD7pRv4IexK",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/gloriacarrion__23-12-2024_1905/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DDXV600IEdj",
+      "url": "https://instagram.com/p/DDXV600IEdj",
+      "category": "caption",
+      "expectedFragments": ["1kg", "4 tbsp soy sauce", "15–20 minutes"],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/rachelama__09-12-2024_1650/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 3,
+        "ingredients": [
+          {
+            "name": "mane",
+            "amounts": ["1000 g"]
+          },
+          {
+            "name": "soy sauce",
+            "amounts": ["4 tbsp"]
+          }
+        ],
+        "methodFacts": ["roast", "190"]
+      }
+    },
+    {
+      "id": "DDFPQFeoA_p",
+      "url": "https://instagram.com/p/DDFPQFeoA_p",
+      "category": "partial",
+      "expectedFragments": [],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/nomeatdisco_02-12-2024_1559/",
+      "expectedOutcome": "recipe_or_draft"
+    },
+    {
+      "id": "DBEQxIwo_BF",
+      "url": "https://instagram.com/p/DBEQxIwo_BF",
+      "category": "caption",
+      "expectedFragments": [
+        "2 tbsp Red curry paste",
+        "2 carrots",
+        "form into balls"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_13-10-2024_1355/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 15,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "curry paste",
+            "amounts": ["2 tbsp"]
+          },
+          {
+            "name": "carrot",
+            "amounts": ["2"]
+          }
+        ],
+        "methodFacts": ["fry"]
+      }
+    },
+    {
+      "id": "DACCkaqSiJd",
+      "url": "https://instagram.com/p/DACCkaqSiJd",
+      "category": "caption",
+      "expectedFragments": [
+        "1/2 cup peanut butter",
+        "1/2 cup maple syrup",
+        "25 minutes"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/healthygirlkitchen_17-09-2024_2036/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 10,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "peanut butter",
+            "amounts": ["0.5 cup"]
+          },
+          {
+            "name": "maple syrup",
+            "amounts": ["0.5 cup"]
+          }
+        ],
+        "methodFacts": ["bake", "25"]
+      }
+    },
+    {
+      "id": "C_s3NSBoXOc",
+      "url": "https://instagram.com/p/C_s3NSBoXOc",
+      "category": "caption",
+      "expectedFragments": [
+        "2 tbsp soy sauce",
+        "2 tbsp peanut butter",
+        "simmer"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/nomeatdisco_09-09-2024_1509/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 15,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "soy sauce",
+            "amounts": ["2 tbsp"]
+          },
+          {
+            "name": "peanut butter",
+            "amounts": ["2 tbsp"]
+          }
+        ],
+        "methodFacts": ["simmer", "lime"]
+      }
+    },
+    {
+      "id": "C_ndl1pIXdY",
+      "url": "https://instagram.com/p/C_ndl1pIXdY",
+      "category": "caption",
+      "expectedFragments": [
+        "1 sweet potato",
+        "0,5 tbsp olive oil",
+        "4-6 minutes"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_07-09-2024_1300/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 6,
+        "minimumSteps": 3,
+        "ingredients": [
+          {
+            "name": "sweet potato",
+            "amounts": ["1"]
+          },
+          {
+            "name": "olive oil",
+            "amounts": ["0.5 tbsp"]
+          }
+        ],
+        "methodFacts": ["microwave"]
+      }
+    },
+    {
+      "id": "C-2wMbtKL8K",
+      "url": "https://instagram.com/p/C-2wMbtKL8K",
+      "category": "caption",
+      "expectedFragments": [
+        "2 shallots",
+        "2 cans butter beans",
+        "Simmer until thick"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/eatmoreplants.no_19-08-2024_1502/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 13,
+        "minimumSteps": 4,
+        "ingredients": [
+          {
+            "name": "shallot",
+            "amounts": ["2"]
+          },
+          {
+            "name": "butter bean",
+            "amounts": ["2 can"]
+          }
+        ],
+        "methodFacts": ["simmer"]
+      }
+    },
+    {
+      "id": "C9Hu7kzt8aH",
+      "url": "https://instagram.com/p/C9Hu7kzt8aH",
+      "category": "caption",
+      "expectedFragments": [
+        "250g penne pasta",
+        "100ml coconut milk",
+        "8-10 minutes"
+      ],
+      "reviewed": true,
+      "evidenceUrl": "https://testkitchen.luischav.es/recipes/ramoan_07-07-2024_1207/",
+      "expectedOutcome": "usable",
+      "verification": {
+        "minimumIngredients": 13,
+        "minimumSteps": 5,
+        "ingredients": [
+          {
+            "name": "penne",
+            "amounts": ["250 g"]
+          },
+          {
+            "name": "coconut milk",
+            "amounts": ["100 ml", "350 ml"]
+          }
+        ],
+        "methodFacts": ["simmer", "ackee"]
+      }
+    },
+    {
+      "id": "DZIY8A-iEZm",
+      "url": "https://www.instagram.com/p/DZIY8A-iEZm/",
+      "category": "bio_only",
+      "expectedFragments": ["SCALLOP", "CHORIZO", "link in bio"],
+      "reviewed": true,
+      "evidenceUrl": "https://www.instagram.com/p/DZIY8A-iEZm/",
+      "evidenceNote": "Direct public caption reviewed 2026-11-04: promotional caption, no quantities or method, points to profile bio.",
+      "expectedOutcome": "not_usable"
+    }
+  ],
+  "qualificationNote": "The original 75% verified-recipe score includes three evaluation budget stops and two fact-check failures requiring review. It is not an estimate that 25% of acquired recipes are unusable. Four negative/partial cases failed the declared expectations; no failed/unknown probe is counted as correct rejection. Follow-up results are recorded separately, never silently substituted.",
+  "summary": {
+    "provider": "apify",
+    "scope": "acquisition + shared normalization, no recipe writes",
+    "distinctPosts": 40,
+    "distinctSupportedPosts": 20,
+    "attempts": 80,
+    "supportedAttempts": 40,
+    "acquisitionSuccessRate": 0.975,
+    "usableRecipeSuccessRate": 0.75,
+    "p95AcquisitionMs": 33699,
+    "harnessFailures": 0,
+    "negativeRecipeFailures": 4,
+    "qualified": false
+  },
+  "results": [
+    {
+      "id": "DUx8T2KDRG-",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 42422,
+      "acquisitionMs": 4708,
+      "normalizationOutcome": "usable",
+      "totalMs": 41221,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DQFu9VuEftI",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 46012,
+      "acquisitionMs": 9253,
+      "normalizationOutcome": "usable",
+      "totalMs": 43659,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DG5ZyMqphsR",
+      "category": "inaccessible",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 41105,
+      "acquisitionMs": 37827,
+      "outcome": "not_found"
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 57384,
+      "acquisitionMs": 8100,
+      "normalizationOutcome": "usable",
+      "totalMs": 53006,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 50312,
+      "acquisitionMs": 14239,
+      "normalizationOutcome": "usable",
+      "totalMs": 49226,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 81899,
+      "acquisitionMs": 33699,
+      "normalizationOutcome": "usable",
+      "totalMs": 80715,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 38449,
+      "acquisitionMs": 9688,
+      "normalizationOutcome": "usable",
+      "totalMs": 37113,
+      "modelCalls": 2,
+      "missingFactCount": 1
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 51438,
+      "acquisitionMs": 16306,
+      "normalizationOutcome": "usable",
+      "totalMs": 50271,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 64047,
+      "acquisitionMs": 24107,
+      "normalizationOutcome": "usable",
+      "totalMs": 62786,
+      "modelCalls": 2,
+      "missingFactCount": 2
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 74081,
+      "acquisitionMs": 30988,
+      "normalizationOutcome": "evaluation_budget_limited",
+      "totalMs": 72949,
+      "modelCalls": 1,
+      "missingFactCount": 0
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 59385,
+      "acquisitionMs": 22369,
+      "normalizationOutcome": "usable",
+      "totalMs": 58159,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DU09LToEUhE",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 46107,
+      "acquisitionMs": 5242,
+      "normalizationOutcome": "usable",
+      "totalMs": 45040,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 94353,
+      "acquisitionMs": 21747,
+      "normalizationOutcome": "evaluation_budget_limited",
+      "totalMs": 93205,
+      "modelCalls": 1,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DSkyy_BEcMO",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 50203,
+      "acquisitionMs": 7393,
+      "normalizationOutcome": "draft",
+      "totalMs": 48935,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DRvFv0Hk8fL",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 40367,
+      "acquisitionMs": 14513,
+      "normalizationOutcome": "draft",
+      "totalMs": 39300,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 22943,
+      "acquisitionMs": 17570,
+      "normalizationOutcome": "video_only_unsupported",
+      "totalMs": 21773,
+      "modelCalls": 1,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DTavZ1Lkv80",
+      "category": "media_only",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 20441,
+      "acquisitionMs": 3797,
+      "normalizationOutcome": "draft",
+      "totalMs": 19382,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DTA-S7wjskR",
+      "category": "media_only",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 24028,
+      "acquisitionMs": 8155,
+      "normalizationOutcome": "draft",
+      "totalMs": 22935,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DRPu2DNDbVM",
+      "category": "media_only",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 17977,
+      "acquisitionMs": 7542,
+      "normalizationOutcome": "video_only_unsupported",
+      "totalMs": 16937,
+      "modelCalls": 1,
+      "missingFactCount": 0
+    },
+    {
+      "id": "unsupported-profile",
+      "category": "inaccessible",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 1127,
+      "acquisitionMs": 1,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-story",
+      "category": "inaccessible",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 975,
+      "acquisitionMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 61375,
+      "acquisitionMs": 25822,
+      "normalizationOutcome": "evaluation_budget_limited",
+      "totalMs": 60120,
+      "modelCalls": 1,
+      "missingFactCount": 0
+    },
+    {
+      "id": "missing-post-1",
+      "category": "inaccessible",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 37982,
+      "acquisitionMs": 36928,
+      "outcome": "not_found"
+    },
+    {
+      "id": "missing-post-2",
+      "category": "inaccessible",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 36373,
+      "acquisitionMs": 35240,
+      "outcome": "not_found"
+    },
+    {
+      "id": "DTlMUfsEbXV",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 37774,
+      "acquisitionMs": 6254,
+      "normalizationOutcome": "draft",
+      "totalMs": 36741,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DK1TKqeimw-",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 41909,
+      "acquisitionMs": 40677,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DH80SqjRvNX",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 52850,
+      "acquisitionMs": 18280,
+      "normalizationOutcome": "draft",
+      "totalMs": 51841,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DHZ5EBgyJ-K",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 51874,
+      "acquisitionMs": 17692,
+      "normalizationOutcome": "draft",
+      "totalMs": 49932,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DR0B05xj30K",
+      "category": "linked",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 53213,
+      "acquisitionMs": 9660,
+      "normalizationOutcome": "usable",
+      "totalMs": 51993,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DIB2aSJRYxm",
+      "category": "linked_unavailable",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 32471,
+      "acquisitionMs": 31358,
+      "outcome": "not_found"
+    },
+    {
+      "id": "DD7pRv4IexK",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": false,
+      "harnessOutcome": "completed",
+      "harnessMs": 41738,
+      "acquisitionMs": 40543,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DDXV600IEdj",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 51429,
+      "acquisitionMs": 7877,
+      "normalizationOutcome": "usable",
+      "totalMs": 50229,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DDFPQFeoA_p",
+      "category": "partial",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 59023,
+      "acquisitionMs": 22856,
+      "normalizationOutcome": "usable",
+      "totalMs": 57818,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DBEQxIwo_BF",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 62274,
+      "acquisitionMs": 14454,
+      "normalizationOutcome": "usable",
+      "totalMs": 61166,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DACCkaqSiJd",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 46112,
+      "acquisitionMs": 17032,
+      "normalizationOutcome": "usable",
+      "totalMs": 44742,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_ndl1pIXdY",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 34058,
+      "acquisitionMs": 6964,
+      "normalizationOutcome": "usable",
+      "totalMs": 32951,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C_s3NSBoXOc",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 62839,
+      "acquisitionMs": 19119,
+      "normalizationOutcome": "usable",
+      "totalMs": 61763,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C-2wMbtKL8K",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 66473,
+      "acquisitionMs": 20588,
+      "normalizationOutcome": "usable",
+      "totalMs": 65178,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "C9Hu7kzt8aH",
+      "category": "caption",
+      "repeat": 1,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 67408,
+      "acquisitionMs": 8136,
+      "normalizationOutcome": "usable",
+      "totalMs": 66256,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DZIY8A-iEZm",
+      "category": "bio_only",
+      "repeat": 1,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": true,
+      "harnessOutcome": "completed",
+      "harnessMs": 36951,
+      "acquisitionMs": 10558,
+      "normalizationOutcome": "draft",
+      "totalMs": 35816,
+      "modelCalls": 2,
+      "missingFactCount": 0
+    },
+    {
+      "id": "DUx8T2KDRG-",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 9070,
+      "acquisitionMs": 7913
+    },
+    {
+      "id": "DQFu9VuEftI",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 9487,
+      "acquisitionMs": 8380
+    },
+    {
+      "id": "DHIzKs7t8rz",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 13715,
+      "acquisitionMs": 12686
+    },
+    {
+      "id": "DFwrARtyUiv",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 23541,
+      "acquisitionMs": 22467
+    },
+    {
+      "id": "DG5ZyMqphsR",
+      "category": "inaccessible",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 41404,
+      "acquisitionMs": 40407,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DFqEfZQtCtu",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 16201,
+      "acquisitionMs": 15054
+    },
+    {
+      "id": "DB1gm_2oVO2",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 14084,
+      "acquisitionMs": 13064
+    },
+    {
+      "id": "DA6P3p3IBev",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 11314,
+      "acquisitionMs": 10279
+    },
+    {
+      "id": "C_VsDRvJ6x4",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 25426,
+      "acquisitionMs": 24259
+    },
+    {
+      "id": "DBEq4G9Si8D",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 19247,
+      "acquisitionMs": 18055
+    },
+    {
+      "id": "CY__LnYJmzU",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 41959,
+      "acquisitionMs": 40659
+    },
+    {
+      "id": "CsL_SBOP7Yp",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": false,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 41629,
+      "acquisitionMs": 40617,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DU09LToEUhE",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 4385,
+      "acquisitionMs": 2977
+    },
+    {
+      "id": "DSkyy_BEcMO",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 4510,
+      "acquisitionMs": 3487
+    },
+    {
+      "id": "DRvFv0Hk8fL",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 19864,
+      "acquisitionMs": 18786
+    },
+    {
+      "id": "DTavZ1Lkv80",
+      "category": "media_only",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 4936,
+      "acquisitionMs": 3793
+    },
+    {
+      "id": "DRWT7b2jqH5",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 23108,
+      "acquisitionMs": 22075
+    },
+    {
+      "id": "DTA-S7wjskR",
+      "category": "media_only",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 7944,
+      "acquisitionMs": 6920
+    },
+    {
+      "id": "DRPu2DNDbVM",
+      "category": "media_only",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 14450,
+      "acquisitionMs": 13349
+    },
+    {
+      "id": "unsupported-profile",
+      "category": "inaccessible",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 1260,
+      "acquisitionMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "unsupported-story",
+      "category": "inaccessible",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 1007,
+      "acquisitionMs": 0,
+      "outcome": "invalid_url"
+    },
+    {
+      "id": "DSFrhwmifp3",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 23615,
+      "acquisitionMs": 22343
+    },
+    {
+      "id": "missing-post-1",
+      "category": "inaccessible",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 35851,
+      "acquisitionMs": 34813,
+      "outcome": "not_found"
+    },
+    {
+      "id": "missing-post-2",
+      "category": "inaccessible",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 35731,
+      "acquisitionMs": 34653,
+      "outcome": "not_found"
+    },
+    {
+      "id": "DTlMUfsEbXV",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 8120,
+      "acquisitionMs": 6810
+    },
+    {
+      "id": "DH80SqjRvNX",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 19446,
+      "acquisitionMs": 18303
+    },
+    {
+      "id": "DK1TKqeimw-",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 41570,
+      "acquisitionMs": 40408,
+      "outcome": "timed_out"
+    },
+    {
+      "id": "DHZ5EBgyJ-K",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 23465,
+      "acquisitionMs": 22317
+    },
+    {
+      "id": "DR0B05xj30K",
+      "category": "linked",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 16681,
+      "acquisitionMs": 15343
+    },
+    {
+      "id": "DD7pRv4IexK",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 19876,
+      "acquisitionMs": 18676
+    },
+    {
+      "id": "DIB2aSJRYxm",
+      "category": "linked_unavailable",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": false,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 37041,
+      "acquisitionMs": 35988,
+      "outcome": "not_found"
+    },
+    {
+      "id": "DDXV600IEdj",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 11866,
+      "acquisitionMs": 10410
+    },
+    {
+      "id": "DBEQxIwo_BF",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 13778,
+      "acquisitionMs": 12767
+    },
+    {
+      "id": "DDFPQFeoA_p",
+      "category": "partial",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 22262,
+      "acquisitionMs": 21142
+    },
+    {
+      "id": "DACCkaqSiJd",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 20123,
+      "acquisitionMs": 19085
+    },
+    {
+      "id": "C_s3NSBoXOc",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 19334,
+      "acquisitionMs": 18191
+    },
+    {
+      "id": "C_ndl1pIXdY",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 13448,
+      "acquisitionMs": 12141
+    },
+    {
+      "id": "C-2wMbtKL8K",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 14591,
+      "acquisitionMs": 13255
+    },
+    {
+      "id": "C9Hu7kzt8aH",
+      "category": "caption",
+      "repeat": 2,
+      "supported": true,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 9924,
+      "acquisitionMs": 8484
+    },
+    {
+      "id": "DZIY8A-iEZm",
+      "category": "bio_only",
+      "repeat": 2,
+      "supported": false,
+      "acquisitionPassed": true,
+      "recipePassed": null,
+      "harnessOutcome": "completed",
+      "harnessMs": 5299,
+      "acquisitionMs": 4049
+    }
+  ]
+}

@@ -237,6 +237,38 @@ export default defineSchema({
     clientRequestId: v.string(),
     sourceType: v.union(v.literal("url"), v.literal("text")),
     sourceUrl: v.optional(v.string()),
+    originalSourceUrl: v.optional(v.string()),
+    resolvedSourceUrl: v.optional(v.string()),
+    sharedText: v.optional(v.string()),
+    acquisitionRunId: v.optional(v.string()),
+    acquisition: v.optional(
+      v.object({
+        outcome: v.string(),
+        provider: v.literal("apify"),
+        durationMs: v.optional(v.number()),
+        captionCharacters: v.optional(v.number()),
+        linkedPagesTried: v.optional(v.number()),
+        linkedContentUnavailable: v.optional(v.boolean()),
+        suppliedTextPresent: v.optional(v.boolean()),
+        mediaType: v.optional(
+          v.union(
+            v.literal("video"),
+            v.literal("image"),
+            v.literal("carousel"),
+          ),
+        ),
+      }),
+    ),
+    platform: v.optional(
+      v.union(
+        v.literal("youtube"),
+        v.literal("instagram"),
+        v.literal("tiktok"),
+      ),
+    ),
+    recoveryRequestId: v.optional(v.string()),
+    videoOnlyFirstDay: v.optional(v.string()),
+    cleanedUpAt: v.optional(v.number()),
     inputText: v.optional(v.string()),
     sourceName: v.optional(v.string()),
     sourceAuthor: v.optional(v.string()),

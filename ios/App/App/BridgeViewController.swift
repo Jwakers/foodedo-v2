@@ -35,6 +35,7 @@ final class BridgeViewController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(ClerkOAuthPlugin())
         bridge?.registerPluginInstance(CookScreenPlugin())
+        bridge?.registerPluginInstance(RecipeCapturePlugin())
 
         // Match native-app zoom: the packaged viewport already locks scale, and
         // this also covers live-reload which loads the zoomable web build.

@@ -1,4 +1,5 @@
 "use node";
+import { canClassifyVideoOnly } from "../../../src/lib/domain/social-import";
 
 import { z } from "zod";
 import { prepareRecipeContent } from "../../../src/lib/domain/recipes";
@@ -33,6 +34,16 @@ export async function organiseCandidate(
   deadline = Date.now() + 100_000,
 ) {
   const evidence = serializeRecipeEvidence(source);
+  const writtenQuantities =
+    source.sourceText
+      .normalize("NFKC")
+      .replace(/⁄/g, "/")
+      .split(/\r?\n/)
+      .filter((line) =>
+        /^\s*(?:[-*•]\s*)?\d+(?:[.,/]\d+)?(?:\s+\d+\/\d+)?\s*(?:g|kg|grams?|ml|l|litres?|liters?|cups?|tbsp|tsp|tablespoons?|teaspoons?|cloves?)\b/i.test(
+          line,
+        ),
+      ).length >= 2;
   let calls = 0;
   let output: ImportOutput | undefined;
   let recoveryUsed = false;
@@ -108,13 +119,39 @@ export async function organiseCandidate(
   }
 
   output = await withRecovery("normalize");
-  if (output.result.status === "no_recipe")
-    throw new ImportFailure("no_recipe", "No recipe was found.");
+  if (
+    output.result.status !== "recipe" &&
+    writtenQuantities &&
+    !recoveryUsed &&
+    calls < 2
+  ) {
+    recoveryUsed = true;
+    output = await generate(
+      "recover",
+      "\nWritten ingredient quantities are present in the supplied evidence. Reconsider the non-recipe/video-only classification. Preserve a recognizable partial recipe as a draft, marking missing essential cooking instructions as blocking partial_coverage. Do not invent missing instructions or infer ingredients from nutrition figures; genuinely unrelated content remains no_recipe.",
+    );
+  }
+  if (output.result.status !== "recipe")
+    throw new ImportFailure(
+      output.result.status === "video_only_unsupported" &&
+        canClassifyVideoOnly(source.socialEvidence) &&
+        !writtenQuantities
+        ? "video_only_unsupported"
+        : "no_recipe",
+      "No written recipe was found.",
+    );
   output = await withRecovery("correct");
 
   for (;;) {
-    if (output.result.status === "no_recipe")
-      throw new ImportFailure("no_recipe", "No recipe was found.");
+    if (output.result.status !== "recipe")
+      throw new ImportFailure(
+        output.result.status === "video_only_unsupported" &&
+          canClassifyVideoOnly(source.socialEvidence) &&
+          !writtenQuantities
+          ? "video_only_unsupported"
+          : "no_recipe",
+        "No written recipe was found.",
+      );
     let structuralError: string | undefined;
     let converted: ReturnType<typeof toRecipeContent> | undefined;
     try {

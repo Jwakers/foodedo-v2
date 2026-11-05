@@ -1,6 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
+import { abortInstagramRun } from "./lib/recipeImport/instagramProvider";
 
 import { internalAction } from "./_generated/server";
 import {
@@ -22,4 +23,13 @@ export const copySourceImage = internalAction({
   },
   returns: v.null(),
   handler: copySourceImageHandler,
+});
+
+export const cancelInstagramRun = internalAction({
+  args: { runId: v.string() },
+  returns: v.null(),
+  handler: async (_, { runId }) => {
+    await abortInstagramRun(runId);
+    return null;
+  },
 });

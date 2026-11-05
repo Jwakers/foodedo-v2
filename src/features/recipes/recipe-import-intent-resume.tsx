@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { readRecipeImportIntent } from "@/lib/domain/auth-intents";
 import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store";
@@ -36,7 +37,22 @@ export function RecipeImportIntentResume() {
         if (!intent) return;
         const importId = await beginImport({
           clientRequestId: intent.clientRequestId,
-          source: intent.source,
+          source:
+            intent.source.type === "url"
+              ? intent.source
+              : {
+                  type: "text",
+                  text: intent.source.text,
+                  ...(intent.source.resume
+                    ? {
+                        resume: {
+                          ...intent.source.resume,
+                          importId: intent.source.resume
+                            .importId as Id<"recipeImports">,
+                        },
+                      }
+                    : {}),
+                },
         });
         await store.clear();
         router.push(`/recipes/import?job=${importId}`);

@@ -63,7 +63,9 @@ export function RecipeImporter() {
       ? { recipeId: job.resultRecipeId }
       : "skip",
   );
-  const [mode, setMode] = useState<ImportMode>("url");
+  const [mode, setMode] = useState<ImportMode>(() =>
+    searchParams.get("recover") ? "text" : "url",
+  );
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +76,22 @@ export function RecipeImporter() {
   const [repairValues, setRepairValues] = useState<Record<string, string>>({});
 
   const activeSource: RecipeImportIntentV1["source"] =
-    mode === "url" ? { type: "url", url } : { type: "text", text };
+    mode === "url"
+      ? { type: "url", url }
+      : {
+          type: "text",
+          text,
+          ...(searchParams.get("recover") &&
+          Number.isSafeInteger(Number(searchParams.get("attempt"))) &&
+          Number(searchParams.get("attempt")) > 0
+            ? {
+                resume: {
+                  importId: searchParams.get("recover")!,
+                  attempt: Number(searchParams.get("attempt")),
+                },
+              }
+            : {}),
+        };
 
   async function pasteFromClipboard(into: ImportMode) {
     try {
@@ -138,7 +155,22 @@ export function RecipeImporter() {
     try {
       const nextImportId = await beginImport({
         clientRequestId,
-        source: preparedSource,
+        source:
+          preparedSource.type === "url"
+            ? preparedSource
+            : {
+                type: "text",
+                text: preparedSource.text,
+                ...(preparedSource.resume
+                  ? {
+                      resume: {
+                        ...preparedSource.resume,
+                        importId: preparedSource.resume
+                          .importId as Id<"recipeImports">,
+                      },
+                    }
+                  : {}),
+              },
       });
       router.replace(`/recipes/import?job=${nextImportId}`);
     } catch (error) {
@@ -238,9 +270,17 @@ export function RecipeImporter() {
         failureDetails={job.failureDetails}
         retrying={retrying}
         onRetry={() => void retry()}
+        onStartAgain={() => {
+          setMode("url");
+          setUrl("");
+          setText("");
+          router.replace("/recipes/import");
+        }}
         onPasteText={() => {
           setMode("text");
-          router.replace("/recipes/import");
+          router.replace(
+            `/recipes/import?recover=${job._id}&attempt=${job.attempt}`,
+          );
         }}
       />
     );
@@ -326,9 +366,8 @@ export function RecipeImporter() {
               Paste from clipboard
             </Button>
             <p className="mt-3 text-13 leading-5 text-graphite">
-              YouTube links can include a written recipe in the description or a
-              linked recipe page. For TikTok or Instagram, paste the recipe
-              caption.
+              YouTube and Instagram imports use written descriptions, captions
+              and linked recipe pages. For TikTok, paste the recipe caption.
             </p>
           </div>
         ) : (
@@ -453,7 +492,7 @@ function ImportProgress({
       <p className="mt-3 max-w-85 text-15 leading-5.5 text-graphite">
         {accountLoading
           ? "Checking your sign-in so we can resume your import."
-          : "We’re organising the recipe and checking for missing cooking details. This can take up to two minutes. You can keep using Foodedo—we’ll notify you in the app when it’s ready or needs your attention."}
+          : "We’re organising the recipe and checking for missing cooking details. This can take a few minutes. You can keep using Foodedo—we’ll notify you in the app when it’s ready or needs your attention."}
       </p>
       {importId ? (
         <ButtonLink variant="inline" className="mt-3" href="/recipes">
@@ -476,6 +515,7 @@ function ImportFailure({
   failureDetails,
   onRetry,
   onPasteText,
+  onStartAgain,
   retrying,
 }: {
   sourceUrl?: string;
@@ -484,8 +524,13 @@ function ImportFailure({
   retrying: boolean;
   onRetry: () => void;
   onPasteText: () => void;
+  onStartAgain: () => void;
 }) {
   const message = importFailureMessage(failureCode, failureDetails, sourceUrl);
+  const canRetry =
+    failureCode === "source_unreachable" ||
+    failureCode === "timed_out" ||
+    failureCode === "ai_unavailable";
   return (
     <main className="mx-auto w-full max-w-175 px-page-inline pt-4">
       <h1 className="font-display text-32 font-semibold tracking-heading text-ink">
@@ -499,12 +544,23 @@ function ImportFailure({
           {sourceUrl}
         </div>
       ) : null}
-      <Button className="mt-6 w-full" onClick={onRetry} disabled={retrying}>
-        {retrying ? "Retrying…" : "Try again"}
+      <Button className="mt-6 w-full" onClick={onStartAgain}>
+        Start again with a new link
       </Button>
       <Button variant="secondary" className="mt-3 w-full" onClick={onPasteText}>
         Paste recipe text
       </Button>
+      {canRetry ? (
+        <Button
+          variant="inline"
+          size="block"
+          className="mt-3 w-full"
+          onClick={onRetry}
+          disabled={retrying}
+        >
+          {retrying ? "Retrying…" : "Try again"}
+        </Button>
+      ) : null}
     </main>
   );
 }
@@ -674,6 +730,20 @@ export function importFailureMessage(
 ) {
   const platform = detectSocialPlatform(sourceUrl);
 
+  if (failureCode === "instagram_unavailable") {
+    return {
+      title: "Instagram importing isn’t available yet",
+      description:
+        "For now, paste the recipe caption, or use a recipe-page link from the post.",
+    };
+  }
+  if (failureCode === "video_only_unsupported") {
+    return {
+      title: "This recipe appears to be in the video",
+      description:
+        "Video-only recipe importing is coming later. For now, paste the ingredients and method, or add a recipe-page link.",
+    };
+  }
   if (failureCode === "source_blocked") {
     return {
       title:
@@ -691,8 +761,8 @@ export function importFailureMessage(
       title: "We couldn’t reach that recipe page",
       description:
         platform === "youtube"
-          ? "YouTube may be temporarily unavailable. Try again, or paste the video description (or a linked recipe page) to import it."
-          : "The website may be temporarily unavailable. Try again, or paste the recipe text if the page opens for you.",
+          ? "YouTube may be temporarily unavailable. Use a recipe-page link from the description, or paste the recipe text."
+          : "The website may be temporarily unavailable. Use another recipe link, or paste the recipe text if the page opens for you.",
     };
   }
   if (failureCode === "unsupported_content") {
@@ -727,7 +797,7 @@ export function importFailureMessage(
     return {
       title: "We found the page, but couldn’t finish organising it",
       description:
-        "The recipe service is temporarily unavailable. Try again, or paste the recipe text if you need it now.",
+        "The recipe service is temporarily unavailable. Nothing was saved.",
     };
   }
   if (failureCode === "incomplete_recipe") {
@@ -740,8 +810,8 @@ export function importFailureMessage(
     return {
       title: "This recipe is incomplete",
       description: missing.length
-        ? `We couldn’t find enough ${missing.join(" and ")}. Include that part of the recipe and try again. A title, photo, servings and labelled times are not required.`
-        : "We couldn’t confirm enough ingredient information or cooking instructions. Include both and try again. A title, photo, servings and labelled times are not required.",
+        ? `We couldn’t find enough ${missing.join(" and ")}. Paste that part of the recipe, or use another recipe link. A title, photo, servings and labelled times are not required.`
+        : "We couldn’t confirm enough ingredient information or cooking instructions. Paste both, or use another recipe link. A title, photo, servings and labelled times are not required.",
     };
   }
   if (failureCode === "unsafe_result") {
@@ -755,7 +825,7 @@ export function importFailureMessage(
     return {
       title: "We couldn’t finish organising this recipe",
       description:
-        "The AI service couldn’t return a usable recipe format. Nothing was saved. Try again, or paste the recipe text.",
+        "We couldn’t organise the recipe reliably. Nothing was saved. Use another recipe link, or paste the ingredients and method.",
     };
   }
   if (failureCode === "invalid_result") {
@@ -776,21 +846,21 @@ export function importFailureMessage(
     return {
       title: "We couldn’t open that recipe page",
       description:
-        "The website may be blocking automated access or temporarily unavailable. Try again, or paste the recipe text.",
+        "The website may be blocking automated access or temporarily unavailable. Use another recipe link, or paste the recipe text.",
     };
   }
   if (failureCode === "timed_out") {
     return {
       title: "That import took too long",
       description: platform
-        ? "Nothing was saved. Try again, or paste the caption/description text for a quicker import."
-        : "Nothing was saved. Try again, or paste the recipe text for a quicker import.",
+        ? "Nothing was saved. Use another recipe link, or paste the caption or description text instead."
+        : "Nothing was saved. Use another recipe link, or paste the recipe text instead.",
     };
   }
   return {
     title: "We couldn’t finish that import",
     description:
-      "Nothing was saved. Try again, or paste the recipe text instead.",
+      "Nothing was saved. Use another recipe link, or paste the ingredients and method instead.",
   };
 }
 

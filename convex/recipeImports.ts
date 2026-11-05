@@ -12,6 +12,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { getCurrentUser, requireUserId } from "./lib/auth";
+import { socialImportPlatform } from "../src/lib/domain/social-import";
 import {
   RECIPE_IMPORT_FAILURE_REASONS,
   RECIPE_NORMALIZATION_VERSION,
@@ -43,8 +44,18 @@ const IMPORT_TIMEOUT_MS = 120_000;
 const IMPORT_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;
 
 const sourceValidator = v.union(
-  v.object({ type: v.literal("url"), url: v.string() }),
-  v.object({ type: v.literal("text"), text: v.string() }),
+  v.object({
+    type: v.literal("url"),
+    url: v.string(),
+    sharedText: v.optional(v.string()),
+  }),
+  v.object({
+    type: v.literal("text"),
+    text: v.string(),
+    resume: v.optional(
+      v.object({ importId: v.id("recipeImports"), attempt: v.number() }),
+    ),
+  }),
 );
 
 const phaseValidator = v.union(
@@ -84,9 +95,18 @@ const importViewValidator = v.object({
 });
 
 export const beginImport = mutation({
-  args: { clientRequestId: v.string(), source: sourceValidator },
+  args: {
+    clientRequestId: v.string(),
+    source: sourceValidator,
+    expectedAuthSubject: v.optional(v.string()),
+  },
   returns: v.id("recipeImports"),
-  handler: async (ctx, { clientRequestId, source }) => {
+  handler: async (ctx, { clientRequestId, source, expectedAuthSubject }) => {
+    if (
+      expectedAuthSubject !== undefined &&
+      (await ctx.auth.getUserIdentity())?.subject !== expectedAuthSubject
+    )
+      throwInvalid("The signed-in account changed. Reopen Foodedo to resume.");
     const ownerId = await requireUserId(ctx);
     const requestId = clientRequestId.trim();
     if (
@@ -96,6 +116,36 @@ export const beginImport = mutation({
       throwInvalid("Invalid import request identifier.");
     }
 
+    if (source.type === "text" && source.resume) {
+      const previous = await ctx.db.get(source.resume.importId);
+      if (!previous || previous.ownerId !== ownerId || previous.cleanedUpAt)
+        throwInvalid("Import not found.");
+      if (previous.recoveryRequestId === requestId) return previous._id;
+      if (
+        previous.status !== "failed" ||
+        previous.attempt !== source.resume.attempt ||
+        previous.draft
+      )
+        throwInvalid(
+          "This import changed. Reopen it before adding recipe text.",
+        );
+      const textInput = prepareSource(source);
+      const attempt = previous.attempt + 1;
+      await ctx.db.patch(previous._id, {
+        inputText: textInput.inputText,
+        recoveryRequestId: requestId,
+        attempt,
+        status: "queued",
+        phase: "waiting",
+        failureCode: undefined,
+        failureDetails: undefined,
+        failureReasons: undefined,
+        failureSourceIds: undefined,
+        updatedAt: Date.now(),
+      });
+      await scheduleAttempt(ctx, previous._id, attempt);
+      return previous._id;
+    }
     const existing = await ctx.db
       .query("recipeImports")
       .withIndex("by_owner_and_request", (q) =>
@@ -110,6 +160,12 @@ export const beginImport = mutation({
       ownerId,
       clientRequestId: requestId,
       ...input,
+      ...(input.sourceType === "url"
+        ? { originalSourceUrl: input.sourceUrl }
+        : {}),
+      ...(input.sourceType === "url" && socialImportPlatform(input.sourceUrl)
+        ? { platform: socialImportPlatform(input.sourceUrl) }
+        : {}),
       status: "queued",
       phase: "waiting",
       attempt: 1,
@@ -127,7 +183,7 @@ export const getImport = query({
   handler: async (ctx, { importId }) => {
     const ownerId = await requireUserId(ctx);
     const job = await ctx.db.get(importId);
-    if (job === null || job.ownerId !== ownerId) return null;
+    if (job === null || job.ownerId !== ownerId || job.cleanedUpAt) return null;
     return await toImportView(ctx, job);
   },
 });
@@ -155,13 +211,15 @@ export const notificationJobs = query({
       .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
       .order("desc")
       .take(20);
-    return jobs.map(({ _id, attempt, status, updatedAt, resultRecipeId }) => ({
-      _id,
-      attempt,
-      status,
-      updatedAt,
-      ...(resultRecipeId ? { resultRecipeId } : {}),
-    }));
+    return jobs
+      .filter((job) => !job.cleanedUpAt)
+      .map(({ _id, attempt, status, updatedAt, resultRecipeId }) => ({
+        _id,
+        attempt,
+        status,
+        updatedAt,
+        ...(resultRecipeId ? { resultRecipeId } : {}),
+      }));
   },
 });
 
@@ -171,7 +229,7 @@ export const retryImport = mutation({
   handler: async (ctx, { importId }) => {
     const ownerId = await requireUserId(ctx);
     const job = await ctx.db.get(importId);
-    if (job === null || job.ownerId !== ownerId) {
+    if (job === null || job.ownerId !== ownerId || job.cleanedUpAt) {
       throw new ConvexError({
         code: "NOT_FOUND",
         message: "Import not found.",
@@ -235,6 +293,7 @@ export const stageDraft = internalMutation({
       status: "awaiting_input",
       phase: "complete",
       inputText: undefined,
+      sharedText: undefined,
       expiresAt,
       ...(args.sourceName ? { sourceName: args.sourceName.slice(0, 160) } : {}),
       ...(args.sourceAuthor
@@ -359,7 +418,9 @@ export const finalizeDraft = mutation({
       importedAt: now,
       normalizationVersion: RECIPE_NORMALIZATION_VERSION,
       contentFingerprint,
-      ...(job.sourceUrl ? { sourceUrl: job.sourceUrl } : {}),
+      ...((job.resolvedSourceUrl ?? job.sourceUrl)
+        ? { sourceUrl: job.resolvedSourceUrl ?? job.sourceUrl }
+        : {}),
       ...(draft.sourceName ? { sourceName: draft.sourceName } : {}),
       ...(draft.sourceAuthor ? { sourceAuthor: draft.sourceAuthor } : {}),
       ...(draft.metadataProvenance
@@ -382,6 +443,7 @@ export const finalizeDraft = mutation({
         : "succeeded",
       draft: undefined,
       inputText: undefined,
+      sharedText: undefined,
       expiresAt: undefined,
       failureCode: undefined,
       failureDetails: undefined,
@@ -504,6 +566,7 @@ export const getPayload = internalQuery({
       sourceType: v.union(v.literal("url"), v.literal("text")),
       sourceUrl: v.optional(v.string()),
       inputText: v.optional(v.string()),
+      sharedText: v.optional(v.string()),
       method: v.union(v.literal("url"), v.literal("text")),
       sourceName: v.optional(v.string()),
       sourceAuthor: v.optional(v.string()),
@@ -528,8 +591,15 @@ export const getPayload = internalQuery({
       ...(job.sourceAuthor ? { sourceAuthor: job.sourceAuthor } : {}),
       ...(job.sourceImageUrls ? { sourceImageUrls: job.sourceImageUrls } : {}),
       ...(job.draft ? { recoveredDraft: job.draft } : {}),
-      ...(job.sourceUrl === undefined ? {} : { sourceUrl: job.sourceUrl }),
+      ...(job.sourceUrl === undefined
+        ? {}
+        : {
+            sourceUrl: job.inputText
+              ? (job.resolvedSourceUrl ?? job.sourceUrl)
+              : job.sourceUrl,
+          }),
       ...(job.inputText === undefined ? {} : { inputText: job.inputText }),
+      ...(job.sharedText === undefined ? {} : { sharedText: job.sharedText }),
     };
   },
 });
@@ -626,6 +696,7 @@ export const completeImport = internalMutation({
       status: reviewIssues.length > 0 ? "needs_review" : "succeeded",
       phase: "complete",
       inputText: undefined,
+      sharedText: undefined,
       failureCode: undefined,
       failureDetails: undefined,
       failureSourceIds: undefined,
@@ -688,6 +759,9 @@ export const failImport = internalMutation({
         status: "failed",
         phase: "complete",
         failureCode,
+        ...(failureCode === "video_only_unsupported" && !job.videoOnlyFirstDay
+          ? { videoOnlyFirstDay: new Date(now).toISOString().slice(0, 10) }
+          : {}),
         ...(failureDetails === undefined ? {} : { failureDetails }),
         ...(failureReasons === undefined
           ? {}
@@ -730,6 +804,12 @@ export const markTimedOut = internalMutation({
       (job.status === "queued" || job.status === "processing")
     ) {
       const now = Date.now();
+      if (job.acquisitionRunId)
+        await ctx.scheduler.runAfter(
+          0,
+          internal.recipeImportActions.cancelInstagramRun,
+          { runId: job.acquisitionRunId },
+        );
       await ctx.db.patch(importId, {
         status: "failed",
         phase: "complete",
@@ -786,7 +866,7 @@ export const cleanupImport = internalMutation({
       job.expiresAt !== undefined &&
       job.expiresAt <= Date.now()
     ) {
-      await ctx.db.delete(importId);
+      await clearImportPayload(ctx, job);
       return null;
     }
     if (
@@ -796,14 +876,38 @@ export const cleanupImport = internalMutation({
         job.status === "needs_review" ||
         job.status === "failed")
     ) {
-      await ctx.db.delete(importId);
+      await clearImportPayload(ctx, job);
     }
     return null;
   },
 });
 
+/** Keep outcomes on the import itself; expire recoverable content after seven days. */
+async function clearImportPayload(ctx: MutationCtx, job: Doc<"recipeImports">) {
+  await ctx.db.patch(job._id, {
+    cleanedUpAt: Date.now(),
+    inputText: undefined,
+    sharedText: undefined,
+    sourceUrl: undefined,
+    originalSourceUrl: undefined,
+    resolvedSourceUrl: undefined,
+    sourceName: undefined,
+    sourceAuthor: undefined,
+    sourceImageUrls: undefined,
+    acquisitionRunId: undefined,
+    acquisition: undefined,
+    draft: undefined,
+    expiresAt: undefined,
+    failureDetails: undefined,
+    failureSourceIds: undefined,
+    failureReasons: undefined,
+  });
+}
+
 function prepareSource(
-  source: { type: "url"; url: string } | { type: "text"; text: string },
+  source:
+    | { type: "url"; url: string; sharedText?: string }
+    | { type: "text"; text: string },
 ) {
   if (source.type === "url") {
     const url = source.url.trim();
@@ -818,7 +922,16 @@ function prepareSource(
     } catch {
       throwInvalid("Enter a valid recipe link.");
     }
-    return { sourceType: "url" as const, sourceUrl: url };
+    if (
+      (source.sharedText?.length ?? 0) >
+      RECIPE_IMPORT_INPUT_LIMITS.textCharacters
+    )
+      throwInvalid("That shared text is too long.");
+    return {
+      sourceType: "url" as const,
+      sourceUrl: url,
+      ...(source.sharedText ? { sharedText: source.sharedText.trim() } : {}),
+    };
   }
 
   const text = source.text.trim();
@@ -844,8 +957,9 @@ async function scheduleAttempt(
     importId,
     attempt,
   });
+  const job = await ctx.db.get(importId);
   await ctx.scheduler.runAfter(
-    IMPORT_TIMEOUT_MS,
+    job?.platform === "instagram" ? 180_000 : IMPORT_TIMEOUT_MS,
     internal.recipeImports.markTimedOut,
     { importId, attempt },
   );
@@ -884,3 +998,44 @@ async function toImportView(ctx: QueryCtx, job: Doc<"recipeImports">) {
     updatedAt: job.updatedAt,
   };
 }
+
+export const recordAcquisition = internalMutation({
+  args: {
+    importId: v.id("recipeImports"),
+    attempt: v.number(),
+    runId: v.optional(v.string()),
+    resolvedUrl: v.optional(v.string()),
+    summary: v.optional(
+      v.object({
+        outcome: v.string(),
+        provider: v.literal("apify"),
+        durationMs: v.optional(v.number()),
+        captionCharacters: v.optional(v.number()),
+        linkedPagesTried: v.optional(v.number()),
+        linkedContentUnavailable: v.optional(v.boolean()),
+        suppliedTextPresent: v.optional(v.boolean()),
+        mediaType: v.optional(
+          v.union(
+            v.literal("video"),
+            v.literal("image"),
+            v.literal("carousel"),
+          ),
+        ),
+      }),
+    ),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, { importId, attempt, runId, resolvedUrl, summary }) => {
+    const job = await ctx.db.get(importId);
+    if (!job || job.status !== "processing" || job.attempt !== attempt)
+      return false;
+    await ctx.db.patch(importId, {
+      ...(runId ? { acquisitionRunId: runId } : {}),
+      ...(resolvedUrl && resolvedUrl.length <= 2048
+        ? { resolvedSourceUrl: resolvedUrl }
+        : {}),
+      ...(summary ? { acquisition: summary } : {}),
+    });
+    return true;
+  },
+});
