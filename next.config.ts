@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     "tsx",
     "ts",
     "jsx",
-    // Keep the standard analytics route.js entrypoint out of the static native bundle.
+    // Keep standard web-only route.js entrypoints out of the static native bundle.
     ...(!isCapacitorBuild ? ["js"] : []),
   ],
   env: {

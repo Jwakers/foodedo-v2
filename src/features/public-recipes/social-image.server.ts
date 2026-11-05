@@ -1,9 +1,7 @@
+import "server-only";
+
 import sharp from "sharp";
 import { getPublicRecipe } from "@/features/public-recipes/catalogue.server";
-
-export const runtime = "nodejs";
-export const dynamic = "force-static";
-export const revalidate = 86400;
 
 /** A compact JPEG keeps large catalogue originals out of messaging previews. */
 export async function GET(
