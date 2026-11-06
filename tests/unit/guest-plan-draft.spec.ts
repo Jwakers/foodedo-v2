@@ -905,3 +905,68 @@ for (const requestedAsGuest of [true, false]) {
     );
   });
 }
+
+test("manual guest choices can include warned recipes without putting them back into automatic suggestions", async () => {
+  const safe = { catalogueMealId: "safe", catalogueVersion: 1 };
+  const warned = { catalogueMealId: "warned", catalogueVersion: 1 };
+  const filtered = {
+    currentMeals: [safe],
+    selectableMeals: [safe, warned],
+    readableMeals: [safe, warned],
+  };
+  const store = createMemoryStore();
+  const initial = await ensureGuestPlanDraft({
+    catalogue: filtered,
+    planStartDate: "2026-11-01",
+    planDays: 3,
+    now: 1,
+    store,
+  });
+  const chosen = await replaceGuestPlanMeal({
+    catalogue: filtered,
+    date: initial.mealChoices[0]!.date,
+    catalogueMealId: "warned",
+    now: 2,
+    store,
+  });
+  expect(chosen.mealChoices[0]!.catalogueMealId).toBe("warned");
+  const extended = await extendCurrentGuestPlanDraft({
+    catalogue: filtered,
+    catalogueMealId: "warned",
+    now: 3,
+    store,
+  });
+  expect(extended.mealChoices.at(-1)!.catalogueMealId).toBe("warned");
+  const shuffled = await shuffleCurrentGuestPlanDraft({
+    catalogue: filtered,
+    now: 4,
+    store,
+  });
+  expect(
+    shuffled.mealChoices.every((choice) => choice.catalogueMealId === "safe"),
+  ).toBe(true);
+  expect(filtered.currentMeals).toEqual([safe]);
+});
+
+test("selecting another revision preserves older pinned meals in the same guest plan", async () => {
+  const old = { catalogueMealId: "versioned", catalogueVersion: 1 };
+  const current = { catalogueMealId: "versioned", catalogueVersion: 3 };
+  const seed = createGuestDraft({
+    catalogueMeals: [old],
+    planStartDate: "2026-11-01",
+    planDays: 3,
+    now: 1,
+  });
+  const store = createMemoryStore(seed);
+  const chosen = await replaceGuestPlanMeal({
+    catalogue: { currentMeals: [current], readableMeals: [old, current] },
+    date: seed.mealChoices[1]!.date,
+    catalogueMealId: "versioned",
+    catalogueVersion: 2,
+    now: 2,
+    store,
+  });
+  expect(chosen.mealChoices.map((choice) => choice.catalogueVersion)).toEqual([
+    1, 2, 1,
+  ]);
+});

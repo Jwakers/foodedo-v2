@@ -1,6 +1,5 @@
 "use client";
 
-import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -61,23 +60,5 @@ export function PlanScopeOption({
         <span className="text-11 text-graphite">{description}</span>
       </span>
     </label>
-  );
-}
-
-export function DietaryPreferencesStub() {
-  return (
-    <div className="mt-3 flex min-h-12.5 items-center gap-2.5 rounded-md bg-leaf-soft px-3.5">
-      <Check aria-hidden="true" className="size-4.5 shrink-0 text-leaf" />
-      <p className="min-w-0 flex-1 text-13 font-medium text-leaf">
-        Dietary preferences
-      </p>
-      <Button
-        variant="inline"
-        className="h-11 shrink-0 text-12 font-semibold text-leaf"
-        disabled
-      >
-        Coming soon
-      </Button>
-    </div>
   );
 }

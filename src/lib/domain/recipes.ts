@@ -218,6 +218,8 @@ export function catalogueMealReferenceKey({
 }
 
 export type CatalogueMeal = RecipeContent & {
+  allergenIds?: string[];
+  possibleAllergenIds?: string[];
   id: string;
   version: number;
   slug: string;

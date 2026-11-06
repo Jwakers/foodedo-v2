@@ -1,3 +1,6 @@
+import type { Infer } from "convex/values";
+import { mealPlanViewValidator } from "./contracts";
+import { recipeAllergyEvidence } from "../../../src/lib/domain/allergies";
 import { recipeServingScaling } from "../../../src/lib/domain/ingredient-scaling";
 import { withStepIngredientMappings } from "../../../src/lib/domain/step-ingredients";
 import type { Doc, Id } from "../../_generated/dataModel";
@@ -12,7 +15,7 @@ export async function buildMealPlanView(
   ownerId: SpaceId,
   mealPlan: Doc<"mealPlans">,
   { hasActivePlanConflict }: { hasActivePlanConflict: boolean },
-) {
+): Promise<Infer<typeof mealPlanViewValidator>> {
   const mealSlots = await getPlanSlots(ctx, mealPlan._id);
   const recipes = await Promise.all(
     mealSlots.map(async (mealSlot) => {
@@ -28,6 +31,8 @@ export async function buildMealPlanView(
           date: mealSlot.date,
           recipeId: mealSlot.recipeId,
           isAvailable: false,
+          allergenIds: [],
+          possibleAllergenIds: [],
           catalogueMealId: null,
           catalogueVersion: null,
           catalogueMealSlug: null,
@@ -54,6 +59,7 @@ export async function buildMealPlanView(
         date: mealSlot.date,
         recipeId: recipe._id,
         isAvailable: true,
+        ...recipeAllergyEvidence(recipe),
         catalogueMealId:
           recipe.source.type === "catalogue"
             ? recipe.source.catalogueMealId

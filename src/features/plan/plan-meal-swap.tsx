@@ -1,5 +1,9 @@
 "use client";
 
+import { useAllergies } from "@/features/allergies/allergy-context";
+import { allergyWarningText } from "@/features/allergies/allergy-warning";
+import { ALLERGY_REMINDER } from "@/lib/domain/allergies";
+import { TriangleAlert } from "lucide-react";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import {
   ArrowRight,
@@ -63,6 +67,7 @@ export function PlanMealSwap({
   onOpenPreview: (catalogueMealId: string) => void;
 }) {
   const { push } = useDrawerStack();
+  const allergies = useAllergies();
   const catalogue = useCurrentCatalogue();
   const candidates = (catalogue?.meals ?? []).filter(
     (meal) => meal.id !== currentMeal?.id,
@@ -235,7 +240,7 @@ export function PlanMealSwap({
       <DrawerFooter>
         <Button
           className="w-full"
-          disabled={!selectedMeal || isSwapping}
+          disabled={!selectedMeal || isSwapping || !allergies.ready}
           aria-busy={isSwapping || undefined}
           onClick={() => {
             if (!selectedMeal || isSwapping) return;
@@ -249,6 +254,9 @@ export function PlanMealSwap({
           </span>
           <ArrowRight aria-hidden="true" className="size-4.5 shrink-0" />
         </Button>
+        {allergies.effectiveIds.length > 0 ? (
+          <p className="mt-2 text-12 text-graphite">{ALLERGY_REMINDER}</p>
+        ) : null}
       </DrawerFooter>
     </>
   );
@@ -267,6 +275,8 @@ function SwapCandidateRow({
   onSelect: () => void;
   onOpenPreview: () => void;
 }) {
+  const { effectiveIds } = useAllergies();
+  const warning = allergyWarningText(meal, effectiveIds);
   const durationLabel = formatMealDurationLabel(
     meal.prepMinutes,
     meal.cookMinutes,
@@ -300,6 +310,15 @@ function SwapCandidateRow({
           <p className="truncate text-15 font-semibold text-ink">
             {formatRecipeHeading(meal.title)}
           </p>
+          {warning ? (
+            <span className="flex items-start gap-1 text-12 font-semibold text-cadmium">
+              <TriangleAlert
+                aria-hidden="true"
+                className="mt-0.5 size-3 shrink-0"
+              />
+              {warning}
+            </span>
+          ) : null}
           {meta ? (
             <span className="flex w-fit items-center gap-1 text-12 text-graphite">
               {meta}

@@ -1,3 +1,8 @@
+import { effectiveAllergies } from "../allergies";
+import {
+  recipeAllergyEvidence,
+  isAllergyEligible,
+} from "../../../src/lib/domain/allergies";
 import { withStepIngredientMappings } from "../../../src/lib/domain/step-ingredients";
 import {
   minimumServingsNotice,
@@ -64,6 +69,8 @@ export async function buildRegenerationProposal(
     numberOfMeals: mealSlots.length,
     variationKey: `replan:${mealPlan._id}:${mealPlan.updatedAt}:${variant}`,
   });
+  if (selectedCandidateKeys.length < mealSlots.length)
+    return { status: "plan_unavailable" };
   const selectedCandidates = selectedCandidateKeys.map((key) =>
     candidatePool.byKey.get(key)!,
   );
@@ -126,6 +133,7 @@ export async function getPlanningCandidates(
 ) {
   const actorId = await requireUserId(ctx);
   const signals = await getMealSelectionSignals(ctx, ownerId);
+  const allergies = await effectiveAllergies(ctx, ownerId);
   const byKey = new Map<string, PlanCandidate>();
   // Private imports stay private. Household imports become eligible only after
   // somebody has explicitly put a snapshot into the shared space.
@@ -146,10 +154,13 @@ export async function getPlanningCandidates(
   for (const recipe of recipes) {
     // Use the current public revision for catalogue meals, not a member's edited copy.
     if (ownerId !== actorId && recipe.source.type === "catalogue") continue;
+    if (!isAllergyEligible(recipeAllergyEvidence(recipe), allergies)) continue;
     const candidate = await planCandidateFromRecipe(ctx, recipe);
     if (!byKey.has(candidate.key)) byKey.set(candidate.key, candidate);
   }
   for (const catalogueMeal of await getCurrentCatalogueMeals(ctx)) {
+    if (!isAllergyEligible(recipeAllergyEvidence(catalogueMeal), allergies))
+      continue;
     const candidate = planCandidateFromCatalogue(catalogueMeal);
     if (!byKey.has(candidate.key)) byKey.set(candidate.key, candidate);
   }
@@ -207,6 +218,7 @@ export async function selectPlanCandidateKeys({
   numberOfMeals: number;
   variationKey: string;
 }): Promise<string[]> {
+  if (candidatePool.byKey.size === 0) return [];
   const actorId = await requireUserId(ctx);
   const [recentPlans, preferences] = await Promise.all([
     getRecentSelectionHistory(ctx, ownerId),

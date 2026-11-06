@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { capacitorClerkOAuthTransport } from "@/lib/platform/capacitor/clerk-oauth-transport";
 
 import { OnboardingProvider } from "@/features/onboarding/use-onboarding";
+import { AllergyProvider } from "@/features/allergies/allergy-context";
 import { HouseholdProvider } from "@/features/household/household-context";
 
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -27,7 +28,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <AccountSyncGate>
           <OnboardingProvider>
-            <HouseholdProvider>{children}</HouseholdProvider>
+            <HouseholdProvider>
+              <AllergyProvider>{children}</AllergyProvider>
+            </HouseholdProvider>
           </OnboardingProvider>
         </AccountSyncGate>
       </ConvexProviderWithClerk>

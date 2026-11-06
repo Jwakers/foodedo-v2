@@ -1,5 +1,7 @@
 "use client";
 
+import { useAllergies } from "@/features/allergies/allergy-context";
+import { isAllergyEligible } from "@/lib/domain/allergies";
 import { track } from "@/lib/analytics";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -50,6 +52,7 @@ export function PlanSetupPage({
   firstVersion?: number;
 }) {
   const router = useRouter();
+  const allergies = useAllergies();
   const { status, isAuthenticated } = useFoodedoAuth();
   const { spaceArgs, spaceKey, isHousehold, ready } = useHouseholdSpace();
   const { retire } = useOnboarding();
@@ -85,6 +88,7 @@ export function PlanSetupPage({
   if (status === "connection_error") return <AccountConnectionError />;
   if (
     status === "loading" ||
+    !allergies.ready ||
     !ready ||
     catalogue === undefined ||
     (pinnedReferences.length > 0 && pinned === undefined) ||
@@ -143,7 +147,22 @@ export function PlanSetupPage({
       const signalsById = new Map(
         (signals ?? []).map((signal) => [signal.catalogueMealId, signal]),
       );
-      const meals = catalogue!.meals.map((meal) => {
+      const eligibleMeals = catalogue!.meals.filter((meal) =>
+        isAllergyEligible(meal, allergies.effectiveIds),
+      );
+      if (eligibleMeals.length === 0) {
+        toast.error(
+          "We couldn’t find meals for your saved allergies. Your plan hasn’t changed.",
+        );
+        return;
+      }
+      if (firstMeal && !eligibleMeals.some((meal) => meal.id === firstMeal)) {
+        toast.error(
+          "This recipe needs an allergy check. Choose another recipe to start your plan.",
+        );
+        return;
+      }
+      const meals = eligibleMeals.map((meal) => {
         const signal = signalsById.get(meal.id);
         return {
           catalogueMealId: meal.id,
@@ -157,7 +176,10 @@ export function PlanSetupPage({
         };
       });
       const readableMeals = [
-        ...meals,
+        ...catalogue!.meals.map((meal) => ({
+          catalogueMealId: meal.id,
+          catalogueVersion: meal.version,
+        })),
         ...(pinned ?? []).map((meal) => ({
           catalogueMealId: meal.id,
           catalogueVersion: meal.version,

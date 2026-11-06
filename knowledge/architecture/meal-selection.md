@@ -43,7 +43,9 @@ mutations use plan identity, revision, target, and proposal variant. The client
 history query is owner-scoped and catalogue-only; server mutations may also use
 private recipe keys already available in their candidate pools.
 
-Future rules may add cooked-history, dietary safety constraints, explicit time
+[Allergy assistance](./allergies.md) filters candidate pools before scoring. Variety, saved status and repeat fallback can never reintroduce a filtered allergen match.
+
+Future rules may add cooked-history, broader dietary preferences, explicit time
 or cost preferences, and richer personal-recipe generation. Add each as a
 small deterministic rule with tests; do not turn the selector into a generic
 settings document or an opaque external service.

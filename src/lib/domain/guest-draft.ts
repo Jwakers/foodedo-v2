@@ -502,8 +502,12 @@ export function setGuestPlanMeal(
   );
   if (choiceIndex === -1) throw new Error("That date is not in this plan.");
 
-  const currentMealId = draft.mealChoices[choiceIndex]!.catalogueMealId;
-  if (currentMealId === catalogueMealId) return draft;
+  const currentChoice = draft.mealChoices[choiceIndex]!;
+  if (
+    currentChoice.catalogueMealId === catalogueMealId &&
+    currentChoice.catalogueVersion === catalogueVersions.get(catalogueMealId)
+  )
+    return draft;
 
   const mealChoices = draft.mealChoices.map((choice, index) =>
     index === choiceIndex

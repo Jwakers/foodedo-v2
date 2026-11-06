@@ -1,5 +1,8 @@
 "use client";
 
+import { useAllergies } from "@/features/allergies/allergy-context";
+import { allergyWarningText } from "@/features/allergies/allergy-warning";
+import { TriangleAlert } from "lucide-react";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { minimumServingsNotice } from "@/lib/domain/ingredient-scaling";
 
@@ -117,6 +120,8 @@ function PlannedMealRow({
   readOnly: boolean;
   recipeHref?: string;
 }) {
+  const { effectiveIds } = useAllergies();
+  const allergyLabel = allergyWarningText(row.meal, effectiveIds);
   const servingNotice =
     row.requestedServings === undefined
       ? null
@@ -139,6 +144,15 @@ function PlannedMealRow({
         <p className="truncate font-display text-18 font-semibold tracking-card text-ink">
           {formatRecipeHeading(row.meal.title)}
         </p>
+        {allergyLabel ? (
+          <p className="flex items-start gap-1 text-12 font-semibold text-cadmium">
+            <TriangleAlert
+              aria-hidden="true"
+              className="mt-0.5 size-3 shrink-0"
+            />
+            {allergyLabel}
+          </p>
+        ) : null}
         {servingNotice ? (
           <p className="text-12 text-graphite">{servingNotice}</p>
         ) : null}

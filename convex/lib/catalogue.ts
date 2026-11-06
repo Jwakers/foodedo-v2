@@ -1,3 +1,4 @@
+import { recipeAllergyEvidence } from "../../src/lib/domain/allergies";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { recipeServingScaling } from "../../src/lib/domain/ingredient-scaling";
@@ -93,6 +94,7 @@ export async function catalogueMealSummary(
     throw new Error("A readable catalogue meal must have a stored image.");
   }
   return {
+    ...recipeAllergyEvidence(meal),
     id: meal.catalogueMealId,
     version: meal.version,
     slug: meal.slug,

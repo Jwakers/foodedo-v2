@@ -116,6 +116,12 @@ export const deleteFromClerk = internalMutation({
       .collect();
     for (const entry of feedback) await ctx.db.delete(entry._id);
 
+    const allergies = await ctx.db
+      .query("allergyProfiles")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect();
+    for (const profile of allergies) await ctx.db.delete(profile._id);
+
     const planningPreferences = await ctx.db
       .query("planningPreferences")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

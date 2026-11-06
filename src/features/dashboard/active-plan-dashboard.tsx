@@ -1,11 +1,13 @@
 "use client";
 
+import { allergyWarningText } from "@/features/allergies/allergy-warning";
+import { useAllergies } from "@/features/allergies/allergy-context";
 import { useEffect } from "react";
 import { useAuth } from "@clerk/react";
 import { rememberPlanVisit } from "@/lib/analytics";
 
 import { useMemo } from "react";
-import { ArrowRight, Check, Download } from "lucide-react";
+import { ArrowRight, Check, Download, TriangleAlert } from "lucide-react";
 import type { FunctionReturnType } from "convex/server";
 
 import { ButtonLink } from "@/components/ui/button";
@@ -24,6 +26,13 @@ type ActiveMealPlan = NonNullable<
 
 export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
   const { userId } = useAuth();
+  const { effectiveIds } = useAllergies();
+  const affectedMeals = plan.mealSlots.filter(
+    (meal) =>
+      meal.isAvailable &&
+      meal.status !== "skipped" &&
+      allergyWarningText(meal, effectiveIds),
+  );
   useEffect(() => {
     rememberPlanVisit(plan._id, userId);
   }, [plan._id, userId]);
@@ -42,6 +51,31 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
         Your plan
       </h1>
 
+      {affectedMeals.length > 0 ? (
+        <div className="flex items-start gap-2.5 rounded-surface bg-cadmium-soft p-3.5">
+          <TriangleAlert
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-cadmium"
+          />
+          <div>
+            <p className="text-14 font-semibold text-cadmium">
+              {affectedMeals
+                .slice(0, 2)
+                .map(
+                  (meal) =>
+                    `${meal.title}: ${allergyWarningText(meal, effectiveIds)?.toLowerCase()}`,
+                )
+                .join(". ")}
+              {affectedMeals.length > 2
+                ? `. Check ${affectedMeals.length - 2} other meals in your plan too.`
+                : "."}
+            </p>
+            <p className="mt-1 text-12 leading-4.5 text-graphite">
+              Always check ingredients, product labels and cross-contact risks.
+            </p>
+          </div>
+        </div>
+      ) : null}
       {meals.length > 0 ? (
         <PlanMealSelector
           key={selectionKey}

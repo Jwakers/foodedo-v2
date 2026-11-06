@@ -1,4 +1,5 @@
 "use client";
+import { recipeAllergyEvidence } from "@/lib/domain/allergies";
 
 import { useAuth } from "@clerk/react";
 import { usePaginatedQuery } from "convex-helpers/react";
@@ -562,6 +563,7 @@ function CatalogueGrid({
             <li key={meal.id}>
               <RecipeCard
                 href={catalogueBrowsePath(meal.slug)}
+                allergyEvidence={meal}
                 title={meal.title}
                 meta={catalogueMealMeta(meal)}
                 imageSrc={meal.imageSrc}
@@ -645,6 +647,7 @@ function YoursGrid({
             {recipes.map((recipe) => (
               <li key={recipe._id}>
                 <RecipeCard
+                  allergyEvidence={recipeAllergyEvidence(recipe)}
                   title={recipe.title}
                   meta={personalRecipeMeta(recipe)}
                   imageSrc={recipe.imageSrc}

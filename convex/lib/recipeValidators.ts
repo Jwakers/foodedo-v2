@@ -237,7 +237,13 @@ export const catalogueMealStatusValidator = v.union(
   v.literal("retired"),
 );
 
+export const allergyEvidenceFields = {
+  allergenIds: v.optional(v.array(v.string())),
+  possibleAllergenIds: v.optional(v.array(v.string())),
+};
+
 export const catalogueMealSummaryValidator = v.object({
+  ...allergyEvidenceFields,
   id: v.string(),
   version: v.number(),
   slug: v.string(),
@@ -257,6 +263,7 @@ export const catalogueMealSummaryValidator = v.object({
 });
 
 export const catalogueMealViewValidator = v.object({
+  ...allergyEvidenceFields,
   id: v.string(),
   version: v.number(),
   slug: v.string(),

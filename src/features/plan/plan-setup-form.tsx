@@ -1,5 +1,6 @@
 "use client";
 
+import { AllergyEntry } from "@/features/allergies/allergy-management";
 import { ArrowRight, Minus, Plus } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -274,6 +275,8 @@ export function PlanSetupForm({
             />
           </label>
         ) : null}
+
+        <AllergyEntry />
 
         {canRemember && hasChanges ? (
           <fieldset className="mt-3.5 flex flex-col gap-2">

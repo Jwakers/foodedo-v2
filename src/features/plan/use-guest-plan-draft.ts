@@ -1,5 +1,7 @@
 "use client";
 
+import { useAllergies } from "@/features/allergies/allergy-context";
+import { isAllergyEligible } from "@/lib/domain/allergies";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
@@ -50,6 +52,7 @@ export type GuestPlanDraftState =
     };
 
 type GuestDraftCatalogueSelection = {
+  selectableMeals?: CatalogueMealSummary[];
   meals: (CatalogueMealSummary &
     MealPreferenceSignals & { isSaved?: boolean })[];
   readableMeals: CatalogueMealSummary[];
@@ -67,6 +70,13 @@ export function toGuestCatalogueContract(
       savedByMemberKeys: meal.savedByMemberKeys,
       dismissalCount: meal.dismissalCount,
     })),
+    selectableMeals: (selection.selectableMeals ?? selection.meals).map(
+      (meal) => ({
+        catalogueMealId: meal.id,
+        catalogueVersion: meal.version,
+        proteinCategory: meal.proteinCategory,
+      }),
+    ),
     readableMeals: selection.readableMeals.map((meal) => ({
       catalogueMealId: meal.id,
       catalogueVersion: meal.version,
@@ -232,6 +242,7 @@ export function useGuestDraftCatalogue(storeKey?: string): {
   refreshStoredReferences: () => Promise<void>;
 } {
   const currentCatalogue = useCurrentCatalogue();
+  const { effectiveIds: allergyIds, ready: allergiesReady } = useAllergies();
   const { isAuthenticated } = useFoodedoAuth();
   const { spaceArgs, ready: spaceReady } = useHouseholdSpace();
   const selectionSignals = useQuery(
@@ -283,6 +294,7 @@ export function useGuestDraftCatalogue(storeKey?: string): {
 
   const catalogue = useMemo(() => {
     if (
+      !allergiesReady ||
       storedReferences === undefined ||
       currentCatalogue === undefined ||
       (isAuthenticated &&
@@ -320,10 +332,13 @@ export function useGuestDraftCatalogue(storeKey?: string): {
       readableByReference.set(`${meal.id}:${meal.version}`, meal);
     }
     return {
-      meals: currentMeals,
+      meals: currentMeals.filter((meal) => isAllergyEligible(meal, allergyIds)),
+      selectableMeals: currentMeals,
       readableMeals: [...readableByReference.values()],
     };
   }, [
+    allergyIds,
+    allergiesReady,
     currentCatalogue,
     pinnedMeals,
     storedReferences,

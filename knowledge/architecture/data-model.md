@@ -36,7 +36,7 @@ The small set of reusable defaults required by the approved signed-in **Adjust y
 
 There is at most one record per authenticated owner. Mutations derive the owner from `ctx.auth`, use patch semantics, and update only persistent-capable fields the user actually changed. The actual start date selected for a plan is never stored here.
 
-The pre-plan sheet resolves its initial values from this record and then Foodedo defaults. **This plan only** keeps overrides in local generation state. **This and future plans** also patches this record. Dietary requirements and allergies will use their own later profile contract and are not governed by this selector. See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
+The pre-plan sheet resolves its initial values from this record and then Foodedo defaults. **This plan only** keeps overrides in local generation state. **This and future plans** also patches this record. Allergies use their own independently saved profile and are not governed by this selector; broader dietary preferences remain later work. See [ADR 0009](../decisions/0009-plan-adjustments-and-preferences.md).
 
 ### catalogue meals (standard content)
 
@@ -206,3 +206,7 @@ An active Cook session—current step, preparation checks, scroll position, and 
 Always index owner and join keys. Prefer `withIndex` over `filter`. Paginate unbounded lists such as the recipe library and events.
 
 Catalogue maintenance (`/admin/catalogue`) reuses `catalogueProposals`, adding optional `sourceMealId` (the exact published document), `maintenanceMode` (`recipe`/`image`) and `changeSummary`. Source/status and proposal/run-time indexes support idempotent open-draft reuse and scoped failure feedback. The `improve` run operation audits existing content before a scoped rewrite and separate review. Publication checks source currency, retires the previous revision, and preserves the stable meal ID, slug, ordering and all historical images. Image-only proposals retain published text exactly; editing converts them to normal reviewed recipe revisions. Private user recipes remain outside this admin tool.
+
+## Allergy profiles
+
+See [Allergy assistance](./allergies.md) for `allergyProfiles`, independent explicit saves, household opt-in and guest local state.

@@ -10,6 +10,8 @@ export const mealSlotViewValidator = v.object({
   date: v.string(),
   recipeId: v.id("recipes"),
   isAvailable: v.boolean(),
+  allergenIds: v.optional(v.array(v.string())),
+  possibleAllergenIds: v.optional(v.array(v.string())),
   catalogueMealId: v.union(v.string(), v.null()),
   catalogueVersion: v.union(v.number(), v.null()),
   catalogueMealSlug: v.union(v.string(), v.null()),

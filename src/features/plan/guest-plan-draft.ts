@@ -41,6 +41,8 @@ export type GuestCatalogueContract = {
     proteinCategory?: ProteinCategory;
     isSaved?: boolean;
   })[];
+  /** Current public choices for explicit manual selection, including warnings. */
+  selectableMeals?: GuestCatalogueContract["currentMeals"];
   readableMeals: readonly {
     catalogueMealId: string;
     catalogueVersion: number;
@@ -63,6 +65,7 @@ function withSelectedCatalogueReference(
     (meal) => meal.catalogueMealId === catalogueMealId,
   )!;
   return {
+    ...catalogue,
     currentMeals: [
       { ...selected, catalogueVersion },
       ...catalogue.currentMeals.filter(
@@ -72,7 +75,9 @@ function withSelectedCatalogueReference(
     readableMeals: [
       { ...selected, catalogueVersion },
       ...catalogue.readableMeals.filter(
-        (meal) => meal.catalogueMealId !== catalogueMealId,
+        (meal) =>
+          meal.catalogueMealId !== catalogueMealId ||
+          meal.catalogueVersion !== catalogueVersion,
       ),
     ],
   };
@@ -82,8 +87,12 @@ function catalogueForMealReference(
   catalogue: GuestCatalogueContract,
   catalogueMealId: string,
   catalogueVersion?: number,
+  allowManualChoice = false,
 ): GuestCatalogueContract {
-  const currentReference = catalogue.currentMeals.find(
+  const choices = allowManualChoice
+    ? (catalogue.selectableMeals ?? catalogue.currentMeals)
+    : catalogue.currentMeals;
+  const currentReference = choices.find(
     (meal) => meal.catalogueMealId === catalogueMealId,
   );
   if (currentReference === undefined) {
@@ -93,12 +102,25 @@ function catalogueForMealReference(
     catalogueVersion === undefined ||
     catalogueVersion === currentReference.catalogueVersion
   ) {
-    return catalogue;
+    if (
+      catalogue.currentMeals.some(
+        (meal) => meal.catalogueMealId === catalogueMealId,
+      )
+    )
+      return catalogue;
   }
   return withSelectedCatalogueReference(
-    catalogue,
+    {
+      ...catalogue,
+      currentMeals: [
+        currentReference,
+        ...catalogue.currentMeals.filter(
+          (meal) => meal.catalogueMealId !== catalogueMealId,
+        ),
+      ],
+    },
     catalogueMealId,
-    catalogueVersion,
+    catalogueVersion ?? currentReference.catalogueVersion,
   );
 }
 
@@ -539,6 +561,7 @@ export async function replaceGuestPlanMeal({
     catalogue,
     catalogueMealId,
     catalogueVersion,
+    true,
   );
   const catalogueMeals = selectedCatalogue.currentMeals;
   return store.runMutation((raw) => {
@@ -603,7 +626,12 @@ export async function extendCurrentGuestPlanDraft({
   const selectedCatalogue =
     catalogueMealId === undefined
       ? catalogue
-      : catalogueForMealReference(catalogue, catalogueMealId, catalogueVersion);
+      : catalogueForMealReference(
+          catalogue,
+          catalogueMealId,
+          catalogueVersion,
+          true,
+        );
   const catalogueMeals = selectedCatalogue.currentMeals;
   return store.runMutation((raw) => {
     const existing = parseGuestDraft(raw, selectedCatalogue);

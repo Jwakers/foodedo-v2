@@ -169,6 +169,12 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_auth_subject", ["authSubject"]),
+  allergyProfiles: defineTable({
+    ownerId: v.id("users"),
+    allergenIds: v.array(v.string()),
+    shareWithHousehold: v.boolean(),
+    revision: v.number(),
+  }).index("by_owner", ["ownerId"]),
   planningPreferences: defineTable({
     ownerId: v.id("users"),
     usualPlanDays: v.union(

@@ -1,7 +1,14 @@
 "use client";
 
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
-import { CircleAlert, Play } from "lucide-react";
+import { AllergyWarning } from "@/features/allergies/allergy-warning";
+import { useAllergies } from "@/features/allergies/allergy-context";
+import {
+  recipeAllergyEvidence,
+  ingredientAllergyEvidence,
+  isAllergyEligible,
+} from "@/lib/domain/allergies";
+import { CircleAlert, Play, TriangleAlert } from "lucide-react";
 import Image from "next/image";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 
@@ -63,6 +70,8 @@ export function RecipeDetailContent({
   planServings?: number;
 }) {
   const router = useRouter();
+  const { effectiveIds } = useAllergies();
+  const allergyEvidence = recipeAllergyEvidence(meal);
   const defaultServings = initialServings ?? meal.servings ?? 1;
   const [servingSelection, setServingSelection] = useState(() => ({
     recipeSlug: meal.slug,
@@ -261,6 +270,9 @@ export function RecipeDetailContent({
         className="px-page-inline"
         aria-labelledby="recipe-ingredients-heading"
       >
+        <div className="mb-3">
+          <AllergyWarning evidence={allergyEvidence} />
+        </div>
         <div className="flex items-end justify-between pt-1 pb-3">
           <h2
             id="recipe-ingredients-heading"
@@ -280,7 +292,15 @@ export function RecipeDetailContent({
                   {formatRecipeHeading(line.group)}
                 </li>
               ) : null}
-              <li className="flex min-h-11 items-start gap-3 border-b border-border py-2">
+              <li
+                className={cn(
+                  "flex min-h-11 items-start gap-3 border-b border-border py-2",
+                  !isAllergyEligible(
+                    ingredientAllergyEvidence(line),
+                    effectiveIds,
+                  ) && "bg-cadmium-soft px-2",
+                )}
+              >
                 <span className="w-32 shrink-0 text-14 font-semibold text-ink">
                   {formatIngredientAmount(line)}
                 </span>
@@ -288,6 +308,15 @@ export function RecipeDetailContent({
                   <span className="block text-14 font-medium text-ink">
                     {formatIngredientName(line)}
                   </span>
+                  {!isAllergyEligible(
+                    ingredientAllergyEvidence(line),
+                    effectiveIds,
+                  ) ? (
+                    <span className="mt-1 flex items-center gap-1 text-12 font-semibold text-cadmium">
+                      <TriangleAlert aria-hidden="true" className="size-3" />
+                      In your allergies — check ingredient
+                    </span>
+                  ) : null}
                   {formatIngredientNote(line) ? (
                     <span className="mt-0.5 block text-13 leading-5 text-graphite">
                       {formatIngredientNote(line)}

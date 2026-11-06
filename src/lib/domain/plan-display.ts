@@ -91,6 +91,8 @@ export function formatMealDurationLabel(
 }
 
 export type ActivePlanMealSlot = {
+  allergenIds?: string[];
+  possibleAllergenIds?: string[];
   _id?: string;
   isAvailable?: boolean;
   recipeId?: string;
@@ -179,6 +181,8 @@ export function summarizeGuestPlanDraft(draft: GuestDraft) {
 }
 
 export type ActivePlanWeekSlot = {
+  allergenIds?: string[];
+  possibleAllergenIds?: string[];
   servings?: number;
   minimumServings?: number;
   servingScaling?: "safe" | "source_only";
@@ -257,6 +261,9 @@ export function resolveActivePlanWeekRows({
 
     const meal = {
       ...fallbackMeal,
+      allergenIds: slot.allergenIds ?? fallbackMeal.allergenIds,
+      possibleAllergenIds:
+        slot.possibleAllergenIds ?? fallbackMeal.possibleAllergenIds,
       servings: slot.servings,
       minimumServings: slot.minimumServings,
       servingScaling: slot.servingScaling,

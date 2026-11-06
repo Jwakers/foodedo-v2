@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as allergies from "../allergies.js";
 import type * as catalogue from "../catalogue.js";
 import type * as catalogueAdmin from "../catalogueAdmin.js";
 import type * as catalogueGenerationActions from "../catalogueGenerationActions.js";
@@ -16,6 +17,7 @@ import type * as crons from "../crons.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as lib_activePlan from "../lib/activePlan.js";
+import type * as lib_allergies from "../lib/allergies.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
 import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
@@ -80,6 +82,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  allergies: typeof allergies;
   catalogue: typeof catalogue;
   catalogueAdmin: typeof catalogueAdmin;
   catalogueGenerationActions: typeof catalogueGenerationActions;
@@ -88,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   households: typeof households;
   http: typeof http;
   "lib/activePlan": typeof lib_activePlan;
+  "lib/allergies": typeof lib_allergies;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
   "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;

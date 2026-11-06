@@ -29,6 +29,7 @@ Authentication protects durable personal data; it does not unlock the standard m
 - Read the same published catalogue from public Convex queries for guests and account holders. Every occupied draft day pins its meal's exact version; retired meal revisions remain readable so an existing draft can still be reviewed and claimed.
 - Store only a bounded draft locally (prefer IndexedDB behind a platform adapter): seven consecutive dated catalogue meal choices, acceptance/claim state, schema version, and timestamps.
 - Do not put guest-owned recipes, plans, settings, or synthetic guest users in Convex.
+- Allergy assistance allows bounded device-local selections without sign-in. Remembering them on an account requires an explicit save; existing account allergies are never silently replaced. See [Allergy assistance](./allergies.md).
 - Do not store secrets or treat a device identifier as identity.
 - Give the user an obvious way to clear the draft.
 
