@@ -1,5 +1,10 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { recipeServingScaling } from "../../src/lib/domain/ingredient-scaling";
+import {
+  hasCurrentIngredientMappings,
+  withStepIngredientMappings,
+} from "../../src/lib/domain/step-ingredients";
 
 type ReadCtx = QueryCtx | MutationCtx;
 type ReadableCatalogueMeal = Doc<"catalogueMeals"> & {
@@ -79,7 +84,11 @@ export async function catalogueMealSummary(
   meal: Doc<"catalogueMeals">,
 ) {
   assertReadableCatalogueMeal(meal);
-  const imageSrc = await catalogueImageUrl(ctx, meal.imageStorageId);
+  const [imageSrc, enriched] = await Promise.all([
+    catalogueImageUrl(ctx, meal.imageStorageId),
+    enrichedCatalogueMeal(ctx, meal),
+  ]);
+  const servingScaling = recipeServingScaling(enriched);
   if (imageSrc === undefined) {
     throw new Error("A readable catalogue meal must have a stored image.");
   }
@@ -93,9 +102,7 @@ export async function catalogueMealSummary(
       ? {}
       : { description: meal.description }),
     ...(meal.servings === undefined ? {} : { servings: meal.servings }),
-    ...(meal.servingScaling === undefined
-      ? {}
-      : { servingScaling: meal.servingScaling }),
+    servingScaling,
     ...(meal.minimumServings === undefined
       ? {}
       : { minimumServings: meal.minimumServings }),
@@ -111,20 +118,46 @@ export async function catalogueMealSummary(
   };
 }
 
+/** Both listing and detail reads use the same materialised enrichment. */
+async function enrichedCatalogueMeal(
+  ctx: ReadCtx,
+  meal: Doc<"catalogueMeals">,
+) {
+  let enriched = meal;
+  if (!hasCurrentIngredientMappings(meal)) {
+    const stored = await ctx.db
+      .query("catalogueIngredientMappings")
+      .withIndex("by_meal", (q) => q.eq("mealId", meal._id))
+      .unique();
+    if (stored) {
+      const mappings = new Map(
+        stored.steps.map((step) => [step.id, step.ingredientMapping]),
+      );
+      enriched = {
+        ...meal,
+        steps: meal.steps.map((step) => ({
+          ...step,
+          ingredientMapping: mappings.get(step.id),
+        })),
+      };
+    }
+  }
+  return withStepIngredientMappings(enriched);
+}
+
 export async function catalogueMealView(
   ctx: ReadCtx,
   meal: Doc<"catalogueMeals">,
 ) {
-  const summary = await catalogueMealSummary(ctx, meal);
+  const enriched = await enrichedCatalogueMeal(ctx, meal);
+  const summary = await catalogueMealSummary(ctx, enriched);
   return {
     ...summary,
     ingredients: meal.ingredients,
-    steps: meal.steps,
+    steps: enriched.steps,
     ...(meal.preheat === undefined ? {} : { preheat: meal.preheat }),
     ...(meal.notes === undefined ? {} : { notes: meal.notes }),
-    ...(meal.servingScaling === undefined
-      ? {}
-      : { servingScaling: meal.servingScaling }),
+    servingScaling: recipeServingScaling(enriched),
   };
 }
 

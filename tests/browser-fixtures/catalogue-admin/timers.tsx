@@ -8,7 +8,7 @@ import {
   emptyCookSession,
   reduceCookSession,
 } from "../../../src/lib/domain/cook-session";
-import { scaleIngredients } from "../../../src/lib/domain/ingredient-scaling";
+import { recipeServingModel } from "../../../src/lib/domain/ingredient-scaling";
 import type { CatalogueMeal } from "../../../src/lib/domain/recipes";
 
 export function TimersFixture() {
@@ -41,6 +41,7 @@ export function TimersFixture() {
     { meal, catalogueVersion: 1, servings: 2 },
     emptyCookSession,
   );
+  const ingredients = recipeServingModel(meal, session.servings).ingredients;
   const actions = {
     now,
     timerMenuId: menu,
@@ -86,12 +87,13 @@ export function TimersFixture() {
           meal={meal}
           session={session}
           persistenceAvailable
-          ingredients={scaleIngredients(meal.ingredients, meal.servings, 2)}
+          ingredients={ingredients}
           onBack={() => dispatch({ type: "hide-ingredients" })}
           {...actions}
         />
       ) : session.phase.name === "step" ? (
         <StepScreen
+          ingredients={ingredients}
           meal={meal}
           session={{ ...session, phase: session.phase }}
           persistenceAvailable

@@ -247,7 +247,7 @@ test("only two explicit approvals publish once, preserving current catalogue ord
   );
   expect(
     (await t.run((ctx) => ctx.db.query("catalogueMeals").first()))?.steps,
-  ).toEqual(content.steps);
+  ).toMatchObject(content.steps);
   await t.mutation(internal.catalogueAdmin.completeImage, {
     runId,
     token: run.attemptToken,

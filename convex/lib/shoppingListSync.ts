@@ -4,6 +4,7 @@ import {
   SHOPPING_LIST_LIMITS,
 } from "../../src/lib/domain/shopping-list";
 import { recipeServingModel } from "../../src/lib/domain/ingredient-scaling";
+import { withStepIngredientMappings } from "../../src/lib/domain/step-ingredients";
 import type { RecipeIngredientLine } from "../../src/lib/domain/recipes";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
@@ -101,7 +102,7 @@ export async function syncShoppingListForPlan(
       date: mealSlot.date,
       ingredients: recipeServingModel(
         {
-          ...recipe,
+          ...withStepIngredientMappings(recipe),
           ingredients: recipe.ingredients.map((ingredient) => ({
             ...ingredient,
             shoppingCategory: ingredient.shoppingCategory ?? "other",

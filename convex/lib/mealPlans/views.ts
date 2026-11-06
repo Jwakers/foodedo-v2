@@ -1,4 +1,5 @@
 import { recipeServingScaling } from "../../../src/lib/domain/ingredient-scaling";
+import { withStepIngredientMappings } from "../../../src/lib/domain/step-ingredients";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { getActivePlanState, getPlanSlots } from "../activePlan";
@@ -70,7 +71,9 @@ export async function buildMealPlanView(
             : await ctx.storage.getUrl(recipe.imageStorageId),
         servings: recipe.servings,
         minimumServings: recipe.minimumServings,
-        servingScaling: recipeServingScaling(recipe),
+        servingScaling: recipeServingScaling(
+          withStepIngredientMappings(recipe),
+        ),
         prepMinutes: recipe.prepMinutes ?? null,
         cookMinutes: recipe.cookMinutes ?? null,
         status: mealSlot.status,

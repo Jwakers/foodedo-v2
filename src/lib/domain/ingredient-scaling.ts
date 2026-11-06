@@ -10,12 +10,25 @@ type ServingMetadata = Pick<
   "servings" | "minimumServings" | "servingScaling"
 > & {
   source?: Pick<RecipeSource, "type">;
+  steps?: RecipeContent["steps"];
 };
 
 /** Older private imports must keep their authored amounts until proven scalable. */
 export function recipeServingScaling(
-  recipe: Pick<ServingMetadata, "servingScaling" | "source">,
+  recipe: Pick<ServingMetadata, "servingScaling" | "source" | "steps">,
 ) {
+  // An unchanged instruction containing a fixed amount cannot silently scale.
+  // Inspect validated metadata only; Cook does not parse method prose.
+  if (
+    recipe.steps?.some(
+      (step) =>
+        step.ingredientMapping?.hasFixedAmounts ||
+        step.ingredientMapping?.references.some(
+          (reference) => reference.usage === "instruction_amount",
+        ),
+    )
+  )
+    return "source_only";
   return (
     recipe.servingScaling ??
     (recipe.source?.type === "import" ? "source_only" : "safe")

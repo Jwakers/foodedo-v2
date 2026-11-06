@@ -1,0 +1,434 @@
+[
+  {
+    "ingredients": [
+      {
+        "id": "ing_sausages",
+        "name": "pork sausages",
+        "note": "about 450–500 g total; Cumberland or other good-quality herby sausages",
+        "quantity": "8",
+        "shoppingCategory": "meat_and_fish"
+      },
+      {
+        "id": "ing_oil",
+        "name": "olive oil",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_onion",
+        "name": "brown onion",
+        "note": "large, diced into about 1 cm pieces",
+        "quantity": "1",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_carrots",
+        "name": "carrots",
+        "note": "medium, peeled and diced into about 1 cm pieces",
+        "quantity": "2",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_garlic",
+        "name": "garlic cloves",
+        "note": "finely chopped",
+        "quantity": "2",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_tomato_puree",
+        "name": "tomato purée",
+        "quantity": "2",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_lentils",
+        "name": "dried green or brown lentils",
+        "note": "rinsed well; do not use red lentils here",
+        "quantity": "250",
+        "shoppingCategory": "pantry",
+        "unit": "g"
+      },
+      {
+        "id": "ing_stock",
+        "name": "chicken stock",
+        "note": "made with stock cubes or stock pots",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "litre"
+      },
+      {
+        "id": "ing_bay",
+        "name": "bay leaves",
+        "quantity": "2",
+        "shoppingCategory": "pantry"
+      },
+      {
+        "id": "ing_thyme",
+        "name": "dried thyme",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_worcestershire",
+        "name": "Worcestershire sauce",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_mustard",
+        "name": "Dijon mustard",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_vinegar",
+        "name": "red wine vinegar",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_parsley",
+        "name": "flat-leaf parsley",
+        "note": "roughly chopped",
+        "quantity": "15",
+        "shoppingCategory": "fruit_and_veg",
+        "unit": "g"
+      },
+      {
+        "id": "ing_bread",
+        "name": "crusty bread",
+        "note": "such as half a small loaf, sliced for serving",
+        "quantity": "200",
+        "shoppingCategory": "bakery",
+        "unit": "g"
+      },
+      {
+        "id": "ing_salt",
+        "name": "fine salt",
+        "quantity": "to taste",
+        "shoppingCategory": "pantry"
+      },
+      {
+        "id": "ing_pepper",
+        "name": "black pepper",
+        "quantity": "to taste",
+        "shoppingCategory": "pantry"
+      }
+    ],
+    "proteinCategory": "pork",
+    "servings": 4,
+    "steps": [
+      {
+        "id": "step_1",
+        "text": "Prepare the vegetables first: dice the onion and carrots, chop the garlic and parsley, and rinse the lentils in a sieve. Slice the bread for serving. Keep the raw sausages and their packaging separate from ready-to-eat foods, and wash your hands after handling them."
+      },
+      {
+        "id": "step_2",
+        "text": "Heat the olive oil in a large casserole or deep sauté pan with a lid, about 24–28 cm wide, over a medium-high heat. Add the sausages and brown them for 6–8 minutes, turning regularly, until golden on most sides. If your pan is small, brown them in 2 batches so they colour rather than steam. Transfer to a plate; they will not be cooked through yet.",
+        "timerCues": [
+          {
+            "durationSeconds": 360,
+            "id": "timer-backfill-2-1",
+            "label": "Check brown"
+          }
+        ]
+      },
+      {
+        "id": "step_3",
+        "text": "Reduce the heat to medium. Add the onion and carrots to the same pan with a small pinch of salt and cook for 8–10 minutes, stirring often, until softened and starting to catch a little colour. Stir in the garlic for 30 seconds, then add the tomato purée and cook for 1 minute, stirring, until slightly darkened.",
+        "timerCues": [
+          {
+            "durationSeconds": 480,
+            "id": "timer-backfill-3-1",
+            "label": "Check cook"
+          },
+          {
+            "durationSeconds": 30,
+            "id": "timer-backfill-3-2",
+            "label": "Stir"
+          },
+          {
+            "durationSeconds": 60,
+            "id": "timer-backfill-3-3",
+            "label": "Cook"
+          }
+        ]
+      },
+      {
+        "id": "step_4",
+        "text": "Stir in the lentils, chicken stock, bay leaves, dried thyme, Worcestershire sauce and Dijon mustard. Return the sausages and any resting juices to the pan. The liquid should just cover everything; add a small splash of water if needed. Bring to a gentle simmer."
+      },
+      {
+        "id": "step_5",
+        "text": "Cover with the lid, lower the heat and simmer gently for 25 minutes, stirring once or twice so the lentils do not catch on the bottom."
+      },
+      {
+        "id": "step_6",
+        "text": "Remove the lid and simmer for a further 10–15 minutes, stirring now and then, until the lentils are tender and the broth has thickened to a light casserole consistency. Check the sausages are thoroughly cooked with a clean probe thermometer in the thickest part: they should reach 75°C for 30 seconds, or 70°C for 2 minutes. If not, simmer for a few minutes longer and test again.",
+        "timerCues": [
+          {
+            "durationSeconds": 600,
+            "id": "timer-backfill-6-1",
+            "label": "Check simmer"
+          }
+        ]
+      },
+      {
+        "id": "step_7",
+        "text": "Remove the bay leaves. Stir in the red wine vinegar and half the parsley. Taste the casserole and season with black pepper and more salt only if needed. Leave it to stand for 5 minutes so the broth settles slightly.",
+        "timerCues": [
+          {
+            "durationSeconds": 300,
+            "id": "timer-backfill-7-1",
+            "label": "Stand"
+          }
+        ]
+      },
+      {
+        "id": "step_8",
+        "text": "Ladle the sausage and lentil casserole into bowls, scatter over the remaining parsley and serve with the sliced crusty bread alongside."
+      }
+    ],
+    "title": "Sausage and Lentil Casserole with Crusty Bread"
+  },
+  {
+    "ingredients": [
+      {
+        "id": "ing_chicken_leg_quarters",
+        "name": "chicken leg quarters",
+        "note": "about 750–850g total",
+        "quantity": "2",
+        "shoppingCategory": "meat_and_fish"
+      },
+      {
+        "id": "ing_roasted_red_peppers",
+        "name": "roasted red peppers from a jar",
+        "note": "drained",
+        "quantity": "100",
+        "shoppingCategory": "pantry",
+        "unit": "g"
+      },
+      {
+        "id": "ing_red_chillies",
+        "name": "red chillies",
+        "note": "deseeded for less heat",
+        "quantity": "2",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_garlic",
+        "name": "garlic",
+        "note": "roughly chopped",
+        "quantity": "4",
+        "shoppingCategory": "fruit_and_veg",
+        "unit": "cloves"
+      },
+      {
+        "id": "ing_lemon",
+        "name": "lemon",
+        "note": "zested and juiced; use 2 tbsp juice for the paste",
+        "quantity": "1",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_red_wine_vinegar",
+        "name": "red wine vinegar",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_smoked_paprika",
+        "name": "smoked paprika",
+        "note": "1 tsp for the marinade and 1 tsp for the chips",
+        "quantity": "2",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_dried_oregano",
+        "name": "dried oregano",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_soft_brown_sugar",
+        "name": "soft light brown sugar",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_olive_oil",
+        "name": "olive oil",
+        "note": "for the marinade",
+        "quantity": "2",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_potatoes",
+        "name": "Maris Piper potatoes",
+        "note": "cut into 1.5cm chips",
+        "quantity": "700",
+        "shoppingCategory": "fruit_and_veg",
+        "unit": "g"
+      },
+      {
+        "id": "ing_sunflower_oil",
+        "name": "sunflower oil",
+        "note": "for the chips",
+        "quantity": "2",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_white_cabbage",
+        "name": "white cabbage",
+        "note": "very finely sliced",
+        "quantity": "200",
+        "shoppingCategory": "fruit_and_veg",
+        "unit": "g"
+      },
+      {
+        "id": "ing_carrot",
+        "name": "carrot",
+        "note": "large, coarsely grated",
+        "quantity": "1",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_spring_onions",
+        "name": "spring onions",
+        "note": "finely sliced",
+        "quantity": "2",
+        "shoppingCategory": "fruit_and_veg"
+      },
+      {
+        "id": "ing_mayonnaise",
+        "name": "mayonnaise",
+        "quantity": "3",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_greek_yoghurt",
+        "name": "Greek yoghurt",
+        "quantity": "2",
+        "shoppingCategory": "dairy_and_eggs",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_dijon_mustard",
+        "name": "Dijon mustard",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_cider_vinegar",
+        "name": "cider vinegar",
+        "quantity": "1",
+        "shoppingCategory": "pantry",
+        "unit": "tbsp"
+      },
+      {
+        "id": "ing_sea_salt",
+        "name": "fine sea salt",
+        "note": "plus extra for the potato water",
+        "quantity": "1.5",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      },
+      {
+        "id": "ing_black_pepper",
+        "name": "black pepper",
+        "quantity": "0.5",
+        "shoppingCategory": "pantry",
+        "unit": "tsp"
+      }
+    ],
+    "proteinCategory": "chicken",
+    "servings": 2,
+    "steps": [
+      {
+        "id": "step_preheat",
+        "text": "Heat the oven to 220C. Put a large sturdy baking tray in the oven to heat for the chips. For the chicken, set out a second roasting tray or tin; if you want to finish the chicken under the grill, line it with foil only, not baking parchment. If you have one, set a wire rack over the chicken tray."
+      },
+      {
+        "id": "step_make_slaw",
+        "text": "Make the slaw before handling the raw chicken. In a large bowl, mix the mayonnaise, Greek yoghurt, Dijon mustard, cider vinegar, 1/4 tsp of the salt and a little of the black pepper. Add the cabbage, grated carrot and spring onions, toss well, then chill until serving."
+      },
+      {
+        "id": "step_parboil_chips",
+        "text": "Put the potatoes in a large saucepan, cover with cold water, add a generous pinch of salt and bring to the boil. Simmer for 5 minutes, then drain well and leave them in the colander for 2 minutes to steam-dry. Tip into a bowl, add the sunflower oil, 1 tsp of the smoked paprika and a pinch of salt, then turn to coat without breaking them up too much.",
+        "timerCues": [
+          {
+            "durationSeconds": 300,
+            "id": "timer-backfill-3-1",
+            "label": "Simmer"
+          },
+          {
+            "durationSeconds": 120,
+            "id": "timer-backfill-3-2",
+            "label": "Leave"
+          }
+        ]
+      },
+      {
+        "id": "step_roast_chips_start",
+        "text": "Carefully spread the potatoes out on the hot baking tray in a single layer, leaving a little space between them. Roast for 40 to 45 minutes, turning once halfway, until golden and crisp at the edges.",
+        "timerCues": [
+          {
+            "durationSeconds": 2400,
+            "id": "timer-backfill-4-1",
+            "label": "Check roast"
+          }
+        ]
+      },
+      {
+        "id": "step_make_peri_peri_paste",
+        "text": "While the chips start roasting, make the peri-peri paste. In a small food processor or blender, blitz the roasted red peppers, chillies, garlic, lemon zest, 2 tbsp lemon juice, red wine vinegar, the remaining 1 tsp smoked paprika, dried oregano, brown sugar, olive oil, the remaining salt and the rest of the black pepper to a rough paste. If you do not have a machine, chop everything very finely and mix well."
+      },
+      {
+        "id": "step_prepare_chicken",
+        "text": "Pat the chicken dry with kitchen paper. Do not wash it. Make 2 or 3 shallow slashes in the thickest part of each thigh, then rub the peri-peri paste all over the chicken, working some into the cuts. Put the chicken skin-side up on the prepared tray or rack. Keep the raw chicken and anything it touches away from the slaw and other ready-to-eat food, and wash your hands, knife, board and sink area after handling it."
+      },
+      {
+        "id": "step_roast_chicken",
+        "text": "When the chips have had about 10 minutes, put the chicken into the oven on a shelf above them. Roast for 35 to 40 minutes, or until the skin is darkened and the chicken is nearly done. If you want extra charring, switch to a hot grill for the last 3 to 5 minutes, watching closely so the marinade does not catch. Only put the tray under the grill if it is unlined or lined with foil, never with baking paper.",
+        "timerCues": [
+          {
+            "durationSeconds": 2100,
+            "id": "timer-backfill-7-1",
+            "label": "Check roast"
+          }
+        ]
+      },
+      {
+        "id": "step_check_rest",
+        "text": "Check the thickest part of each chicken quarter with a clean probe, avoiding the bone. It must reach 75C for 30 seconds, or 70C for 2 minutes. If it is not there yet, return it to the oven for 5 minutes and check again. Rest the chicken for 5 minutes before serving.",
+        "timerCues": [
+          {
+            "durationSeconds": 300,
+            "id": "timer-backfill-8-1",
+            "label": "Rest"
+          }
+        ]
+      },
+      {
+        "id": "step_finish_and_serve",
+        "text": "Give the slaw a final toss and taste for seasoning. Taste a chip and add a little more salt if needed. Serve one chicken quarter per person with the paprika chips and slaw alongside, spooning over any cooked resting juices from the chicken tray."
+      }
+    ],
+    "title": "Peri-Peri Chicken Quarters with Paprika Chips and Crunchy Slaw"
+  }
+]

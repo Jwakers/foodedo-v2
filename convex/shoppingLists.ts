@@ -1,4 +1,5 @@
 import { recipeServingModel } from "../src/lib/domain/ingredient-scaling";
+import { withStepIngredientMappings } from "../src/lib/domain/step-ingredients";
 import { ConvexError, v } from "convex/values";
 import {
   formatShoppingItemDisplayName,
@@ -606,7 +607,10 @@ async function reconstructLegacySources(
     const recipe = await ctx.db.get(mealSlot.recipeId);
     if (recipe === null) continue;
     if (recipe.ownerId !== item.ownerId) continue;
-    const model = recipeServingModel(recipe, requestedServings);
+    const model = recipeServingModel(
+      withStepIngredientMappings(recipe),
+      requestedServings,
+    );
     for (const ingredient of model.ingredients) {
       if (normaliseIngredientName(ingredient.name) !== itemName) continue;
       if ((ingredient.shoppingCategory ?? "other") !== itemCategory) continue;

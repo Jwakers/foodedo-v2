@@ -47,6 +47,30 @@ export const recipeIngredientInputValidator = v.object({
   noteRefs: v.optional(v.array(v.string())),
 });
 
+export const stepIngredientMappingValidator = v.object({
+  version: v.literal(1),
+  inputSignature: v.string(),
+  origin: v.literal("deterministic"),
+  hasFixedAmounts: v.optional(v.boolean()),
+  status: v.union(v.literal("complete"), v.literal("partial")),
+  references: v.array(
+    v.object({
+      start: v.number(),
+      end: v.number(),
+      ingredientIds: v.array(v.string()),
+      optional: v.optional(v.boolean()),
+      status: v.union(v.literal("resolved"), v.literal("ambiguous")),
+      usage: v.union(
+        v.literal("whole"),
+        v.literal("recipe_total"),
+        v.literal("remaining"),
+        v.literal("optional"),
+        v.literal("instruction_amount"),
+      ),
+    }),
+  ),
+});
+
 export const recipeStepValidator = v.object({
   id: v.string(),
   text: v.string(),
@@ -62,6 +86,7 @@ export const recipeStepValidator = v.object({
   ),
   sourceText: v.optional(v.string()),
   noteRefs: v.optional(v.array(v.string())),
+  ingredientMapping: v.optional(stepIngredientMappingValidator),
 });
 
 export const recipeNoteValidator = v.object({

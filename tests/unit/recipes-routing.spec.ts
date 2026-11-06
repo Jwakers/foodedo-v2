@@ -7,6 +7,7 @@ import {
   parsePersonalRecipeId,
   parseRecipeDetailSlug,
   parseRecipeServings,
+  parseRecipeCatalogueReference,
   personalRecipeCookPath,
   personalRecipeDetailPath,
   recipeCookPath,
@@ -14,6 +15,25 @@ import {
   catalogueBrowsePath,
   publicRecipePath,
 } from "@/lib/routing/recipes";
+
+test("catalogue references validate an explicit version before Cook uses it", () => {
+  expect(
+    parseRecipeCatalogueReference(
+      new URLSearchParams("catalogueMealId=meal-1&catalogueVersion=3"),
+    ),
+  ).toEqual({ catalogueMealId: "meal-1", catalogueVersion: 3 });
+  for (const query of [
+    "",
+    "catalogueMealId=meal-1",
+    "catalogueVersion=3",
+    "catalogueMealId=meal-1&catalogueVersion=0",
+    "catalogueMealId=meal-1&catalogueVersion=1.5",
+    "catalogueMealId=meal-1&catalogueVersion=invalid",
+  ])
+    expect(
+      parseRecipeCatalogueReference(new URLSearchParams(query)),
+    ).toBeNull();
+});
 
 test("only canonical catalogue details use public recipe account recovery", () => {
   expect(

@@ -4,7 +4,10 @@ import { useSearchParams } from "next/navigation";
 
 import { CookModePage } from "@/features/cook/cook-mode-page";
 import { Button } from "@/components/ui/button";
-import { parseRecipeServings } from "@/lib/routing/recipes";
+import {
+  parseRecipeServings,
+  parseRecipeCatalogueReference,
+} from "@/lib/routing/recipes";
 import { useRecipeSource } from "@/features/recipes/use-recipe-source";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "@/features/recipes/recipe-account-recovery";
@@ -14,6 +17,7 @@ export function CookModeRoute() {
   const searchParams = useSearchParams();
   const { slug, personalRecipeId, meal } = useRecipeSource(searchParams);
   const explicitServings = parseRecipeServings(searchParams.get("servings"));
+  const reference = parseRecipeCatalogueReference(searchParams);
 
   if (personalRecipeId && !isAuthenticated)
     return <RecipeAccountRecovery status={status} />;
@@ -40,6 +44,11 @@ export function CookModeRoute() {
   }
   return (
     <CookModePage
+      key={
+        personalRecipeId
+          ? `personal:${personalRecipeId}`
+          : `catalogue:${meal.id}:${reference?.catalogueVersion ?? "current"}`
+      }
       meal={meal}
       catalogueVersion={meal.version}
       servings={explicitServings ?? meal.servings ?? 1}

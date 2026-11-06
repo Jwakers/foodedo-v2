@@ -1,4 +1,5 @@
 import { stream } from "convex-helpers/server/stream";
+import { withStepIngredientMappings } from "../src/lib/domain/step-ingredients";
 import schema from "./schema";
 import { internal } from "./_generated/api";
 import {
@@ -420,6 +421,46 @@ export const backfillBrowseKeys = internalMutation({
   },
 });
 
+/** Optional enrichment only: preserve ownership, authored content and timestamps. */
+export const backfillIngredientMappings = internalMutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+    updated: v.number(),
+  }),
+  handler: async (ctx, { paginationOpts }) => {
+    const result = await ctx.db.query("recipes").paginate({
+      ...paginationOpts,
+      numItems: Math.min(25, paginationOpts.numItems),
+    });
+    let updated = 0;
+    for (const recipe of result.page) {
+      const enriched = withStepIngredientMappings(recipe);
+      if (enriched !== recipe) {
+        await ctx.db.patch(recipe._id, { steps: enriched.steps });
+        if (recipeServingScaling(recipe) !== recipeServingScaling(enriched)) {
+          await syncShoppingListsForRecipe(ctx, recipe.ownerId, recipe._id);
+        }
+        updated++;
+      }
+    }
+    if (!result.isDone)
+      await ctx.scheduler.runAfter(
+        0,
+        internal.recipes.backfillIngredientMappings,
+        {
+          paginationOpts: { numItems: 25, cursor: result.continueCursor },
+        },
+      );
+    return {
+      isDone: result.isDone,
+      continueCursor: result.continueCursor,
+      updated,
+    };
+  },
+});
+
 function prepareRecipeOrThrow(
   recipe: Parameters<typeof prepareRecipeContent>[0],
 ) {
@@ -437,6 +478,7 @@ function prepareRecipeOrThrow(
 }
 
 async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
+  const enriched = withStepIngredientMappings(recipe);
   const imageSrc =
     recipe.imageStorageId === undefined
       ? undefined
@@ -451,7 +493,7 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
       ? {}
       : { description: recipe.description }),
     ingredients: recipe.ingredients,
-    steps: recipe.steps,
+    steps: enriched.steps,
     ...(recipe.servings === undefined ? {} : { servings: recipe.servings }),
     ...(recipe.minimumServings === undefined
       ? {}
@@ -466,7 +508,7 @@ async function toRecipeView(ctx: QueryCtx, recipe: Doc<"recipes">) {
     ...(recipe.costBand === undefined ? {} : { costBand: recipe.costBand }),
     ...(recipe.preheat === undefined ? {} : { preheat: recipe.preheat }),
     ...(recipe.notes === undefined ? {} : { notes: recipe.notes }),
-    servingScaling: recipeServingScaling(recipe),
+    servingScaling: recipeServingScaling(enriched),
     ...(imageSrc === undefined ? {} : { imageSrc }),
     source: recipe.source,
     ...(recipe.savedAt === undefined ? {} : { savedAt: recipe.savedAt }),

@@ -1,3 +1,4 @@
+import { withStepIngredientMappings } from "../../../src/lib/domain/step-ingredients";
 import {
   minimumServingsNotice,
   recipeServingScaling,
@@ -316,7 +317,7 @@ export async function planCandidateFromRecipe(
     title: recipe.title,
     servings: recipe.servings,
     minimumServings: recipe.minimumServings,
-    servingScaling: recipeServingScaling(recipe),
+    servingScaling: recipeServingScaling(withStepIngredientMappings(recipe)),
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
     proteinCategory: recipe.proteinCategory,
@@ -339,7 +340,9 @@ export function planCandidateFromCatalogue(
     title: catalogueMeal.title,
     servings: catalogueMeal.servings,
     minimumServings: catalogueMeal.minimumServings,
-    servingScaling: catalogueMeal.servingScaling,
+    servingScaling: recipeServingScaling(
+      withStepIngredientMappings(catalogueMeal),
+    ),
     prepMinutes: catalogueMeal.prepMinutes ?? null,
     cookMinutes: catalogueMeal.cookMinutes ?? null,
     proteinCategory: catalogueMeal.proteinCategory,

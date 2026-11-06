@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { Fragment } from "react";
+import { StepIngredientContent } from "./step-ingredient-content";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -200,6 +201,7 @@ export function PreparationScreen({
 
 export function StepScreen({
   meal,
+  ingredients,
   session,
   persistenceAvailable,
   onExit,
@@ -210,6 +212,7 @@ export function StepScreen({
   ...timerActions
 }: {
   meal: CatalogueMeal;
+  ingredients: ScaledIngredientLine[];
   session: CookSession & { phase: { name: "step"; stepIndex: number } };
   persistenceAvailable: boolean;
   onExit: () => void;
@@ -246,9 +249,7 @@ export function StepScreen({
           />
         </div>
         <TimerList timers={session.timers} {...timerActions} />
-        <p className="mt-7 font-display text-34 font-semibold leading-10 tracking-heading text-ink">
-          {step.text}
-        </p>
+        <StepIngredientContent step={step} ingredients={ingredients} />
         {step.noteRefs?.map((reference) => {
           const note = meal.notes?.find(
             (candidate) => candidate.id === reference,

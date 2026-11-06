@@ -32,8 +32,8 @@ import {
 } from "@/lib/routing/recipes";
 
 export function CookModePage({
-  meal,
-  catalogueVersion,
+  meal: incomingMeal,
+  catalogueVersion: incomingCatalogueVersion,
   servings,
   personalRecipeId,
 }: {
@@ -42,6 +42,11 @@ export function CookModePage({
   servings: number;
   personalRecipeId?: string;
 }) {
+  // A live backend update must not change ingredients or links mid-cook.
+  const [{ meal, catalogueVersion }] = useState(() => ({
+    meal: incomingMeal,
+    catalogueVersion: incomingCatalogueVersion,
+  }));
   const router = useRouter();
   const searchParams = useSearchParams();
   const planServingsValue = Number(searchParams.get("planServings"));
@@ -218,6 +223,7 @@ export function CookModePage({
   const stepIndex = session.phase.stepIndex;
   return (
     <StepScreen
+      ingredients={ingredients}
       meal={meal}
       session={stepSession}
       persistenceAvailable={persistenceAvailable}

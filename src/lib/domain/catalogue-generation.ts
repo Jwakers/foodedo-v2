@@ -221,6 +221,12 @@ const canonical = (value: unknown): unknown =>
         )
       : value;
 
+function withoutIngredientMapping(step: RecipeContent["steps"][number]) {
+  const authored = { ...step };
+  delete authored.ingredientMapping;
+  return authored;
+}
+
 // Cosmetic/editorial fields do not change how a recipe is cooked. Keep the
 // remaining content in this comparison so new cooking fields default to review.
 export function culinaryContentChanged(
@@ -231,6 +237,7 @@ export function culinaryContentChanged(
     return JSON.stringify(
       canonical({
         ...input,
+        steps: input.steps.map(withoutIngredientMapping),
         title: undefined,
         description: undefined,
         proteinCategory: undefined,
@@ -247,7 +254,14 @@ export async function recipeFingerprint(content: RecipeContent) {
   const prepared = prepareRecipeContent(content);
   const hash = await crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(JSON.stringify(canonical(prepared))),
+    new TextEncoder().encode(
+      JSON.stringify(
+        canonical({
+          ...prepared,
+          steps: prepared.steps.map(withoutIngredientMapping),
+        }),
+      ),
+    ),
   );
   return Array.from(new Uint8Array(hash), (byte) =>
     byte.toString(16).padStart(2, "0"),

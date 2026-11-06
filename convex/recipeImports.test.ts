@@ -214,9 +214,9 @@ test("draft editing and finalization are revision-guarded, atomic and idempotent
     recipeId,
     recipe: { ...recipeCore, steps: editedSteps },
   });
-  expect((await owner.query(api.recipes.getMine, { recipeId }))?.steps).toEqual(
-    editedSteps,
-  );
+  expect(
+    (await owner.query(api.recipes.getMine, { recipeId }))?.steps,
+  ).toMatchObject(editedSteps);
   await t.run(async (ctx) => {
     expect(await ctx.db.query("recipes").collect()).toHaveLength(1);
   });

@@ -8,6 +8,7 @@ import {
   recipeImportFailureCodeValidator,
   recipeImportFailureDetailValidator,
   importDraftValidator,
+  stepIngredientMappingValidator,
 } from "./lib/recipeValidators";
 
 import {
@@ -201,6 +202,17 @@ export default defineSchema({
     .index("by_meal_id_and_version", ["catalogueMealId", "version"])
     .index("by_meal_id_and_status", ["catalogueMealId", "status"])
     .index("by_status_and_slug", ["status", "slug"]),
+  // Derived Cook metadata for immutable catalogue revisions. No authored text,
+  // publication state, image approvals or personal snapshots are changed.
+  catalogueIngredientMappings: defineTable({
+    mealId: v.id("catalogueMeals"),
+    steps: v.array(
+      v.object({
+        id: v.string(),
+        ingredientMapping: stepIngredientMappingValidator,
+      }),
+    ),
+  }).index("by_meal", ["mealId"]),
   recipes: defineTable({
     ownerId: spaceOwner,
     selectionKey: v.optional(v.string()),

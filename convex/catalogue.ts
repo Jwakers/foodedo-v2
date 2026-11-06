@@ -1,4 +1,8 @@
 import { stream, type QueryStream } from "convex-helpers/server/stream";
+import {
+  enrichStepIngredients,
+  hasCurrentIngredientMappings,
+} from "../src/lib/domain/step-ingredients";
 import schema from "./schema";
 import type { Doc } from "./_generated/dataModel";
 import {
@@ -265,5 +269,66 @@ export const backfillBrowseKeys = internalMutation({
       });
     }
     return { isDone: result.isDone, continueCursor: result.continueCursor };
+  },
+});
+
+/** Materialise enrichment separately so published/retired content is immutable. */
+export const backfillIngredientMappings = internalMutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+    updated: v.number(),
+  }),
+  handler: async (ctx, { paginationOpts }) => {
+    const result = await ctx.db.query("catalogueMeals").paginate({
+      ...paginationOpts,
+      numItems: Math.min(25, paginationOpts.numItems),
+    });
+    let updated = 0;
+    for (const meal of result.page) {
+      if (hasCurrentIngredientMappings(meal)) continue;
+      const previous = await ctx.db
+        .query("catalogueIngredientMappings")
+        .withIndex("by_meal", (q) => q.eq("mealId", meal._id))
+        .unique();
+      if (previous) {
+        const mappings = new Map(
+          previous.steps.map((step) => [step.id, step.ingredientMapping]),
+        );
+        const candidate = {
+          ...meal,
+          steps: meal.steps.map((step) => ({
+            ...step,
+            ingredientMapping: mappings.get(step.id),
+          })),
+        };
+        if (hasCurrentIngredientMappings(candidate)) continue;
+      }
+      const steps = enrichStepIngredients(meal).steps.map((step) => ({
+        id: step.id,
+        ingredientMapping: step.ingredientMapping!,
+      }));
+      if (previous) await ctx.db.patch(previous._id, { steps });
+      else
+        await ctx.db.insert("catalogueIngredientMappings", {
+          mealId: meal._id,
+          steps,
+        });
+      updated++;
+    }
+    if (!result.isDone)
+      await ctx.scheduler.runAfter(
+        0,
+        internal.catalogue.backfillIngredientMappings,
+        {
+          paginationOpts: { numItems: 25, cursor: result.continueCursor },
+        },
+      );
+    return {
+      isDone: result.isDone,
+      continueCursor: result.continueCursor,
+      updated,
+    };
   },
 });

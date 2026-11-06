@@ -50,7 +50,7 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Additional completed slices:** the mobile design system is applied to Plan/Shop; planning setup and Adjust Plan separate temporary overrides from reusable preferences; recipe metadata supports time, protein and approximate-cost steering; and Cook Mode uses authored preheat data and timer cues. See ADR 0009, the meal-selection architecture and the feature documentation for current contracts.
 
-**Later product:** deepen Capture beyond URL/text, add dietary/allergy profile management, plan automatic method-step ingredient mapping, then build Remember. Discover follows only after Remember has signal.
+**Later product:** deepen Capture beyond URL/text, add dietary/allergy profile management, extend method-step ingredient mapping to contextual references, then build Remember. Discover follows only after Remember has signal.
 
 **Later native:** camera, photos, share sheet, haptics, push, deep links.
 

@@ -1,3 +1,8 @@
+import {
+  enrichStepIngredients,
+  type StepIngredientMapping,
+} from "./step-ingredients";
+
 export const RECIPE_LIMITS = {
   title: 160,
   description: 1_000,
@@ -75,6 +80,7 @@ export type RecipeStep = {
   timerCues?: RecipeTimerCue[];
   sourceText?: string;
   noteRefs?: string[];
+  ingredientMapping?: StepIngredientMapping;
 };
 
 export type RecipeNote = {
@@ -293,7 +299,7 @@ function prepareContent(
   const ingredients = prepareIngredients(input.ingredients, incomplete ? 0 : 1);
   const steps = prepareSteps(input.steps, incomplete ? 0 : 1);
   validateNoteReferences(ingredients, steps, notes);
-  return {
+  return enrichStepIngredients({
     title: requiredText(input.title, "Title", RECIPE_LIMITS.title),
     ...(description === undefined ? {} : { description }),
     ingredients,
@@ -309,7 +315,7 @@ function prepareContent(
     ...(input.servingScaling === undefined
       ? {}
       : { servingScaling: requiredServingScaling(input.servingScaling) }),
-  };
+  });
 }
 
 export function prepareCatalogue(input: Catalogue): Catalogue {
