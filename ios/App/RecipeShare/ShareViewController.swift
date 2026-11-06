@@ -43,9 +43,7 @@ final class ShareViewController: UIViewController {
                 guard text.utf16.count <= 80_000 else { throw SharedRecipeInboxError.invalid }
                 let detector = try NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
                 let urls = detector.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { $0.url }.filter { ["http", "https"].contains($0.scheme?.lowercased() ?? "") }
-                let instagram = urls.filter { ["instagram.com", "www.instagram.com", "m.instagram.com"].contains($0.host?.lowercased() ?? "") }
-                let unique = Array(Set(instagram.compactMap { try? SharedRecipeInbox.canonicalURL($0.absoluteString) }))
-                guard unique.count <= 1, let url = instagram.first ?? urls.first else { throw SharedRecipeInboxError.invalid }
+                let url = try SharedRecipeInbox.preferredURL(urls)
                 try Task.checkCancellation()
                 try SharedRecipeInbox().capture(url: url.absoluteString, text: text)
                 status.text = "Captured — open Foodedo to import."

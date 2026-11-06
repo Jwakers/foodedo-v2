@@ -1,0 +1,302 @@
+{
+  "date": "2026-11-06",
+  "deployment": "bold-walrus-818",
+  "scope": "Targeted live smoke checks; shared acquisition and normalization only, no recipe/job writes.",
+  "releaseQualified": false,
+  "limits": [
+    "Three distinct TikTok videos, not a representative reliability cohort.",
+    "The tested short link redirects to the TikTok homepage, confirmed by an independent HTTP check; a valid live short link remains unverified.",
+    "No live slideshow or explicit publisher-linked TikTok recipe was sampled.",
+    "No signed-device TikTok share payload was tested.",
+    "Selected facts are checked, not an exhaustive culinary audit."
+  ],
+  "checks": [
+    {
+      "case": "pasta-acquisition",
+      "expected": "acquired",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 8641,
+        "mediaType": "video",
+        "missingFragments": [],
+        "sourceUrl": "https://www.tiktok.com/@tinkerbellskitchen/video/7694740999825837345",
+        "textCharacters": 434
+      }
+    },
+    {
+      "case": "control-acquisition",
+      "expected": "acquired",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 5454,
+        "mediaType": "video",
+        "missingFragments": [],
+        "sourceUrl": "https://www.tiktok.com/@apifylife/video/7200360993149553925",
+        "textCharacters": 104
+      }
+    },
+    {
+      "case": "control-normalization",
+      "expected": "no_recipe",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 9023,
+        "mediaType": "video",
+        "missingFragments": [],
+        "normalization": {
+          "inputTokens": 3370,
+          "latencyMs": 11349,
+          "missingFacts": [],
+          "modelCalls": 1,
+          "outcome": "no_recipe",
+          "outputTokens": 31,
+          "usable": false,
+          "usageComplete": true,
+          "verified": false
+        },
+        "sourceUrl": "https://www.tiktok.com/@apifylife/video/7200360993149553925",
+        "textCharacters": 104
+      }
+    },
+    {
+      "case": "gnocchi-short-acquisition",
+      "expected": "source_unreachable",
+      "passed": true,
+      "result": {
+        "acquired": false,
+        "latencyMs": 822,
+        "outcome": "source_unreachable"
+      }
+    },
+    {
+      "case": "gnocchi-acquisition",
+      "expected": "acquired",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 7229,
+        "mediaType": "video",
+        "missingFragments": [],
+        "sourceUrl": "https://www.tiktok.com/@alexcookjoy/video/7574621199519567136",
+        "textCharacters": 1681
+      }
+    },
+    {
+      "case": "pasta-normalization",
+      "expected": "draft",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 6665,
+        "mediaType": "video",
+        "missingFragments": [],
+        "normalization": {
+          "blockingIssues": 1,
+          "ingredients": 15,
+          "inputTokens": 10172,
+          "latencyMs": 37925,
+          "missingFacts": [],
+          "modelCalls": 2,
+          "outcome": "draft",
+          "outputTokens": 2381,
+          "steps": 1,
+          "usable": false,
+          "usageComplete": true,
+          "verified": true
+        },
+        "sourceUrl": "https://www.tiktok.com/@tinkerbellskitchen/video/7694740999825837345",
+        "textCharacters": 434
+      }
+    },
+    {
+      "case": "gnocchi-normalization",
+      "expected": "usable",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 5756,
+        "mediaType": "video",
+        "missingFragments": [],
+        "normalization": {
+          "blockingIssues": 0,
+          "ingredients": 17,
+          "inputTokens": 11512,
+          "latencyMs": 40400,
+          "missingFacts": [],
+          "modelCalls": 2,
+          "outcome": "usable",
+          "outputTokens": 2621,
+          "steps": 4,
+          "usable": true,
+          "usageComplete": true,
+          "verified": true
+        },
+        "sourceUrl": "https://www.tiktok.com/@alexcookjoy/video/7574621199519567136",
+        "textCharacters": 1681
+      }
+    },
+    {
+      "case": "instagram-regression",
+      "expected": "acquired",
+      "passed": true,
+      "result": {
+        "acquired": true,
+        "extractor": "text",
+        "latencyMs": 6959,
+        "mediaType": "video",
+        "missingFragments": [],
+        "sourceUrl": "https://www.instagram.com/p/DQFu9VuEftI/",
+        "textCharacters": 939
+      }
+    }
+  ],
+  "gnocchiDeclaredVerification": {
+    "minimumIngredients": 13,
+    "minimumSteps": 4,
+    "ingredients": [
+      {
+        "name": "chicken",
+        "amounts": ["450 g"]
+      },
+      {
+        "name": "gnocchi",
+        "amounts": ["450 g"]
+      },
+      {
+        "name": "spinach",
+        "amounts": ["60 g"]
+      },
+      {
+        "name": "cream",
+        "amounts": ["240 ml"]
+      },
+      {
+        "name": "broth",
+        "aliases": ["stock"],
+        "amounts": ["240 ml"]
+      },
+      {
+        "name": "Parmesan",
+        "amounts": ["50 g"]
+      },
+      {
+        "name": "garlic",
+        "amounts": ["3 cloves"]
+      },
+      {
+        "name": "olive oil",
+        "amounts": ["15 ml"]
+      }
+    ],
+    "methodFacts": ["gnocchi", "spinach", "Parmesan", "simmer"],
+    "methodAlternatives": [
+      ["30 seconds", "30 sec"],
+      ["4-5 minutes", "4 to 5 minutes", "4–5 minutes"]
+    ]
+  },
+  "sourceReferences": [
+    "https://www.tiktok.com/@alexcookjoy/video/7574621199519567136",
+    "https://www.tiktok.com/@tinkerbellskitchen/video/7694740999825837345",
+    "https://www.tiktok.com/@apifylife/video/7200360993149553925",
+    "https://social-spork.com/recipes/69da7f8f4db49e9c36a309f3",
+    "https://cookbooksocial.app/recipes/user_tzt79h9r8mh0p7yns-mv2xqzuv-9a395698"
+  ],
+  "verificationBasis": "Original captions were read from existing provider datasets before declaring normalization checks. Third-party references located the post identities; expected facts come from written caption evidence, not generated recipe output.",
+  "liveFix": {
+    "problem": "Apify field selection omitted nested creator, private-account and cover fields without flattening.",
+    "change": "Flatten only authorMeta and videoMeta before selecting named subfields; validate the projected fields and map them into the shared source contract.",
+    "verified": "Existing real datasets return creator, privacy flag and cover after flattening; mocked adapter regressions now reproduce the flat API shape, and subsequent live acquisition/normalization succeeds."
+  },
+  "spend": {
+    "approvedCapUsd": 2,
+    "apifyMeasuredUsd": 0.0207,
+    "modelEstimatedUsdUncached": 0.13813,
+    "combinedEstimatedUsd": 0.15883,
+    "inputUsdPerMillion": 2.5,
+    "outputUsdPerMillion": 15,
+    "model": "openai/gpt-5.4",
+    "pricingSource": "https://vercel.com/ai-gateway/models/gpt-5.4",
+    "estimateNote": "Model estimate uses reported token counts at uncached published rates; this is not an invoice total. All model usage was reported complete.",
+    "modelCalls": [
+      {
+        "case": "control-normalization",
+        "inputTokens": 3370,
+        "outputTokens": 31,
+        "estimatedUsdUncached": 0.00889
+      },
+      {
+        "case": "pasta-normalization",
+        "inputTokens": 10172,
+        "outputTokens": 2381,
+        "estimatedUsdUncached": 0.061145
+      },
+      {
+        "case": "gnocchi-normalization",
+        "inputTokens": 11512,
+        "outputTokens": 2621,
+        "estimatedUsdUncached": 0.068095
+      }
+    ],
+    "providerRuns": [
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "FxKYtaJrcGh2BhaY8",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:25:16.680Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "j4TgTlXaMFOrEYzWc",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:24:32.582Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "r0AtlNIpysnQpTyYL",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:24:05.148Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "XTJEjn0Cy8yqxEoon",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:21:40.473Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "zfW9D6YHfxBKl6XQg",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:20:49.959Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "clockworks~tiktok-video-scraper",
+        "id": "pJBdE5T5nM7CU41Vp",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:20:46.795Z",
+        "usageTotalUsd": 0.003
+      },
+      {
+        "actor": "apify~instagram-scraper",
+        "id": "17m5Xj6WS6An6DJp4",
+        "status": "SUCCEEDED",
+        "startedAt": "2026-11-06T12:26:47.521Z",
+        "usageTotalUsd": 0.0027
+      }
+    ],
+    "activeRuns": 0
+  }
+}

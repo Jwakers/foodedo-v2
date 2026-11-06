@@ -14,6 +14,21 @@ struct InboxChecks {
         } catch SharedRecipeInboxError.invalid { }
         let boundary = try unicodeInbox.capture(url: "https://example.com/boundary", text: String(repeating: "🥕", count: 40_000))
         precondition(boundary.sharedText?.utf16.count == 80_000)
+        let tikTok = URL(string: "https://www.tiktok.com/@cook/video/7234567890123456789?is_from_webapp=1")!
+        let trackingVariant = URL(string: "https://m.tiktok.com/@cook/video/7234567890123456789/?utm_source=share")!
+        let canonicalTikTok = try SharedRecipeInbox.canonicalURL(tikTok.absoluteString)
+        let canonicalVariant = try SharedRecipeInbox.canonicalURL(trackingVariant.absoluteString)
+        precondition(canonicalTikTok == canonicalVariant)
+        let selectedSocial = try SharedRecipeInbox.preferredURL([URL(string: "https://example.com/recipe/soup")!, tikTok])
+        precondition(selectedSocial == tikTok, "Social post identity takes priority over a link in its shared caption")
+        do {
+            _ = try SharedRecipeInbox.preferredURL([tikTok, URL(string: "https://www.tiktok.com/@other/video/7234567890123456780")!])
+            fatalError("Ambiguous social posts must not silently import the first")
+        } catch SharedRecipeInboxError.invalid { }
+        let tikTokInbox = try SharedRecipeInbox(directory: root.appendingPathComponent("tiktok"), now: { time })
+        let tikTokCapture = try tikTokInbox.capture(url: tikTok.absoluteString, text: nil)
+        let tikTokDuplicate = try tikTokInbox.capture(url: trackingVariant.absoluteString, text: nil)
+        precondition(tikTokCapture.id == tikTokDuplicate.id)
         let first = try inbox.capture(url: "https://instagram.com/reel/Cexample123/?igsh=one", text: "My recipe")
         let duplicate = try inbox.capture(url: "https://www.instagram.com/reel/Cexample123/?igsh=two", text: nil)
         precondition(first.id == duplicate.id, "Tracking variations must not duplicate captures")

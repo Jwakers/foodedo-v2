@@ -15,7 +15,6 @@ import type * as catalogueMaintenance from "../catalogueMaintenance.js";
 import type * as crons from "../crons.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
-import type * as instagramImportEvaluation from "../instagramImportEvaluation.js";
 import type * as lib_activePlan from "../lib/activePlan.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
@@ -37,6 +36,7 @@ import type * as lib_mealPlans_views from "../lib/mealPlans/views.js";
 import type * as lib_mealSelection from "../lib/mealSelection.js";
 import type * as lib_onboarding from "../lib/onboarding.js";
 import type * as lib_planningPreferences from "../lib/planningPreferences.js";
+import type * as lib_recipeImport_apify from "../lib/recipeImport/apify.js";
 import type * as lib_recipeImport_contracts from "../lib/recipeImport/contracts.js";
 import type * as lib_recipeImport_corrections from "../lib/recipeImport/corrections.js";
 import type * as lib_recipeImport_evaluation from "../lib/recipeImport/evaluation.js";
@@ -50,9 +50,11 @@ import type * as lib_recipeImport_models from "../lib/recipeImport/models.js";
 import type * as lib_recipeImport_network from "../lib/recipeImport/network.js";
 import type * as lib_recipeImport_pipeline from "../lib/recipeImport/pipeline.js";
 import type * as lib_recipeImport_prompts from "../lib/recipeImport/prompts.js";
+import type * as lib_recipeImport_socialSource from "../lib/recipeImport/socialSource.js";
 import type * as lib_recipeImport_source from "../lib/recipeImport/source.js";
 import type * as lib_recipeImport_sourceImages from "../lib/recipeImport/sourceImages.js";
 import type * as lib_recipeImport_sources from "../lib/recipeImport/sources.js";
+import type * as lib_recipeImport_tiktok from "../lib/recipeImport/tiktok.js";
 import type * as lib_recipeImport_validation from "../lib/recipeImport/validation.js";
 import type * as lib_recipeImport_youtube from "../lib/recipeImport/youtube.js";
 import type * as lib_recipeListing from "../lib/recipeListing.js";
@@ -68,6 +70,7 @@ import type * as recipeImportActions from "../recipeImportActions.js";
 import type * as recipeImports from "../recipeImports.js";
 import type * as recipes from "../recipes.js";
 import type * as shoppingLists from "../shoppingLists.js";
+import type * as socialImportEvaluation from "../socialImportEvaluation.js";
 import type * as users from "../users.js";
 
 import type {
@@ -84,7 +87,6 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   households: typeof households;
   http: typeof http;
-  instagramImportEvaluation: typeof instagramImportEvaluation;
   "lib/activePlan": typeof lib_activePlan;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
@@ -106,6 +108,7 @@ declare const fullApi: ApiFromModules<{
   "lib/mealSelection": typeof lib_mealSelection;
   "lib/onboarding": typeof lib_onboarding;
   "lib/planningPreferences": typeof lib_planningPreferences;
+  "lib/recipeImport/apify": typeof lib_recipeImport_apify;
   "lib/recipeImport/contracts": typeof lib_recipeImport_contracts;
   "lib/recipeImport/corrections": typeof lib_recipeImport_corrections;
   "lib/recipeImport/evaluation": typeof lib_recipeImport_evaluation;
@@ -119,9 +122,11 @@ declare const fullApi: ApiFromModules<{
   "lib/recipeImport/network": typeof lib_recipeImport_network;
   "lib/recipeImport/pipeline": typeof lib_recipeImport_pipeline;
   "lib/recipeImport/prompts": typeof lib_recipeImport_prompts;
+  "lib/recipeImport/socialSource": typeof lib_recipeImport_socialSource;
   "lib/recipeImport/source": typeof lib_recipeImport_source;
   "lib/recipeImport/sourceImages": typeof lib_recipeImport_sourceImages;
   "lib/recipeImport/sources": typeof lib_recipeImport_sources;
+  "lib/recipeImport/tiktok": typeof lib_recipeImport_tiktok;
   "lib/recipeImport/validation": typeof lib_recipeImport_validation;
   "lib/recipeImport/youtube": typeof lib_recipeImport_youtube;
   "lib/recipeListing": typeof lib_recipeListing;
@@ -137,6 +142,7 @@ declare const fullApi: ApiFromModules<{
   recipeImports: typeof recipeImports;
   recipes: typeof recipes;
   shoppingLists: typeof shoppingLists;
+  socialImportEvaluation: typeof socialImportEvaluation;
   users: typeof users;
 }>;
 

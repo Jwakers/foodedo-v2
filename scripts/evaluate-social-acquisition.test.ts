@@ -4,7 +4,7 @@ import {
   evaluateResult,
   summarize,
   type BenchmarkRow,
-} from "./evaluate-instagram-acquisition";
+} from "./evaluate-social-acquisition";
 
 const item = {
   id: "one",

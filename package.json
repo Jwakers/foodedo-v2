@@ -25,7 +25,8 @@
     "cap:open:ios": "pnpm exec cap open ios",
     "cap:run:ios:live": "pnpm exec cap run ios --live-reload",
     "eval:catalogue-generation": "tsx scripts/catalogue-generation/evaluate.ts",
-    "eval:instagram": "tsx scripts/evaluate-instagram-acquisition.ts",
+    "eval:instagram": "tsx scripts/evaluate-social-acquisition.ts",
+    "eval:social": "tsx scripts/evaluate-social-acquisition.ts",
     "test:ios:inbox": "sh scripts/test-recipe-share-inbox.sh"
   },
   "dependencies": {

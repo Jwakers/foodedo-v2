@@ -2,7 +2,11 @@ import { readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { z } from "zod";
-import { instagramPostUrl } from "../src/lib/domain/social-import";
+import {
+  instagramPostUrl,
+  socialImportPlatform,
+  tiktokPostUrl,
+} from "../src/lib/domain/social-import";
 const run = promisify(execFile);
 const verification = z.object({
   minimumIngredients: z.number().int().min(1).max(100),
@@ -178,10 +182,17 @@ async function main() {
   if (!path) throw new Error("Pass --manifest=/path/to/reviewed-cases.json.");
   let cases = z
     .array(caseSchema)
-    .min(32)
+    .min(process.argv.includes("--one-round") ? 1 : 32)
     .max(40)
     .parse(JSON.parse(await readFile(path, "utf8")));
-  const identities = cases.map((x) => instagramPostUrl(x.url)?.url ?? x.url);
+  if (
+    !process.argv.includes("--one-round") &&
+    new Set(cases.map((item) => socialImportPlatform(item.url))).size !== 1
+  )
+    throw new Error("Use a separate release cohort for each platform.");
+  const identities = cases.map(
+    (x) => instagramPostUrl(x.url)?.url ?? tiktokPostUrl(x.url)?.url ?? x.url,
+  );
   if (
     new Set(cases.map((x) => x.id)).size !== cases.length ||
     new Set(identities).size !== cases.length
@@ -190,7 +201,7 @@ async function main() {
   const supported = cases.filter((x) =>
     ["caption", "linked"].includes(x.category),
   );
-  if (supported.length < 20)
+  if (supported.length < 20 && !process.argv.includes("--one-round"))
     throw new Error(
       "Register at least 20 independently reviewed supported posts.",
     );
@@ -231,7 +242,7 @@ async function main() {
               "exec",
               "convex",
               "run",
-              "instagramImportEvaluation:probe",
+              "socialImportEvaluation:probe",
               JSON.stringify({
                 url: item.url,
                 expectedFragments: item.expectedFragments,
@@ -322,7 +333,7 @@ async function main() {
   );
   if (!summary.qualified) process.exitCode = 1;
 }
-if (process.argv[1]?.endsWith("evaluate-instagram-acquisition.ts"))
+if (process.argv[1]?.endsWith("evaluate-social-acquisition.ts"))
   void main().catch((error) => {
     console.error(
       error instanceof z.ZodError

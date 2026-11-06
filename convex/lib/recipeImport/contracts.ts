@@ -13,6 +13,7 @@ export const CURRENT_IMPORT_FAILURE_CODES = [
   "unsafe_url",
   "source_unreachable",
   "instagram_unavailable",
+  "tiktok_unavailable",
   "source_blocked",
   "unsupported_content",
   "no_recipe",

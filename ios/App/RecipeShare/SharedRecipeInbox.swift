@@ -39,7 +39,23 @@ final class SharedRecipeInbox {
         if ["instagram.com", "www.instagram.com", "m.instagram.com"].contains(url.host?.lowercased() ?? "") { url.host = "www.instagram.com"; url.scheme = "https"; url.query = nil
             let parts = url.path.split(separator: "/")
             if !url.path.hasPrefix("/share/"), parts.count >= 2, ["p", "reel", "reels", "tv"].contains(String(parts[parts.count - 2])) { url.path = "/\(parts[parts.count - 2] == "p" ? "p" : "reel")/\(parts.last!)/" } }
+        if ["tiktok.com", "www.tiktok.com", "m.tiktok.com", "vm.tiktok.com", "vt.tiktok.com"].contains(url.host?.lowercased() ?? "") {
+            url.scheme = "https"
+            url.query = nil
+            url.path = url.path.hasSuffix("/") ? String(url.path.dropLast()) : url.path
+            if ["tiktok.com", "www.tiktok.com", "m.tiktok.com"].contains(url.host?.lowercased() ?? "") { url.host = "www.tiktok.com" }
+        }
         return url.string!
+    }
+    static func isSocialURL(_ url: URL) -> Bool {
+        return ["instagram.com", "www.instagram.com", "m.instagram.com", "tiktok.com", "www.tiktok.com", "m.tiktok.com", "vm.tiktok.com", "vt.tiktok.com", "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"].contains(url.host?.lowercased() ?? "")
+    }
+    static func preferredURL(_ urls: [URL]) throws -> URL {
+        let social = urls.filter { isSocialURL($0) }
+        let candidates = social.isEmpty ? urls : social
+        let unique = Set(try candidates.map { try canonicalURL($0.absoluteString) })
+        guard unique.count == 1, let selected = candidates.first else { throw SharedRecipeInboxError.invalid }
+        return selected
     }
     private func transaction<T>(_ update: (inout [SharedRecipeCapture]) throws -> T) throws -> T {
         var coordinationError: NSError?

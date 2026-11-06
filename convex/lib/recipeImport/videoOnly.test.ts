@@ -9,20 +9,23 @@ const videoClient: RecipeImportModelClient = {
     return task.schema.parse({ result: { status: "video_only_unsupported" } });
   },
 };
-it("classifies an apparent video recipe only from accessible complete video evidence", async () => {
-  const candidate = extractTextCandidate(
-    "Chicken curry: watch the video for the ingredients and cooking method.",
-  );
-  candidate.socialEvidence = {
-    platform: "youtube",
-    mediaType: "video",
-    captionComplete: true,
-    linkedContentUnavailable: false,
-  };
-  await expect(organiseCandidate(candidate, videoClient)).rejects.toMatchObject(
-    { code: "video_only_unsupported" },
-  );
-});
+it.each(["youtube", "instagram", "tiktok"] as const)(
+  "classifies %s video recipes only from accessible complete video evidence",
+  async (platform) => {
+    const candidate = extractTextCandidate(
+      "Chicken curry: watch the video for the ingredients and cooking method.",
+    );
+    candidate.socialEvidence = {
+      platform,
+      mediaType: "video",
+      captionComplete: true,
+      linkedContentUnavailable: false,
+    };
+    await expect(
+      organiseCandidate(candidate, videoClient),
+    ).rejects.toMatchObject({ code: "video_only_unsupported" });
+  },
+);
 it.each(["blocked_link", "incomplete_caption", "image", "unknown"])(
   "does not turn %s evidence into a video-only demand signal",
   async (kind) => {

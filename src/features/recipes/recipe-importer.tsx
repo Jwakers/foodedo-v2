@@ -730,9 +730,12 @@ export function importFailureMessage(
 ) {
   const platform = detectSocialPlatform(sourceUrl);
 
-  if (failureCode === "instagram_unavailable") {
+  if (
+    failureCode === "instagram_unavailable" ||
+    failureCode === "tiktok_unavailable"
+  ) {
     return {
-      title: "Instagram importing isn’t available yet",
+      title: `${failureCode === "tiktok_unavailable" ? "TikTok" : "Instagram"} importing isn’t available yet`,
       description:
         "For now, paste the recipe caption, or use a recipe-page link from the post.",
     };

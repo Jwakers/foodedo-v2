@@ -18,8 +18,11 @@ import { validateDownloadedRecipeImage } from "./images";
 import { type RecipeSourceCandidate } from "./source";
 import { organiseCandidate } from "./extraction";
 import { acquireRecipeSource } from "./sources";
-import { socialImportPlatform } from "../../../src/lib/domain/social-import";
-import { InstagramAcquisitionFailure } from "./instagramProvider";
+import {
+  socialImportPlatform,
+  isApifySocialPlatform,
+} from "../../../src/lib/domain/social-import";
+import { SocialAcquisitionFailure } from "./apify";
 import { createGatewayRecipeImportModelClient } from "./models";
 export {
   extractHtmlCandidate,
@@ -131,7 +134,7 @@ export async function processImportHandler(
     const outcome = await organiseCandidate(
       candidate,
       modelClient,
-      socialImportPlatform(payload.sourceUrl) === "instagram"
+      isApifySocialPlatform(socialImportPlatform(payload.sourceUrl))
         ? Math.min(startedAt + 165_000, normalizationStartedAt + 110_000)
         : startedAt + 110_000,
     );
@@ -231,7 +234,7 @@ export async function processImportHandler(
       ),
     });
   } catch (error) {
-    if (error instanceof InstagramAcquisitionFailure) {
+    if (error instanceof SocialAcquisitionFailure) {
       await ctx.runMutation(internal.recipeImports.recordAcquisition, {
         importId,
         attempt,

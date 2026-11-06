@@ -2,8 +2,12 @@
 import { generateText } from "ai";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
-import { acquireInstagramSource } from "./lib/recipeImport/instagram";
-import { InstagramAcquisitionFailure } from "./lib/recipeImport/instagramProvider";
+import { acquireRecipeSource } from "./lib/recipeImport/sources";
+import {
+  isApifySocialPlatform,
+  socialImportPlatform,
+} from "../src/lib/domain/social-import";
+import { SocialAcquisitionFailure } from "./lib/recipeImport/apify";
 import { containsFact, verifyRecipe } from "./lib/recipeImport/evaluation";
 import { organiseCandidate } from "./lib/recipeImport/extraction";
 import { createGatewayRecipeImportModelClient } from "./lib/recipeImport/models";
@@ -33,6 +37,7 @@ export const probe = internalAction({
   },
   handler: async (_, { url, expectedFragments, normalize, verification }) => {
     if (
+      !isApifySocialPlatform(socialImportPlatform(url)) ||
       url.length > 2048 ||
       expectedFragments.length > 32 ||
       expectedFragments.some((value) => !value || value.length > 160)
@@ -54,9 +59,7 @@ export const probe = internalAction({
       throw new Error("Invalid recipe verification.");
     const started = Date.now();
     try {
-      const candidate = await acquireInstagramSource(url, undefined, {
-        deadline: started + 45_000,
-      });
+      const candidate = await acquireRecipeSource({ type: "url", url });
       const acquisition = {
         acquired: true,
         latencyMs: Date.now() - started,
@@ -136,7 +139,7 @@ export const probe = internalAction({
         acquired: false,
         latencyMs: Date.now() - started,
         outcome:
-          error instanceof InstagramAcquisitionFailure
+          error instanceof SocialAcquisitionFailure
             ? error.acquisitionOutcome
             : error instanceof ImportFailure
               ? error.code

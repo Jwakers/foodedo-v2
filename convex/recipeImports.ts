@@ -12,7 +12,10 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { getCurrentUser, requireUserId } from "./lib/auth";
-import { socialImportPlatform } from "../src/lib/domain/social-import";
+import {
+  socialImportPlatform,
+  isApifySocialPlatform,
+} from "../src/lib/domain/social-import";
 import {
   RECIPE_IMPORT_FAILURE_REASONS,
   RECIPE_NORMALIZATION_VERSION,
@@ -807,7 +810,7 @@ export const markTimedOut = internalMutation({
       if (job.acquisitionRunId)
         await ctx.scheduler.runAfter(
           0,
-          internal.recipeImportActions.cancelInstagramRun,
+          internal.recipeImportActions.cancelAcquisitionRun,
           { runId: job.acquisitionRunId },
         );
       await ctx.db.patch(importId, {
@@ -959,7 +962,7 @@ async function scheduleAttempt(
   });
   const job = await ctx.db.get(importId);
   await ctx.scheduler.runAfter(
-    job?.platform === "instagram" ? 180_000 : IMPORT_TIMEOUT_MS,
+    isApifySocialPlatform(job?.platform) ? 180_000 : IMPORT_TIMEOUT_MS,
     internal.recipeImports.markTimedOut,
     { importId, attempt },
   );
