@@ -14,6 +14,7 @@ import type * as catalogueAdmin from "../catalogueAdmin.js";
 import type * as catalogueGenerationActions from "../catalogueGenerationActions.js";
 import type * as catalogueMaintenance from "../catalogueMaintenance.js";
 import type * as crons from "../crons.js";
+import type * as entitlements from "../entitlements.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as lib_activePlan from "../lib/activePlan.js";
@@ -22,6 +23,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
 import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
 import type * as lib_catalogueGeneration_config from "../lib/catalogueGeneration/config.js";
+import type * as lib_catalogueGeneration_contracts from "../lib/catalogueGeneration/contracts.js";
 import type * as lib_catalogueGeneration_errors from "../lib/catalogueGeneration/errors.js";
 import type * as lib_catalogueGeneration_models from "../lib/catalogueGeneration/models.js";
 import type * as lib_catalogueGeneration_pipeline from "../lib/catalogueGeneration/pipeline.js";
@@ -29,6 +31,8 @@ import type * as lib_catalogueGeneration_prompts from "../lib/catalogueGeneratio
 import type * as lib_catalogueGeneration_revisions from "../lib/catalogueGeneration/revisions.js";
 import type * as lib_catalogueGeneration_validators from "../lib/catalogueGeneration/validators.js";
 import type * as lib_catalogueRecipes from "../lib/catalogueRecipes.js";
+import type * as lib_entitlements from "../lib/entitlements.js";
+import type * as lib_importLimits from "../lib/importLimits.js";
 import type * as lib_mealPlans_contracts from "../lib/mealPlans/contracts.js";
 import type * as lib_mealPlans_creation from "../lib/mealPlans/creation.js";
 import type * as lib_mealPlans_model from "../lib/mealPlans/model.js";
@@ -71,6 +75,7 @@ import type * as planningPreferences from "../planningPreferences.js";
 import type * as recipeImportActions from "../recipeImportActions.js";
 import type * as recipeImports from "../recipeImports.js";
 import type * as recipes from "../recipes.js";
+import type * as shoppingListReconciliation from "../shoppingListReconciliation.js";
 import type * as shoppingLists from "../shoppingLists.js";
 import type * as socialImportEvaluation from "../socialImportEvaluation.js";
 import type * as users from "../users.js";
@@ -88,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   catalogueGenerationActions: typeof catalogueGenerationActions;
   catalogueMaintenance: typeof catalogueMaintenance;
   crons: typeof crons;
+  entitlements: typeof entitlements;
   households: typeof households;
   http: typeof http;
   "lib/activePlan": typeof lib_activePlan;
@@ -96,6 +102,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogue": typeof lib_catalogue;
   "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;
   "lib/catalogueGeneration/config": typeof lib_catalogueGeneration_config;
+  "lib/catalogueGeneration/contracts": typeof lib_catalogueGeneration_contracts;
   "lib/catalogueGeneration/errors": typeof lib_catalogueGeneration_errors;
   "lib/catalogueGeneration/models": typeof lib_catalogueGeneration_models;
   "lib/catalogueGeneration/pipeline": typeof lib_catalogueGeneration_pipeline;
@@ -103,6 +110,8 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogueGeneration/revisions": typeof lib_catalogueGeneration_revisions;
   "lib/catalogueGeneration/validators": typeof lib_catalogueGeneration_validators;
   "lib/catalogueRecipes": typeof lib_catalogueRecipes;
+  "lib/entitlements": typeof lib_entitlements;
+  "lib/importLimits": typeof lib_importLimits;
   "lib/mealPlans/contracts": typeof lib_mealPlans_contracts;
   "lib/mealPlans/creation": typeof lib_mealPlans_creation;
   "lib/mealPlans/model": typeof lib_mealPlans_model;
@@ -145,6 +154,7 @@ declare const fullApi: ApiFromModules<{
   recipeImportActions: typeof recipeImportActions;
   recipeImports: typeof recipeImports;
   recipes: typeof recipes;
+  shoppingListReconciliation: typeof shoppingListReconciliation;
   shoppingLists: typeof shoppingLists;
   socialImportEvaluation: typeof socialImportEvaluation;
   users: typeof users;
@@ -176,4 +186,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

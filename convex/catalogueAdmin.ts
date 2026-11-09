@@ -1,3 +1,9 @@
+import schema from "./schema";
+import {
+  overviewValidator,
+  proposalViewValidator,
+  editorialPayloadValidator,
+} from "./lib/catalogueGeneration/contracts";
 import { catalogueBrowseKeys } from "./lib/catalogue";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -75,10 +81,12 @@ async function removeImage(ctx: MutationCtx, p: Doc<"catalogueProposals">) {
 
 export const access = query({
   args: {},
+  returns: v.object({ isAdmin: v.boolean() }),
   handler: async (ctx) => ({ isAdmin: await isAdministrator(ctx) }),
 });
 export const overview = query({
   args: {},
+  returns: overviewValidator,
   handler: async (ctx) => {
     await requireAdministrator(ctx);
     const [proposals, runs, meals] = await Promise.all([
@@ -114,6 +122,7 @@ export const overview = query({
 });
 export const getProposal = query({
   args: { proposalId: v.id("catalogueProposals") },
+  returns: proposalViewValidator,
   handler: async (ctx, { proposalId }) => {
     await requireAdministrator(ctx);
     const proposal = await ctx.db.get(proposalId);
@@ -124,11 +133,10 @@ export const getProposal = query({
     const latestImageRun = proposal
       ? await ctx.db
           .query("catalogueGenerationRuns")
-          .withIndex("by_proposal_and_created_at", (q) =>
-            q.eq("proposalId", proposalId),
+          .withIndex("by_proposal_operation_and_created_at", (q) =>
+            q.eq("proposalId", proposalId).eq("operation", "image"),
           )
           .order("desc")
-          .filter((q) => q.eq(q.field("operation"), "image"))
           .first()
       : null;
     return proposal
@@ -159,6 +167,14 @@ export const getProposal = query({
 });
 export const analysisRows = query({
   args: {},
+  returns: v.array(
+    v.object({
+      title: v.string(),
+      catalogueMealId: v.string(),
+      version: v.number(),
+      metadata: v.union(schema.doc("catalogueAnalysisMetadata"), v.null()),
+    }),
+  ),
   handler: async (ctx) => {
     await requireAdministrator(ctx);
     const meals = await ctx.db
@@ -303,6 +319,7 @@ export const begin = mutation({
     feedback: v.optional(v.string()),
     initialPrompt: v.optional(v.string()),
   },
+  returns: v.id("catalogueGenerationRuns"),
   handler: async (ctx, args) =>
     enqueue(ctx, {
       ...args,
@@ -358,6 +375,7 @@ export const updateProposal = mutation({
     content: recipeContentValidator,
     tags: tagsValidator,
   },
+  returns: v.number(),
   handler: async (ctx, args) => {
     await requireAdministrator(ctx);
     const p = await editable(ctx, args.proposalId, args.revision);
@@ -406,6 +424,7 @@ export const reject = mutation({
     revision: v.number(),
     reason: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdministrator(ctx);
     const p = await editable(ctx, args.proposalId, args.revision);
@@ -424,6 +443,7 @@ export const reject = mutation({
 });
 export const deleteProposal = mutation({
   args: { proposalId: v.id("catalogueProposals"), revision: v.number() },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdministrator(ctx);
     const p = await ctx.db.get(args.proposalId);
@@ -448,6 +468,7 @@ export const reviewMetadata = mutation({
       }),
     ),
   },
+  returns: v.null(),
   handler: async (ctx, { rows }) => {
     const actor = await requireAdministrator(ctx);
     if (!rows.length || rows.length > 100)
@@ -485,6 +506,7 @@ export const reviewMetadata = mutation({
 });
 export const publish = mutation({
   args: { proposalId: v.id("catalogueProposals"), revision: v.number() },
+  returns: v.id("catalogueMeals"),
   handler: async (ctx, args) => {
     const actor = await requireAdministrator(ctx);
     const p = await ctx.db.get(args.proposalId);
@@ -601,6 +623,7 @@ export const publish = mutation({
 
 export const payload = internalQuery({
   args: { runId: v.id("catalogueGenerationRuns") },
+  returns: editorialPayloadValidator,
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
     if (!run || !run.active) return null;
@@ -653,6 +676,7 @@ export const payload = internalQuery({
 });
 export const claim = internalMutation({
   args: { runId: v.id("catalogueGenerationRuns") },
+  returns: v.union(v.string(), v.literal(false)),
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
     if (
@@ -712,6 +736,7 @@ export const recordUsage = internalMutation({
     token: v.string(),
     event: telemetryValidator,
   },
+  returns: v.null(),
   handler: async (ctx, { runId, token, event }) => {
     const run = await ctx.db.get(runId);
     if (run && run.attemptToken === token && run.usage.length < 8)
@@ -813,6 +838,7 @@ export const completeRecipe = internalMutation({
     findings: v.array(findingValidator),
     changeSummary: v.optional(v.array(v.string())),
   },
+  returns: v.union(v.id("catalogueProposals"), v.null()),
   handler: async (ctx, args) => {
     const run = await currentRun(ctx, args.runId, args.token);
     if (!run) return null;
@@ -928,6 +954,7 @@ export const completeReview = internalMutation({
     token: v.string(),
     findings: v.array(findingValidator),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const run = await currentRun(ctx, args.runId, args.token);
     if (!run?.proposalId) return;
@@ -958,6 +985,7 @@ export const completeImage = internalMutation({
     token: v.string(),
     imageStorageId: v.id("_storage"),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const previousRun = await ctx.db.get(args.runId);
     const previousProposal = previousRun?.proposalId
@@ -1003,6 +1031,7 @@ export const completeEnrichment = internalMutation({
       }),
     ),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const run = await currentRun(ctx, args.runId, args.token);
     if (!run) return;
@@ -1079,6 +1108,7 @@ export const failRun = internalMutation({
     token: v.string(),
     failure: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const run = await ctx.db.get(args.runId);
     if (run?.active && run.attemptToken === args.token)
@@ -1087,6 +1117,7 @@ export const failRun = internalMutation({
 });
 export const expireRun = internalMutation({
   args: { runId: v.id("catalogueGenerationRuns") },
+  returns: v.null(),
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
     if (run?.active && Date.now() >= run.deadline)

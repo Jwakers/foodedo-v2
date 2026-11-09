@@ -1,3 +1,4 @@
+import { RECIPE_LIMITS } from "../../src/lib/domain/recipes";
 import { recipeAllergyEvidence } from "../../src/lib/domain/allergies";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
@@ -17,7 +18,11 @@ export async function getCurrentCatalogueMeals(ctx: ReadCtx) {
   const meals = await ctx.db
     .query("catalogueMeals")
     .withIndex("by_status_and_position", (q) => q.eq("status", "published"))
-    .collect();
+    .take(RECIPE_LIMITS.catalogueMeals + 1);
+  if (meals.length > RECIPE_LIMITS.catalogueMeals)
+    throw new Error(
+      "Catalogue exceeds the supported size; increase the complete-read limit deliberately.",
+    );
   assertUniqueCurrentCatalogue(meals);
   return meals;
 }

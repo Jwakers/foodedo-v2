@@ -1,5 +1,6 @@
-import { convexTest } from "convex-test";
-import { expect, test } from "vitest";
+import { convexTest } from "../tests/convex-test";
+import { afterEach, expect, test, vi } from "vitest";
+afterEach(() => vi.useRealTimers());
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
@@ -166,4 +167,150 @@ test("deletion wins a race with recovery and repeated webhook delivery", async (
   await expect(alice.mutation(api.users.ensureCurrent, {})).rejects.toThrow(
     "deleted",
   );
+});
+
+test("large deletion revokes access immediately, drains bounded batches and rejects late imports", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const alice = t.withIdentity({ subject: "large-account" });
+  const ownerId = await alice.mutation(api.users.ensureCurrent, {});
+  const bob = t.withIdentity({ subject: "retained-account" });
+  const bobId = await bob.mutation(api.users.ensureCurrent, {});
+  const imports = await t.run(async (ctx) => {
+    const ids = [];
+    for (let i = 0; i < 27; i++)
+      ids.push(
+        await ctx.db.insert("recipeImports", {
+          ownerId,
+          clientRequestId: `large-${i}`,
+          sourceType: "text",
+          inputText: "Private source",
+          status: "processing",
+          phase: "organising",
+          attempt: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        }),
+      );
+    await ctx.db.insert("accountEntitlements", {
+      ownerId,
+      tier: "premium",
+      validUntil: Date.now() + 1000,
+    });
+    return ids;
+  });
+  await t.mutation(internal.users.deleteFromClerk, {
+    authSubject: "large-account",
+  });
+  expect(await alice.query(api.users.current, {})).toBeNull();
+  await expect(alice.mutation(api.entitlements.current, {})).rejects.toThrow(
+    "being prepared",
+  );
+  await expect(alice.mutation(api.users.ensureCurrent, {})).rejects.toThrow(
+    "deleted",
+  );
+  const remaining = await t.run((ctx) =>
+    ctx.db.query("recipeImports").collect(),
+  );
+  expect(remaining).toHaveLength(19);
+  // This pending job has not been removed yet, but cannot complete or expose its source.
+  expect(
+    await t.query(internal.recipeImports.getPayload, {
+      importId: imports[26],
+      attempt: 1,
+    }),
+  ).toBeNull();
+  expect(
+    await t.mutation(internal.recipeImports.completeImport, {
+      importId: imports[26],
+      attempt: 1,
+      method: "text",
+      recipe: {
+        title: "Late recipe",
+        proteinCategory: "meat-free",
+        ingredients: [
+          { id: "one", name: "tomato", shoppingCategory: "fruit_and_veg" },
+        ],
+        steps: [{ id: "cook", text: "Cook the tomato." }],
+      },
+    }),
+  ).toBeNull();
+  await t.mutation(internal.users.deleteFromClerk, {
+    authSubject: "large-account",
+  });
+  await t.mutation(internal.users.upsertFromClerk, {
+    ...clerkFields,
+    authSubject: "large-account",
+  });
+  for (let i = 0; i < 5; i++)
+    await t.mutation(internal.users.cleanupDeletedUser, { ownerId });
+  expect(await t.run((ctx) => ctx.db.query("recipeImports").collect())).toEqual(
+    [],
+  );
+  expect(
+    await t.run((ctx) => ctx.db.query("accountEntitlements").collect()),
+  ).toEqual([]);
+  expect(await t.run((ctx) => ctx.db.get(bobId))).not.toBeNull();
+  await expect(
+    t.mutation(internal.users.cleanupDeletedUser, { ownerId: bobId }),
+  ).rejects.toThrow("live account");
+});
+
+test("image completion refuses a deleted owner while its recipe awaits cleanup", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const owner = t.withIdentity({ subject: "deleted-image-owner" });
+  const ownerId = await owner.mutation(api.users.ensureCurrent, {});
+  const { recipeId, imageStorageId } = await t.run(async (ctx) => {
+    // The first cleanup batch is occupied, leaving the recipe in the database.
+    for (let index = 0; index < 9; index++)
+      await ctx.db.insert("recipeImports", {
+        ownerId,
+        clientRequestId: `image-job-${index}`,
+        sourceType: "text",
+        status: "failed",
+        phase: "complete",
+        attempt: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    const recipeId = await ctx.db.insert("recipes", {
+      ownerId,
+      title: "Private tomato recipe",
+      proteinCategory: "meat-free",
+      ingredients: [
+        { id: "tomato", name: "tomatoes", shoppingCategory: "fruit_and_veg" },
+      ],
+      steps: [{ id: "cook", text: "Cook the tomatoes." }],
+      source: {
+        type: "import",
+        method: "text",
+        importedAt: 1,
+        contentFingerprint: "current",
+      },
+      savedAt: 1,
+      updatedAt: 1,
+    });
+    return {
+      recipeId,
+      imageStorageId: await ctx.storage.store(new Blob(["image"])),
+    };
+  });
+  await t.mutation(internal.users.deleteFromClerk, {
+    authSubject: "deleted-image-owner",
+  });
+  expect(await t.run((ctx) => ctx.db.get(ownerId))).toBeNull();
+  expect(await t.run((ctx) => ctx.db.get(recipeId))).not.toBeNull();
+  await expect(
+    t.mutation(internal.recipeImports.attachImage, {
+      recipeId,
+      imageStorageId,
+      expectedContentFingerprint: "current",
+    }),
+  ).resolves.toBe(false);
+  expect(
+    await t.run(
+      async (ctx) => (await ctx.db.get(recipeId))?.imageStorageId ?? null,
+    ),
+  ).toBeNull();
 });

@@ -1,4 +1,6 @@
 "use client";
+
+import { recipeImportErrorMessage } from "./recipe-import-errors";
 import { Capacitor } from "@capacitor/core";
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
@@ -32,10 +34,12 @@ function CaptureCoordinator() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let removeListener: (() => Promise<void>) | undefined;
     let running = false;
+    let limitBlocked = false;
     async function drain() {
       if (
         !active ||
         running ||
+        limitBlocked ||
         document.visibilityState === "hidden" ||
         status === "loading" ||
         status === "connection_error"
@@ -133,6 +137,7 @@ function CaptureCoordinator() {
         });
         if (!active) return;
         await recipeCapture.acknowledge({ id: capture.id, owner: userId });
+        toast.dismiss("native-capture-limit");
         toast.dismiss(`native-share:${capture.id}`);
         if (active)
           toast("Importing captured recipe", {
@@ -142,7 +147,26 @@ function CaptureCoordinator() {
               onClick: () => router.push(`/recipes/import?job=${importId}`),
             },
           });
-      } catch {
+      } catch (error) {
+        const limitMessage = recipeImportErrorMessage(error, "");
+        if (limitMessage) {
+          limitBlocked = true;
+          shouldPoll = false;
+          if (active)
+            toast.error(limitMessage, {
+              id: "native-capture-limit",
+              duration: Infinity,
+              description: "Your captured recipe remains in the inbox.",
+              action: {
+                label: "Try again",
+                onClick: () => {
+                  limitBlocked = false;
+                  void drain();
+                },
+              },
+            });
+          return;
+        }
         if (active && !shownNotices.current.has("error")) {
           shownNotices.current.add("error");
           toast.error(
@@ -163,6 +187,7 @@ function CaptureCoordinator() {
           ({ isActive }) => {
             if (isActive) {
               if (timer) clearTimeout(timer);
+              limitBlocked = false;
               void drain();
             }
           },
@@ -173,6 +198,7 @@ function CaptureCoordinator() {
       .catch(() => {});
     return () => {
       active = false;
+      toast.dismiss("native-capture-limit");
       if (timer) clearTimeout(timer);
       void removeListener?.();
     };

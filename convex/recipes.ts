@@ -205,29 +205,9 @@ async function removeRecipeFromLibrary(
     await retireIntroductions(ctx, ownerId, ["recipes"]);
   }
 
-  const referencedSlot = await ctx.db
-    .query("mealSlots")
-    .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
-    .first();
-
-  const shoppingListItems = await ctx.db
-    .query("shoppingListItems")
-    .withIndex("by_owner_and_updated_at", (q) =>
-      q.eq("ownerId", recipe.ownerId),
-    )
-    .collect();
-  const referencedInShoppingList = shoppingListItems.some((item) =>
-    item.sourceRecipeIds.includes(recipe._id),
-  );
-
-  if (referencedSlot === null && !referencedInShoppingList) {
-    await ctx.db.delete(recipe._id);
-  } else {
-    await ctx.db.patch(recipe._id, {
-      savedAt: undefined,
-      updatedAt: Date.now(),
-    });
-  }
+  // Library membership is independent of pinned plan/list snapshots. Retaining the
+  // private row avoids a scan of every historical list when freeing a library slot.
+  await ctx.db.patch(recipe._id, { savedAt: undefined, updatedAt: Date.now() });
 }
 
 export const repairImport = mutation({

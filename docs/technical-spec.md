@@ -62,6 +62,8 @@ The original shell and auth foundations are complete. The recipe kernel adds pri
 
 **Web blog — implemented:** `/blog` and `/blog/[slug]` reuse the existing Sanity CMS with published-only reads, plus six preserved local guides. Editorial routes have an independent server-rendered layout, a guest-first Try Foodedo action, article metadata and a live sitemap. They are excluded from the Capacitor export. No CMS schema or backend migration is involved. See [Web blog](./blog.md).
 
+**Account allowances:** all accounts currently default to free, with a central server-enforced policy for 10 saved imported recipes, 20 import attempts per UTC calendar month and two simultaneous imports. The policy supports future expiring server-owned tier grants and feature flags; billing and upgrades are not enabled. See [Entitlements and limits](./entitlements-and-limits.md).
+
 **Not initial build:** subscriptions, premium meal delivery, ads, a new CMS/editor, social.
 
 ## 4. Architecture philosophy
@@ -158,3 +160,5 @@ out/                     Generated native web bundle (gitignored)
 - [0007 Standard meals and future premium entitlement](../knowledge/decisions/0007-standard-meals-and-future-premium-entitlement.md)
 - [0008 Convex and Clerk](../knowledge/decisions/0008-convex-and-clerk.md)
 - [0009 Plan adjustments and preferences](../knowledge/decisions/0009-plan-adjustments-and-preferences.md)
+
+Recipe edits keep active-plan shopping lists atomic; archived lists refresh through bounded background reconciliation after a small historical fast path. See [Entitlements and limits](./entitlements-and-limits.md) for the consistency and deletion contracts.

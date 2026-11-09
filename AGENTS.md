@@ -37,7 +37,7 @@ Use skills **selectively**. See `knowledge/skills/README.md`.
 - Product UI later: `.cursor/skills/frontend-design/SKILL.md`
 - Next.js App Router: Vercel plugin `nextjs` skill
 - After editing several TSX files: Vercel `react-best-practices` skill
-- Convex: use official plugin skills when available. Dependencies and the V2 project already exist; do not install Convex AI files or switch deployments without explicit need.
+- Convex: use the installed `.agents/skills/convex-*` skills selectively, with the Foodedo-specific guidance in `knowledge/skills/README.md`. Dependencies and the V2 project already exist; do not reinstall AI files, scaffold another backend, or switch deployments without explicit need. Repository architecture takes precedence over generic skill defaults.
 - Accessibility: `knowledge/ux/interaction-principles.md`
 
 ## Coding

@@ -58,10 +58,12 @@ export async function readOnboardingState(ctx: QueryCtx, userId: Id<"users">) {
       ? null
       : ctx.db
           .query("recipes")
-          .withIndex("by_owner_and_saved_at", (q) =>
-            q.eq("ownerId", userId).gt("savedAt", 0),
+          .withIndex("by_owner_and_source_and_saved_at", (q) =>
+            q
+              .eq("ownerId", userId)
+              .eq("source.type", "catalogue")
+              .gt("savedAt", 0),
           )
-          .filter((q) => q.eq(q.field("source.type"), "catalogue"))
           .first(),
   ]);
   return {

@@ -1,3 +1,9 @@
+import { requireFeature } from "./lib/entitlements";
+import {
+  activeImportAttempts,
+  assertImportedRecipeCapacity,
+  consumeImportAttempt,
+} from "./lib/importLimits";
 import { personalRecipeBrowseKeys } from "./lib/recipeListing";
 import { ConvexError, v } from "convex/values";
 
@@ -186,7 +192,13 @@ export const getImport = query({
   handler: async (ctx, { importId }) => {
     const ownerId = await requireUserId(ctx);
     const job = await ctx.db.get(importId);
-    if (job === null || job.ownerId !== ownerId || job.cleanedUpAt) return null;
+    if (
+      job === null ||
+      !(await ctx.db.get(job.ownerId)) ||
+      job.ownerId !== ownerId ||
+      job.cleanedUpAt
+    )
+      return null;
     return await toImportView(ctx, job);
   },
 });
@@ -232,7 +244,12 @@ export const retryImport = mutation({
   handler: async (ctx, { importId }) => {
     const ownerId = await requireUserId(ctx);
     const job = await ctx.db.get(importId);
-    if (job === null || job.ownerId !== ownerId || job.cleanedUpAt) {
+    if (
+      job === null ||
+      !(await ctx.db.get(job.ownerId)) ||
+      job.ownerId !== ownerId ||
+      job.cleanedUpAt
+    ) {
       throw new ConvexError({
         code: "NOT_FOUND",
         message: "Import not found.",
@@ -286,7 +303,12 @@ export const stageDraft = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const job = await ctx.db.get(args.importId);
-    if (!job || job.attempt !== args.attempt || job.status !== "processing")
+    if (
+      !job ||
+      !(await ctx.db.get(job.ownerId)) ||
+      job.attempt !== args.attempt ||
+      job.status !== "processing"
+    )
       return null;
     const recipe = prepareRecipeDraft(args.recipe);
     const issues = boundedDraftIssues(args.issues);
@@ -400,6 +422,18 @@ export const finalizeDraft = mutation({
     )
       return existing.resultRecipeId;
     const job = await ownedDraft(ctx, args);
+    const { limits } = await requireFeature(ctx, ownerId, "recipeImport");
+    const active = await activeImportAttempts(
+      ctx,
+      ownerId,
+      limits.simultaneousImports,
+    );
+    await assertImportedRecipeCapacity(
+      ctx,
+      ownerId,
+      limits.savedImportedRecipes,
+      active.length + 1,
+    );
     const draft = job.draft!;
     if (
       draft.issues.some(
@@ -550,7 +584,12 @@ export const claimAttempt = internalMutation({
   returns: v.boolean(),
   handler: async (ctx, { importId, attempt }) => {
     const job = await ctx.db.get(importId);
-    if (job === null || job.attempt !== attempt || job.status !== "queued") {
+    if (
+      job === null ||
+      !(await ctx.db.get(job.ownerId)) ||
+      job.attempt !== attempt ||
+      job.status !== "queued"
+    ) {
       return false;
     }
     await ctx.db.patch(importId, {
@@ -582,6 +621,7 @@ export const getPayload = internalQuery({
     const job = await ctx.db.get(importId);
     if (
       job === null ||
+      !(await ctx.db.get(job.ownerId)) ||
       job.attempt !== attempt ||
       job.status !== "processing"
     ) {
@@ -649,12 +689,19 @@ export const completeImport = internalMutation({
     const job = await ctx.db.get(args.importId);
     if (
       job === null ||
+      !(await ctx.db.get(job.ownerId)) ||
       job.attempt !== args.attempt ||
       job.status !== "processing"
     ) {
       return null;
     }
 
+    const { limits } = await requireFeature(ctx, job.ownerId, "recipeImport");
+    await assertImportedRecipeCapacity(
+      ctx,
+      job.ownerId,
+      limits.savedImportedRecipes,
+    );
     let content;
     try {
       content = prepareRecipeContent(args.recipe);
@@ -843,6 +890,7 @@ export const attachImage = internalMutation({
     const recipe = await ctx.db.get(recipeId);
     if (
       recipe === null ||
+      !(await ctx.db.get(recipe.ownerId)) ||
       recipe.source.type !== "import" ||
       recipe.source.contentFingerprint !== expectedContentFingerprint
     ) {
@@ -956,6 +1004,9 @@ async function scheduleAttempt(
   importId: Id<"recipeImports">,
   attempt: number,
 ) {
+  const queuedJob = await ctx.db.get(importId);
+  if (!queuedJob) throw new Error("Import not found.");
+  await consumeImportAttempt(ctx, queuedJob.ownerId, importId);
   await ctx.scheduler.runAfter(0, internal.recipeImportActions.processImport, {
     importId,
     attempt,
@@ -1030,7 +1081,12 @@ export const recordAcquisition = internalMutation({
   returns: v.boolean(),
   handler: async (ctx, { importId, attempt, runId, resolvedUrl, summary }) => {
     const job = await ctx.db.get(importId);
-    if (!job || job.status !== "processing" || job.attempt !== attempt)
+    if (
+      !job ||
+      !(await ctx.db.get(job.ownerId)) ||
+      job.status !== "processing" ||
+      job.attempt !== attempt
+    )
       return false;
     await ctx.db.patch(importId, {
       ...(runId ? { acquisitionRunId: runId } : {}),

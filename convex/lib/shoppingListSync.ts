@@ -1,3 +1,4 @@
+import { internal } from "../_generated/api";
 import {
   deriveShoppingListItems,
   shoppingItemIdentityKey,
@@ -13,26 +14,49 @@ import type { SpaceId } from "./spaces";
 import { maximumPlanSlots } from "./activePlan";
 const maximumListsForOnePlan = 10;
 
-/** Recipe edits must refresh the same derived lists as plan edits. */
+/** Keep the active plan atomic; archived history is reconciled one plan per batch. */
 export async function syncShoppingListsForRecipe(
   ctx: MutationCtx,
   ownerId: SpaceId,
   recipeId: Id<"recipes">,
 ) {
-  const slots = await ctx.db
+  const plans = await ctx.db
+    .query("mealPlans")
+    .withIndex("by_owner_and_status_and_updated_at", (q) =>
+      q.eq("ownerId", ownerId).eq("status", "active"),
+    )
+    .take(3);
+  if (plans.length > 2)
+    throw new Error("Resolve active plan conflicts before editing recipes.");
+  for (const plan of plans) {
+    const slots = await ctx.db
+      .query("mealSlots")
+      .withIndex("by_plan_and_date", (q) => q.eq("mealPlanId", plan._id))
+      .take(maximumPlanSlots + 1);
+    if (slots.length > maximumPlanSlots)
+      throw new Error("This plan exceeds the supported limit.");
+    if (slots.some((slot) => slot.recipeId === recipeId))
+      await syncShoppingListForPlan(ctx, ownerId, plan._id);
+  }
+  // Refresh up to two historical references inline without nesting a second pagination.
+  const history = await ctx.db
     .query("mealSlots")
     .withIndex("by_recipe", (q) => q.eq("recipeId", recipeId))
-    .collect();
-  const planIds = new Set(
-    slots
-      .filter((slot) => slot.ownerId === ownerId)
-      .map((slot) => slot.mealPlanId),
-  );
-  for (const planId of planIds) {
-    const plan = await ctx.db.get(planId);
-    if (plan?.ownerId === ownerId)
-      await syncShoppingListForPlan(ctx, ownerId, planId);
+    .take(3);
+  for (const slot of history.slice(0, 2)) {
+    const historicalPlan = await ctx.db.get(slot.mealPlanId);
+    if (
+      historicalPlan?.ownerId === ownerId &&
+      historicalPlan.status === "archived"
+    )
+      await syncShoppingListForPlan(ctx, ownerId, historicalPlan._id);
   }
+  if (history.length > 2)
+    await ctx.scheduler.runAfter(
+      0,
+      internal.shoppingListReconciliation.reconcileRecipeHistory,
+      { recipeId, cursor: null },
+    );
 }
 
 /**

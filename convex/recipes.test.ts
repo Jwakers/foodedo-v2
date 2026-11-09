@@ -1,4 +1,4 @@
-import { convexTest } from "convex-test";
+import { convexTest } from "../tests/convex-test";
 import { expect, test } from "vitest";
 
 import { personalRecipeBrowseKeys } from "./lib/recipeListing";

@@ -1,4 +1,4 @@
-import { convexTest } from "convex-test";
+import { convexTest } from "../tests/convex-test";
 import { expect, test, vi } from "vitest";
 import * as ingredientMappings from "../src/lib/domain/step-ingredients";
 import { api, internal } from "./_generated/api";

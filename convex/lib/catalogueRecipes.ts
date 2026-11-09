@@ -130,7 +130,7 @@ export async function getOrCreateCatalogueRecipe(
 
 /** Imported/manual recipes must not consume the catalogue-membership read budget. */
 export async function getSavedCatalogueRecipes(
-  ctx: QueryCtx,
+  ctx: QueryCtx | MutationCtx,
   ownerId: Id<"users">,
 ) {
   const recipes = await ctx.db

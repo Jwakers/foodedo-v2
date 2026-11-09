@@ -23,6 +23,16 @@ import { onboardingValidator } from "./lib/onboarding";
 const spaceOwner = v.union(v.id("users"), v.id("households"));
 
 export default defineSchema({
+  accountImportUsage: defineTable({
+    ownerId: v.id("users"),
+    windowStart: v.number(),
+    allowance: v.number(),
+  }).index("by_owner", ["ownerId"]),
+  accountEntitlements: defineTable({
+    ownerId: v.id("users"),
+    tier: v.union(v.literal("free"), v.literal("premium")),
+    validUntil: v.number(),
+  }).index("by_owner", ["ownerId"]),
   households: defineTable({
     creatorId: v.id("users"),
     createdAt: v.number(),
@@ -145,6 +155,11 @@ export default defineSchema({
   })
     .index("by_request", ["actor", "requestKey"])
     .index("by_proposal_and_created_at", ["proposalId", "createdAt"])
+    .index("by_proposal_operation_and_created_at", [
+      "proposalId",
+      "operation",
+      "createdAt",
+    ])
     .index("by_active", ["active"])
     .index("by_created_at", ["createdAt"]),
   catalogueAnalysisMetadata: defineTable({
@@ -318,6 +333,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_owner_and_request", ["ownerId", "clientRequestId"])
+    .index("by_owner_and_status", ["ownerId", "status"])
     .index("by_owner_and_updated_at", ["ownerId", "updatedAt"]),
   mealPlans: defineTable({
     ownerId: spaceOwner,

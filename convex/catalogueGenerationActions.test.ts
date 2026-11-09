@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { convexTest } from "convex-test";
+import { convexTest } from "../tests/convex-test";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import sharp from "sharp";
 import { api, internal } from "./_generated/api";

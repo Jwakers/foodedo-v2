@@ -106,7 +106,7 @@ Build the recipe prerequisite, then one identity vertical slice:
 6. **Auth integration — proof complete:** email and Google sign-in, token propagation, sign-out, and the iOS return flow work in development. Repeat the full matrix against release environments before launch.
 7. **Claim flow — complete:** `claimGuestDraft` is idempotent for retries using the same claim key. The client retains the local draft until acknowledgement. Saving the explicitly reviewed week atomically archives a different active plan. Authenticated plan hydration is authoritative across devices and cleans matching IndexedDB state after confirmation.
 8. **Plan editing — MVP complete:** authenticated users can swap a meal or review a read-only alternative before atomically replacing the current plan. Elapsed meals remain intact, the previous version is archived for undo, and saved personal recipes are considered before standard catalogue fallback. The ranked selector remains a replaceable seam for richer preference-aware planning.
-9. **Shopping list — MVP foundation complete:** authenticated users can derive and edit a list from the current plan. Plan and recipe changes reconcile the linked list in the same transaction, preserving retained item state and manual extras. Archived plan lists remain editable for delayed shopping and follow their plan’s lifetime.
+9. **Shopping list — MVP foundation complete:** authenticated users can derive and edit a list from the current plan. Plan changes and active-plan recipe edits reconcile the linked list in the same transaction; archived recipe-derived lists refresh in bounded background batches, preserving retained item state and manual extras. Archived plan lists remain editable for delayed shopping and follow their plan’s lifetime.
 10. **Release proof remaining:** manually verify guest → Keep → email/Google authentication → automatic claim → authenticated editing and Shop reload on web and iOS, plus cross-user authorization and conflict messaging.
 
 Do not begin with a full recipe importer, settings surface, ingredient taxonomy, or provider-specific user-profile system. Keep each new slice focused on the smallest trustworthy product loop.
@@ -165,3 +165,5 @@ sign-out rather than provisioning retries. A new Clerk identity can register wit
 the same email; deletion is matched by subject, never email. This additive table
 requires no existing-user migration, but cannot identify accounts deleted before
 markers were introduced. Deploy the schema and backend before the frontend.
+
+Deletion revokes access by removing the user row immediately; remaining private data is then removed in bounded internal batches. In-flight imports cannot complete for a removed owner. See [Entitlements and limits](../../docs/entitlements-and-limits.md) for cleanup, free-tier import capacity, monthly allowances and future server-owned grants.

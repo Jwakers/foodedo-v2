@@ -1,5 +1,7 @@
 "use client";
 
+import { recipeImportErrorMessage } from "./recipe-import-errors";
+
 import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
 
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
@@ -177,7 +179,12 @@ export function RecipeImporter() {
       router.replace(`/recipes/import?job=${nextImportId}`);
     } catch (error) {
       console.error("Failed to begin recipe import.", error);
-      toast.error("Foodedo couldn’t start that import. Try again.");
+      toast.error(
+        recipeImportErrorMessage(
+          error,
+          "Foodedo couldn’t start that import. Try again.",
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +199,9 @@ export function RecipeImporter() {
       await retryImport({ importId });
     } catch (error) {
       console.error("Failed to retry recipe import.", error);
-      toast.error("Foodedo couldn’t retry that import.");
+      toast.error(
+        recipeImportErrorMessage(error, "Foodedo couldn’t retry that import."),
+      );
     } finally {
       retryPending.current = false;
       setRetrying(false);

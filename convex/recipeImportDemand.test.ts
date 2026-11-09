@@ -1,4 +1,4 @@
-import { convexTest } from "convex-test";
+import { convexTest } from "../tests/convex-test";
 import { expect, it, vi, afterEach } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";

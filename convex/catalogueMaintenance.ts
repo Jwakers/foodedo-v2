@@ -1,3 +1,8 @@
+import schema from "./schema";
+import {
+  recipeContentValidator,
+  proteinCategoryValidator,
+} from "./lib/recipeValidators";
 import { ConvexError, v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { requireAdministrator } from "./lib/auth";
@@ -23,6 +28,17 @@ const unknownTags: EditorialTags = {
 
 export const list = query({
   args: {},
+  returns: v.object({
+    meals: v.array(
+      v.object({
+        _id: v.id("catalogueMeals"),
+        title: v.string(),
+        version: v.number(),
+        proteinCategory: proteinCategoryValidator,
+      }),
+    ),
+    activeRun: v.union(schema.doc("catalogueGenerationRuns"), v.null()),
+  }),
   handler: async (ctx) => {
     await requireAdministrator(ctx);
     const meals = (await getCurrentCatalogueMeals(ctx)).map((meal) => ({
@@ -40,6 +56,15 @@ export const list = query({
 });
 export const getMeal = query({
   args: { mealId: v.id("catalogueMeals") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      mealId: v.id("catalogueMeals"),
+      version: v.number(),
+      content: recipeContentValidator,
+      imageUrl: v.union(v.string(), v.null()),
+    }),
+  ),
   handler: async (ctx, { mealId }) => {
     await requireAdministrator(ctx);
     const meal = await ctx.db.get(mealId);
@@ -62,6 +87,11 @@ export const start = mutation({
     feedback: v.optional(v.string()),
     requestKey: v.string(),
   },
+  returns: v.object({
+    proposalId: v.id("catalogueProposals"),
+    runId: v.union(v.id("catalogueGenerationRuns"), v.null()),
+    reused: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     const actor = await requireAdministrator(ctx);
     if (

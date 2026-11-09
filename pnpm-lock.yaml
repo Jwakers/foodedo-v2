@@ -26,6 +26,9 @@ importers:
       '@clerk/react':
         specifier: 6.14.5
         version: 6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@convex-dev/rate-limiter':
+        specifier: ^0.4.3
+        version: 0.4.3(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5)
       '@portabletext/react':
         specifier: ^8.0.1
         version: 8.0.1(react@19.2.8)
@@ -284,6 +287,20 @@ packages:
       react:
         optional: true
       react-dom:
+        optional: true
+
+  '@convex-dev/batch-worker@0.3.5':
+    resolution: {integrity: sha512-kTxLGy1TXRN6WLcENcoRWWnvPshv1sIZp2EpPqGqCB4FxDI7m8tEHUr+jCLdhGtSZT1UHkWtb1w8YYuEzTxHWQ==}
+    peerDependencies:
+      convex: ^1.43.0
+
+  '@convex-dev/rate-limiter@0.4.3':
+    resolution: {integrity: sha512-IXIEGbZBANC5B23pGmIui7p49kSiltNWyJ7wX7nFmkR396X/Oj9ebgScgxSJMAW7DkhpUtt1NAnQHhjB0v6a/A==}
+    peerDependencies:
+      convex: ^1.43.0
+      react: ^18.2.0 || ^19.0.0
+    peerDependenciesMeta:
+      react:
         optional: true
 
   '@edge-runtime/primitives@6.0.0':
@@ -2070,6 +2087,31 @@ packages:
       '@standard-schema/spec':
         optional: true
       hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
+
+  convex-helpers@0.1.134:
+    resolution: {integrity: sha512-GPVj5HmRMOyd2PF/OxUYQlNS/HdmOo3pZ4iTyPXyEOxuXwvNeQcx7OUlvNFTTYnHhcuonsMx8UuqjVo5gCqpZA==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.46.0
+      hono: ^4.0.5
+      prettier: ^3.0.0
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0 || ^7.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      prettier:
         optional: true
       react:
         optional: true
@@ -4055,6 +4097,31 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
+  '@convex-dev/batch-worker@0.3.5(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5)':
+    dependencies:
+      convex: 1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+      convex-helpers: 0.1.134(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5)
+    transitivePeerDependencies:
+      - '@standard-schema/spec'
+      - hono
+      - prettier
+      - react
+      - typescript
+      - zod
+
+  '@convex-dev/rate-limiter@0.4.3(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5)':
+    dependencies:
+      '@convex-dev/batch-worker': 0.3.5(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5)
+      convex: 1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+    optionalDependencies:
+      react: 19.2.8
+    transitivePeerDependencies:
+      - '@standard-schema/spec'
+      - hono
+      - prettier
+      - typescript
+      - zod
+
   '@edge-runtime/primitives@6.0.0': {}
 
   '@edge-runtime/vm@5.0.0':
@@ -5492,6 +5559,16 @@ snapshots:
       convex: 1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
+      react: 19.2.8
+      typescript: 5.9.3
+      zod: 4.6.5
+
+  convex-helpers@0.1.134(@standard-schema/spec@1.1.0)(convex@1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(prettier@3.9.6)(react@19.2.8)(typescript@5.9.3)(zod@4.6.5):
+    dependencies:
+      convex: 1.45.0(@clerk/react@6.14.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      prettier: 3.9.6
       react: 19.2.8
       typescript: 5.9.3
       zod: 4.6.5

@@ -1,3 +1,5 @@
+import type { Id } from "./_generated/dataModel";
+import { importRateLimiter } from "./lib/importLimits";
 import { ConvexError, v } from "convex/values";
 import {
   internalMutation,
@@ -111,84 +113,104 @@ export const deleteFromClerk = internalMutation({
     const ownerId = existing._id;
     await leaveMembership(ctx, ownerId);
 
-    // Remove source text, drafts and job state as part of deletion. A pipeline
-    // already in flight cannot complete once its import record is gone.
-    const imports = await ctx.db
-      .query("recipeImports")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const job of imports) {
-      if (
-        job.acquisitionRunId &&
-        (job.status === "queued" || job.status === "processing")
-      ) {
-        await ctx.scheduler.runAfter(
-          0,
-          internal.recipeImportActions.cancelAcquisitionRun,
-          { runId: job.acquisitionRunId },
-        );
-      }
-      await ctx.db.delete(job._id);
-    }
-
-    const feedback = await ctx.db
-      .query("mealSelectionFeedback")
-      .withIndex("by_actor", (q) => q.eq("actorId", ownerId))
-      .collect();
-    for (const entry of feedback) await ctx.db.delete(entry._id);
-
-    const allergies = await ctx.db
-      .query("allergyProfiles")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const profile of allergies) await ctx.db.delete(profile._id);
-
-    const planningPreferences = await ctx.db
-      .query("planningPreferences")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const preferences of planningPreferences) {
-      await ctx.db.delete(preferences._id);
-    }
-
-    const mealSlots = await ctx.db
-      .query("mealSlots")
-      .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const mealSlot of mealSlots) await ctx.db.delete(mealSlot._id);
-
-    const guestClaims = await ctx.db
-      .query("guestClaims")
-      .withIndex("by_owner_and_claim_key", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const guestClaim of guestClaims) await ctx.db.delete(guestClaim._id);
-
-    const mealPlans = await ctx.db
-      .query("mealPlans")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const mealPlan of mealPlans) await ctx.db.delete(mealPlan._id);
-
-    const shoppingListItems = await ctx.db
-      .query("shoppingListItems")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const item of shoppingListItems) await ctx.db.delete(item._id);
-
-    const shoppingLists = await ctx.db
-      .query("shoppingLists")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const list of shoppingLists) await ctx.db.delete(list._id);
-
-    const recipes = await ctx.db
-      .query("recipes")
-      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
-      .collect();
-    for (const recipe of recipes) await ctx.db.delete(recipe._id);
-
     await ctx.db.delete(existing._id);
+    await cleanUserData(ctx, ownerId);
 
     return null;
   },
 });
+
+const cleanupBatchSize = 8;
+
+/** No public entry point: a cleanup cannot be aimed at a live account. */
+export const cleanupDeletedUser = internalMutation({
+  args: { ownerId: v.id("users") },
+  returns: v.null(),
+  handler: async (ctx, { ownerId }) => {
+    if (await ctx.db.get(ownerId))
+      throw new Error("Cannot clean a live account.");
+    await cleanUserData(ctx, ownerId);
+    return null;
+  },
+});
+
+async function cleanUserData(ctx: MutationCtx, ownerId: Id<"users">) {
+  // Each index is equality-scoped; one shared budget bounds the entire batch.
+  const queries = [
+    () =>
+      ctx.db
+        .query("recipeImports")
+        .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("mealSelectionFeedback")
+        .withIndex("by_actor", (q) => q.eq("actorId", ownerId)),
+    () =>
+      ctx.db
+        .query("allergyProfiles")
+        .withIndex("by_owner", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("planningPreferences")
+        .withIndex("by_owner", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("mealSlots")
+        .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("guestClaims")
+        .withIndex("by_owner_and_claim_key", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("shoppingListItems")
+        .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("shoppingLists")
+        .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("mealPlans")
+        .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("recipes")
+        .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("accountEntitlements")
+        .withIndex("by_owner", (q) => q.eq("ownerId", ownerId)),
+    () =>
+      ctx.db
+        .query("accountImportUsage")
+        .withIndex("by_owner", (q) => q.eq("ownerId", ownerId)),
+  ];
+  let remaining = cleanupBatchSize;
+  for (const query of queries) {
+    const rows = await query().take(remaining);
+    for (const row of rows) {
+      if (
+        "acquisitionRunId" in row &&
+        row.acquisitionRunId &&
+        "status" in row &&
+        (row.status === "queued" || row.status === "processing")
+      ) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.recipeImportActions.cancelAcquisitionRun,
+          { runId: row.acquisitionRunId },
+        );
+      }
+      await ctx.db.delete(row._id);
+    }
+    remaining -= rows.length;
+    if (remaining === 0) {
+      await ctx.scheduler.runAfter(0, internal.users.cleanupDeletedUser, {
+        ownerId,
+      });
+      return;
+    }
+  }
+  await importRateLimiter.reset(ctx, "recipeImportAttempts", { key: ownerId });
+}

@@ -41,6 +41,12 @@ export async function isAdministrator(ctx: AuthContext) {
   const identity = await ctx.auth.getUserIdentity();
   return (
     identity !== null &&
+    !(await ctx.db
+      .query("deletedUserSubjects")
+      .withIndex("by_auth_subject", (q) =>
+        q.eq("authSubject", identity.subject),
+      )
+      .unique()) &&
     (process.env.FOODEDO_ADMIN_CLERK_USER_IDS ?? "")
       .split(/[\s,]+/)
       .filter(Boolean)

@@ -1,3 +1,4 @@
+import { getSavedCatalogueRecipes } from "./catalogueRecipes";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { requireUserId } from "./auth";
@@ -34,13 +35,7 @@ export async function getMealSelectionSignals(
       if (householdId) {
         // Read catalogue saves directly so private imports cannot crowd out
         // older favourites or expose their contents to the shared adapter.
-        return await ctx.db
-          .query("recipes")
-          .withIndex("by_owner_and_catalogue_source", (q) =>
-            q.eq("ownerId", userId).gt("source.catalogueMealId", ""),
-          )
-          .filter((q) => q.gt(q.field("savedAt"), 0))
-          .collect();
+        return await getSavedCatalogueRecipes(ctx, userId);
       }
       return await ctx.db
         .query("recipes")

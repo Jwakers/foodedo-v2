@@ -1,5 +1,7 @@
 "use client";
 
+import { recipeImportErrorMessage } from "./recipe-import-errors";
+
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -71,7 +73,12 @@ export function RecipeImportIntentResume() {
         router.push(`/recipes/import?job=${importId}`);
       } catch (error) {
         console.error("Failed to resume recipe import.", error);
-        toast.error("Foodedo couldn’t resume that recipe import.");
+        toast.error(
+          recipeImportErrorMessage(
+            error,
+            "Foodedo couldn’t resume that recipe import.",
+          ),
+        );
       } finally {
         resumingRef.current = false;
       }

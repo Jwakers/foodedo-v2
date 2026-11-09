@@ -35,6 +35,32 @@ export const probe = internalAction({
       }),
     ),
   },
+  returns: v.object({
+    acquired: v.boolean(),
+    latencyMs: v.number(),
+    outcome: v.optional(v.string()),
+    extractor: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    textCharacters: v.optional(v.number()),
+    missingFragments: v.optional(v.array(v.string())),
+    mediaType: v.optional(v.string()),
+    normalization: v.optional(
+      v.object({
+        outcome: v.string(),
+        usable: v.boolean(),
+        verified: v.boolean(),
+        missingFacts: v.array(v.string()),
+        ingredients: v.optional(v.number()),
+        steps: v.optional(v.number()),
+        blockingIssues: v.optional(v.number()),
+        modelCalls: v.number(),
+        inputTokens: v.number(),
+        outputTokens: v.number(),
+        usageComplete: v.boolean(),
+        latencyMs: v.number(),
+      }),
+    ),
+  }),
   handler: async (_, { url, expectedFragments, normalize, verification }) => {
     if (
       !isApifySocialPlatform(socialImportPlatform(url)) ||

@@ -1,5 +1,5 @@
 import type { FunctionReturnType } from "convex/server";
-import { convexTest } from "convex-test";
+import { convexTest } from "../tests/convex-test";
 import { expect, test } from "vitest";
 
 import { catalogueBrowseKeys } from "./lib/catalogue";

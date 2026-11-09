@@ -1,5 +1,7 @@
 "use client";
 
+import { recipeImportErrorMessage } from "./recipe-import-errors";
+
 import { RecipeTimerEditor } from "@/features/recipes/recipe-timer-editor";
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -69,9 +71,12 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
       } else if (action === "retry") {
         await retry({ importId: job._id });
       } else setMessage("Draft saved.");
-    } catch {
+    } catch (error) {
       setMessage(
-        "Couldn’t save this draft. Check the highlighted issues and field lengths. If it changed elsewhere or expired, reload this page.",
+        recipeImportErrorMessage(
+          error,
+          "Couldn’t save this draft. Check the highlighted issues and field lengths. If it changed elsewhere or expired, reload this page.",
+        ),
       );
     } finally {
       pending.current = false;

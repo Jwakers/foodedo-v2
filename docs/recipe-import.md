@@ -99,3 +99,7 @@ Imported-recipe and draft editors expose **Minimum servings**, with blank allowi
 ## Protein classification
 
 Import normalization, correction and recovery share the same protein category list as catalogue generation and persistence: chicken, turkey, beef, pork, lamb, fish, meat-free and other. Turkey has its own category, including mince and leftover turkey, rather than falling back to chicken or other. Classification corrections can return `turkey` without rewriting ingredients or method. This applies to future imports and corrections; existing personal recipes are not backfilled.
+
+## Account allowances
+
+All import entry points use the central backend policy: currently 10 saved imported recipes, 20 accepted attempts per UTC calendar month and two simultaneous jobs for free accounts. Retries/resumes consume attempts; duplicate starts and local draft edits/finalization do not. Completion/finalization recheck library capacity, existing recipes remain accessible above the limit, and removed library imports free capacity. See [Entitlements and limits](./entitlements-and-limits.md).
