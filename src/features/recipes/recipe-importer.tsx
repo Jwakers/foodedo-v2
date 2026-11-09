@@ -38,6 +38,7 @@ import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store"
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { cn } from "@/lib/utils/cn";
 import { importJobAccess, importJobResumePath } from "./recipe-import-state";
+import { confirmRecipeImportSharing } from "@/lib/platform/recipe-import-permission";
 import { RecipeImportDraftEditor } from "./recipe-import-draft-editor";
 import type { ImportFailureCode } from "../../../convex/lib/recipeImport/contracts";
 
@@ -151,6 +152,7 @@ export function RecipeImporter() {
       return;
     }
 
+    if (!confirmRecipeImportSharing()) return;
     setSubmitting(true);
     try {
       const nextImportId = await beginImport({
@@ -183,6 +185,7 @@ export function RecipeImporter() {
 
   async function retry() {
     if (!importId || retryPending.current) return;
+    if (!confirmRecipeImportSharing()) return;
     retryPending.current = true;
     setRetrying(true);
     try {

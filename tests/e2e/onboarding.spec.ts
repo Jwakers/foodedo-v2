@@ -79,6 +79,12 @@ for (const viewport of [
     await expect(guide.getByRole("link", { name: "Contact us" })).toHaveCount(
       1,
     );
+    await expect(
+      guide.getByRole("link", { name: "Privacy Policy" }),
+    ).toHaveAttribute("href", "/privacy");
+    await expect(
+      guide.getByRole("link", { name: "Terms of Service" }),
+    ).toHaveAttribute("href", "/terms");
     const headingStyles = await guide.locator("h2").evaluateAll((headings) =>
       headings.map((heading) => {
         const style = getComputedStyle(heading);

@@ -2,6 +2,11 @@
 
 This is a release gate, not a backlog. Every applicable item must have an owner and evidence before the first public web or App Store release. Use separate production Clerk, Convex, hosting, OAuth, and webhook configuration; a working development flow is not proof that production is configured.
 
+The web app is already live. For the iOS launch, verify and reuse its existing V2
+production services rather than recreating them. See the dated
+[iOS launch audit and submission drafts](app-store-launch.md) for current evidence,
+known gaps, the production build command, and the device acceptance matrix.
+
 ## 1. Release identity and ownership
 
 - [ ] Confirm the App Store product will use bundle ID `com.foodedo.app` and will not conflict with an existing Foodedo listing.

@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 import { useAuth } from "@clerk/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { contactLink } from "@/lib/routing/contact";
+import { legalLink } from "@/lib/routing/legal";
 import {
   Drawer,
   DrawerBody,
@@ -115,6 +116,26 @@ export function FoodedoHelpProvider({ children }: { children: ReactNode }) {
               >
                 Contact us
               </a>
+              <nav
+                aria-label="Legal information"
+                className="mt-3 flex flex-wrap gap-x-5"
+              >
+                {(
+                  [
+                    ["/privacy", "Privacy Policy"],
+                    ["/terms", "Terms of Service"],
+                  ] as const
+                ).map(([path, label]) => (
+                  <a
+                    key={path}
+                    {...legalLink(path)}
+                    onClick={() => setOpen(false)}
+                    className="inline-flex min-h-11 items-center text-14 text-graphite underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cadmium"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
             </section>
           </DrawerBody>
           <DrawerFooter>

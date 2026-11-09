@@ -12,6 +12,7 @@ import { EditorField } from "./recipe-editor-fields";
 import { personalRecipeDetailPath } from "@/lib/routing/recipes";
 import { SHOPPING_CATEGORIES } from "@/lib/domain/recipes";
 import { importJobResumePath } from "./recipe-import-state";
+import { confirmRecipeImportSharing } from "@/lib/platform/recipe-import-permission";
 
 type ImportJob = NonNullable<
   FunctionReturnType<typeof api.recipeImports.getImport>
@@ -34,6 +35,11 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
 
   async function save(action: "draft" | "finalize" | "resume" | "retry") {
     if (pending.current) return;
+    if (
+      (action === "resume" || action === "retry") &&
+      !confirmRecipeImportSharing()
+    )
+      return;
     pending.current = true;
     setBusy(true);
     setMessage("");

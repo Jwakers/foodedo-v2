@@ -8,6 +8,7 @@
     "dev:convex": "convex dev",
     "build": "next build --webpack && node scripts/check-route-build-traces.mjs",
     "build:ios:web": "CAPACITOR_BUILD=true next build --webpack",
+    "build:ios:release": "FOODEDO_IOS_RELEASE=true pnpm build:ios:web && pnpm exec cap sync ios",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",

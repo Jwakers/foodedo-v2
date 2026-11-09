@@ -15,7 +15,7 @@ export function NativeInviteLinks() {
       if (!active) return;
       const path = householdInvitePath(
         url,
-        process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://foodedo.com",
+        process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://www.foodedo.com",
       );
       if (!path) return;
       rememberInvite(new URL(url).searchParams.get("token")!);

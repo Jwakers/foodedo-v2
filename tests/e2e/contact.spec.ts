@@ -156,7 +156,9 @@ for (const outcome of [
     await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
       "  Sam Taylor  ",
     );
-    await expect(page.getByLabel(/^Email/)).toHaveValue("test@example.com");
+    await expect(
+      page.getByRole("textbox", { name: "Email", exact: true }),
+    ).toHaveValue("test@example.com");
     await expect(page.getByLabel(/^Message/)).toHaveValue(
       "A mocked test message.",
     );

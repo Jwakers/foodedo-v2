@@ -40,11 +40,11 @@ Cook servings are local display/session state. They do not mutate the plan or sh
 
 The App plugin listens for warm `appUrlOpen` and cold `getLaunchUrl` events. Only the canonical HTTPS origin and exact `/household/join` path with one valid token are routed internally. Clerk's existing custom-scheme OAuth callback stays with its existing transport.
 
-The repository includes `public/.well-known/apple-app-site-association` and `App.entitlements`, scoped to `foodedo.com` and `2UFQ4ZW67L.com.foodedo.app` from the configured Xcode team and bundle ID. Before the partner soft launch:
+The repository includes `public/.well-known/apple-app-site-association` and `App.entitlements`, covering `foodedo.com` and `www.foodedo.com` with `2UFQ4ZW67L.com.foodedo.app` from the configured Xcode team and bundle ID. Native link creation and handling both default to `https://www.foodedo.com`; the handler accepts only the configured canonical origin. Before the partner soft launch:
 
 1. Confirm the signing profile's App ID prefix matches `2UFQ4ZW67L`; update AASA if Apple uses another prefix. Enable Associated Domains on the app identifier/provisioning profile.
 2. Set `NEXT_PUBLIC_SITE_URL` to the actual canonical public HTTPS domain; keep the entitlement domain and hosted AASA in agreement. Deploy the V2 web build and V2 Convex functions using the existing project release process.
-3. Verify `https://foodedo.com/.well-known/apple-app-site-association` returns JSON with HTTP 200 and no redirect, including through the actual hosting configuration.
+3. Verify the canonical host’s `/.well-known/apple-app-site-association` returns JSON with HTTP 200 and no redirect, including through the actual hosting configuration. Check both declared associated domains; a cross-host redirect does not establish an association for the original host.
 4. Run `pnpm cap:sync:ios`, archive/sign in Xcode and install a fresh release-like build. Test links from Messages/WhatsApp with the app closed, open and absent. Verify the browser fallback and sign-in token continuation.
 5. With two real accounts: create/copy, invite/join, switch Private/Household, edit concurrently, cook a shared recipe, check/remove/undo shopping, leave as creator, and finally close. Confirm Private remains unchanged.
 

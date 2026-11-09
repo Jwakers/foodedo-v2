@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 import blogRedirects from "./config/blog-redirects";
+import { assertIosReleaseEnvironment } from "./config/ios-release";
 
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === "true";
+if (process.env.FOODEDO_IOS_RELEASE === "true") {
+  if (!isCapacitorBuild)
+    throw new Error("Use build:ios:release for an iOS release.");
+  assertIosReleaseEnvironment(process.env);
+}
 const requiredPublicEnvironment = [
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
   "NEXT_PUBLIC_CONVEX_URL",

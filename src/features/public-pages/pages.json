@@ -412,7 +412,15 @@
     "sections": [
       {
         "heading": "About this draft",
-        "body": "This V2 privacy draft describes verified product behavior. It requires owner review before publication as the operative policy. Controller identity, a privacy contact, retention periods, provider terms and international transfer details remain to be confirmed."
+        "body": "This privacy draft describes the current Foodedo implementation and requires final review before App Store submission. Foodedo is operated by Jack Wakeham. Contact jackwakeham82@gmail.com for support or privacy requests. Provider contracts, processing locations, backup retention and the final legal bases remain to be confirmed."
+      },
+      {
+        "heading": "Who operates Foodedo",
+        "body": "Jack Wakeham operates Foodedo and is the contact for questions about your information. Email jackwakeham82@gmail.com to request access, correction, export or deletion, or to ask a privacy question.",
+        "link": {
+          "href": "mailto:jackwakeham82@gmail.com",
+          "label": "Email Jack Wakeham"
+        }
       },
       {
         "heading": "Guest use and device storage",
@@ -424,7 +432,7 @@
       },
       {
         "heading": "Recipe imports",
-        "body": "Recipe imports process submitted source material using server-side processing and AI services to produce structured recipe content. Completed import jobs clear pasted source text and expire after a short retention period. The final provider disclosures and retention schedule require owner review."
+        "body": "Foodedo sends submitted recipe text and retrieved recipe content to OpenAI through Vercel AI Gateway to organise recipes. Social links and shared captions may be sent to Apify to retrieve source content. Content you submit can contain personal information, so only share material you are comfortable sending to these providers. The iOS app asks permission before starting or retrying processing. Successful imports clear pasted input text and shared captions from the import job; source payloads and unfinished drafts are scheduled for cleanup after seven days. Saved recipes remain in your library. Provider-side retention and processing locations require final review."
       },
       {
         "heading": "Household sharing",
@@ -432,11 +440,15 @@
       },
       {
         "heading": "Deletion and privacy requests",
-        "body": "Account-deletion handling removes user-owned product data and ends household membership; shared household content follows its separate lifecycle. The public request channel, any recovery window and the final retention policy must be confirmed before this draft is approved."
+        "body": "Use Manage account from your account menu to access account settings. Account deletion must be enabled in the authentication service before launch. Deletion processing removes user-owned product records, including recipe-import jobs and drafts, and ends household membership; shared household content follows its separate lifecycle. A minimal deleted-account identifier is retained to reject old sessions and delayed authentication events. Email jackwakeham82@gmail.com for access, correction, export or deletion requests. Backup and provider retention require final review."
       },
       {
         "heading": "Contact messages",
         "body": "When you use Contact us, your name, email address and message are sent to Formspree and the Foodedo support inbox so we can respond. If you are signed in, your Clerk user ID is included to help identify your Foodedo account, even if you enter a different email address. Guest submissions leave this optional field blank. Recipes, session tokens and diagnostic data are not attached. Retention and processor details remain subject to the policy review described above."
+      },
+      {
+        "heading": "Website analytics",
+        "body": "When configured, the website uses PostHog to measure page visits, planning, recipe views and sign-in activity. Signed-in activity can be linked to your account identifier. Automatic interaction capture and session recording are disabled. You can turn off optional analytics using the control below; supported Do Not Track preferences are respected. PostHog product analytics are disabled in the packaged iOS app. Hosting, authentication and backend providers may still process technical and security information."
       }
     ],
     "related": ["/terms", "/faq"]
@@ -449,7 +461,7 @@
     "sections": [
       {
         "heading": "About this draft",
-        "body": "These V2 terms require owner review before publication as the operative terms. The service operator, contact details, eligibility, governing law, liability provisions and change-notice process remain to be confirmed."
+        "body": "Foodedo is operated by Jack Wakeham, reachable at jackwakeham82@gmail.com. These terms remain a draft for final review before App Store submission. Eligibility, governing law, liability provisions and the change-notice process still need to be confirmed."
       },
       {
         "heading": "Using Foodedo",
@@ -483,6 +495,14 @@
       {
         "heading": "We’re here to help",
         "body": "Tell us what you need help with and include any steps that led to a problem. You do not need an account to get in touch."
+      },
+      {
+        "heading": "Email support",
+        "body": "You can also contact Jack Wakeham directly at jackwakeham82@gmail.com for Foodedo support or privacy requests.",
+        "link": {
+          "href": "mailto:jackwakeham82@gmail.com",
+          "label": "Email Foodedo support"
+        }
       }
     ],
     "related": ["/faq", "/support", "/privacy"]

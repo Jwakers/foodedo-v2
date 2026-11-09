@@ -12,6 +12,7 @@ import {
   readRecipeImportIntent,
 } from "@/lib/domain/auth-intents";
 import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store";
+import { confirmRecipeImportSharing } from "@/lib/platform/recipe-import-permission";
 
 export function NativeRecipeCaptures() {
   return Capacitor.isNativePlatform() ? <CaptureCoordinator /> : null;
@@ -99,6 +100,26 @@ function CaptureCoordinator() {
         )
           return;
         if (!active) return;
+        const pausedNotice = `paused:${capture.id}`;
+        if (shownNotices.current.has(pausedNotice)) return;
+        if (!confirmRecipeImportSharing()) {
+          shownNotices.current.add(pausedNotice);
+          toast("Recipe import paused", {
+            id: `native-share:${capture.id}`,
+            description:
+              "Your capture remains on this device. No import was started.",
+            duration: Infinity,
+            action: {
+              label: "Try again",
+              onClick: () => {
+                shownNotices.current.delete(pausedNotice);
+                if (timer) clearTimeout(timer);
+                void drain();
+              },
+            },
+          });
+          return;
+        }
         await recipeCapture.claim({ id: capture.id, owner: userId });
         if (!active) return;
         const importId = await beginImport({

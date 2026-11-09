@@ -2,7 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
@@ -11,6 +11,7 @@ import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { readRecipeImportIntent } from "@/lib/domain/auth-intents";
 import { createRecipeImportIntentStore } from "@/lib/platform/auth-intent-store";
 import { hasImportJobLink } from "./recipe-import-state";
+import { confirmRecipeImportSharing } from "@/lib/platform/recipe-import-permission";
 
 /**
  * Lightweight global continuation. Kept separate from the importer page so
@@ -22,6 +23,7 @@ export function RecipeImportIntentResume() {
   const { status, isAuthenticated } = useFoodedoAuth();
   const beginImport = useMutation(api.recipeImports.beginImport);
   const resumingRef = useRef(false);
+  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated || status === "loading" || resumingRef.current) return;
@@ -35,6 +37,17 @@ export function RecipeImportIntentResume() {
       try {
         const intent = readRecipeImportIntent(await store.read());
         if (!intent) return;
+        if (!confirmRecipeImportSharing()) {
+          toast("Recipe import paused", {
+            description:
+              "Your recipe remains on this device. No import was started.",
+            action: {
+              label: "Try again",
+              onClick: () => setRetryVersion((value) => value + 1),
+            },
+          });
+          return;
+        }
         const importId = await beginImport({
           clientRequestId: intent.clientRequestId,
           source:
@@ -63,6 +76,6 @@ export function RecipeImportIntentResume() {
         resumingRef.current = false;
       }
     })();
-  }, [beginImport, isAuthenticated, router, status]);
+  }, [beginImport, isAuthenticated, router, status, retryVersion]);
   return null;
 }

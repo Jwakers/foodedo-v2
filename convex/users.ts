@@ -8,6 +8,7 @@ import {
 import { leaveMembership } from "./lib/spaces";
 import { onboardingValidator } from "./lib/onboarding";
 import { getCurrentUser } from "./lib/auth";
+import { internal } from "./_generated/api";
 
 const syncedUserFields = {
   authSubject: v.string(),
@@ -109,6 +110,26 @@ export const deleteFromClerk = internalMutation({
     if (existing === null) return null;
     const ownerId = existing._id;
     await leaveMembership(ctx, ownerId);
+
+    // Remove source text, drafts and job state as part of deletion. A pipeline
+    // already in flight cannot complete once its import record is gone.
+    const imports = await ctx.db
+      .query("recipeImports")
+      .withIndex("by_owner_and_updated_at", (q) => q.eq("ownerId", ownerId))
+      .collect();
+    for (const job of imports) {
+      if (
+        job.acquisitionRunId &&
+        (job.status === "queued" || job.status === "processing")
+      ) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.recipeImportActions.cancelAcquisitionRun,
+          { runId: job.acquisitionRunId },
+        );
+      }
+      await ctx.db.delete(job._id);
+    }
 
     const feedback = await ctx.db
       .query("mealSelectionFeedback")

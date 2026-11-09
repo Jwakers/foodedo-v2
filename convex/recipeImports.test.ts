@@ -49,6 +49,53 @@ const recipeCore = {
   proteinCategory: "meat-free" as const,
 };
 
+test("account deletion removes imports and prevents late completion without touching another account", async () => {
+  const t = createTestContext();
+  await seedUser(t, "deleted-import-owner");
+  await seedUser(t, "retained-import-owner");
+  const jobs = await t.run(async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    const ids = [];
+    for (const user of users) {
+      ids.push(
+        await ctx.db.insert("recipeImports", {
+          ownerId: user._id,
+          clientRequestId: "private-import",
+          sourceType: "text",
+          inputText: "Private source text",
+          sharedText: "Private shared caption",
+          status: "processing",
+          phase: "organising",
+          attempt: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        }),
+      );
+    }
+    return ids;
+  });
+  await t.mutation(internal.users.deleteFromClerk, {
+    authSubject: "deleted-import-owner",
+  });
+  await t.mutation(internal.users.deleteFromClerk, {
+    authSubject: "deleted-import-owner",
+  });
+  expect(await t.run((ctx) => ctx.db.get(jobs[0]))).toBeNull();
+  expect(await t.run((ctx) => ctx.db.get(jobs[1]))).toMatchObject({
+    inputText: "Private source text",
+    status: "processing",
+  });
+  expect(
+    await t.mutation(internal.recipeImports.completeImport, {
+      importId: jobs[0],
+      attempt: 1,
+      recipe: recipeCore,
+      method: "text",
+    }),
+  ).toBeNull();
+  expect(await t.run((ctx) => ctx.db.query("recipes").collect())).toEqual([]);
+});
+
 test("app-wide notification reads are bounded, private and exclude retained source/drafts", async () => {
   const t = createTestContext();
   const owner = await seedUser(t, "notifications-owner");
