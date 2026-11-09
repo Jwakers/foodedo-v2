@@ -58,6 +58,13 @@ test("blog HTML lists every migrated URL without app chrome or account providers
   const response = await request.get("/blog");
   expect(response.status()).toBe(200);
   const html = await response.text();
+  const images = load(html)("img").toArray();
+  expect(images.length).toBeGreaterThan(0);
+  for (const image of images) {
+    expect(image.attribs.src).toMatch(/^https:\/\/cdn\.sanity\.io\//);
+    expect(image.attribs.srcset).toContain("https://cdn.sanity.io/");
+    expect(image.attribs.srcset).not.toContain("/_next/image");
+  }
   for (const article of [
     ...inventory.cmsArticles,
     ...inventory.localGuides,

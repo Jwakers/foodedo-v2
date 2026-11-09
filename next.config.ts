@@ -90,6 +90,15 @@ const nextConfig: NextConfig = {
       }
     : {}),
   images: {
+    // Share a small set of variants across thumbnails, cards and detail views.
+    // 1920px still covers the 700px recipe hero on high-density phones.
+    deviceSizes: [640, 828, 1200, 1920],
+    imageSizes: [64, 128, 256, 384],
+    formats: ["image/webp"],
+    qualities: [75],
+    // Convex image replacements get a new storage URL. Version local image
+    // paths when replacing their contents so long-lived caches stay correct.
+    minimumCacheTTL: 2_678_400, // 31 days
     remotePatterns: [
       convexStoragePattern,
       {

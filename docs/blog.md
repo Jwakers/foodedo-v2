@@ -16,6 +16,8 @@ Portable Text renders headings, nested ordered/unordered lists, marks, links and
 
 Article-local fragment/query links retain their current-page destination. Mapped guest links preserve their query parameters and fragment through rendering. Image dimensions use Sanity's crop and pixel-rounding rules to reserve the correct aspect ratio before the image loads.
 
+Blog index, hero and inline images use `BlogImage` with a Sanity loader. Responsive widths, lazy loading and hero preloading remain managed by Next/Image, but every image candidate points directly at Sanity's CDN rather than Vercel's optimizer. The loader preserves the URL builder's crop/hotspot rectangle and scales both output dimensions for index-card crops. Sanity negotiates the format and applies quality 75. This avoids paying for a second transformation of an already resized Sanity image.
+
 ## Layouts, guest entry and builds
 
 The root layout owns global styles, fonts and metadata. The `(product)` route group owns Clerk/Convex providers, household state, app navigation and continuation effects. The `(editorial)` group owns the blog reading layout and has no account dependency.

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { BlogImage } from "@/features/blog/blog-image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -77,7 +77,7 @@ export default async function ArticlePage({ params }: Props) {
           ) : null}
         </header>
         {image && article.mainImage ? (
-          <Image
+          <BlogImage
             src={image}
             alt={article.mainImage.alt || ""}
             {...blogImageDimensions(article.mainImage)}

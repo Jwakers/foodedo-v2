@@ -4,7 +4,7 @@ import {
   type PortableTextTypeComponentProps,
 } from "@portabletext/react";
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { BlogImage } from "./blog-image";
 import Link from "next/link";
 import {
   blogImageUrl,
@@ -28,7 +28,7 @@ function InlineImage({ value }: PortableTextTypeComponentProps<unknown>) {
   if (!url || !image) return null;
   return (
     <figure className="my-8 flex flex-col gap-2.5">
-      <Image
+      <BlogImage
         src={url}
         alt={alt || image.alt || ""}
         {...blogImageDimensions(image)}

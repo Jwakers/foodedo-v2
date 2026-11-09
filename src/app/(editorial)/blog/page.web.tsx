@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { BlogImage } from "@/features/blog/blog-image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { localGuides } from "@/features/blog/guides";
@@ -105,7 +105,7 @@ export default async function BlogPage() {
                     className="group flex flex-col gap-6 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cadmium sm:flex-row sm:items-center"
                   >
                     {image ? (
-                      <Image
+                      <BlogImage
                         src={image}
                         alt={post.mainImage?.alt || ""}
                         width={800}
