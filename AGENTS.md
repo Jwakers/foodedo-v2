@@ -45,3 +45,17 @@ Use skills **selectively**. See `knowledge/skills/README.md`.
 TypeScript strict, Server Components by default, feature folders for jobs, domain logic free of React/Capacitor. Format with Prettier. Lint and typecheck must stay green. Follow Convex workspace rules once `convex/` exists (validators, awaits, indexes, no `Date.now()` in queries, schedule `internal` only).
 
 Run both `pnpm build` and `pnpm build:ios:web` when changing routing, rendering, or data access. The first verifies the Vercel web build; the second verifies the bundle Capacitor ships.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->
