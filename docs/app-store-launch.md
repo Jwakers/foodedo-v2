@@ -8,6 +8,29 @@ actually checked rather than assuming unchecked historical items are missing.
 
 ## Current position
 
+**10 November update:** `.env.production.local` now supplies the four public
+production settings from the existing V2 Vercel project. The production Clerk
+origin and exact HTTPS mobile callback are configured. Google OAuth then exposed
+`no_valid_client` in the production callback logs: the WebView's browser-cookie
+client was unavailable to the separate iOS browser session. A Keychain-backed
+native-session correction is implemented and compiles locally. Jack explicitly
+approved enabling Clerk's production Native API on 10 November; activation is
+complete and both native and website environment endpoints return HTTP 200. The
+updated build is running on Jack's iPhone, and Jack confirmed Google sign-in
+succeeds. Jack also reported the basic reopening, sign-out/re-sign-in and email
+checks working. A signed archive was uploaded and installed through TestFlight;
+the Delish share-sheet import then saved successfully after the backend HTTP
+Early Hints fix. Co-op remains blocked by publisher browser verification.
+The extended device authentication acceptance checks are still pending.
+Code review added IPv6 literal rejection, fixed callback diagnostic codes and an
+explicit native UI CDN pin, plus security updates to Capacitor, Next.js, Undici
+and Zod. The reviewed dependency graph has zero known production advisories.
+Those review changes are local: deploy the backend/web updates and build/test a
+new native binary before including them in a release. See the
+[code review and verification record](reviews/2026-11-10-ios-auth-and-import.md).
+See [ADR 0011](../knowledge/decisions/0011-ios-native-clerk-session.md) for the
+decision, security boundary and verification evidence.
+
 The native project exists for iPhone and iPad, including a recipe share extension,
 system-browser authentication, household invitation links, and Cook Mode screen
 behaviour. The app packages the Next.js static export; it does not load the live
@@ -48,23 +71,23 @@ Changes made during preparation:
 
 ## Remaining release gates
 
-| Gate                         | Current evidence                                                                         | Next action                                                                                                                                                             |
-| ---------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Developer membership         | Enrolment purchased; activation not checked here                                         | Confirm active membership and the intended team                                                                                                                         |
-| Production build environment | Local key is a test key                                                                  | Supply existing production Clerk key, Convex client/site origins and `NEXT_PUBLIC_SITE_URL` to the release build                                                        |
-| Convex deployment identity   | URLs configured locally, production identity not established                             | Verify the release URLs against the V2 production dashboard; the release guard cannot infer deployment ownership from a hostname                                        |
-| Bundle and signing identity  | `com.foodedo.app`, extension `com.foodedo.app.RecipeShare`; team `2UFQ4ZW67L` in project | Verify registered identifiers and paid team, then archive with distribution signing                                                                                     |
-| App Group                    | Both entitlements use `group.com.foodedo.app.imports`                                    | Register/assign the group to both identifiers and validate share capture on a device                                                                                    |
-| Associated domains           | App includes both Foodedo hosts; AASA names the current team and bundle                  | Verify production hosting, actual App ID prefix and device invitation handling; configure Clerk's production associated domain if required by the tested integration    |
-| Production authentication    | Clerk prebuilt account controls and native OAuth adapter exist                           | Verify Clerk native registration, allowed origin, mobile SSO callback, provider credentials and all device return paths                                                 |
-| Equivalent login option      | Providers are configured remotely, not established by this source audit                  | If Google is enabled on iOS, configure and test Sign in with Apple or establish an applicable Guideline 4.8 exception                                                   |
-| In-app deletion              | Manage account opens Clerk's profile; backend webhook handler exists                     | Confirm Clerk allows user deletion, find the deletion control inside the iPhone app, and test the full production webhook path with a dedicated account                 |
-| Privacy policy / Terms       | Still explicitly drafts                                                                  | Finalise lawful bases (including allergy information), processor contracts/locations, backup/provider retention and terms; publish verified documents before submission |
-| Privacy manifests            | Capacitor and Cordova manifests included in unsigned archive                             | Generate/review Xcode's privacy report for the final signed archive; App Privacy declarations still require actual service configuration                                |
-| Physical-device QA           | Compilation is separate from device testing                                              | Complete the matrix below using the production release candidate                                                                                                        |
-| Store artwork and listing    | Brand assets exist; listing draft below                                                  | Capture final native screenshots for accepted iPhone and 13-inch iPad sizes; complete category/age/territory questions in App Store Connect                             |
-| Review access                | No review credentials created                                                            | Create a dedicated account and put credentials only in App Store Connect                                                                                                |
-| Monitoring and support       | Web analytics exist; native PostHog is disabled                                          | Verify support delivery and TestFlight crash collection; establish how launch sign-in/import failures will be detected                                                  |
+| Gate                         | Current evidence                                                                     | Next action                                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Developer membership         | Signed upload and TestFlight installation succeeded                                  | Keep the verified paid team for the release                                                                                                                             |
+| Production build environment | Production public settings loaded; release build passed                              | Retain the verified public production settings for each release build                                                                                                   |
+| Convex deployment identity   | V2 production `moonlit-perch-843` confirmed through CLI/dashboard                    | Keep client/site URLs on this V2 deployment; keep development separate                                                                                                  |
+| Bundle and signing identity  | Signed archive uploaded; TestFlight app installed with the configured identifiers    | Preserve identifiers/team and increment the build number for the next upload                                                                                            |
+| App Group                    | TestFlight share-sheet source reached the production importer                        | Complete share-inbox lifecycle and account-boundary device checks                                                                                                       |
+| Associated domains           | App includes both Foodedo hosts; AASA names the current team and bundle              | Verify production hosting, actual App ID prefix and device invitation handling; configure Clerk's production associated domain if required by the tested integration    |
+| Production authentication    | Native API/origin/callback configured; Google and basic auth checks reported working | Verify Clerk native registration, allowed origin, mobile SSO callback, provider credentials and all device return paths                                                 |
+| Equivalent login option      | Providers are configured remotely, not established by this source audit              | If Google is enabled on iOS, configure and test Sign in with Apple or establish an applicable Guideline 4.8 exception                                                   |
+| In-app deletion              | Manage account opens Clerk's profile; backend webhook handler exists                 | Confirm Clerk allows user deletion, find the deletion control inside the iPhone app, and test the full production webhook path with a dedicated account                 |
+| Privacy policy / Terms       | Still explicitly drafts                                                              | Finalise lawful bases (including allergy information), processor contracts/locations, backup/provider retention and terms; publish verified documents before submission |
+| Privacy manifests            | Capacitor and Cordova manifests included in unsigned archive                         | Generate/review Xcode's privacy report for the final signed archive; App Privacy declarations still require actual service configuration                                |
+| Physical-device QA           | TestFlight installation and Delish share-sheet import confirmed                      | Complete the matrix below using the production release candidate                                                                                                        |
+| Store artwork and listing    | Brand assets exist; listing draft below                                              | Capture final native screenshots for accepted iPhone and 13-inch iPad sizes; complete category/age/territory questions in App Store Connect                             |
+| Review access                | No review credentials created                                                        | Create a dedicated account and put credentials only in App Store Connect                                                                                                |
+| Monitoring and support       | Web analytics exist; native PostHog is disabled                                      | Verify support delivery and TestFlight crash collection; establish how launch sign-in/import failures will be detected                                                  |
 
 ## Verification evidence — 9 November 2026
 
@@ -102,8 +125,10 @@ Changes made during preparation:
 
 Reconcile those catalogue/editorial expectations before marking the full web
 regression gate green. They are separate from the passing launch-focused checks.
-Physical-device sign-in, signed capabilities, final privacy declarations and
-TestFlight installation remain unverified.
+At the time of the 9 November audit, physical-device sign-in, signed capabilities,
+privacy declarations and TestFlight installation were unverified. See the
+10 November update above for subsequent device/upload evidence; final privacy
+declarations and the extended device matrix still require completion.
 
 ## Build and rollout procedure
 

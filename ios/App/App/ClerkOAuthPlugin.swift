@@ -1,6 +1,7 @@
 import AuthenticationServices
 import Capacitor
 import OSLog
+import Security
 import UIKit
 
 @objc(ClerkOAuthPlugin)
@@ -8,7 +9,9 @@ public class ClerkOAuthPlugin: CAPInstancePlugin, CAPBridgedPlugin, ASWebAuthent
     public let identifier = "ClerkOAuthPlugin"
     public let jsName = "ClerkOAuth"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "authenticate", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "authenticate", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getClientToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setClientToken", returnType: CAPPluginReturnPromise)
     ]
 
     private let callbackURLScheme = "com.foodedo.app"
@@ -17,6 +20,59 @@ public class ClerkOAuthPlugin: CAPInstancePlugin, CAPBridgedPlugin, ASWebAuthent
         subsystem: Bundle.main.bundleIdentifier ?? "com.foodedo.app",
         category: "ClerkOAuth"
     )
+
+    private func tokenQuery(_ call: CAPPluginCall) -> [String: Any]? {
+        guard let host = call.getString("frontendApiHost"),
+              host.range(of: "^[a-zA-Z0-9.-]{1,253}$", options: .regularExpression) != nil else {
+            call.reject("The authentication service host is invalid.")
+            return nil
+        }
+        return [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "\(Bundle.main.bundleIdentifier ?? "com.foodedo.app").clerk-client",
+            kSecAttrAccount as String: host.lowercased(),
+            kSecAttrSynchronizable as String: false
+        ]
+    }
+
+    @objc func getClientToken(_ call: CAPPluginCall) {
+        guard var query = tokenQuery(call) else { return }
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound {
+            call.resolve([:])
+        } else if status == errSecSuccess, let data = result as? Data,
+                  let token = String(data: data, encoding: .utf8) {
+            call.resolve(["token": token])
+        } else {
+            call.reject("Foodedo could not read secure sign-in storage. Unlock your iPhone and try again.", "keychain_read_failed")
+        }
+    }
+
+    @objc func setClientToken(_ call: CAPPluginCall) {
+        guard let query = tokenQuery(call) else { return }
+        guard let token = call.getString("token"), !token.isEmpty,
+              token.utf8.count <= 16_384,
+              let data = token.data(using: .utf8) else {
+            call.reject("The sign-in storage value is invalid.")
+            return
+        }
+        let attributes: [String: Any] = [kSecValueData as String: data]
+        var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if status == errSecItemNotFound {
+            var item = query
+            item[kSecValueData as String] = data
+            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            status = SecItemAdd(item as CFDictionary, nil)
+        }
+        if status == errSecSuccess {
+            call.resolve()
+        } else {
+            call.reject("Foodedo could not save secure sign-in storage. Unlock your iPhone and try again.", "keychain_write_failed")
+        }
+    }
 
     @objc func authenticate(_ call: CAPPluginCall) {
         logger.info("Native Clerk OAuth request received")

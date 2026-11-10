@@ -36,10 +36,13 @@ known gaps, the production build command, and the device acceptance matrix.
 
 - [ ] In Clerk production **Native applications**, add the iOS app using the exact Apple App ID Prefix and bundle ID `com.foodedo.app`. Clerk lists this as required production configuration in its [deployment guide](https://clerk.com/docs/guides/development/deployment/production#confirm-your-ios-app-is-registered-in-production).
 - [ ] In Xcode **Signing & Capabilities**, add the Clerk associated domain required by the current Clerk iOS guidance: `webcredentials:{PRODUCTION_CLERK_FRONTEND_API_HOST}`. Use the host only—no `https://` or path—and verify the signed entitlement in the archive.
-- [ ] Keep `capacitor://localhost` in the production Clerk instance's allowed origins while the packaged app uses Clerk's web client in its WebView.
-- [ ] Add the exact production `${NEXT_PUBLIC_CONVEX_SITE_URL}/clerk-oauth-callback` URL to Clerk's **Allowlist for mobile SSO redirect**. Do not allowlist the development callback.
+- [x] Keep `capacitor://localhost` in the production Clerk instance's allowed origins for the packaged native adapter; configured and verified on 10 November 2026.
+- [x] Add the exact production `${NEXT_PUBLIC_CONVEX_SITE_URL}/clerk-oauth-callback` URL to Clerk's **Allowlist for mobile SSO redirect**. Production callback configured and verified on 10 November 2026.
 - [ ] Confirm `com.foodedo.app://callback` is registered in the Release app and cannot be confused with any other installed app owned by the team.
-- [ ] Decide whether Clerk's Native API is required by the final architecture. The current hybrid WebView proof does not use Clerk's native token API; do not enable an additional public authentication pathway without documenting the bot-protection trade-off.
+- [x] Approve and enable Clerk’s Native API for the Keychain-backed native token adapter, following ADR 0011. Jack approved activation on 10 November 2026 after the bot-protection trade-off was explained; native and web environment endpoints return HTTP 200.
+- [x] Verify Google sign-in on a physical device with the native token adapter: Jack confirmed success on 10 November 2026.
+- [x] Jack reported the requested basic reopening, sign-out/re-sign-in and email sign-in checks working on 10 November 2026.
+- [ ] Complete the extended device authentication acceptance matrix in ADR 0011 and repeat sign-in on the next build containing the explicit UI CDN pin.
 - [ ] Replace Clerk development/shared Google OAuth credentials with production credentials and verify the production domains, consent screen, support email, and publishing status in Google Cloud.
 - [ ] If Google remains a primary-account login option on iOS, implement an equivalent privacy-preserving login—normally Sign in with Apple—or document why an exception in [App Review Guideline 4.8](https://developer.apple.com/app-store/review/guidelines/#login-services) applies.
 - [ ] Treat the internal Clerk OAuth transport API as a release risk: pin the tested `@clerk/react` version, test the installed ClerkJS runtime, and block dependency updates until the full iOS matrix passes. Prefer a documented Clerk-supported Capacitor path if one becomes available.

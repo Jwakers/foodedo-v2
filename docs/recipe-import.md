@@ -14,6 +14,84 @@ Imports create clear, useful Foodedo recipes, not exact publisher transcriptions
 
 Parallel ingredient/method processing is not shipped. Benchmark it against this coherent baseline before adoption: it must retain accuracy and demonstrate a latency improvement. Future rendered-page/transcript adapters can supply the same evidence contract. No rendering service, video analysis or OS/push notification infrastructure is introduced.
 
+## Publisher access diagnosis — 10 November 2026
+
+Two share-sheet attempts reached the production import action. Co-op's
+`/recipes/carbonara-chickpeas` failed as `no_recipe` after one model call;
+Delish's cowboy-butter-chicken-skillet page failed as `source_unreachable`
+before any model call. The source URLs were confirmed against the two job
+records, rather than inferred from their attempt order.
+
+A read-only local acquisition reproduced Co-op returning an HTTP 200 browser
+verification page headed “Pardon Our Interruption”. Delish returned usable
+recipe evidence locally (14 structured ingredient blocks and four method
+blocks), so local access does not establish production access.
+
+The local correction classifies this specific verification page as
+`source_blocked` before AI, requiring both an exact challenge heading and
+explicit bot/cookie instructions, with no structured Recipe evidence. Ordinary
+recipe mentions cannot trigger it. Network failures also log fixed transport
+reason labels or HTTP status, without URLs, source text, headers or arbitrary
+error messages. These changes improve classification and diagnosis; they do
+not bypass publisher restrictions or establish successful imports. Production
+verification of another Delish attempt is still needed. Pasting recipe text
+remains the existing fallback when a page is readable in the user's browser.
+
+Local verification: lint, application/backend TypeScript, all 463 backend/rendering
+tests, web build and iOS static-export build pass. Live read-only acquisition
+now returns `source_blocked` for the Co-op challenge and still extracts Delish's
+14 structured ingredients and four method blocks locally. Jack explicitly
+approved the production deployment on 10 November 2026. The preview confirmed
+Foodedo V2 production `moonlit-perch-843` and no index deletions; deployment
+completed successfully with backend TypeScript and schema validation. The
+existing TestFlight app can retry against these backend changes without a new
+binary. Successful production acquisition of the reported URLs is not yet
+verified.
+
+The first post-deployment Delish retry failed before AI in 600 ms. Its transport
+reason was `other`, so the initial diagnostic allowlist did not identify the
+underlying error. A temporary internal, fixed-URL development probe used the
+same DNS-protected dispatcher and request headers; it returned HTTP 200 on
+`bold-walrus-818` (Node v24.22.2). That deployment is in a different region from
+production. Jack explicitly approved deploying, running and removing this probe.
+Production (also Node v24.22.2) returned `ERR_ASSERTION` from Undici's response
+handler, rather than a publisher HTTP rejection. The probe made no AI calls or
+data writes and was removed from production and development after diagnosis.
+
+A synthetic HTTP server reproduced the identical assertion when sending HTTP
+103 Early Hints before the final HTTP 200 response through Undici's DNS
+interceptor. The local fix moves public-address validation into the Agent's
+socket `connect.lookup` hook, avoiding that response wrapper. The socket uses
+exactly the validated addresses, preserves the original hostname for Host/SNI,
+and validates every DNS answer before selecting a requested address family.
+Private/mixed/empty DNS answers remain rejected; URL/redirect validation, body
+limits, deadlines and dispatcher cleanup remain in place. No TLS verification
+or publisher access control is bypassed.
+
+The real-transport regression fixture now reads a recipe after two Early Hints
+responses. The socket-lookup tests cover single/all address results, address
+families, mixed private/public responses and DNS errors. All 465 backend/rendering
+tests, lint, TypeScript, web build and iOS static-export build pass. Live local
+acquisition still extracts Delish's 14 structured ingredient blocks and four
+method blocks; Co-op's challenge still returns `source_blocked`.
+The socket-level fix synced successfully to development. Jack explicitly
+approved its production deployment on 10 November 2026; deployment to
+`moonlit-perch-843` completed with TypeScript and schema validation and no index
+deletions. Jack then confirmed that the Delish import succeeds through the
+existing TestFlight app. This validates the production acquisition fix for the
+reported Delish URL; Co-op's separate publisher verification block remains.
+Production completion logs confirm `result: saved`, no review issues or
+normalization warnings, 3.4 seconds acquisition and 46.6 seconds total duration
+with two model calls.
+
+Subsequent code review normalized IPv6 URL brackets before direct-address
+validation, closing a literal-address bypass of the DNS boundary. Regression
+tests reject private/reserved IPv6 destinations before any fetch. The review
+also updates Undici and Zod to patched versions. These additional changes are
+verified on development and require the normal production release; they were
+not part of the already-confirmed Delish production fix. See the
+[review record](reviews/2026-11-10-ios-auth-and-import.md).
+
 ## YouTube acquisition
 
 YouTube watch, share, Shorts, embed and live-video URLs resolve to one video ID. An optional `YOUTUBE_DATA_API_KEY` on the V2 Convex deployment supplies full description metadata. Missing, failed, empty or malformed API responses fall back to bounded public watch-page player metadata. Scripts are read as JSON data, never executed. Consent/login pages and truncated meta descriptions cannot stand in for full descriptions.

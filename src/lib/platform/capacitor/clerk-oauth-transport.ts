@@ -1,5 +1,6 @@
 import type { ClerkProviderProps } from "@clerk/react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { oauthCallbackFailureCode } from "@/lib/domain/oauth-callback";
 
 const clerkOAuthCallbackUrl = "com.foodedo.app://callback";
 const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL!;
@@ -15,14 +16,13 @@ type ClerkOAuthPlugin = {
 const clerkOAuthPlugin = registerPlugin<ClerkOAuthPlugin>("ClerkOAuth");
 
 /**
- * Keeps Clerk's browser session in the WebView while presenting social auth
- * with iOS's ASWebAuthenticationSession. This internal Clerk API is isolated
- * here so an SDK change has one replacement point.
+ * Presents social auth with ASWebAuthenticationSession. The native client JWT
+ * adapter handles identity independently of browser cookies.
  */
 export const capacitorClerkOAuthTransport: OAuthTransport = {
   getRedirectUrl: () => {
-    // Browser-mode Clerk accepts HTTP(S), not the app scheme. This bridge
-    // forwards Clerk's rotating callback parameters to the native session.
+    // Keep the already-allowlisted HTTPS bridge; it forwards the native nonce
+    // to ASWebAuthenticationSession's registered app-scheme callback.
     return new URL("/clerk-oauth-callback", convexSiteUrl).toString();
   },
   open: async (verificationUrl) => {
@@ -38,6 +38,14 @@ export const capacitorClerkOAuthTransport: OAuthTransport = {
 
     if (!isClerkOAuthCallback(result.callbackUrl)) {
       throw new Error("Social sign-in returned an unexpected callback URL.");
+    }
+
+    // Clerk's transport collapses most provider failures to oauth_callback_failed.
+    // Keep its existing error/recovery handling, but expose the non-sensitive code
+    // for diagnosis. Never log the callback itself: it can contain session nonces.
+    const failureCode = oauthCallbackFailureCode(result.callbackUrl);
+    if (failureCode) {
+      console.warn("[Foodedo OAuth] Callback failed:", failureCode);
     }
 
     return result;

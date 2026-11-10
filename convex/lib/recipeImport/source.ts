@@ -248,6 +248,24 @@ export function extractHtmlCandidate(
       /* Malformed JSON-LD cannot prevent reading visible content. */
     }
   });
+  // Some publishers return an HTTP 200 bot challenge instead of the recipe.
+  // Require a challenge heading and its access instructions, and never let an
+  // incidental mention override actual structured recipe evidence.
+  const accessHeading = [$("title").text(), $("h1").first().text()];
+  if (
+    recipes.length === 0 &&
+    accessHeading.some((heading) =>
+      /^pardon our interruption[.!]?$/i.test(heading.trim()),
+    ) &&
+    /(?:made us think you were a bot|make sure that cookies and javascript are enabled)/i.test(
+      $("body").text(),
+    )
+  ) {
+    throw new ImportFailure(
+      "source_blocked",
+      "Source returned a browser-verification page.",
+    );
+  }
   const sourceImageUrls = selectSourceImages(
     $,
     recipes.flatMap((recipe) => recipe.image ?? []),

@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
   appId: "com.foodedo.app",
   appName: "Foodedo",
   webDir: "out",
+  // Bridge debug output can include returned client JWTs. Keep credentials out
+  // of native logs; deliberate sanitized OSLog diagnostics remain available.
+  loggingBehavior: "none",
 };
 
 export default config;

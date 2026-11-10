@@ -2,11 +2,11 @@
 
 import { AccountSyncGate } from "@/features/auth/account-sync-gate";
 import { AnalyticsIdentity } from "@/components/analytics-identity";
-import { ClerkProvider, useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/react";
+import { PlatformClerkProvider } from "@/components/platform-clerk-provider";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import type { ReactNode } from "react";
-import { capacitorClerkOAuthTransport } from "@/lib/platform/capacitor/clerk-oauth-transport";
 
 import { OnboardingProvider } from "@/features/onboarding/use-onboarding";
 import { AllergyProvider } from "@/features/allergies/allergy-context";
@@ -18,12 +18,7 @@ const isCapacitorBuild = process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider
-      publishableKey={clerkPublishableKey}
-      __internal_oauthTransport={
-        isCapacitorBuild ? capacitorClerkOAuthTransport : undefined
-      }
-    >
+    <PlatformClerkProvider publishableKey={clerkPublishableKey}>
       {!isCapacitorBuild && <AnalyticsIdentity />}
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <AccountSyncGate>
@@ -34,6 +29,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
           </OnboardingProvider>
         </AccountSyncGate>
       </ConvexProviderWithClerk>
-    </ClerkProvider>
+    </PlatformClerkProvider>
   );
 }

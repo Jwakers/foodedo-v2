@@ -3,7 +3,7 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
-import { Agent, fetch, interceptors, type Dispatcher } from "undici";
+import { Agent, fetch, type Dispatcher } from "undici";
 
 import { isPrivateOrReservedAddress } from "../../../src/lib/domain/recipe-import";
 import { ImportFailure, RECIPE_IMPORT_LIMITS } from "./contracts";
@@ -12,17 +12,15 @@ export type ImportResponse = Awaited<ReturnType<typeof fetch>>;
 const responseDispatchers = new WeakMap<ImportResponse, Dispatcher>();
 
 /**
- * Fetch through an Undici DNS interceptor so the address validated here is the
- * same address used by the connection. This avoids a validate-then-resolve
- * DNS-rebinding gap without mutating Node's global dispatcher.
+ * Validate DNS at the socket lookup boundary, so the connection uses exactly
+ * the checked addresses. Keep the original hostname for Host/SNI and avoid the
+ * DNS interceptor's response-handler assertion on HTTP informational responses.
  */
 function publicNetworkDispatcher(): Dispatcher {
-  return new Agent().compose(
-    interceptors.dns({
-      maxTTL: 1,
-      maxItems: 1,
-      lookup(origin, _options, callback) {
-        void lookup(origin.hostname, { all: true, verbatim: true }).then(
+  return new Agent({
+    connect: {
+      lookup(hostname, options, callback) {
+        void lookup(hostname, { all: true, verbatim: true }).then(
           (addresses) => {
             try {
               assertPublicResolvedAddresses(
@@ -37,14 +35,29 @@ function publicNetworkDispatcher(): Dispatcher {
               );
               return;
             }
-            callback(
-              null,
-              addresses.map(({ address, family }) => ({
-                address,
-                family: family === 6 ? 6 : 4,
-                ttl: 1,
-              })),
-            );
+            const family =
+              options.family === "IPv4"
+                ? 4
+                : options.family === "IPv6"
+                  ? 6
+                  : options.family;
+            const selected = family
+              ? addresses.filter((address) => address.family === family)
+              : addresses;
+            if (selected.length === 0) {
+              callback(
+                Object.assign(
+                  new Error("Recipe host has no matching address."),
+                  {
+                    code: "ENOTFOUND",
+                  },
+                ),
+                [],
+              );
+              return;
+            }
+            if (options.all) callback(null, selected);
+            else callback(null, selected[0].address, selected[0].family);
           },
           (error: unknown) =>
             callback(
@@ -55,8 +68,8 @@ function publicNetworkDispatcher(): Dispatcher {
             ),
         );
       },
-    }),
-  );
+    },
+  });
 }
 
 export async function safeFetch(
@@ -104,6 +117,11 @@ export async function safeFetch(
           },
         });
       } catch (error) {
+        console.warn("recipe_import_network_failure", {
+          stage: "fetch",
+          expected,
+          reason: networkFailureReason(error),
+        });
         if (hasErrorCode(error, "EUNSAFEADDRESS")) {
           throw new ImportFailure(
             "unsafe_url",
@@ -135,6 +153,11 @@ export async function safeFetch(
       // its connection, not just the successful body-reader path.
       responseDispatchers.set(response, dispatcher);
       if (!response.ok) {
+        console.warn("recipe_import_network_failure", {
+          stage: "response",
+          expected,
+          status: response.status,
+        });
         await discardResponse(response);
         if ([401, 403, 429].includes(response.status)) {
           throw new ImportFailure(
@@ -178,6 +201,27 @@ function hasErrorCode(error: unknown, expectedCode: string): boolean {
   if (!(error instanceof Error)) return false;
   if ("code" in error && error.code === expectedCode) return true;
   return "cause" in error && hasErrorCode(error.cause, expectedCode);
+}
+
+/** Fixed labels only: transport messages may contain URLs or credentials. */
+function networkFailureReason(error: unknown): string {
+  for (const code of [
+    "ENOTFOUND",
+    "EAI_AGAIN",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "UND_ERR_CONNECT_TIMEOUT",
+    "UND_ERR_HEADERS_TIMEOUT",
+    "CERT_HAS_EXPIRED",
+    "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    "EUNSAFEADDRESS",
+    "ERR_ASSERTION",
+  ]) {
+    if (hasErrorCode(error, code)) return code;
+  }
+  if (error instanceof Error && error.name === "TimeoutError") return "timeout";
+  return "other";
 }
 
 export function assertPublicResolvedAddresses(addresses: string[]) {
@@ -236,7 +280,12 @@ export function assertPublicUrlShape(url: URL) {
       "Credentials are not allowed in URLs.",
     );
   }
-  const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
+  // WHATWG URLs retain brackets around IPv6 literals; net.isIP does not.
+  // Literal addresses bypass socket DNS lookup, so reject them here as well.
+  const hostname = url.hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/\.$/, "");
   if (
     hostname === "localhost" ||
     hostname.endsWith(".localhost") ||

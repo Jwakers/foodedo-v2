@@ -30,17 +30,21 @@ test("declining native sign-in continuation preserves its source and retry requi
   await page.route("https://import-permission.fixture/**", (route) =>
     route.fulfill(
       route.request().url().endsWith("app.js")
-        ? { contentType: "application/javascript", body: javascript }
+        ? {
+            contentType: "application/javascript; charset=utf-8",
+            body: javascript,
+          }
         : {
-            contentType: "text/html",
+            contentType: "text/html; charset=utf-8",
             body: '<div id="root"></div><script src="/app.js"></script>',
           },
     ),
   );
   page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toContain("OpenAI through Vercel AI Gateway");
-    expect(dialog.message()).toContain("Apify");
+    const notice = dialog.message();
     await dialog.dismiss();
+    expect(notice).toContain("OpenAI through Vercel");
+    expect(notice).toContain("Apify");
   });
   await page.goto("https://import-permission.fixture/");
   await expect(

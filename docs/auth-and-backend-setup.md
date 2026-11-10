@@ -11,7 +11,7 @@ Clerk and Convex are required infrastructure. Next.js refuses to start or build 
 - Convex validates the JWT and derives the owner in every personal function.
 - Clerk sends signed user lifecycle events directly to the Convex HTTP action at `/clerk-users-webhook`.
 - Shared Next.js pages use client-side authentication so they remain compatible with the Capacitor static export. There is deliberately no Next.js Proxy or webhook Route Handler.
-- The Capacitor shell runs Clerk's web SDK in its normal browser mode inside `WKWebView`. The WebView persists Clerk's browser session. An isolated Capacitor OAuth transport opens social providers with iOS's `ASWebAuthenticationSession`. Clerk completes against an HTTPS Convex callback, which immediately hands the result to the authentication session through `com.foodedo.app://callback`; setting `standardBrowser=false` without a native token adapter causes Clerk startup requests to fail.
+- Packaged iOS uses a pinned ClerkJS instance with native request hooks and device-only Keychain storage. Web keeps standard-browser sessions. The existing ASWebAuthenticationSession/HTTPS callback bridge remains. Production Native API activation was explicitly approved and completed on 10 November 2026; Jack confirmed Google sign-in, the basic reopening/sign-out/email checks and TestFlight installation. The extended device acceptance matrix is pending. See [ADR 0011](../knowledge/decisions/0011-ios-native-clerk-session.md). Setting `standardBrowser=false` without the adapter is still invalid.
 - Do not replace `@clerk/react` with `@clerk/nextjs` in shared native routes: the Next-specific SDK introduces server-action behavior that the iOS static export rejects.
 
 ### Why the HTTPS OAuth callback remains
@@ -58,7 +58,34 @@ Clerk and Convex are required infrastructure. Next.js refuses to start or build 
 
    Use the value from `NEXT_PUBLIC_CONVEX_SITE_URL`, followed by `/clerk-oauth-callback`. This is distinct from `allowed_origins`: the origin permits the packaged WebView to call Clerk, while the mobile SSO entry permits Clerk to return security-sensitive OAuth state to the HTTPS bridge. The bridge then opens the registered app scheme. Clerk's standard-browser completion endpoint rejects a custom scheme when it is supplied directly.
 
-Clerk's native iOS quickstart also requires an Xcode Associated Domains entry of `webcredentials:{CLERK_FRONTEND_API_HOST}`. Add it after selecting the Apple development team, using the host only (for example `webcredentials:example.clerk.accounts.dev`). The **Native API** toggle is not required by the current WebView proof. Enable it only when adding a real native Clerk client or token adapter; that pathway has a different persistence and CAPTCHA security model.
+Clerk's native iOS quickstart also requires an Xcode Associated Domains entry of `webcredentials:{CLERK_FRONTEND_API_HOST}`. Add it after selecting the Apple development team, using the host only (for example `webcredentials:example.clerk.accounts.dev`). The **Native API** toggle is required by the native token adapter. Production activation was explicitly approved and completed on 10 November 2026, with the different native CAPTCHA security model explained. Keep the exact existing origin and mobile redirect allowlists.
+
+## Production iOS verification — 10 November 2026
+
+The local production build now uses the four public settings copied from the
+existing Foodedo V2 Vercel project into ignored `.env.production.local`.
+Production Clerk (`clerk.foodedo.com`) allows `capacitor://localhost`; its public
+environment endpoint was verified to return HTTP 200 for that origin and the web
+origin. The mobile SSO redirect allowlist now contains the exact production
+`NEXT_PUBLIC_CONVEX_SITE_URL` plus `/clerk-oauth-callback`. The bridge returns
+HTTP 200, `Cache-Control: no-store`, and the expected app-scheme handoff.
+
+Google sign-in succeeds after the native-session correction in ADR 0011, as
+confirmed on the physical iPhone. Production logs confirmed `no_valid_client`
+in the previous cookie-based flow. ClerkJS
+6.42.3 maps most failed callbacks to the generic `oauth_callback_failed` message.
+The native transport now writes `[Foodedo OAuth] Callback failed:` followed by
+only a fixed allowlisted error-code value to the WebView console. Missing or unknown codes
+become `unspecified`. It does not log callback URLs, nonces or provider messages,
+and leaves Clerk's existing callback and recovery handling intact. Capacitor bridge
+logging is now disabled because its payload logging can expose client credentials.
+Use Clerk application logs for server-side failure details and sanitized native
+OSLog messages for lifecycle checks; do not enable general bridge logging to
+collect authentication payloads.
+
+Temporary production Clerk administration keys used for the configuration checks
+were removed from the local ignored credential file after each operation. No
+administration key belongs in the app bundle.
 
 ## 2. Convex dashboard
 
