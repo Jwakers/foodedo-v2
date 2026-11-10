@@ -25,21 +25,49 @@ The extended device authentication acceptance checks are still pending.
 Code review added IPv6 literal rejection, fixed callback diagnostic codes and an
 explicit native UI CDN pin, plus security updates to Capacitor, Next.js, Undici
 and Zod. The reviewed dependency graph has zero known production advisories.
-Those review changes are local: deploy the backend/web updates and build/test a
-new native binary before including them in a release. See the
+The review changes were committed as `33c008c`. Native version 1.0/build 2 has
+now been built, signed, validated and uploaded successfully to App Store Connect;
+processing and export-compliance configuration are complete, and the internal
+testing group now contains both builds. Device acceptance is pending. The reviewed backend/web updates
+still require the normal production release. See the
 [code review and verification record](reviews/2026-11-10-ios-auth-and-import.md).
+
+App Store Connect listing progress on 10 November: the English (U.K.)
+promotional text, description, keywords, support/marketing URLs and copyright
+were saved. The subtitle `Dinner ideas. Shopping sorted.` and primary category
+Food & Drink were also saved. Build 2, reviewer notes, private review contact
+details and manual release are now saved in the version form. App Store Connect
+accepted two iPhone 17 Pro screenshots (Home and Week) and one 13-inch iPad
+screenshot (Home). The original TestFlight iPhone captures for Home, Week,
+Shopping and Recipe are in `tmp/app-store/screenshots/` for reference. Review
+access, age and content-rights answers, pricing and availability, App Privacy
+and final policy review remain outstanding.
+
+Jack deleted the separate Apple sign-in test account through Foodedo's in-app
+Clerk menu after saving a week and opening its linked shopping list. The exact
+account search in the production Clerk directory returned no users afterward.
+Convex record cleanup and Apple token revocation still need independent checks.
+Nothing has been submitted for review or released.
 See [ADR 0011](../knowledge/decisions/0011-ios-native-clerk-session.md) for the
 decision, security boundary and verification evidence.
 
 The native project exists for iPhone and iPad, including a recipe share extension,
 system-browser authentication, household invitation links, and Cook Mode screen
 behaviour. The app packages the Next.js static export; it does not load the live
-website as its shell. Both targets use version 1.0 / build 1.
+website as its shell. Both targets now use version 1.0 / build 2.
+
+Apple sign-in setup is in progress at Jack's request. The Apple App ID capability,
+Services ID/domain/callback, restricted signing key, email relay sender and
+production Clerk iOS registration are configured. Jack completed key entry and
+the production Apple connection shows Enabled. Its separate sign-up/sign-in
+toggle was subsequently enabled after a missing-button report. Jack confirmed
+that Apple appears and sign-in succeeds in TestFlight build 2. See the
+[authentication setup record](auth-and-backend-setup.md#apple-sign-in-preparation--10-november-2026).
 
 Local `.env.local` uses a Clerk **test** publishable key. A successful local build
 or unsigned archive therefore proves compilation, not production authentication
-or App Store readiness. No production dashboard changes or deployments were made
-as part of this audit.
+or App Store readiness. The original 9 November audit did not change production;
+the subsequent production setup and deployment evidence is recorded above.
 
 Changes made during preparation:
 

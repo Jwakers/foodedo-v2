@@ -87,6 +87,40 @@ Temporary production Clerk administration keys used for the configuration checks
 were removed from the local ignored credential file after each operation. No
 administration key belongs in the app bundle.
 
+### Apple sign-in preparation — 10 November 2026
+
+Apple uses the existing hosted OAuth/system-browser transport, alongside Google;
+no second identity provider SDK or Apple signing credential is added to the app.
+Jack explicitly approved creating the Foodedo-only Apple signing key, storing it
+in the production Clerk connection and enabling Apple sign-in.
+
+- Apple verified App ID Prefix/Team ID: `2UFQ4ZW67L`.
+- Primary App ID: `com.foodedo.app`, with Sign in with Apple enabled.
+- Services ID: `com.foodedo.app.web` (Foodedo Sign In).
+- Allowed domain: `clerk.foodedo.com`.
+- Return URL: `https://clerk.foodedo.com/v1/oauth_callback`.
+- Signing key scope: Sign in with Apple for this primary App ID only. Its
+  one-time download is backed up outside the repository with owner-only file
+  permissions. Do not put the private key in source, public environment values,
+  the app bundle, logs or review credentials.
+- Apple's email relay sender registration completed for Clerk's instance-specific
+  bounce address displayed in its Apple connection settings.
+- Production Clerk native registration now includes `2UFQ4ZW67L.com.foodedo.app`;
+  Clerk's public AASA response was verified to contain this app identity.
+- The app's signed build 2 includes `webcredentials:clerk.foodedo.com`.
+
+Jack completed private-key entry through the prepared dashboard form after
+automatic approval review rejected opening the credential in a text editor.
+Clerk's production Apple connection visibly showed Enabled, but its separate
+"Enable for sign-up and sign-in" toggle was initially off. This was corrected
+after Jack reported the missing button. The public `/v1/environment` response
+now confirms Apple is both `enabled: true` and `authenticatable: true`; Google
+remains enabled and authenticatable. Jack restarted TestFlight build 2 and
+confirmed that Apple appears and sign-in succeeds. Returning sign-in,
+cancellation and account deletion/provider revocation remain to be verified.
+After saving, test first-time sign-up with Hide My Email, returning sign-in,
+cancellation, and account deletion/provider revocation before submission.
+
 ## 2. Convex dashboard
 
 Open the **Foodedo V2 development deployment**, then **Settings → Environment Variables** and add:

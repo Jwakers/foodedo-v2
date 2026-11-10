@@ -34,8 +34,8 @@ known gaps, the production build command, and the device acceptance matrix.
 
 ## 3. Clerk and iOS authentication
 
-- [ ] In Clerk production **Native applications**, add the iOS app using the exact Apple App ID Prefix and bundle ID `com.foodedo.app`. Clerk lists this as required production configuration in its [deployment guide](https://clerk.com/docs/guides/development/deployment/production#confirm-your-ios-app-is-registered-in-production).
-- [ ] In Xcode **Signing & Capabilities**, add the Clerk associated domain required by the current Clerk iOS guidance: `webcredentials:{PRODUCTION_CLERK_FRONTEND_API_HOST}`. Use the host only—no `https://` or path—and verify the signed entitlement in the archive.
+- [x] In Clerk production **Native applications**, register `2UFQ4ZW67L.com.foodedo.app`; the prefix was verified against Apple and Clerk's public AASA response includes the app identity (10 November 2026).
+- [x] Add `webcredentials:clerk.foodedo.com` to the app's associated domains; verified in the signed build 2 archive's XML entitlements (10 November 2026).
 - [x] Keep `capacitor://localhost` in the production Clerk instance's allowed origins for the packaged native adapter; configured and verified on 10 November 2026.
 - [x] Add the exact production `${NEXT_PUBLIC_CONVEX_SITE_URL}/clerk-oauth-callback` URL to Clerk's **Allowlist for mobile SSO redirect**. Production callback configured and verified on 10 November 2026.
 - [ ] Confirm `com.foodedo.app://callback` is registered in the Release app and cannot be confused with any other installed app owned by the team.
