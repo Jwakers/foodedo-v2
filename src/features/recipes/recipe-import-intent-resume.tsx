@@ -42,7 +42,7 @@ export function RecipeImportIntentResume() {
         if (!confirmRecipeImportSharing()) {
           toast("Recipe import paused", {
             description:
-              "Your recipe remains on this device. No import was started.",
+              "Your recipe hasn’t been added to your account yet. You can try again when you’re ready.",
             action: {
               label: "Try again",
               onClick: () => setRetryVersion((value) => value + 1),
@@ -76,7 +76,7 @@ export function RecipeImportIntentResume() {
         toast.error(
           recipeImportErrorMessage(
             error,
-            "Foodedo couldn’t resume that recipe import.",
+            "We couldn’t continue adding your recipe. Please try again.",
           ),
         );
       } finally {

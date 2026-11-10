@@ -5,7 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { useClerk } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
@@ -29,6 +29,14 @@ function CaptureCoordinator() {
   );
   const beginImport = useMutation(api.recipeImports.beginImport);
   const shownNotices = useRef(new Set<string>());
+  const approvedCaptures = useRef(new Set<string>());
+  // Job updates must not cancel the claim → enqueue → acknowledge handoff.
+  const currentContext = useEffectEvent(() => ({
+    jobs,
+    beginImport,
+    openSignIn,
+    router,
+  }));
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -48,6 +56,7 @@ function CaptureCoordinator() {
       running = true;
       let shouldPoll = true;
       try {
+        const { jobs, beginImport, openSignIn, router } = currentContext();
         const { recipeCapture } =
           await import("@/lib/platform/capacitor/recipe-capture");
         const { capture } = await recipeCapture.peek();
@@ -63,14 +72,16 @@ function CaptureCoordinator() {
             url: capture.url,
             ...(capture.sharedText ? { sharedText: capture.sharedText } : {}),
           },
-          now: capture.createdAt,
+          // Older Swift captures store fractional milliseconds; intents use integers.
+          now: Math.floor(capture.createdAt),
         });
         if (status === "guest") {
           if (shownNotices.current.has(`guest:${capture.id}`)) return;
           shownNotices.current.add(`guest:${capture.id}`);
-          toast("Recipe captured", {
+          toast("Recipe link saved", {
             id: `native-share:${capture.id}`,
-            description: "Sign in to import it into your recipes.",
+            description:
+              "Sign in to add it to your account and access it on your other devices.",
             duration: Infinity,
             action: {
               label: "Sign in to import",
@@ -84,10 +95,10 @@ function CaptureCoordinator() {
         if (capture.claimedBy && capture.claimedBy !== userId) {
           if (shownNotices.current.has(`account:${capture.id}`)) return;
           shownNotices.current.add(`account:${capture.id}`);
-          toast("A captured recipe is waiting for another account", {
+          toast("This recipe link belongs to another account", {
             id: `native-share:${capture.id}`,
             description:
-              "Sign in to the account that started this import. The capture stays on this device for up to seven days.",
+              "Sign in to the account you used to start adding this recipe. Your link will wait here for up to seven days.",
             duration: Infinity,
           });
           return;
@@ -105,13 +116,17 @@ function CaptureCoordinator() {
           return;
         if (!active) return;
         const pausedNotice = `paused:${capture.id}`;
+        const approvalKey = `${userId}:${capture.id}`;
         if (shownNotices.current.has(pausedNotice)) return;
-        if (!confirmRecipeImportSharing()) {
+        if (
+          !approvedCaptures.current.has(approvalKey) &&
+          !confirmRecipeImportSharing()
+        ) {
           shownNotices.current.add(pausedNotice);
           toast("Recipe import paused", {
             id: `native-share:${capture.id}`,
             description:
-              "Your capture remains on this device. No import was started.",
+              "Your recipe hasn’t been added to your account yet. Your link is waiting for when you’re ready.",
             duration: Infinity,
             action: {
               label: "Try again",
@@ -124,6 +139,7 @@ function CaptureCoordinator() {
           });
           return;
         }
+        approvedCaptures.current.add(approvalKey);
         await recipeCapture.claim({ id: capture.id, owner: userId });
         if (!active) return;
         const importId = await beginImport({
@@ -135,18 +151,22 @@ function CaptureCoordinator() {
             sharedText: capture.sharedText,
           },
         });
-        if (!active) return;
+        // Once the server accepted this capture, finish acknowledgement even if
+        // auth or navigation rerendered the coordinator while the call awaited.
         await recipeCapture.acknowledge({ id: capture.id, owner: userId });
+        approvedCaptures.current.delete(approvalKey);
         toast.dismiss("native-capture-limit");
         toast.dismiss(`native-share:${capture.id}`);
-        if (active)
-          toast("Importing captured recipe", {
+        if (active) {
+          router.push(`/recipes/import?job=${importId}`);
+          toast("Adding your recipe…", {
             id: `native-share:${capture.id}`,
             action: {
-              label: "View import",
+              label: "See progress",
               onClick: () => router.push(`/recipes/import?job=${importId}`),
             },
           });
+        }
       } catch (error) {
         const limitMessage = recipeImportErrorMessage(error, "");
         if (limitMessage) {
@@ -156,7 +176,7 @@ function CaptureCoordinator() {
             toast.error(limitMessage, {
               id: "native-capture-limit",
               duration: Infinity,
-              description: "Your captured recipe remains in the inbox.",
+              description: "Your link is waiting to be added to your account.",
               action: {
                 label: "Try again",
                 onClick: () => {
@@ -170,7 +190,7 @@ function CaptureCoordinator() {
         if (active && !shownNotices.current.has("error")) {
           shownNotices.current.add("error");
           toast.error(
-            "Foodedo couldn’t resume the captured recipe. It remains in the inbox.",
+            "We couldn’t add your recipe to your account. Your link is still waiting. Please try again.",
             { id: "native-capture-error" },
           );
         }
@@ -202,6 +222,6 @@ function CaptureCoordinator() {
       if (timer) clearTimeout(timer);
       void removeListener?.();
     };
-  }, [status, userId, jobs, beginImport, openSignIn, router]);
+  }, [status, userId]);
   return null;
 }

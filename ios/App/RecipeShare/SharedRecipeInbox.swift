@@ -13,11 +13,11 @@ enum SharedRecipeInboxError: LocalizedError {
     case unavailable, full, invalid, corrupt, wrongAccount
     var errorDescription: String? {
         switch self {
-        case .unavailable: return "Foodedo’s shared inbox is unavailable. Open Foodedo and try again."
-        case .full: return "Your capture inbox is full. Open Foodedo to import your saved links first."
+        case .unavailable: return "We couldn’t save your link. Open Foodedo, then try sharing it again."
+        case .full: return "You have too many links waiting to be imported. Open Foodedo to add them to your recipes first."
         case .invalid: return "Share one public recipe link at a time."
-        case .corrupt: return "Foodedo couldn’t read the capture inbox. Your saved captures have been preserved."
-        case .wrongAccount: return "This capture is waiting for the account that started importing it."
+        case .corrupt: return "We couldn’t open your saved links. They haven’t been deleted. Open Foodedo and try again."
+        case .wrongAccount: return "Sign in to the Foodedo account you used when you first shared this link."
         }
     }
 }
@@ -93,7 +93,7 @@ final class SharedRecipeInbox {
         return try transaction { captures in
             if let existing = captures.first(where: { (try? Self.canonicalURL($0.url)) == key }) { return existing }
             guard captures.count < 20 else { throw SharedRecipeInboxError.full }
-            let capture = SharedRecipeCapture(schemaVersion: 1, id: UUID().uuidString, url: url, sharedText: text, createdAt: now(), claimedBy: nil)
+            let capture = SharedRecipeCapture(schemaVersion: 1, id: UUID().uuidString, url: url, sharedText: text, createdAt: now().rounded(.down), claimedBy: nil)
             captures.append(capture)
             return capture
         }

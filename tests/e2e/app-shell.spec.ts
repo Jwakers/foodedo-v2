@@ -22,14 +22,14 @@ test("signed-out job links show sign-in recovery rather than indefinite progress
 }) => {
   await page.goto("/recipes/import?job=existing-job");
   await expect(
-    page.getByRole("heading", { name: "Sign in to resume your import" }),
+    page.getByRole("heading", { name: "Sign in to continue" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Sign in to resume" }),
+    page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();
   await expect(page).toHaveURL(/job=existing-job/);
   await expect(
-    page.getByRole("heading", { name: "Bringing your recipe into Foodedo" }),
+    page.getByRole("heading", { name: "Adding your recipe…" }),
   ).toHaveCount(0);
 });
 

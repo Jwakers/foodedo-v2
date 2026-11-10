@@ -5,7 +5,7 @@ import { buildRecipeRepairPatch } from "@/lib/domain/recipe-repair";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
@@ -19,10 +19,10 @@ import { useRecipeSource } from "@/features/recipes/use-recipe-source";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "./recipe-account-recovery";
 import { RecipeReviewDrawer } from "@/features/recipes/recipe-review-drawer";
+import { ImportedRecipeActions } from "./imported-recipe-actions";
 
 export function RecipeDetailPage() {
   const { status, isAuthenticated } = useFoodedoAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { slug, personalRecipeId, personalMeal, meal } =
     useRecipeSource(searchParams);
@@ -107,14 +107,7 @@ export function RecipeDetailPage() {
           personalRecipeId &&
           !personalMeal?.householdSnapshot &&
           personalMeal?.source.type === "import" ? (
-            <Button
-              variant="secondary"
-              onClick={() =>
-                router.push(`/recipes/edit?recipeId=${personalRecipeId}`)
-              }
-            >
-              Edit recipe
-            </Button>
+            <ImportedRecipeActions recipeId={personalRecipeId} />
           ) : undefined
         }
         planMealAction={

@@ -442,6 +442,75 @@ test("catalogue detail and personal snapshots preserve cooking notes and scaling
   expect(snapshot?.servingScaling).toBe("source_only");
 });
 
+test("only the owner can delete an import from the library, preserving planned copies", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await seedUserAndRelease(t);
+  const { recipeId, slotId } = await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      authSubject: "other-recipe-owner",
+      name: null,
+      email: null,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const recipeId = await ctx.db.insert("recipes", {
+      ownerId,
+      title: "My imported recipe",
+      proteinCategory: "meat-free",
+      ingredients: [],
+      steps: [],
+      source: {
+        type: "import",
+        method: "text",
+        importedAt: 1,
+        normalizationVersion: 1,
+        contentFingerprint: "delete-test",
+      },
+      savedAt: 1,
+      updatedAt: 1,
+    });
+    const mealPlanId = await ctx.db.insert("mealPlans", {
+      ownerId,
+      startDate: "2026-11-09",
+      endDate: "2026-11-15",
+      status: "active",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const slotId = await ctx.db.insert("mealSlots", {
+      ownerId,
+      mealPlanId,
+      recipeId,
+      date: "2026-11-09",
+      status: "planned",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    return { recipeId, slotId };
+  });
+  await expect(
+    t.mutation(api.recipes.removeMineFromLibrary, { recipeId }),
+  ).rejects.toThrow();
+  expect(
+    await t
+      .withIdentity({ subject: "other-recipe-owner" })
+      .mutation(api.recipes.removeMineFromLibrary, { recipeId }),
+  ).toEqual({ status: "not_found" });
+  expect((await t.run((ctx) => ctx.db.get(recipeId)))?.savedAt).toBe(1);
+  expect(
+    await asUser.mutation(api.recipes.removeMineFromLibrary, { recipeId }),
+  ).toEqual({ status: "removed" });
+  expect(
+    await asUser.query(api.recipes.listMine, {
+      paginationOpts: { numItems: 10, cursor: null },
+    }),
+  ).toMatchObject({ page: [] });
+  expect(await t.run((ctx) => ctx.db.get(slotId))).toMatchObject({ recipeId });
+  expect(await asUser.query(api.recipes.getMine, { recipeId })).toMatchObject({
+    title: "My imported recipe",
+  });
+});
+
 test("the first favourite retires its hint even after it is removed", async () => {
   const t = createTestContext();
   const { asUser } = await seedUserAndRelease(t);

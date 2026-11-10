@@ -41,7 +41,7 @@ test("drafts and failures link to their job without manufacturing a recipe", () 
     expect(
       importNotification({ ...ready, status, resultRecipeId: undefined }),
     ).toMatchObject({
-      label: "Review import",
+      label: "See what’s needed",
       path: "/recipes/import?job=job-1",
     });
   expect(

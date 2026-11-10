@@ -75,7 +75,7 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
       setMessage(
         recipeImportErrorMessage(
           error,
-          "Couldn’t save this draft. Check the highlighted issues and field lengths. If it changed elsewhere or expired, reload this page.",
+          "We couldn’t save your changes. Check any highlighted details and try again. If you edited this recipe on another device, reopen it to see the latest version.",
         ),
       );
     } finally {
@@ -156,8 +156,8 @@ export function RecipeImportDraftEditor({ job }: { job: ImportJob }) {
                 {issue.message}{" "}
                 <span className="block text-12 text-graphite">
                   {issue.blocking
-                    ? "Confirm when corrected or checked."
-                    : "Optional detail. Does not prevent saving."}
+                    ? "Tick once you’ve checked or corrected this."
+                    : "Optional—you can add this later."}
                 </span>
               </span>
             </label>

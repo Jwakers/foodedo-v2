@@ -135,7 +135,9 @@ export function RecipeImporter() {
         setAuthDrawerOpen(true);
       } catch (error) {
         console.error("Failed to store recipe import intent.", error);
-        toast.error("Foodedo couldn’t hold onto that recipe.");
+        toast.error(
+          "We couldn’t save your recipe for later. Please try again.",
+        );
       }
       return;
     }
@@ -182,7 +184,7 @@ export function RecipeImporter() {
       toast.error(
         recipeImportErrorMessage(
           error,
-          "Foodedo couldn’t start that import. Try again.",
+          "We couldn’t start adding your recipe. Please try again.",
         ),
       );
     } finally {
@@ -200,7 +202,10 @@ export function RecipeImporter() {
     } catch (error) {
       console.error("Failed to retry recipe import.", error);
       toast.error(
-        recipeImportErrorMessage(error, "Foodedo couldn’t retry that import."),
+        recipeImportErrorMessage(
+          error,
+          "We couldn’t try adding your recipe again. Please try again.",
+        ),
       );
     } finally {
       retryPending.current = false;
@@ -232,13 +237,11 @@ export function RecipeImporter() {
     return (
       <main className="mx-auto w-full max-w-175 px-page-inline py-16 text-center">
         <h1 className="font-display text-28 font-semibold text-ink">
-          {needsSignIn
-            ? "Sign in to resume your import"
-            : "Reconnect to resume your import"}
+          {needsSignIn ? "Sign in to continue" : "Reconnect to continue"}
         </h1>
         <p className="mt-2 text-15 leading-5.5 text-graphite">
-          Your import link is preserved. Resume to check its progress or open
-          the saved recipe.
+          Sign in or reconnect to check your recipe’s progress. If it’s ready,
+          you’ll be able to open it.
         </p>
         <Button
           className="mt-6 w-full"
@@ -248,7 +251,7 @@ export function RecipeImporter() {
             else window.location.reload();
           }}
         >
-          {needsSignIn ? "Sign in to resume" : "Reconnect"}
+          {needsSignIn ? "Sign in" : "Reconnect"}
         </Button>
       </main>
     );
@@ -497,14 +500,12 @@ function ImportProgress({
   return (
     <main className="mx-auto flex w-full max-w-175 flex-col items-center px-page-inline pt-16 text-center">
       <h1 className="max-w-85 font-display text-28 font-semibold tracking-title text-ink">
-        {accountLoading
-          ? "Connecting your account"
-          : "Bringing your recipe into Foodedo"}
+        {accountLoading ? "Connecting your account" : "Adding your recipe…"}
       </h1>
       <p className="mt-3 max-w-85 text-15 leading-5.5 text-graphite">
         {accountLoading
-          ? "Checking your sign-in so we can resume your import."
-          : "We’re organising the recipe and checking for missing cooking details. This can take a few minutes. You can keep using Foodedo—we’ll notify you in the app when it’s ready or needs your attention."}
+          ? "Checking your account so we can continue adding your recipe."
+          : "We’re putting the ingredients and steps together. This can take a few minutes. You can keep using Foodedo—we’ll let you know here when your recipe is ready or needs a little more detail."}
       </p>
       {importId ? (
         <ButtonLink variant="inline" className="mt-3" href="/recipes">
@@ -618,6 +619,9 @@ function ImportSuccess({
       <h1 className="mt-2 font-display text-32 font-semibold tracking-heading text-ink">
         Recipe imported
       </h1>
+      <p className="mt-1.5 text-15 leading-5.5 text-graphite">
+        Saved to your account. Find it in Recipes wherever you sign in.
+      </p>
       {recipe.source.type === "import" && recipe.source.method === "text" ? (
         <p className="mt-1.5 text-15 leading-5.5 text-graphite">
           We suggested any missing title and description. Check the details and

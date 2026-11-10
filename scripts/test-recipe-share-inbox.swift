@@ -7,6 +7,9 @@ struct InboxChecks {
         defer { try? FileManager.default.removeItem(at: root) }
         var time = 1_800_000_000_000.0
         let inbox = try SharedRecipeInbox(directory: root, now: { time })
+        let fractionalInbox = try SharedRecipeInbox(directory: root.appendingPathComponent("fractional"), now: { time + 0.75 })
+        let fractionalCapture = try fractionalInbox.capture(url: "https://example.com/recipe", text: nil)
+        precondition(fractionalCapture.createdAt == time, "Native timestamps must use whole milliseconds accepted by import intents")
         let unicodeInbox = try SharedRecipeInbox(directory: root.appendingPathComponent("unicode"))
         do {
             try unicodeInbox.capture(url: "https://example.com/too-long", text: String(repeating: "🥕", count: 40_001))

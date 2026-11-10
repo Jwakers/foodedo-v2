@@ -9,13 +9,32 @@ const state = vi.hoisted(() => ({
   error: vi.fn(),
   dismiss: vi.fn(),
   acknowledge: vi.fn(),
+  claim: vi.fn(),
+  confirm: vi.fn(),
+  push: vi.fn(),
+  jobs: [] as { status: string }[],
+  refs: [] as { current: unknown }[],
+  refIndex: 0,
+  dependencies: [] as unknown[],
+  latestContext: undefined as (() => unknown) | undefined,
 }));
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
-  useEffect: (effect: () => (() => void) | undefined) => {
+  useEffect: (
+    effect: () => (() => void) | undefined,
+    dependencies: unknown[],
+  ) => {
     state.effect = effect;
+    state.dependencies = dependencies;
   },
-  useRef: (value: unknown) => ({ current: value }),
+  useRef: (value: unknown) => {
+    const index = state.refIndex++;
+    return (state.refs[index] ??= { current: value });
+  },
+  useEffectEvent: (callback: () => unknown) => {
+    state.latestContext = callback;
+    return () => state.latestContext?.();
+  },
 }));
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => true },
@@ -31,9 +50,9 @@ vi.mock("@capacitor/app", () => ({
 vi.mock("@clerk/react", () => ({ useClerk: () => ({ openSignIn: vi.fn() }) }));
 vi.mock("convex/react", () => ({
   useMutation: () => state.begin,
-  useQuery: () => [],
+  useQuery: () => state.jobs,
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }) }));
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), { error: state.error, dismiss: state.dismiss }),
 }));
@@ -41,7 +60,7 @@ vi.mock("@/features/auth/use-foodedo-auth", () => ({
   useFoodedoAuth: () => ({ status: "authenticated", userId: "alice" }),
 }));
 vi.mock("@/lib/platform/recipe-import-permission", () => ({
-  confirmRecipeImportSharing: () => true,
+  confirmRecipeImportSharing: state.confirm,
 }));
 vi.mock("@/lib/platform/auth-intent-store", () => ({
   createRecipeImportIntentStore: () => ({ read: async () => null }),
@@ -52,10 +71,11 @@ vi.mock("@/lib/platform/capacitor/recipe-capture", () => ({
       capture: {
         id: "capture-1",
         url: "https://example.com/recipe",
-        createdAt: Date.now(),
+        // Existing native inbox entries contain fractional milliseconds.
+        createdAt: Date.now() + 0.25,
       },
     }),
-    claim: vi.fn(),
+    claim: state.claim,
     acknowledge: state.acknowledge,
   },
 }));
@@ -64,6 +84,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.effect = undefined;
   state.foreground = undefined;
+  state.refs = [];
+  state.refIndex = 0;
+  state.jobs = [];
+  state.confirm.mockReturnValue(true);
+  state.claim.mockResolvedValue(undefined);
   vi.stubGlobal("document", { visibilityState: "visible" });
 });
 afterEach(() => {
@@ -101,7 +126,65 @@ test("a limit pause keeps its retry action available and retry can acknowledge t
     }),
   );
   expect(state.dismiss).toHaveBeenCalledWith("native-capture-limit");
+  expect(state.confirm).toHaveBeenCalledTimes(1);
+  expect(state.push).toHaveBeenCalledWith("/recipes/import?job=import-1");
   cleanup?.();
+});
+
+test("live job updates do not restart consent or interrupt the inbox handoff", async () => {
+  let claimed!: () => void;
+  state.claim.mockReturnValue(
+    new Promise<void>((resolve) => {
+      claimed = resolve;
+    }),
+  );
+  state.begin.mockResolvedValue("import-progress");
+  const { NativeRecipeCaptures } =
+    await import("@/features/recipes/native-recipe-captures");
+  const Coordinator = NativeRecipeCaptures()!.type as () => null;
+  Coordinator();
+  let cleanup = state.effect?.();
+  const previousDependencies = state.dependencies;
+  await vi.waitFor(() => expect(state.claim).toHaveBeenCalledTimes(1));
+  state.jobs = [{ status: "processing" }];
+  state.refIndex = 0;
+  Coordinator();
+  // Commit the rerender, applying the same dependency comparison as React.
+  if (
+    state.dependencies.some(
+      (value, index) => !Object.is(value, previousDependencies[index]),
+    )
+  ) {
+    cleanup?.();
+    cleanup = state.effect?.();
+  }
+  claimed();
+  await vi.waitFor(() => expect(state.acknowledge).toHaveBeenCalledTimes(1));
+  expect(state.confirm).toHaveBeenCalledTimes(1);
+  expect(state.begin).toHaveBeenCalledTimes(1);
+  expect(state.push).toHaveBeenCalledWith(
+    "/recipes/import?job=import-progress",
+  );
+  cleanup?.();
+});
+
+test("a server-accepted capture is acknowledged even if the effect was cleaned up", async () => {
+  let accepted!: (id: string) => void;
+  state.begin.mockReturnValue(
+    new Promise<string>((resolve) => {
+      accepted = resolve;
+    }),
+  );
+  const { NativeRecipeCaptures } =
+    await import("@/features/recipes/native-recipe-captures");
+  const Coordinator = NativeRecipeCaptures()!.type as () => null;
+  Coordinator();
+  const cleanup = state.effect?.();
+  await vi.waitFor(() => expect(state.begin).toHaveBeenCalledTimes(1));
+  cleanup?.();
+  accepted("accepted-import");
+  await vi.waitFor(() => expect(state.acknowledge).toHaveBeenCalledTimes(1));
+  expect(state.push).not.toHaveBeenCalled();
 });
 
 test("foregrounding rechecks a paused capture after its limit has cleared", async () => {

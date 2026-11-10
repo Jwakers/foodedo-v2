@@ -69,14 +69,14 @@ export function importNotification(job: ImportNotificationJob) {
     return {
       key: `${job._id}:${job.attempt}:draft`,
       title: "Your recipe needs a little more detail",
-      label: "Review import",
+      label: "See what’s needed",
       path: reviewPath,
     };
   if (job.status === "failed")
     return {
       key: `${job._id}:${job.attempt}:failed`,
-      title: "We couldn’t finish your recipe import",
-      label: "Review import",
+      title: "We couldn’t add your recipe",
+      label: "See what’s needed",
       path: reviewPath,
     };
   return null;
