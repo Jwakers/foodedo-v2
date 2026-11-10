@@ -1,5 +1,5 @@
 export const recipeImportSharingNotice =
-  "Use AI to organise this recipe?\n\nTo turn your link or pasted text into a recipe, Foodedo sends the recipe content to OpenAI through Vercel AI Gateway. For social posts, we may also send the link and shared caption to Apify to find the recipe.\n\nThis may include personal information in the text you share. Only share content you’re comfortable sending to these services.\n\nChoose OK to continue or Cancel to stop. You can read the Privacy Policy in Help.";
+  "Add this recipe with AI?\n\nFoodedo sends recipe text to OpenAI through Vercel to organise it. Social links and captions may also be sent to Apify.\n\nOnly share content you’re comfortable sending to these services. Choose OK to allow this import or Cancel to stop. Details: Privacy Policy in Help.";
 
 /** Capacitor presents confirm() as an iOS alert; cancellation sends no new input. */
 export function confirmRecipeImportSharing(
