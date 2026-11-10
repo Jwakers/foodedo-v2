@@ -360,7 +360,7 @@
       },
       {
         "heading": "Understand what Foodedo keeps",
-        "body": "Read the FAQ for account and guest boundaries. Privacy and Terms describe the service and the handling of information; the V2 drafts are marked for review."
+        "body": "Read the FAQ for account and guest boundaries. The Privacy Policy explains how Foodedo handles information. The Terms describe the service."
       }
     ],
     "related": [
@@ -407,48 +407,52 @@
   {
     "path": "/privacy",
     "title": "Privacy Policy",
-    "description": "V2 privacy draft describing guest data, account information, saved food and household sharing.",
+    "description": "How Foodedo uses personal information when you use the website or iOS app, and the choices you have.",
     "kind": "legal",
     "sections": [
       {
-        "heading": "About this draft",
-        "body": "This privacy draft describes the current Foodedo implementation and requires final review before App Store submission. Foodedo is operated by Jack Wakeham. Contact jackwakeham82@gmail.com for support or privacy requests. Provider contracts, processing locations, backup retention and the final legal bases remain to be confirmed."
-      },
-      {
         "heading": "Who operates Foodedo",
-        "body": "Jack Wakeham operates Foodedo and is the contact for questions about your information. Email jackwakeham82@gmail.com to request access, correction, export or deletion, or to ask a privacy question.",
+        "body": "Jack Wakeham operates Foodedo and is responsible for your personal information. This notice applies to the Foodedo website and iOS app. It was updated on 10 November 2026. Email jackwakeham82@gmail.com with any privacy questions or requests.",
         "link": {
           "href": "mailto:jackwakeham82@gmail.com",
           "label": "Email Jack Wakeham"
         }
       },
       {
-        "heading": "Guest use and device storage",
-        "body": "Public catalogue browsing and temporary guest planning are available without an account. Guest drafts and interface preferences can be stored on your device. Guest drafts do not create anonymous personal backend accounts and are not synced between devices."
+        "heading": "Accounts, guest use and meal planning",
+        "body": "You can browse recipes and try planning without creating an account. Guest drafts and preferences can be stored on your device. If you sign in, Clerk handles authentication. Foodedo receives your account identifier, email address and any name supplied by you or your sign-in provider. If you choose to hide your email with Apple, Foodedo receives the relay address Apple supplies. Convex stores the recipes, plans, shopping lists and preferences you save. Foodedo uses meal choices and swaps to tailor future suggestions."
       },
       {
-        "heading": "Accounts and saved content",
-        "body": "Clerk provides authentication. Convex stores account-linked product data such as saved recipes, preferences, plans and shopping lists. Signing in is required for personal persistence and shared household access."
+        "heading": "Allergy information and household sharing",
+        "body": "You can choose to enter allergy information to filter suggestions and show ingredient warnings. Guest allergy settings stay on your device until you choose to save them to your account. If you turn on household sharing for your allergies, they are used for household plans. You can remove saved allergies or turn sharing off in the allergy settings. Household members can also access shared plans, shopping lists and recipes you explicitly share. Shared content can remain available to other members after you leave."
       },
       {
         "heading": "Recipe imports",
-        "body": "Foodedo sends submitted recipe text and retrieved recipe content to OpenAI through Vercel AI Gateway to organise recipes. Social links and shared captions may be sent to Apify to retrieve source content. Content you submit can contain personal information, so only share material you are comfortable sending to these providers. The iOS app asks permission before starting or retrying processing. Successful imports clear pasted input text and shared captions from the import job; source payloads and unfinished drafts are scheduled for cleanup after seven days. Saved recipes remain in your library. Provider-side retention and processing locations require final review."
+        "body": "When you request a recipe import, Foodedo may retrieve the source page and send the recipe text to OpenAI through Vercel AI Gateway to structure the recipe. Social links and captions may be sent to Apify to retrieve the source. The iOS app asks before it sends content for processing. Submit only material you are comfortable sharing with these services. Successful imports clear pasted text and shared captions from the import job. Foodedo schedules source payloads and unfinished drafts for cleanup after seven days. Recipes you save remain in your library until you remove them or delete your account."
       },
       {
-        "heading": "Household sharing",
-        "body": "Household members can access shared plans, shopping lists and explicitly shared recipe snapshots. Creating a household copies the active private plan and linked shopping state. Your private recipe library is not automatically shared in full. Shared records can remain available to other members when you leave."
+        "heading": "Support, security and website analytics",
+        "body": "If you use the contact form, Formspree delivers your name, email address and message to Foodedo. If signed in, your account identifier helps us find the right account. Service providers can process technical information such as IP addresses and request details to deliver and secure the service. Where enabled, PostHog measures website activity such as page visits and recipe views. Signed-in website activity can be associated with your account identifier. Use the control below to turn off optional website analytics. PostHog is disabled in the packaged iOS app."
       },
       {
-        "heading": "Deletion and privacy requests",
-        "body": "Use Manage account from your account menu to access account settings. Account deletion must be enabled in the authentication service before launch. Deletion processing removes user-owned product records, including recipe-import jobs and drafts, and ends household membership; shared household content follows its separate lifecycle. A minimal deleted-account identifier is retained to reject old sessions and delayed authentication events. Email jackwakeham82@gmail.com for access, correction, export or deletion requests. Backup and provider retention require final review."
+        "heading": "Why we use your information",
+        "body": "We use the information needed to provide the features you request, such as signing in, saving a plan or importing a recipe. We also use information for our legitimate interests in operating and securing Foodedo and responding to support enquiries. Where processing relies on your consent, you can withdraw it at any time. You can choose whether to create an account or use optional features. Without account information we cannot provide saved or shared account features."
       },
       {
-        "heading": "Contact messages",
-        "body": "When you use Contact us, your name, email address and message are sent to Formspree and the Foodedo support inbox so we can respond. If you are signed in, your Clerk user ID is included to help identify your Foodedo account, even if you enter a different email address. Guest submissions leave this optional field blank. Recipes, session tokens and diagnostic data are not attached. Retention and processor details remain subject to the policy review described above."
+        "heading": "Service providers and international processing",
+        "body": "Foodedo uses Clerk for authentication, Convex for stored app data, Vercel for hosting and AI routing, OpenAI for recipe processing, Apify for social recipe retrieval, PostHog for website analytics and Formspree for support messages. Apple and Google handle their own sign-in services when you choose them. Providers may process information outside the UK. You can email us for details about where your information is processed and the safeguards that apply to those transfers."
       },
       {
-        "heading": "Website analytics",
-        "body": "When configured, the website uses PostHog to measure page visits, planning, recipe views and sign-in activity. Signed-in activity can be linked to your account identifier. Automatic interaction capture and session recording are disabled. You can turn off optional analytics using the control below; supported Do Not Track preferences are respected. PostHog product analytics are disabled in the packaged iOS app. Hosting, authentication and backend providers may still process technical and security information."
+        "heading": "Retention and account deletion",
+        "body": "Foodedo keeps account information and saved content while your account is active. Use Manage account in the profile menu to delete your account. Deletion removes personal app records from the live service and ends household membership. Foodedo retains a minimal account identifier to prevent old sessions or delayed sign-in events from restoring the deleted account. Shared household content follows the household’s own lifecycle. Backups and provider logs can persist after live deletion until their retention periods expire. We keep support messages as needed to resolve the request and handle follow-up."
+      },
+      {
+        "heading": "Your privacy rights",
+        "body": "Depending on where you live and how we use your information, you can ask to access, correct, export or delete it, restrict or object to processing, or withdraw consent. Email jackwakeham82@gmail.com to make a request. You can also complain to your local data protection authority. In the UK, that is the Information Commissioner’s Office.",
+        "link": {
+          "href": "https://ico.org.uk/make-a-complaint/",
+          "label": "Make a complaint to the ICO"
+        }
       }
     ],
     "related": ["/terms", "/faq"]

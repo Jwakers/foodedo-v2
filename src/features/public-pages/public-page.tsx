@@ -56,7 +56,9 @@ export function PublicPage({
             {page.kind === "guide"
               ? "A more useful week"
               : page.kind === "legal"
-                ? "Service information · draft for review"
+                ? path === "/privacy"
+                  ? "Service information"
+                  : "Service information · draft for review"
                 : "Foodedo help"}
           </p>
           <h1 className="font-display text-34 leading-[39px] font-semibold tracking-heading sm:text-48 sm:leading-[52px]">
