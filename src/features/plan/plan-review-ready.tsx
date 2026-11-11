@@ -8,10 +8,14 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { useGuestPlanReviewDockEffect } from "@/features/plan/guest-plan-review-chrome";
+import {
+  useGuestPlanReviewDockEffect,
+  useGuestPlanReviewDockHidden,
+} from "@/features/plan/guest-plan-review-chrome";
 import { PlanMealRow } from "@/features/plan/plan-meal-row";
 import { SavePlanDrawer } from "@/features/plan/save-plan-drawer";
 import { type GuestPlanMealRow } from "@/lib/domain/plan-display";
+import { cn } from "@/lib/utils/cn";
 
 export function PlanReviewReady({
   mode,
@@ -58,6 +62,7 @@ export function PlanReviewReady({
   const canAddDay = mode === "standard" && rows.length < 7;
 
   useGuestPlanReviewDockEffect(isLoaded && !isSignedIn);
+  const dockHidden = useGuestPlanReviewDockHidden();
 
   function handleSaveDrawerOpenChange(nextOpen: boolean) {
     if (!nextOpen && preserveClaimOnCloseRef.current) {
@@ -104,7 +109,7 @@ export function PlanReviewReady({
   return (
     <main
       aria-labelledby="plan-review-heading"
-      className="mx-auto flex w-full max-w-175 flex-col px-page-inline pt-4.5 pb-8"
+      className="mx-auto flex w-full max-w-175 flex-col px-page-inline pt-4.5 pb-[calc(9rem+env(safe-area-inset-bottom,0px))]"
     >
       {household ? (
         <p className="mb-3 text-12 font-bold tracking-label text-leaf uppercase">
@@ -194,42 +199,51 @@ export function PlanReviewReady({
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-col gap-2">
-        <Button
-          className="w-full"
-          disabled={isSaving || isAddingDay}
-          aria-busy={isSaving}
-          onClick={handlePrimarySave}
-        >
-          {isSaving
-            ? "Saving…"
-            : mode === "replan"
-              ? "Replace this week"
-              : isHousehold
-                ? "Save household plan"
-                : "Save my plan"}
-          <ArrowRight aria-hidden="true" className="size-4.5" />
-        </Button>
-        <Button
-          variant="inline"
-          size="block"
-          disabled={isShuffling || isSaving || isAddingDay}
-          aria-busy={isShuffling}
-          onClick={() => {
-            void (async () => {
-              try {
-                await onTryAnotherWeek();
-              } catch (error) {
-                console.error("Failed to shuffle guest plan draft.", error);
-                toast.error(
-                  "Foodedo couldn’t refresh this week. Check storage access and try again.",
-                );
-              }
-            })();
-          }}
-        >
-          {isShuffling ? "Finding another week…" : "Try another week"}
-        </Button>
+      <div
+        className={cn(
+          "fixed inset-x-0 z-30 border-t border-border bg-paper",
+          dockHidden
+            ? "bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+            : "bottom-(--app-nav-height) pb-3",
+        )}
+      >
+        <div className="mx-auto flex w-full max-w-175 flex-col gap-2 px-page-inline pt-3">
+          <Button
+            className="w-full"
+            disabled={isSaving || isAddingDay}
+            aria-busy={isSaving}
+            onClick={handlePrimarySave}
+          >
+            {isSaving
+              ? "Saving…"
+              : mode === "replan"
+                ? "Replace this week"
+                : isHousehold
+                  ? "Save household plan"
+                  : "Save my plan"}
+            <ArrowRight aria-hidden="true" className="size-4.5" />
+          </Button>
+          <Button
+            variant="inline"
+            size="block"
+            disabled={isShuffling || isSaving || isAddingDay}
+            aria-busy={isShuffling}
+            onClick={() => {
+              void (async () => {
+                try {
+                  await onTryAnotherWeek();
+                } catch (error) {
+                  console.error("Failed to shuffle guest plan draft.", error);
+                  toast.error(
+                    "Foodedo couldn’t refresh this week. Check storage access and try again.",
+                  );
+                }
+              })();
+            }}
+          >
+            {isShuffling ? "Finding another week…" : "Try another week"}
+          </Button>
+        </div>
       </div>
 
       <Show when="signed-out">
