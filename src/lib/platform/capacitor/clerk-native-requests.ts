@@ -39,11 +39,14 @@ export function nativeClerkRequestHooks(
     },
     async after(request: NativeRequest, response?: Response) {
       assertClerkRequest(request);
-      const authorization = response?.headers.get("Authorization");
-      if (!authorization) return;
-      const token = authorization.startsWith("Bearer ")
-        ? authorization.slice(7)
-        : authorization;
+      const authorization = response?.headers.get("Authorization")?.trim();
+      // Fetch strips trailing spaces, so a scheme with no credential is "Bearer".
+      if (!authorization || authorization === "Bearer") return;
+      const token = (
+        authorization.startsWith("Bearer ")
+          ? authorization.slice(7)
+          : authorization
+      ).trim();
       if (token) await store.set(token);
     },
   };

@@ -53,6 +53,7 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
           <div className={collageImages[0].className}>
             <Image
               src={collageImages[0].src}
+              unoptimized={process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true"}
               alt={collageImages[0].alt}
               fill
               priority
@@ -64,6 +65,7 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
             <div className={collageImages[1].className}>
               <Image
                 src={collageImages[1].src}
+                unoptimized={process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true"}
                 alt={collageImages[1].alt}
                 fill
                 priority
@@ -74,6 +76,7 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
             <div className={collageImages[2].className}>
               <Image
                 src={collageImages[2].src}
+                unoptimized={process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true"}
                 alt={collageImages[2].alt}
                 fill
                 priority

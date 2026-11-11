@@ -113,7 +113,14 @@ const nextConfig: NextConfig = {
         pathname: `/images/${process.env.SANITY_PROJECT_ID?.trim() || "i8ook8b1"}/${process.env.SANITY_DATASET?.trim() || "production"}/**`,
       },
     ],
-    ...(isCapacitorBuild ? { unoptimized: true } : {}),
+    ...(isCapacitorBuild
+      ? {
+          // The static bundle has no local optimizer. Use the deployed web
+          // optimizer rather than downloading full-resolution Convex originals.
+          loader: "custom" as const,
+          loaderFile: "./src/lib/platform/capacitor/image-loader.ts",
+        }
+      : {}),
   },
   ...(isCapacitorBuild
     ? {

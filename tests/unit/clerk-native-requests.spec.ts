@@ -51,6 +51,33 @@ test("native client identity survives a fresh adapter and rotates with Clerk res
   expect(initial.url.searchParams.getAll("_is_native")).toEqual(["1"]);
 });
 
+test("a bearer scheme without a token leaves the stored credential unchanged", async () => {
+  let persisted: string | null = "existing-client-token";
+  let writes = 0;
+  const hooks = nativeClerkRequestHooks("clerk.example.com", {
+    get: async () => persisted,
+    set: async (token: string) => {
+      writes++;
+      persisted = token;
+    },
+  });
+  const request: { url: URL; headers?: HeadersInit } = {
+    url: new URL("https://clerk.example.com/v1/client"),
+  };
+  for (const authorization of ["Bearer", "Bearer ", "Bearer   "]) {
+    await hooks.after(
+      request,
+      new Response("{}", { headers: { Authorization: authorization } }),
+    );
+  }
+  expect(writes).toBe(0);
+  expect(persisted).toBe("existing-client-token");
+  await hooks.before(request);
+  expect(new Headers(request.headers).get("Authorization")).toBe(
+    "Bearer existing-client-token",
+  );
+});
+
 test("tokens never cross hosts and secure-storage failures stop authentication", async () => {
   let reads = 0;
   let writes = 0;

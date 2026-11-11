@@ -98,6 +98,7 @@ function DashboardMealCollage() {
         <div key={src} className="relative min-h-0 min-w-0 bg-mist">
           <Image
             src={src}
+            unoptimized={process.env.NEXT_PUBLIC_CAPACITOR_BUILD === "true"}
             alt={alt}
             fill
             preload
