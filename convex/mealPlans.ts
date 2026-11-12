@@ -315,15 +315,16 @@ export const swapMeal = mutation({
   },
 });
 
-/** Puts one chosen catalogue recipe on a day of the active plan. */
+/** Puts one chosen catalogue or saved imported recipe on a day of the active plan. */
 export const planMeal = mutation({
   args: {
     ...spaceArgs,
     mealPlanId: v.id("mealPlans"),
     expectedUpdatedAt: v.number(),
     date: v.string(),
-    catalogueMealId: v.string(),
-    catalogueVersion: v.number(),
+    catalogueMealId: v.optional(v.string()),
+    catalogueVersion: v.optional(v.number()),
+    importedRecipeId: v.optional(v.id("recipes")),
   },
   returns: planMealResultValidator,
   handler: async (ctx, args) => {
@@ -338,14 +339,45 @@ export const planMeal = mutation({
     if (args.date < mealPlan.startDate || args.date > mealPlan.endDate) {
       throwInvalidPlan("That date is not in this plan.");
     }
-    if (
-      (await getCatalogueMeal(
-        ctx,
-        args.catalogueMealId,
-        args.catalogueVersion,
-      )) === null
-    ) {
-      return { status: "catalogue_unsupported" } as const;
+    let reference: Parameters<typeof resolveRecipeReference>[2];
+    let candidateKey: string;
+    if (args.importedRecipeId !== undefined) {
+      if (
+        args.catalogueMealId !== undefined ||
+        args.catalogueVersion !== undefined
+      )
+        throwInvalidPlan("Choose one recipe source.");
+      const actorId = await requireUserId(ctx);
+      const recipe = await ctx.db.get(args.importedRecipeId);
+      if (
+        !recipe ||
+        recipe.ownerId !== actorId ||
+        recipe.source.type !== "import" ||
+        !recipe.savedAt
+      )
+        throw new ConvexError("That saved imported recipe is unavailable.");
+      reference = { type: "existing", recipeId: recipe._id };
+      candidateKey = recipeSelectionKey(recipe);
+    } else {
+      if (
+        args.catalogueMealId === undefined ||
+        args.catalogueVersion === undefined
+      )
+        throwInvalidPlan("Choose a recipe.");
+      if (
+        (await getCatalogueMeal(
+          ctx,
+          args.catalogueMealId,
+          args.catalogueVersion,
+        )) === null
+      )
+        return { status: "catalogue_unsupported" } as const;
+      reference = {
+        type: "catalogue",
+        catalogueMealId: args.catalogueMealId,
+        catalogueVersion: args.catalogueVersion,
+      };
+      candidateKey = `catalogue:${args.catalogueMealId}`;
     }
 
     const mealSlots = await getPlanSlots(ctx, mealPlan._id);
@@ -357,11 +389,7 @@ export const planMeal = mutation({
     if (existingSlot !== undefined && existingSlot.status !== "planned") {
       return { status: "plan_unavailable" } as const;
     }
-    const recipeId = await resolveRecipeReference(ctx, ownerId, {
-      type: "catalogue",
-      catalogueMealId: args.catalogueMealId,
-      catalogueVersion: args.catalogueVersion,
-    });
+    const recipeId = await resolveRecipeReference(ctx, ownerId, reference);
     if (
       existingSlot?.recipeId === recipeId &&
       existingSlot.status === "planned"
@@ -392,7 +420,7 @@ export const planMeal = mutation({
       if (
         oldRecipe &&
         oldRecipe.ownerId === ownerId &&
-        recipeSelectionKey(oldRecipe) !== `catalogue:${args.catalogueMealId}`
+        recipeSelectionKey(oldRecipe) !== candidateKey
       ) {
         await recordMealSelectionOutcome(ctx, {
           ownerId,
@@ -408,7 +436,7 @@ export const planMeal = mutation({
       ownerId,
       mealPlanId: mealPlan._id,
       date: args.date,
-      candidateKey: `catalogue:${args.catalogueMealId}`,
+      candidateKey,
       outcome: "kept",
       updatedAt,
     });

@@ -1,9 +1,14 @@
 // @vitest-environment node
 import { beforeEach, expect, test, vi } from "vitest";
+import { getFunctionName } from "convex/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 
 const query = vi.hoisted(() => vi.fn());
+const allergies = vi.hoisted(() => ({
+  effectiveIds: [] as string[],
+  ready: true,
+}));
 vi.mock("convex-helpers/react", () => ({ usePaginatedQuery: query }));
 vi.mock("@/components/ui/drawer-stack", () => ({
   useDrawerStack: () => ({ push: vi.fn() }),
@@ -12,7 +17,7 @@ vi.mock("@/components/ui/drawer-stack-header", () => ({
   DrawerStackHeader: () => null,
 }));
 vi.mock("@/features/allergies/allergy-context", () => ({
-  useAllergies: () => ({ effectiveIds: [], ready: true }),
+  useAllergies: () => allergies,
 }));
 import { PlanMealSwap } from "@/features/plan/plan-meal-swap";
 import { api } from "../../convex/_generated/api";
@@ -32,6 +37,7 @@ const render = (props: Partial<Parameters<typeof PlanMealSwap>[0]> = {}) =>
     />,
   );
 beforeEach(() => {
+  allergies.effectiveIds = [];
   query.mockReset();
   query.mockReturnValue({
     results: meals,
@@ -85,4 +91,73 @@ test("loading another page keeps existing choices and disables the shared contro
   query.mockReturnValue({ results: meals, status: "Exhausted" });
   expect(render()).not.toContain("Load more");
   expect(render()).not.toContain("recipes loaded");
+});
+
+test("a reopened imports picker retains its source, applies filters and derives specific allergy warnings", () => {
+  allergies.effectiveIds = ["milk"];
+  query.mockImplementation((ref, args) => ({
+    results:
+      args === "skip"
+        ? []
+        : getFunctionName(ref) === "recipes:listMine"
+          ? [
+              {
+                _id: "import-1",
+                title: "Imported creamy potatoes",
+                proteinCategory: "meat-free",
+                ingredients: [
+                  {
+                    id: "cream",
+                    name: "cream",
+                    shoppingCategory: "dairy_and_eggs",
+                  },
+                ],
+                steps: [{ id: "s", text: "Cook." }],
+                source: { type: "import", method: "text", importedAt: 1 },
+                reviewIssues: [],
+              },
+            ]
+          : meals,
+    status: "Exhausted",
+    loadMore: vi.fn(),
+  }));
+  const props = {
+    source: "Your imports" as const,
+    onSwapImported: vi.fn(),
+    filters: {
+      under30Minutes: true,
+      budgetFriendly: false,
+      proteinCategories: [],
+    },
+  };
+  // Each static render is a fresh mount, as happens when the drawer stack drops a pane.
+  for (let i = 0; i < 2; i++) {
+    const html = render(props);
+    expect(html).toContain('aria-label="Select Imported creamy potatoes"');
+    expect(html).toContain("Contains milk");
+    expect(html).not.toContain("Check ingredients for your allergies");
+    expect(html).not.toContain('aria-label="Select Recipe 0"');
+  }
+  expect(query).toHaveBeenCalledWith(api.catalogue.list, "skip", {
+    initialNumItems: 20,
+  });
+  expect(query).toHaveBeenCalledWith(
+    api.recipes.listMine,
+    {
+      ...props.filters,
+      searchQuery: "",
+      sort: "recommended",
+      importsOnly: true,
+    },
+    { initialNumItems: 20 },
+  );
+});
+
+test("guest picker never requests personal imports even when given an imported source", () => {
+  const html = render({ source: "Your imports" });
+  expect(query).toHaveBeenCalledWith(api.recipes.listMine, "skip", {
+    initialNumItems: 20,
+  });
+  expect(html).not.toContain('aria-label="Recipe sources"');
+  expect(html).toContain('aria-label="Select Recipe 0"');
 });

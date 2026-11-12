@@ -66,7 +66,13 @@ public meal IDs, opaque within-space member keys and dismissal counts. It never
 returns another member's imported/manual recipe, saved snapshot, author or
 library. Household server candidates use current public catalogue content and
 already-shared non-catalogue snapshots, not another member's private imports.
-Private saved imports remain eligible in the private server selector. Explicitly
+Saved imported recipes are manual choices only; neither private imports nor
+explicitly shared imported snapshots enter automatic swaps, extensions or replans.
+The saved Week recipe picker switches between Foodedo meals and the acting
+account’s saved imports, reusing search, filters and recipe preview. Choosing an
+import validates library membership and ownership before writing; household plans
+receive an independent snapshot. Slot changes reconcile shopping lists atomically.
+Guest/local draft planning remains catalogue-only. Explicitly
 sharing a recipe into a plan retains a stable internal selection key across
 snapshot copies. Existing snapshots need no migration.
 

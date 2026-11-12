@@ -970,3 +970,191 @@ test("whole-plan regeneration preserves edge gaps, elapsed meals, range and undo
     before._id,
   );
 });
+
+test.each([false, true])(
+  "saved imports can be manually planned (household: %s) without entering suggestions",
+  async (shared) => {
+    const t = createTestContext();
+    const { asUser, ownerId } = await authenticateTestUser(t);
+    const { asUser: stranger, ownerId: strangerId } =
+      await authenticateTestUser(t, "stranger");
+    const householdId = shared
+      ? await t.run(async (ctx) => {
+          const id = await ctx.db.insert("households", {
+            creatorId: ownerId,
+            createdAt: 1,
+          });
+          await ctx.db.insert("householdMembers", {
+            householdId: id,
+            userId: ownerId,
+            joinedAt: 1,
+          });
+          return id;
+        })
+      : undefined;
+    const space = { householdId };
+    await asUser.mutation(api.mealPlans.claimGuestDraft, {
+      ...space,
+      expectedPlanId: null,
+      claimKey,
+      schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+      planStartDate,
+      servings: 4,
+      mealChoices: guestMealChoices(),
+    });
+    const importedRecipeId = await t.run((ctx) =>
+      ctx.db.insert("recipes", {
+        ownerId,
+        title: "Imported lentils",
+        proteinCategory: "meat-free",
+        ingredients: [
+          {
+            id: "lentils",
+            name: "red lentils",
+            quantity: "200",
+            unit: "g",
+            shoppingCategory: "pantry",
+          },
+        ],
+        steps: [{ id: "s1", text: "Simmer lentils." }],
+        servings: 2,
+        source: { type: "import", method: "text", importedAt: 1 },
+        savedAt: 1,
+        updatedAt: 1,
+      }),
+    );
+    const plan = (await asUser.query(api.mealPlans.getCurrent, space))!;
+    const request = {
+      ...space,
+      mealPlanId: plan._id,
+      expectedUpdatedAt: plan.updatedAt,
+      date: addDaysToPlanDate(planStartDate, 2),
+      importedRecipeId,
+    };
+    if (shared)
+      await expect(
+        stranger.mutation(api.mealPlans.planMeal, request),
+      ).rejects.toThrow();
+    else
+      expect(await stranger.mutation(api.mealPlans.planMeal, request)).toEqual({
+        status: "no_active_plan",
+      });
+    await expect(t.mutation(api.mealPlans.planMeal, request)).rejects.toThrow();
+    expect(await asUser.mutation(api.mealPlans.planMeal, request)).toEqual({
+      status: "planned",
+    });
+    const after = (await asUser.query(api.mealPlans.getCurrent, space))!;
+    const slot = after.mealSlots.find((slot) => slot.date === request.date)!;
+    expect(slot.title).toBe("Imported lentils");
+    expect(slot.catalogueMealId).toBeNull();
+    const snapshot = await t.run((ctx) => ctx.db.get(slot.recipeId));
+    expect(snapshot!.ownerId).toBe(householdId ?? ownerId);
+    expect(
+      shared
+        ? slot.recipeId !== importedRecipeId
+        : slot.recipeId === importedRecipeId,
+    ).toBe(true);
+    if (shared) {
+      expect(snapshot!.savedAt).toBeUndefined();
+      await t.run((ctx) =>
+        ctx.db.patch(importedRecipeId, { title: "Private edit" }),
+      );
+      expect(
+        (await asUser.query(api.mealPlans.getCurrent, space))!.mealSlots.find(
+          (s) => s.date === request.date,
+        )!.title,
+      ).toBe("Imported lentils");
+    }
+    const items = await t.run((ctx) =>
+      ctx.db.query("shoppingListItems").collect(),
+    );
+    expect(
+      items.some(
+        (item) =>
+          item.sourceRecipeIds.includes(slot.recipeId) &&
+          item.name === "red lentils",
+      ),
+    ).toBe(true);
+    expect(await asUser.mutation(api.mealPlans.planMeal, request)).toEqual({
+      status: "plan_changed",
+    });
+    // Both private and explicitly shared imported snapshots stay outside automatic planning.
+    const proposal = await asUser.query(api.mealPlans.getRegenerationProposal, {
+      ...space,
+      variant: 1,
+    });
+    expect(proposal.status).toBe("ready");
+    if (proposal.status === "ready")
+      expect(proposal.mealSlots.every((s) => s.catalogueMealId !== null)).toBe(
+        true,
+      );
+    await t.run((ctx) =>
+      ctx.db.patch(importedRecipeId, { ownerId: strangerId }),
+    );
+    await expect(
+      asUser.mutation(api.mealPlans.planMeal, {
+        ...request,
+        expectedUpdatedAt: after.updatedAt,
+      }),
+    ).rejects.toThrow("unavailable");
+  },
+);
+
+test("import picker lists saved imports only and rejects removed imports and ambiguous choices", async () => {
+  const t = createTestContext();
+  const { asUser, ownerId } = await authenticateTestUser(t);
+  await asUser.mutation(api.mealPlans.claimGuestDraft, {
+    claimKey,
+    schemaVersion: GUEST_DRAFT_SCHEMA_VERSION,
+    planStartDate,
+    servings: 4,
+    mealChoices: guestMealChoices(),
+  });
+  const recipeId = await t.run((ctx) =>
+    ctx.db.insert("recipes", {
+      ownerId,
+      title: "Unsaved import",
+      proteinCategory: "meat-free",
+      ingredients: [],
+      steps: [],
+      source: { type: "import", method: "text", importedAt: 1 },
+      updatedAt: 1,
+    }),
+  );
+  const listing = {
+    importsOnly: true,
+    paginationOpts: { numItems: 20, cursor: null },
+  };
+  expect((await asUser.query(api.recipes.listMine, listing)).page).toHaveLength(
+    0,
+  );
+  const plan = (await asUser.query(api.mealPlans.getCurrent, {}))!;
+  const request = {
+    mealPlanId: plan._id,
+    expectedUpdatedAt: plan.updatedAt,
+    date: planStartDate,
+    importedRecipeId: recipeId,
+  };
+  await expect(
+    asUser.mutation(api.mealPlans.planMeal, request),
+  ).rejects.toThrow("unavailable");
+  await t.run((ctx) => ctx.db.patch(recipeId, { savedAt: 1 }));
+  expect(
+    (await asUser.query(api.recipes.listMine, listing)).page.map((r) => r._id),
+  ).toEqual([recipeId]);
+  await expect(
+    asUser.mutation(api.mealPlans.planMeal, {
+      ...request,
+      catalogueMealId: catalogueMealIds[0],
+      catalogueVersion,
+    }),
+  ).rejects.toThrow("one recipe source");
+  const { importedRecipeId, ...missingSource } = request;
+  void importedRecipeId;
+  await expect(
+    asUser.mutation(api.mealPlans.planMeal, missingSource),
+  ).rejects.toThrow("Choose a recipe");
+  expect((await asUser.query(api.mealPlans.getCurrent, {}))!.updatedAt).toBe(
+    plan.updatedAt,
+  );
+});

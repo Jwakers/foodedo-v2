@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { useState } from "react";
 
+import { toPersonalRecipeMeal } from "@/features/recipes/use-personal-recipe";
 import { Button } from "@/components/ui/button";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
 import { useDrawerStack } from "@/components/ui/drawer-stack";
@@ -57,6 +58,10 @@ export function PlanMealSwap({
   onFiltersChange,
   onSwap,
   onOpenPreview,
+  onSwapImported,
+  onOpenImportedPreview,
+  onSourceChange,
+  source,
 }: {
   date: string;
   currentMeal?: CatalogueMealSummary;
@@ -66,21 +71,43 @@ export function PlanMealSwap({
   onFiltersChange?: (filters: RecipeFilters) => void;
   onSwap: (catalogueMealId: string) => Promise<unknown> | void;
   onOpenPreview: (catalogueMealId: string) => void;
+  source?: "Foodedo" | "Your imports";
+  onSourceChange?: (source: "Foodedo" | "Your imports") => void;
+  onSwapImported?: (recipeId: string) => void;
+  onOpenImportedPreview?: (recipeId: string) => void;
 }) {
   const { push } = useDrawerStack();
   const allergies = useAllergies();
+  const [localSource, setLocalSource] = useState<"Foodedo" | "Your imports">(
+    "Foodedo",
+  );
+  const scope = onSwapImported ? (source ?? localSource) : "Foodedo";
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { results, status, loadMore } = usePaginatedQuery(
+  const queryArgs = {
+    ...filters,
+    proteinCategories: [...filters.proteinCategories],
+    sort,
+    searchQuery,
+  };
+  const catalogueQuery = usePaginatedQuery(
     api.catalogue.list,
-    {
-      ...filters,
-      proteinCategories: [...filters.proteinCategories],
-      sort,
-      searchQuery,
-    },
+    scope === "Foodedo" ? queryArgs : "skip",
     { initialNumItems: pageSize },
   );
+  const importsQuery = usePaginatedQuery(
+    api.recipes.listMine,
+    scope === "Your imports" && onSwapImported
+      ? { ...queryArgs, importsOnly: true }
+      : "skip",
+    { initialNumItems: pageSize },
+  );
+  const { status, loadMore } =
+    scope === "Foodedo" ? catalogueQuery : importsQuery;
+  const results =
+    scope === "Foodedo"
+      ? catalogueQuery.results
+      : importsQuery.results.map(toPersonalRecipeMeal);
   const matchingCandidates = results.filter(
     (meal) => meal.id !== currentMeal?.id,
   );
@@ -129,6 +156,31 @@ export function PlanMealSwap({
                 {formatRecipeHeading(currentMeal.title)}
               </p>
             </div>
+          </div>
+        ) : null}
+
+        {onSwapImported ? (
+          <div
+            className="flex shrink-0 items-center gap-1 pb-3"
+            role="group"
+            aria-label="Recipe sources"
+          >
+            {(["Foodedo", "Your imports"] as const).map((label) => (
+              <Button
+                key={label}
+                variant="choice"
+                className="shrink-0 px-4.5 whitespace-nowrap"
+                aria-pressed={scope === label}
+                disabled={isSwapping}
+                onClick={() => {
+                  setLocalSource(label);
+                  onSourceChange?.(label);
+                  setSelectedId(null);
+                }}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
         ) : null}
 
@@ -211,7 +263,9 @@ export function PlanMealSwap({
 
         <div className="flex shrink-0 items-end justify-between pt-3 pb-2">
           <h3 className="font-display text-20 font-semibold tracking-card text-ink">
-            Good matches
+            {scope === "Your imports"
+              ? "Your imported recipes"
+              : "Good matches"}
           </h3>
           <p className="text-12 text-graphite">
             {isLoading
@@ -228,7 +282,11 @@ export function PlanMealSwap({
               selected={meal.id === selectedId}
               disabled={isSwapping}
               onSelect={() => setSelectedId(meal.id)}
-              onOpenPreview={() => onOpenPreview(meal.id)}
+              onOpenPreview={() =>
+                scope === "Your imports"
+                  ? onOpenImportedPreview?.(meal.id)
+                  : onOpenPreview(meal.id)
+              }
             />
           ))}
           {isLoading || matchingCandidates.length === 0 ? (
@@ -240,7 +298,13 @@ export function PlanMealSwap({
                 ? "Loading recipes…"
                 : hasMore
                   ? "No matches in this batch. Load more to keep looking."
-                  : "No recipes match your search or filters."}
+                  : scope === "Your imports" &&
+                      !searchQuery &&
+                      !filters.under30Minutes &&
+                      !filters.budgetFriendly &&
+                      filters.proteinCategories.length === 0
+                    ? "Your saved imported recipes will appear here."
+                    : "No recipes match your search or filters."}
             </li>
           ) : null}
         </ul>
@@ -258,7 +322,8 @@ export function PlanMealSwap({
           aria-busy={isSwapping || undefined}
           onClick={() => {
             if (!selectedMeal || isSwapping) return;
-            void onSwap(selectedMeal.id);
+            if (scope === "Your imports") onSwapImported?.(selectedMeal.id);
+            else void onSwap(selectedMeal.id);
           }}
         >
           <span className="truncate">

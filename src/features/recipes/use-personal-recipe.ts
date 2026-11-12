@@ -6,6 +6,7 @@ import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
+import { recipeAllergyEvidence } from "@/lib/domain/allergies";
 import type {
   CatalogueMeal,
   RecipeReviewIssue,
@@ -39,6 +40,7 @@ export function toPersonalRecipeMeal(
   recipe: PersonalRecipeQueryResult,
 ): PersonalRecipeMeal {
   return {
+    ...recipeAllergyEvidence(recipe),
     id: recipe._id,
     householdSnapshot: recipe.householdSnapshot,
     version: 1,

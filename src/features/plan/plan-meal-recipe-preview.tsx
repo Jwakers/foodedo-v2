@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
 import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { RecipeDetailContent } from "@/features/recipes/recipe-detail-content";
-import type { CatalogueMeal } from "@/lib/domain/recipes";
+import type { CatalogueMeal, RecipeSource } from "@/lib/domain/recipes";
 
 export function PlanMealRecipePreview({
   meal,
+  source,
   requestedServings,
   isSwapping = false,
   onSwap,
 }: {
   meal: CatalogueMeal;
+  source?: RecipeSource;
   requestedServings?: number;
   isSwapping?: boolean;
   onSwap: () => void;
@@ -30,6 +32,7 @@ export function PlanMealRecipePreview({
       <DrawerBody className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-0 pb-0">
         <RecipeDetailContent
           meal={meal}
+          source={source}
           initialServings={requestedServings}
           planServings={requestedServings}
           presentation="swapPreview"

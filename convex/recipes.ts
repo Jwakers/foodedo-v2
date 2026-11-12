@@ -347,6 +347,7 @@ export const listMine = query({
   args: {
     paginationOpts: paginationOptsValidator,
     excludeCatalogue: v.optional(v.boolean()),
+    importsOnly: v.optional(v.boolean()),
     ...listingFilterArgs,
   },
   returns: paginationResultValidator(recipeViewValidator),
@@ -362,9 +363,16 @@ export const listMine = query({
           ? reader.withIndex("by_owner_and_cost", (q) =>
               q.eq("ownerId", ownerId),
             )
-          : reader.withIndex("by_owner_and_saved_at", (q) =>
-              q.eq("ownerId", ownerId).gt("savedAt", 0),
-            )
+          : args.importsOnly
+            ? reader.withIndex("by_owner_and_source_and_saved_at", (q) =>
+                q
+                  .eq("ownerId", ownerId)
+                  .eq("source.type", "import")
+                  .gt("savedAt", 0),
+              )
+            : reader.withIndex("by_owner_and_saved_at", (q) =>
+                q.eq("ownerId", ownerId).gt("savedAt", 0),
+              )
     )
       .order("desc")
       .filterWith(
@@ -372,6 +380,7 @@ export const listMine = query({
           recipe.savedAt !== undefined &&
           recipe.savedAt > 0 &&
           (!args.excludeCatalogue || recipe.source.type !== "catalogue") &&
+          (!args.importsOnly || recipe.source.type === "import") &&
           matchesRecipeListing(recipe, args),
       );
     const result = await recipes.paginate(

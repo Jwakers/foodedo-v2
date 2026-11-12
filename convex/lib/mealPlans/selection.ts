@@ -135,8 +135,8 @@ export async function getPlanningCandidates(
   const signals = await getMealSelectionSignals(ctx, ownerId);
   const allergies = await effectiveAllergies(ctx, ownerId);
   const byKey = new Map<string, PlanCandidate>();
-  // Private imports stay private. Household imports become eligible only after
-  // somebody has explicitly put a snapshot into the shared space.
+  // Private saved catalogue revisions and already-shared manual recipes may
+  // contribute candidates. Imports remain manual-only in either space.
   const recipes =
     ownerId === actorId
       ? await ctx.db
@@ -152,6 +152,8 @@ export async function getPlanningCandidates(
           .order("desc")
           .take(maximumPersonalPlanCandidates);
   for (const recipe of recipes) {
+    // Imports are manual choices only, including snapshots explicitly shared into a plan.
+    if (recipe.source.type === "import") continue;
     // Use the current public revision for catalogue meals, not a member's edited copy.
     if (ownerId !== actorId && recipe.source.type === "catalogue") continue;
     if (!isAllergyEligible(recipeAllergyEvidence(recipe), allergies)) continue;

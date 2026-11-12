@@ -13,12 +13,19 @@ import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   DrawerStack,
   DrawerStackView,
   useDrawerStack,
 } from "@/components/ui/drawer-stack";
+import { usePersonalRecipe } from "@/features/recipes/use-personal-recipe";
 import { PlanMealActions } from "@/features/plan/plan-meal-actions";
 import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
 import { PlanMealFilters } from "@/features/plan/plan-meal-filters";
@@ -39,6 +46,7 @@ export function PlanMealRow({
   row,
   onRemoveMeal,
   onReplaceMeal,
+  onReplaceImportedMeal,
   onChooseMeal,
   readOnly = false,
   recipeHref,
@@ -48,6 +56,10 @@ export function PlanMealRow({
   onReplaceMeal?: (
     date: string,
     catalogueMealId: string,
+  ) => Promise<unknown> | void;
+  onReplaceImportedMeal?: (
+    date: string,
+    recipeId: string,
   ) => Promise<unknown> | void;
   onChooseMeal?: (date: string) => Promise<unknown> | void;
   readOnly?: boolean;
@@ -78,6 +90,7 @@ export function PlanMealRow({
             date={row.date}
             mealTitle="Add a meal"
             onReplaceMeal={onReplaceMeal}
+            onReplaceImportedMeal={onReplaceImportedMeal}
             onChooseMeal={onChooseMeal}
             trigger={
               <Button type="button" variant="leaf" size="chip">
@@ -95,6 +108,7 @@ export function PlanMealRow({
       row={row}
       onRemoveMeal={onRemoveMeal}
       onReplaceMeal={onReplaceMeal}
+      onReplaceImportedMeal={onReplaceImportedMeal}
       onChooseMeal={onChooseMeal}
       readOnly={readOnly}
       recipeHref={recipeHref}
@@ -106,6 +120,7 @@ function PlannedMealRow({
   row,
   onRemoveMeal,
   onReplaceMeal,
+  onReplaceImportedMeal,
   onChooseMeal,
   readOnly,
   recipeHref,
@@ -115,6 +130,10 @@ function PlannedMealRow({
   onReplaceMeal?: (
     date: string,
     catalogueMealId: string,
+  ) => Promise<unknown> | void;
+  onReplaceImportedMeal?: (
+    date: string,
+    recipeId: string,
   ) => Promise<unknown> | void;
   onChooseMeal?: (date: string) => Promise<unknown> | void;
   readOnly: boolean;
@@ -205,6 +224,7 @@ function PlannedMealRow({
           requestedServings={row.requestedServings}
           onRemoveMeal={onRemoveMeal}
           onReplaceMeal={onReplaceMeal}
+          onReplaceImportedMeal={onReplaceImportedMeal}
           onChooseMeal={onChooseMeal}
           trigger={
             <Button
@@ -229,6 +249,7 @@ function PlanMealActionsDrawer({
   currentMeal,
   onRemoveMeal,
   onReplaceMeal,
+  onReplaceImportedMeal,
   onChooseMeal,
   trigger,
 }: {
@@ -241,6 +262,10 @@ function PlanMealActionsDrawer({
     date: string,
     catalogueMealId: string,
   ) => Promise<unknown> | void;
+  onReplaceImportedMeal?: (
+    date: string,
+    recipeId: string,
+  ) => Promise<unknown> | void;
   onChooseMeal?: (date: string) => Promise<unknown> | void;
   trigger: ReactNode;
 }) {
@@ -250,6 +275,13 @@ function PlanMealActionsDrawer({
   const [isRemoving, setIsRemoving] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [isChoosing, setIsChoosing] = useState(false);
+  const [recipeSource, setRecipeSource] = useState<"Foodedo" | "Your imports">(
+    "Foodedo",
+  );
+  const [previewImportedId, setPreviewImportedId] = useState<string | null>(
+    null,
+  );
+  const importedPreview = usePersonalRecipe(previewImportedId);
   const [previewMealId, setPreviewMealId] = useState<string | null>(null);
   const {
     filters: recipeFilters,
@@ -263,6 +295,8 @@ function PlanMealActionsDrawer({
     if (!nextOpen) {
       setStackKey((value) => value + 1);
       setPreviewMealId(null);
+      setPreviewImportedId(null);
+      setRecipeSource("Foodedo");
     }
   }, []);
 
@@ -275,24 +309,23 @@ function PlanMealActionsDrawer({
   );
 
   const runSwap = useCallback(
-    (catalogueMealId: string) => {
-      if (!onReplaceMeal || isSwapping) return;
+    (catalogueMealId: string, imported = false) => {
+      const replace = imported ? onReplaceImportedMeal : onReplaceMeal;
+      if (!replace || isSwapping) return;
       void (async () => {
         setIsSwapping(true);
         try {
-          await onReplaceMeal(date, catalogueMealId);
+          await replace(date, catalogueMealId);
           setOpen(false);
         } catch (error) {
-          console.error("Failed to swap guest plan meal.", error);
-          toast.error(
-            "Foodedo couldn't swap that meal. Check storage access and try again.",
-          );
+          console.error("Failed to swap plan meal.", error);
+          toast.error("Foodedo couldn’t update that meal. Please try again.");
         } finally {
           setIsSwapping(false);
         }
       })();
     },
-    [date, isSwapping, onReplaceMeal],
+    [date, isSwapping, onReplaceMeal, onReplaceImportedMeal],
   );
 
   return (
@@ -365,13 +398,25 @@ function PlanMealActionsDrawer({
               sort={recipeSort}
               onFiltersChange={setRecipeFilters}
               onSwap={runSwap}
-              onOpenPreview={setPreviewMealId}
+              onOpenPreview={(id) => {
+                setPreviewImportedId(null);
+                setPreviewMealId(id);
+              }}
+              onSwapImported={
+                onReplaceImportedMeal ? (id) => runSwap(id, true) : undefined
+              }
+              source={recipeSource}
+              onSourceChange={setRecipeSource}
+              onOpenImportedPreview={(id) => {
+                setPreviewMealId(null);
+                setPreviewImportedId(id);
+              }}
             />
           </DrawerStackView>
 
           <DrawerStackView id={planMealDrawerViews.filters} layout="hug">
             <PlanMealFilters
-              meals={candidates}
+              meals={recipeSource === "Your imports" ? undefined : candidates}
               filters={recipeFilters}
               sort={recipeSort}
               onApply={(filters, sort) => {
@@ -386,14 +431,36 @@ function PlanMealActionsDrawer({
           </DrawerStackView>
 
           <DrawerStackView id={planMealDrawerViews.preview} layout="fill">
-            {previewMeal ? (
+            {importedPreview || previewMeal ? (
               <PlanMealRecipePreview
                 requestedServings={requestedServings}
-                meal={previewMeal}
+                meal={(importedPreview ?? previewMeal)!}
+                source={importedPreview?.source}
                 isSwapping={isSwapping}
-                onSwap={() => runSwap(previewMeal.id)}
+                onSwap={() =>
+                  importedPreview
+                    ? runSwap(importedPreview.id, true)
+                    : runSwap(previewMeal!.id)
+                }
               />
-            ) : null}
+            ) : (
+              <>
+                <DrawerStackHeader
+                  title="Recipe details"
+                  closeLabel="Close recipe details"
+                />
+                <DrawerBody>
+                  <p
+                    className="py-12 text-center text-14 text-graphite"
+                    role="status"
+                  >
+                    {importedPreview === null
+                      ? "This recipe is no longer available. Choose another recipe."
+                      : "Loading recipe…"}
+                  </p>
+                </DrawerBody>
+              </>
+            )}
           </DrawerStackView>
         </DrawerStack>
       </DrawerContent>
@@ -437,6 +504,10 @@ function SwapPane({
   onFiltersChange,
   onSwap,
   onOpenPreview,
+  onSwapImported,
+  onOpenImportedPreview,
+  onSourceChange,
+  source,
 }: {
   date: string;
   currentMeal?: Extract<GuestPlanMealRow, { kind: "planned" }>["meal"];
@@ -447,6 +518,10 @@ function SwapPane({
   onFiltersChange: (filters: RecipeFilters) => void;
   onSwap: (catalogueMealId: string) => void;
   onOpenPreview: (catalogueMealId: string) => void;
+  source: "Foodedo" | "Your imports";
+  onSourceChange: (source: "Foodedo" | "Your imports") => void;
+  onSwapImported?: (recipeId: string) => void;
+  onOpenImportedPreview: (recipeId: string) => void;
 }) {
   const { push } = useDrawerStack();
 
@@ -459,6 +534,13 @@ function SwapPane({
       sort={sort}
       onFiltersChange={onFiltersChange}
       onSwap={onSwap}
+      onSwapImported={onSwapImported}
+      source={source}
+      onSourceChange={onSourceChange}
+      onOpenImportedPreview={(id) => {
+        onOpenImportedPreview(id);
+        push(planMealDrawerViews.preview);
+      }}
       onOpenPreview={(catalogueMealId) => {
         onOpenPreview(catalogueMealId);
         push(planMealDrawerViews.preview);

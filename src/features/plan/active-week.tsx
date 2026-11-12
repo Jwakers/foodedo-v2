@@ -280,6 +280,19 @@ export function ActiveWeek({
                     }
                   : undefined
               }
+              onReplaceImportedMeal={async (date, recipeId) => {
+                const result = await putMeal({
+                  ...spaceArgs,
+                  mealPlanId: plan._id as Id<"mealPlans">,
+                  expectedUpdatedAt: plan.updatedAt,
+                  date,
+                  importedRecipeId: recipeId as Id<"recipes">,
+                });
+                if (result.status !== "planned") {
+                  toast.error("This week changed. Review the latest week.");
+                  throw new Error("Plan changed");
+                }
+              }}
               onReplaceMeal={async (date, catalogueMealId) => {
                 const selected = catalogue?.meals.find(
                   (meal) => meal.id === catalogueMealId,

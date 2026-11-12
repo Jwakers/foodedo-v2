@@ -17,7 +17,7 @@ export function PlanMealFilters({
   sort,
   onApply,
 }: {
-  meals: ReadonlyArray<CatalogueMealSummary>;
+  meals?: ReadonlyArray<CatalogueMealSummary>;
   filters: RecipeFilters;
   sort: RecipeSort;
   onApply: (filters: RecipeFilters, sort: RecipeSort) => void;
@@ -35,8 +35,10 @@ export function PlanMealFilters({
         filters={filters}
         sort={sort}
         onOpenSort={() => push(planMealDrawerViews.sort)}
-        getMatchCount={(draftFilters) =>
-          filterRecipes(meals, draftFilters).length
+        getMatchCount={
+          meals
+            ? (draftFilters) => filterRecipes(meals, draftFilters).length
+            : undefined
         }
         description="Only choose what would make this meal a better fit."
         onApply={(nextFilters) => {
