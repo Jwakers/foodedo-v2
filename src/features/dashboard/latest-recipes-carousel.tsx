@@ -4,11 +4,11 @@ import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
 import {
-  DashboardCarousel,
-  DashboardCarouselCard,
-  DashboardCarouselList,
-  DashboardCarouselItem,
-} from "@/features/dashboard/dashboard-carousel";
+  RecipeCarousel,
+  RecipeCarouselCard,
+  RecipeCarouselList,
+  RecipeCarouselItem,
+} from "@/features/recipes/recipe-carousel";
 import { catalogueBrowsePath } from "@/lib/routing/recipes";
 
 export function LatestRecipesCarousel() {
@@ -19,7 +19,7 @@ export function LatestRecipesCarousel() {
   });
 
   return (
-    <DashboardCarousel
+    <RecipeCarousel
       headingId="latest-recipes-heading"
       title="Latest recipes"
       href="/recipes"
@@ -37,19 +37,19 @@ export function LatestRecipesCarousel() {
           New recipes will appear here soon.
         </p>
       ) : (
-        <DashboardCarouselList>
+        <RecipeCarouselList>
           {recipes.page.map((meal) => (
-            <DashboardCarouselItem key={meal.id}>
-              <DashboardCarouselCard
+            <RecipeCarouselItem key={meal.id}>
+              <RecipeCarouselCard
                 meal={meal}
                 title={meal.title}
                 imageSrc={meal.imageSrc}
                 href={catalogueBrowsePath(meal.slug)}
               />
-            </DashboardCarouselItem>
+            </RecipeCarouselItem>
           ))}
-        </DashboardCarouselList>
+        </RecipeCarouselList>
       )}
-    </DashboardCarousel>
+    </RecipeCarousel>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { RecipeAllergyBadge } from "@/features/allergies/recipe-allergy-badge";
+
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,11 +14,13 @@ import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 
+import type { AllergyEvidence } from "@/lib/domain/allergies";
+
 const CarouselLibraryContext = createContext<ReturnType<
   typeof useCatalogueRecipeLibrary
 > | null>(null);
 
-export function DashboardCarousel({
+export function RecipeCarousel({
   headingId,
   title,
   href,
@@ -33,49 +37,63 @@ export function DashboardCarousel({
   action: string;
   children: ReactNode;
 }) {
-  const library = useCatalogueRecipeLibrary();
-
-  return (
-    <CarouselLibraryContext.Provider value={showSaveButton ? library : null}>
-      <section
-        aria-labelledby={headingId}
-        className={cn("flex flex-col gap-3", className)}
+  const carousel = (
+    <section
+      aria-labelledby={headingId}
+      className={cn("flex flex-col gap-3", className)}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2
+          id={headingId}
+          className="font-display text-22 font-semibold leading-6.5 text-ink"
+        >
+          {title}
+        </h2>
+        <ButtonLink href={href} variant="inline" className="shrink-0 text-ink">
+          {action}
+          <ArrowRight aria-hidden="true" className="size-3.5" />
+        </ButtonLink>
+      </div>
+      <div
+        tabIndex={0}
+        role="group"
+        aria-label={`${title} carousel`}
+        className="-mx-page-inline snap-x snap-mandatory scroll-px-page-inline overflow-x-auto pb-1 scrollbar-none focus-visible:outline-2 focus-visible:outline-cadmium sm:-mx-8 sm:scroll-px-8"
       >
-        <div className="flex items-center justify-between gap-3">
-          <h2
-            id={headingId}
-            className="font-display text-22 font-semibold leading-6.5 text-ink"
-          >
-            {title}
-          </h2>
-          <ButtonLink
-            href={href}
-            variant="inline"
-            className="shrink-0 text-ink"
-          >
-            {action}
-            <ArrowRight aria-hidden="true" className="size-3.5" />
-          </ButtonLink>
-        </div>
-        <div className="-mx-page-inline snap-x snap-mandatory scroll-px-page-inline overflow-x-auto pb-1 scrollbar-none sm:-mx-8 sm:scroll-px-8">
-          {children}
-        </div>
-      </section>
+        {children}
+      </div>
+    </section>
+  );
+
+  return showSaveButton ? (
+    <CarouselLibraryProvider>{carousel}</CarouselLibraryProvider>
+  ) : (
+    <CarouselLibraryContext.Provider value={null}>
+      {carousel}
     </CarouselLibraryContext.Provider>
   );
 }
 
-export function DashboardCarouselList({ children }: { children: ReactNode }) {
+function CarouselLibraryProvider({ children }: { children: ReactNode }) {
+  const library = useCatalogueRecipeLibrary();
+  return (
+    <CarouselLibraryContext.Provider value={library}>
+      {children}
+    </CarouselLibraryContext.Provider>
+  );
+}
+
+export function RecipeCarouselList({ children }: { children: ReactNode }) {
   return (
     <ul className="flex w-max gap-2 px-page-inline sm:px-8">{children}</ul>
   );
 }
 
-export function DashboardCarouselItem({ children }: { children: ReactNode }) {
+export function RecipeCarouselItem({ children }: { children: ReactNode }) {
   return <li className="w-37 shrink-0 snap-start">{children}</li>;
 }
 
-export function DashboardCarouselCard({
+export function RecipeCarouselCard({
   title,
   imageSrc,
   href,
@@ -86,7 +104,7 @@ export function DashboardCarouselCard({
   imageSrc?: string | null;
   href: string | null;
   meta?: ReactNode;
-  meal: Pick<CatalogueMealSummary, "id" | "version">;
+  meal: Pick<CatalogueMealSummary, "id" | "version"> & Partial<AllergyEvidence>;
 }) {
   const library = useContext(CarouselLibraryContext);
   const content = (
@@ -101,6 +119,7 @@ export function DashboardCarouselCard({
             className="object-cover"
           />
         ) : null}
+        <RecipeAllergyBadge evidence={meal} />
       </div>
       {meta ? (
         <p className="text-11 font-bold tracking-overline text-graphite uppercase">

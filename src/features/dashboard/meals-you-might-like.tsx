@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
-  DashboardCarousel,
-  DashboardCarouselCard,
-  DashboardCarouselItem,
-  DashboardCarouselList,
-} from "@/features/dashboard/dashboard-carousel";
+  RecipeCarousel,
+  RecipeCarouselCard,
+  RecipeCarouselItem,
+  RecipeCarouselList,
+} from "@/features/recipes/recipe-carousel";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { useHouseholdSpace } from "@/features/household/household-context";
 import { useLocalPlanExclusions } from "@/features/dashboard/use-local-plan-exclusions";
@@ -89,7 +89,7 @@ function DiscoveryForSpace({
 
   if (loading || unavailable) {
     return (
-      <DashboardCarousel
+      <RecipeCarousel
         headingId="discovery-heading"
         title="Meals you might like"
         href="/recipes"
@@ -115,7 +115,7 @@ function DiscoveryForSpace({
             </Button>
           ) : null}
         </div>
-      </DashboardCarousel>
+      </RecipeCarousel>
     );
   }
   if (result.status !== "ready") return null;
@@ -132,25 +132,25 @@ function DiscoverySelection({
   if (meals.length === 0) return null;
 
   return (
-    <DashboardCarousel
+    <RecipeCarousel
       headingId="discovery-heading"
       title="Meals you might like"
       href="/recipes"
       action="Browse recipes"
       className={className}
     >
-      <DashboardCarouselList>
+      <RecipeCarouselList>
         {meals.map((meal) => (
-          <DashboardCarouselItem key={meal.id}>
-            <DashboardCarouselCard
+          <RecipeCarouselItem key={meal.id}>
+            <RecipeCarouselCard
               title={meal.title}
               imageSrc={meal.imageSrc}
               href={catalogueBrowsePath(meal.slug)}
               meal={meal}
             />
-          </DashboardCarouselItem>
+          </RecipeCarouselItem>
         ))}
-      </DashboardCarouselList>
-    </DashboardCarousel>
+      </RecipeCarouselList>
+    </RecipeCarousel>
   );
 }

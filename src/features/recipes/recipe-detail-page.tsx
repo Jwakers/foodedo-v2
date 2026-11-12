@@ -19,6 +19,7 @@ import { useRecipeSource } from "@/features/recipes/use-recipe-source";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { RecipeAccountRecovery } from "./recipe-account-recovery";
 import { RecipeReviewDrawer } from "@/features/recipes/recipe-review-drawer";
+import { LiveRelatedRecipes } from "./related-recipes-carousel";
 import { ImportedRecipeActions } from "./imported-recipe-actions";
 
 export function RecipeDetailPage() {
@@ -114,6 +115,7 @@ export function RecipeDetailPage() {
           personalRecipeId ? undefined : <PlanThisMeal meal={meal} />
         }
       />
+      <LiveRelatedRecipes meal={meal} />
       {personalRecipeId && personalMeal && !personalMeal.householdSnapshot ? (
         <RecipeReviewDrawer
           open={repairOpen}

@@ -1,9 +1,8 @@
 "use client";
 
-import { useAllergies } from "@/features/allergies/allergy-context";
-import { allergyWarningText } from "@/features/allergies/allergy-warning";
+import { RecipeAllergyBadge } from "@/features/allergies/recipe-allergy-badge";
+
 import type { AllergyEvidence } from "@/lib/domain/allergies";
-import { TriangleAlert } from "lucide-react";
 import { formatRecipeHeading } from "@/lib/domain/recipe-headings";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,8 +37,6 @@ export function RecipeCard({
   onOpen?: () => void;
   showSave?: boolean;
 }) {
-  const { effectiveIds } = useAllergies();
-  const allergyLabel = allergyWarningText(allergyEvidence, effectiveIds);
   const media = (
     <div className="relative aspect-167/116 w-full overflow-hidden rounded-surface bg-mist">
       {imageSrc ? (
@@ -57,15 +54,7 @@ export function RecipeCard({
           </span>
         </div>
       )}
-      {allergyLabel ? (
-        <span className="absolute bottom-2 left-2 right-2 flex w-fit max-w-[calc(100%-16px)] items-start gap-1 rounded-md bg-cadmium-soft px-2 py-1 text-12 font-semibold text-cadmium">
-          <TriangleAlert
-            aria-hidden="true"
-            className="mt-0.5 size-3 shrink-0"
-          />
-          {allergyLabel}
-        </span>
-      ) : null}
+      <RecipeAllergyBadge evidence={allergyEvidence} />
     </div>
   );
 

@@ -39,15 +39,23 @@ function client(url: string) {
 // Cache Components remains disabled for the shared static-export architecture.
 // unstable_cache supports cached SDK queries without changing that architecture.
 export const getPublishedRecipes = cache(
-  async (): Promise<CatalogueMealSummary[]> => {
+  async (
+    revalidateSeconds = directoryRevalidateSeconds,
+  ): Promise<CatalogueMealSummary[]> => {
     const url = deploymentUrl();
     return unstable_cache(
       async () => {
         const catalogue = await client(url).query(api.catalogue.getCurrent, {});
         return catalogue?.meals ?? [];
       },
-      ["public-recipes-list-v1", url],
-      { revalidate: directoryRevalidateSeconds },
+      [
+        "public-recipes-list-v1",
+        url,
+        ...(revalidateSeconds === directoryRevalidateSeconds
+          ? []
+          : [String(revalidateSeconds)]),
+      ],
+      { revalidate: revalidateSeconds },
     )();
   },
 );

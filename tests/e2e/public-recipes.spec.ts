@@ -253,3 +253,33 @@ test("recipe sharing serves a compact JPEG through the Open Graph image URL", as
     (await request.get("/recipes/no-such-recipe/social-image")).status(),
   ).toBe(404);
 });
+
+test("recipe cross-links render without JavaScript and vary between pages", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    const selections: string[][] = [];
+    for (const slug of ["beef-lasagne", "chicken-katsu-curry"]) {
+      await page.goto(`/recipes/${slug}`);
+      const section = page
+        .getByRole("region", { name: "More recipes to try", exact: true })
+        .first();
+      const links = section.getByRole("list").getByRole("link");
+      await expect(links).toHaveCount(6);
+      const hrefs = await links.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("href")!),
+      );
+      expect(new Set(hrefs).size).toBe(6);
+      expect(hrefs).not.toContain(`/recipes/${slug}`);
+      expect(hrefs.every((href) => /^\/recipes\/[a-z0-9-]+$/.test(href))).toBe(
+        true,
+      );
+      selections.push(hrefs.sort());
+    }
+    expect(selections[0]).not.toEqual(selections[1]);
+  } finally {
+    await context.close();
+  }
+});
