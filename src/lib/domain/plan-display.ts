@@ -292,6 +292,28 @@ export function isNearActivePlanEnd({
   return today >= addCalendarDays(endDate, -1);
 }
 
+export type NextPlanTiming = "ending" | "ended" | "resolved";
+
+/** Calendar timing invites planning; only explicit statuses resolve meals. */
+export function nextPlanTiming({
+  endDate,
+  mealSlots,
+  today = todayPlanDate(),
+}: {
+  endDate: string;
+  mealSlots: ReadonlyArray<{ status: "planned" | "cooked" | "skipped" }>;
+  today?: string;
+}): NextPlanTiming | null {
+  if (today > endDate) return "ended";
+  if (
+    mealSlots.length > 0 &&
+    mealSlots.every((slot) => slot.status !== "planned")
+  ) {
+    return "resolved";
+  }
+  return isNearActivePlanEnd({ endDate, today }) ? "ending" : null;
+}
+
 function formatLocalPlanDate(date: Date) {
   return [
     date.getFullYear().toString().padStart(4, "0"),

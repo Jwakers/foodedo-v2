@@ -16,7 +16,8 @@ import { useHouseholdSpace } from "@/features/household/household-context";
 import { PlanMealSelector } from "@/features/dashboard/plan-meal-selector";
 import { MealsYouMightLike } from "@/features/dashboard/meals-you-might-like";
 import { LatestRecipesCarousel } from "@/features/dashboard/latest-recipes-carousel";
-import { readablePlanMeals } from "@/lib/domain/plan-display";
+import { readablePlanMeals, nextPlanTiming } from "@/lib/domain/plan-display";
+import { NextPlanPrompt } from "@/features/plan/next-plan-prompt";
 import { planMealSelectionKey } from "@/lib/platform/plan-meal-selection-store";
 import { api } from "../../../convex/_generated/api";
 
@@ -41,6 +42,15 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
     () => readablePlanMeals(plan.mealSlots),
     [plan.mealSlots],
   );
+  const nextTiming = nextPlanTiming(plan);
+  const nextPlanPrompt = nextTiming ? (
+    <NextPlanPrompt plan={plan} timing={nextTiming}>
+      <ButtonLink href="/week/setup?mode=next" className="w-full">
+        Start next week
+        <ArrowRight aria-hidden="true" className="size-4.5" />
+      </ButtonLink>
+    </NextPlanPrompt>
+  ) : null;
   const selectionKey = planMealSelectionKey(spaceKey, plan._id);
   return (
     <section
@@ -76,6 +86,7 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
           </div>
         </div>
       ) : null}
+      {nextTiming !== "ending" ? nextPlanPrompt : null}
       {meals.length > 0 ? (
         <PlanMealSelector
           key={selectionKey}
@@ -86,6 +97,8 @@ export function ActivePlanDashboard({ plan }: { plan: ActiveMealPlan }) {
       ) : (
         <EmptyPlanNotice />
       )}
+
+      {nextTiming === "ending" ? nextPlanPrompt : null}
 
       <ShoppingListReady mealCount={plan.mealSlots.length} />
       <LatestRecipesCarousel />

@@ -8,7 +8,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useMemo } from "react";
 
 import { ContextSelector } from "@/features/household/context-selector";
@@ -21,7 +21,7 @@ import { PlanMealRow } from "@/features/plan/plan-meal-row";
 import {
   formatGuestPlanSummary,
   formatPlanDateRange,
-  isNearActivePlanEnd,
+  nextPlanTiming,
   resolveActivePlanWeekRows,
   type ActivePlanWeekSlot,
 } from "@/lib/domain/plan-display";
@@ -34,7 +34,7 @@ import {
   recipeDetailPath,
 } from "@/lib/routing/recipes";
 import { catalogueMealReferenceKey } from "@/lib/domain/recipes";
-import { cn } from "@/lib/utils/cn";
+import { NextPlanPrompt } from "@/features/plan/next-plan-prompt";
 
 export type ActiveWeekPlan = {
   _id: string;
@@ -179,7 +179,7 @@ export function ActiveWeek({
   const plannedCount = plan.mealSlots.filter(
     (slot) => slot.status !== "skipped",
   ).length;
-  const nearEnd = !isArchived && isNearActivePlanEnd({ endDate: plan.endDate });
+  const nextTiming = isArchived ? null : nextPlanTiming(plan);
   const summary = isArchived
     ? `${formatPlanDateRange(plan)} · archived`
     : formatGuestPlanSummary({
@@ -253,6 +253,22 @@ export function ActiveWeek({
             className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-graphite"
           />
         </div>
+      ) : null}
+
+      {nextTiming ? (
+        <NextPlanPrompt plan={plan} timing={nextTiming} className="mt-5">
+          <Button
+            className="w-full"
+            disabled={hasPendingAction}
+            aria-busy={isStartingNextPlan}
+            onClick={() => {
+              void onStartNextPlan();
+            }}
+          >
+            {isStartingNextPlan ? "Starting next plan…" : "Start next week"}
+            <ArrowRight aria-hidden="true" className="size-4.5" />
+          </Button>
+        </NextPlanPrompt>
       ) : null}
 
       <ul className="mt-5">
@@ -358,33 +374,26 @@ export function ActiveWeek({
             variant="inline"
             disabled={hasPendingAction}
             aria-busy={isReplanning}
-            className="h-auto px-0 text-14 font-medium text-graphite"
+            className="min-h-11 px-0 text-14 font-medium text-graphite"
             onClick={() => {
               void onReplan();
             }}
           >
             {isReplanning ? "Replanning this week…" : "Replan this week"}
           </Button>
-          <Button
-            variant="inline"
-            disabled={hasPendingAction}
-            aria-busy={isStartingNextPlan}
-            className={cn(
-              "h-auto px-0 text-14",
-              nearEnd
-                ? "font-semibold text-cadmium"
-                : "font-medium text-graphite",
-            )}
-            onClick={() => {
-              void onStartNextPlan();
-            }}
-          >
-            {isStartingNextPlan
-              ? "Starting next plan…"
-              : nearEnd
-                ? "Start next plan →"
-                : "Start next plan"}
-          </Button>
+          {!nextTiming ? (
+            <Button
+              variant="inline"
+              disabled={hasPendingAction}
+              aria-busy={isStartingNextPlan}
+              className="min-h-11 px-0 text-14 font-medium text-graphite"
+              onClick={() => {
+                void onStartNextPlan();
+              }}
+            >
+              {isStartingNextPlan ? "Starting next plan…" : "Start next week"}
+            </Button>
+          ) : null}
         </div>
       )}
     </main>

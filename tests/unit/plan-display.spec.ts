@@ -7,6 +7,7 @@ import {
   formatPlanDateRange,
   formatProteinCategoryLabel,
   isNearActivePlanEnd,
+  nextPlanTiming,
   readablePlanMeals,
   resolveActivePlanWeekRows,
   resolveGuestPlanMealRows,
@@ -215,7 +216,7 @@ test("fills free days only inside the active plan's date range", () => {
   expect(rows[3]?.kind).toBe("empty");
 });
 
-test("detects the end of an active plan for quieter Start next plan", () => {
+test("detects the day before the plan ends and elapsed date ranges", () => {
   expect(
     isNearActivePlanEnd({ endDate: "2026-09-04", today: "2026-09-03" }),
   ).toBe(true);
@@ -228,4 +229,62 @@ test("detects the end of an active plan for quieter Start next plan", () => {
   expect(
     isNearActivePlanEnd({ endDate: "2026-09-04", today: "2026-10-26" }),
   ).toBe(true);
+});
+
+test("suggests the next plan for resolved meals without inferring cooking from dates", () => {
+  const plan = { endDate: "2026-09-08", today: "2026-09-03" };
+  expect(
+    nextPlanTiming({
+      ...plan,
+      mealSlots: [{ status: "cooked" }, { status: "skipped" }],
+    }),
+  ).toBe("resolved");
+  expect(nextPlanTiming({ ...plan, mealSlots: [{ status: "skipped" }] })).toBe(
+    "resolved",
+  );
+  expect(
+    nextPlanTiming({
+      ...plan,
+      mealSlots: [{ status: "cooked" }, { status: "planned" }],
+    }),
+  ).toBeNull();
+  expect(nextPlanTiming({ ...plan, mealSlots: [] })).toBeNull();
+  expect(
+    nextPlanTiming({
+      ...plan,
+      today: "2026-09-07",
+      mealSlots: [{ status: "planned" }],
+    }),
+  ).toBe("ending");
+  expect(
+    nextPlanTiming({
+      ...plan,
+      today: "2026-09-09",
+      mealSlots: [{ status: "planned" }],
+    }),
+  ).toBe("ended");
+});
+
+test("keeps the last plan day available for cooking and handles year boundaries", () => {
+  expect(
+    nextPlanTiming({
+      endDate: "2026-12-31",
+      today: "2026-12-31",
+      mealSlots: [{ status: "planned" }],
+    }),
+  ).toBe("ending");
+  expect(
+    nextPlanTiming({
+      endDate: "2026-12-31",
+      today: "2027-01-01",
+      mealSlots: [{ status: "planned" }],
+    }),
+  ).toBe("ended");
+  expect(
+    nextPlanTiming({
+      endDate: "2027-01-01",
+      today: "2026-12-31",
+      mealSlots: [{ status: "cooked" }],
+    }),
+  ).toBe("resolved");
 });
