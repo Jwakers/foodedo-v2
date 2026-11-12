@@ -40,7 +40,7 @@ import {
 import { formatPersonalRecipeSourceLabel } from "@/lib/domain/recipe-display";
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import type { RecipeDirectorySeed } from "@/lib/domain/recipe-directory";
-import { RecipePagination } from "./recipe-pagination";
+import { LoadMoreRecipes, RecipePagination } from "./recipe-pagination";
 import { recipeBrowseEvent, useWebRecipeBrowse } from "./use-web-recipe-browse";
 import { recipeBrowseHref } from "@/lib/domain/recipe-browse";
 import { toggleRecipeQuickFilter } from "./use-recipe-filters";
@@ -582,7 +582,7 @@ function CatalogueGrid({
         </ul>
       )}
       {pagination ?? (
-        <LoadMoreButton
+        <LoadMoreRecipes
           canLoadMore={canLoadMore}
           isLoadingMore={isLoadingMore}
           onLoadMore={onLoadMore}
@@ -662,36 +662,13 @@ function YoursGrid({
         </>
       )}
       {pagination ?? (
-        <LoadMoreButton
+        <LoadMoreRecipes
           canLoadMore={canLoadMore}
           isLoadingMore={isLoadingMore}
           onLoadMore={onLoadMore}
         />
       )}
     </section>
-  );
-}
-
-function LoadMoreButton({
-  canLoadMore,
-  isLoadingMore,
-  onLoadMore,
-}: {
-  canLoadMore: boolean;
-  isLoadingMore: boolean;
-  onLoadMore: () => void;
-}) {
-  if (!canLoadMore && !isLoadingMore) return null;
-  return (
-    <Button
-      variant="secondary"
-      className="mt-7 w-full"
-      disabled={isLoadingMore}
-      aria-busy={isLoadingMore}
-      onClick={onLoadMore}
-    >
-      {isLoadingMore ? "Loading more…" : "Load more"}
-    </Button>
   );
 }
 

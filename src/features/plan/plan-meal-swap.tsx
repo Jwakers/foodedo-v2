@@ -21,7 +21,9 @@ import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
 import { useDrawerStack } from "@/components/ui/drawer-stack";
 import { DrawerStackHeader } from "@/components/ui/drawer-stack-header";
 import { planMealDrawerViews } from "@/features/plan/plan-meal-drawer";
-import { useCurrentCatalogue } from "@/features/recipes/use-catalogue";
+import { usePaginatedQuery } from "convex-helpers/react";
+import { api } from "../../../convex/_generated/api";
+import { LoadMoreRecipes } from "@/features/recipes/recipe-pagination";
 import {
   isQuickFilterActive,
   toggleRecipeQuickFilter,
@@ -33,13 +35,12 @@ import {
 import type { CatalogueMealSummary } from "@/lib/domain/recipes";
 import {
   emptyRecipeFilters,
-  filterRecipes,
-  sortRecipes,
   type RecipeFilters,
   type RecipeSort,
 } from "@/lib/domain/recipe-filtering";
-import { filterCatalogueMealsBySearch } from "@/lib/domain/recipe-search";
 import { cn } from "@/lib/utils/cn";
+
+const pageSize = 20;
 
 const quickFilterLabels = [
   "All",
@@ -68,17 +69,23 @@ export function PlanMealSwap({
 }) {
   const { push } = useDrawerStack();
   const allergies = useAllergies();
-  const catalogue = useCurrentCatalogue();
-  const candidates = (catalogue?.meals ?? []).filter(
-    (meal) => meal.id !== currentMeal?.id,
-  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredCandidates = filterRecipes(candidates, filters);
-  const matchingCandidates = sortRecipes(
-    filterCatalogueMealsBySearch(filteredCandidates, searchQuery),
-    sort,
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.catalogue.list,
+    {
+      ...filters,
+      proteinCategories: [...filters.proteinCategories],
+      sort,
+      searchQuery,
+    },
+    { initialNumItems: pageSize },
   );
+  const matchingCandidates = results.filter(
+    (meal) => meal.id !== currentMeal?.id,
+  );
+  const isLoading = status === "LoadingFirstPage";
+  const hasMore = status === "CanLoadMore" || status === "LoadingMore";
   const selectedMeal =
     matchingCandidates.find((meal) => meal.id === selectedId) ?? null;
 
@@ -207,15 +214,13 @@ export function PlanMealSwap({
             Good matches
           </h3>
           <p className="text-12 text-graphite">
-            {matchingCandidates.length}{" "}
-            {matchingCandidates.length === 1 ? "recipe" : "recipes"}
+            {isLoading
+              ? "Loading…"
+              : `${matchingCandidates.length} ${matchingCandidates.length === 1 ? "recipe" : "recipes"}${hasMore ? " loaded" : ""}`}
           </p>
         </div>
 
-        <ul
-          className="flex min-h-0 flex-1 flex-col"
-          aria-label="Recipe matches"
-        >
+        <ul className="flex shrink-0 flex-col" aria-label="Recipe matches">
           {matchingCandidates.map((meal) => (
             <SwapCandidateRow
               key={meal.id}
@@ -226,15 +231,24 @@ export function PlanMealSwap({
               onOpenPreview={() => onOpenPreview(meal.id)}
             />
           ))}
-          {matchingCandidates.length === 0 ? (
+          {isLoading || matchingCandidates.length === 0 ? (
             <li
               className="py-12 text-center text-14 text-graphite"
               role="status"
             >
-              No recipes match your search.
+              {isLoading
+                ? "Loading recipes…"
+                : hasMore
+                  ? "No matches in this batch. Load more to keep looking."
+                  : "No recipes match your search or filters."}
             </li>
           ) : null}
         </ul>
+        <LoadMoreRecipes
+          canLoadMore={status === "CanLoadMore" && !isSwapping}
+          isLoadingMore={status === "LoadingMore"}
+          onLoadMore={() => loadMore(pageSize)}
+        />
       </DrawerBody>
 
       <DrawerFooter>

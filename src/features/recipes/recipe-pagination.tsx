@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { buttonClassName } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 
 export function RecipePagination({
   page,
@@ -115,5 +115,28 @@ export function RecipePagination({
         </span>
       )}
     </nav>
+  );
+}
+
+export function LoadMoreRecipes({
+  canLoadMore,
+  isLoadingMore,
+  onLoadMore,
+}: {
+  canLoadMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+}) {
+  if (!canLoadMore && !isLoadingMore) return null;
+  return (
+    <Button
+      variant="secondary"
+      className="mt-7 w-full shrink-0"
+      disabled={isLoadingMore}
+      aria-busy={isLoadingMore}
+      onClick={onLoadMore}
+    >
+      {isLoadingMore ? "Loading more…" : "Load more"}
+    </Button>
   );
 }
