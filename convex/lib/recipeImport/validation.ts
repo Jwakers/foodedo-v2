@@ -5,6 +5,7 @@ import {
   type RecipeNormalizationWarning,
 } from "../../../src/lib/domain/recipes";
 import { formatImportAmount, isScalableImportAmount } from "./measurements";
+import { normaliseCuisines } from "../../../src/lib/domain/cuisines";
 import type { ImportedRecipe } from "./models";
 import type { RecipeSourceCandidate } from "./source";
 import type { ImportDraftIssue } from "../../../src/lib/domain/recipe-import-draft";
@@ -97,6 +98,23 @@ export function toRecipeContent(
   };
   const recipe = prepareRecipeDraft({
     title: output.title.trim(),
+    ...(output.cuisines == null
+      ? {}
+      : {
+          cuisines: [
+            ...new Set(
+              output.cuisines.flatMap((value) => {
+                try {
+                  return normaliseCuisines([value]);
+                } catch {
+                  return [];
+                }
+              }),
+            ),
+          ]
+            .slice(0, 8)
+            .sort(),
+        }),
     ...(optionalText(output.description)
       ? { description: output.description!.trim() }
       : {}),

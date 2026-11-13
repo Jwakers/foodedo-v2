@@ -552,9 +552,9 @@ test("rejection/deletion cannot publish and deletion retains operational history
 test("metadata stays uncounted until batch review and fingerprints reject stale content", async () => {
   const { t, admin } = setup();
   const fingerprint = await recipeFingerprint(content);
-  await t.run(async (ctx) => {
+  const mealId = await t.run(async (ctx) => {
     const imageStorageId = await ctx.storage.store(new Blob(["image"]));
-    await ctx.db.insert("catalogueMeals", {
+    return ctx.db.insert("catalogueMeals", {
       ...content,
       catalogueMealId: "existing",
       version: 1,
@@ -566,6 +566,17 @@ test("metadata stays uncounted until batch review and fingerprints reject stale 
       publishedAt: 1,
     });
   });
+  await t.run((ctx) =>
+    ctx.db.insert("catalogueCuisineMetadata", {
+      mealId,
+      fingerprint,
+      cuisines: ["korean"],
+      rationale: "Previous cuisine review.",
+      taxonomyVersion: "cuisines-v1",
+      reviewedBy: "previous-editor",
+      reviewedAt: 1,
+    }),
+  );
   const metadataId = await t.run((ctx) =>
     ctx.db.insert("catalogueAnalysisMetadata", {
       catalogueMealId: "existing",
@@ -589,7 +600,23 @@ test("metadata stays uncounted until batch review and fingerprints reject stale 
   });
   expect(
     (await admin.query(api.catalogueAdmin.overview, {})).statistics.cuisines,
-  ).toEqual([{ value: "mediterranean", count: 1 }]);
+  ).toEqual(
+    expect.arrayContaining([
+      { value: "mediterranean", count: 1 },
+      { value: "japanese", count: 0 },
+    ]),
+  );
+  expect(
+    await t.run((ctx) =>
+      ctx.db
+        .query("catalogueCuisineMetadata")
+        .withIndex("by_meal", (q) => q.eq("mealId", mealId))
+        .unique(),
+    ),
+  ).toMatchObject({
+    cuisines: ["mediterranean"],
+    reviewedBy: "admin",
+  });
 });
 
 test("specific recipe requests are trimmed, bounded and persisted through regeneration", async () => {

@@ -2,6 +2,7 @@ import {
   enrichStepIngredients,
   type StepIngredientMapping,
 } from "./step-ingredients";
+import { normaliseCuisines } from "./cuisines";
 
 export const RECIPE_LIMITS = {
   title: 160,
@@ -138,6 +139,8 @@ export type RecipeNormalizationWarning = {
 
 export type RecipeContent = {
   title: string;
+  // Optional editorial influences. Imported values are inferred, not reviewed.
+  cuisines?: string[];
   description?: string;
   ingredients: RecipeIngredientLine[];
   steps: RecipeStep[];
@@ -303,6 +306,9 @@ function prepareContent(
   validateNoteReferences(ingredients, steps, notes);
   return enrichStepIngredients({
     title: requiredText(input.title, "Title", RECIPE_LIMITS.title),
+    ...(input.cuisines === undefined
+      ? {}
+      : { cuisines: normaliseCuisines(input.cuisines) }),
     ...(description === undefined ? {} : { description }),
     ingredients,
     steps,

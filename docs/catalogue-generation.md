@@ -13,6 +13,8 @@ Administrator checks run on all editorial reads and mutations. The access predic
 
 ## Editorial workflow
 
+Cuisine influences use a shared versioned vocabulary and independently reviewed catalogue metadata. Generation and imports share the classification policy; catalogue statistics include zero-count cuisines and unclassified coverage. See [Editorial cuisine influences](catalogue-cuisines.md) for the taxonomy, ongoing review behaviour and completed backfill summary.
+
 Automatic opportunity selection focuses on evening meals. Meal-occasion counts remain descriptive editorial metadata, not coverage targets: a low lunch count is not a gap to fill. Lighter and lunch-style dishes remain welcome when they work as satisfying dinners. Dedicated lunch planning is a later product expansion.
 
 - **Optional: improve catalogue suggestions → Suggest tags for 5 recipes** offers editorial tagging of the existing catalogue. It is not a prerequisite for generation. Five currently unclassified meals receive proposed tags per run. Review/edit and accept rows in batches of up to 100. Repeat to continue. Pending classifications never contribute to category distributions; unknown values are retained. Existing cost bands remain editorial bands, not currency estimates.

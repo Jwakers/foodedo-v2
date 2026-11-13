@@ -10,6 +10,8 @@ import {
 import { generateText } from "ai";
 import { organiseCandidate } from "../../convex/lib/recipeImport/extraction";
 import { extractTextCandidate } from "../../convex/lib/recipeImport/source";
+import { toRecipeContent } from "../../convex/lib/recipeImport/validation";
+import { prepareRecipeContent } from "../../src/lib/domain/recipes";
 
 const recipe = importedRecipeSchema.parse({
   title: "Soup",
@@ -17,6 +19,7 @@ const recipe = importedRecipeSchema.parse({
   description: null,
   servings: null,
   minimumServings: null,
+  cuisines: null,
   prepMinutes: null,
   cookMinutes: { value: 21, origin: "estimated", sourceIds: [] },
   proteinCategory: "meat-free",
@@ -47,6 +50,31 @@ const recipe = importedRecipeSchema.parse({
     },
   ],
   notes: [],
+});
+
+test("imported cuisines survive corrections and preparation while unsupported labels remain nonblocking", () => {
+  const source = extractTextCandidate(
+    "Carrot soup: simmer 2 carrots for 20 minutes.",
+  );
+  const tagged = applyRecipeCorrections(recipe, {
+    changes: [
+      {
+        field: "cuisines",
+        value: ["Indian", "indian", "fusion", "Middle Eastern"],
+      },
+    ],
+    issues: [],
+  });
+  const converted = toRecipeContent(tagged, source);
+  expect(prepareRecipeContent(converted.recipe).cuisines).toEqual([
+    "indian",
+    "middle-eastern",
+  ]);
+  expect(
+    toRecipeContent({ ...recipe, cuisines: ["unrecognised"] }, source).recipe
+      .cuisines,
+  ).toEqual([]);
+  expect(toRecipeContent(recipe, source).recipe.cuisines).toBeUndefined();
 });
 
 test("all roles retain the quality-tested reasoning setting and disable provider retries", async () => {

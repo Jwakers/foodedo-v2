@@ -49,6 +49,56 @@ const recipeCore = {
   proteinCategory: "meat-free" as const,
 };
 
+test("new imports persist optional inferred cuisines without creating catalogue metadata", async () => {
+  const t = createTestContext();
+  const owner = await seedUser(t, "cuisine-import-owner");
+  const importId = await t.run(async (ctx) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_auth_subject", (q) =>
+        q.eq("authSubject", "cuisine-import-owner"),
+      )
+      .unique();
+    return ctx.db.insert("recipeImports", {
+      ownerId: user!._id,
+      clientRequestId: "cuisines",
+      sourceType: "text",
+      status: "processing",
+      phase: "organising",
+      attempt: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+  });
+  const id = await t.mutation(internal.recipeImports.completeImport, {
+    importId,
+    attempt: 1,
+    recipe: { ...recipeCore, cuisines: ["italian"] },
+    method: "text",
+  });
+  expect(await t.run((ctx) => ctx.db.get(id!))).toMatchObject({
+    cuisines: ["italian"],
+  });
+  expect(
+    await t.run((ctx) => ctx.db.query("catalogueCuisineMetadata").collect()),
+  ).toEqual([]);
+  await owner.mutation(api.recipes.updateImported, {
+    recipeId: id!,
+    recipe: { ...recipeCore, description: "A new description." },
+  });
+  expect(await t.run((ctx) => ctx.db.get(id!))).toMatchObject({
+    cuisines: ["italian"],
+  });
+  await owner.mutation(api.recipes.updateImported, {
+    recipeId: id!,
+    recipe: {
+      ...recipeCore,
+      steps: [{ id: "step-1", text: "Roast the tomatoes instead." }],
+    },
+  });
+  expect((await t.run((ctx) => ctx.db.get(id!)))?.cuisines).toBeUndefined();
+});
+
 test("account deletion removes imports and prevents late completion without touching another account", async () => {
   const t = createTestContext();
   await seedUser(t, "deleted-import-owner");

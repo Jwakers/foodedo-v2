@@ -8,6 +8,7 @@ import {
   type RecipeContent,
 } from "../src/lib/domain/recipes";
 import { recipeFingerprint } from "../src/lib/domain/catalogue-generation";
+import { CUISINE_TAXONOMY_VERSION } from "../src/lib/domain/cuisines";
 const modules = import.meta.glob("./**/*.ts");
 const content: RecipeContent = {
   title: "Cauliflower cheese",
@@ -108,6 +109,110 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
+});
+
+test("photo-only publication preserves independently reviewed cuisines without approving other tags", async () => {
+  const { t, admin, mealId } = await setup();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("catalogueCuisineMetadata", {
+      mealId,
+      fingerprint: await recipeFingerprint(content),
+      cuisines: ["british"],
+      rationale: "British cauliflower cheese.",
+      taxonomyVersion: CUISINE_TAXONOMY_VERSION,
+      reviewedBy: "cuisine-editor",
+      reviewedAt: 1,
+    });
+  });
+  const started = await admin.mutation(api.catalogueMaintenance.start, {
+    mealId,
+    mode: "image",
+    requestKey: "cuisine-photo",
+  });
+  const draft = await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId: started.proposalId,
+  });
+  expect(draft?.tags).toMatchObject({
+    cuisines: ["british"],
+    complexity: "unknown",
+  });
+  await finishImage(t, started.runId!);
+  const publishedId = await admin.mutation(api.catalogueAdmin.publish, {
+    proposalId: started.proposalId,
+    revision: 1,
+  });
+  const metadata = await t.run((ctx) =>
+    ctx.db
+      .query("catalogueCuisineMetadata")
+      .withIndex("by_meal", (q) => q.eq("mealId", publishedId))
+      .unique(),
+  );
+  expect(metadata).toMatchObject({
+    cuisines: ["british"],
+    reviewedBy: "cuisine-editor",
+    reviewedAt: 1,
+  });
+  expect(
+    await t.run((ctx) =>
+      ctx.db
+        .query("catalogueAnalysisMetadata")
+        .withIndex("by_meal_revision", (q) =>
+          q
+            .eq("catalogueMealId", "cauliflower-cheese")
+            .eq("catalogueVersion", 2),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ status: "proposed" });
+});
+
+test("an explicit cuisine edit during photo maintenance replaces the inherited review", async () => {
+  const { t, admin, mealId } = await setup();
+  await t.run(async (ctx) =>
+    ctx.db.insert("catalogueCuisineMetadata", {
+      mealId,
+      fingerprint: await recipeFingerprint(content),
+      cuisines: ["british"],
+      rationale: "Earlier classification.",
+      taxonomyVersion: CUISINE_TAXONOMY_VERSION,
+      reviewedBy: "previous",
+      reviewedAt: 1,
+    }),
+  );
+  const started = await admin.mutation(api.catalogueMaintenance.start, {
+    mealId,
+    mode: "image",
+    requestKey: "edit-cuisine-photo",
+  });
+  await finishImage(t, started.runId!);
+  const draft = (await admin.query(api.catalogueAdmin.getProposal, {
+    proposalId: started.proposalId,
+  }))!;
+  const revision = await admin.mutation(api.catalogueAdmin.updateProposal, {
+    proposalId: draft._id,
+    revision: draft.revision,
+    content: draft.content,
+    tags: { ...draft.tags, cuisines: ["french"] },
+  });
+  const runId = await admin.mutation(api.catalogueAdmin.begin, {
+    operation: "image",
+    proposalId: draft._id,
+    expectedRevision: revision,
+    requestKey: "edited-cuisine-image",
+  });
+  await finishImage(t, runId);
+  const id = await admin.mutation(api.catalogueAdmin.publish, {
+    proposalId: draft._id,
+    revision,
+  });
+  expect(
+    await t.run((ctx) =>
+      ctx.db
+        .query("catalogueCuisineMetadata")
+        .withIndex("by_meal", (q) => q.eq("mealId", id))
+        .unique(),
+    ),
+  ).toMatchObject({ cuisines: ["french"], reviewedBy: "admin" });
 });
 
 test("every maintenance endpoint denies guests and non-administrators", async () => {

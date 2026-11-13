@@ -56,6 +56,8 @@ Premium meals and subscription entitlements are deferred. When implemented, prem
 
 `catalogueAnalysisMetadata` stores inferred/reviewed tags against an exact meal revision and content fingerprint. Only reviewed current tags contribute to statistics. Cuisine, technique, complexity and vegetarian/vegan suitability remain private editorial metadata, not consumer allergy guarantees.
 
+`catalogueCuisineMetadata` independently records reviewed cuisine influences against a published meal document and content fingerprint, with rationale and taxonomy version. Current independent reviews override general cuisine tags without approving unrelated classifications. Cuisine distributions include zero-count vocabulary entries and separate unclassified coverage. New imports may carry optional inferred `cuisines` in recipe content; those private inferences never enter reviewed public-catalogue coverage. See [Editorial cuisine influences](../../docs/catalogue-cuisines.md).
+
 All editorial reads and mutations require a verified Clerk subject present in Convex's server-only `FOODEDO_ADMIN_CLERK_USER_IDS` allowlist. This does not alter guest catalogue access or introduce user role fields. See [catalogue generation](../../docs/catalogue-generation.md).
 
 ### recipes (private snapshots)
@@ -70,7 +72,7 @@ Recipe content contains title, optional description, bounded ingredient lines an
 
 Catalogue, personal, and future published recipes remain distinct. Saving shared content produces an attributed personal snapshot rather than a live mutable reference. See [recipes-and-ingredients.md](./recipes-and-ingredients.md).
 
-**Deferred vs V1:** canonical ingredient identity and synonym merging, broader ingredient or nutritional taxonomies beyond the five shopping groups, cuisine unions, generator flags, manual image upload, search, import, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
+**Deferred vs V1:** canonical ingredient identity and synonym merging, broader ingredient or nutritional taxonomies beyond the five shopping groups, generator flags, manual image upload, search, import, publishers, social relationships, editorial descriptor taxonomy, and automatic method-step ingredient mapping.
 
 ### mealPlans
 

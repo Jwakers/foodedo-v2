@@ -47,6 +47,9 @@ const metadata = z
   .nullable();
 export const importedRecipeSchema = z.object({
   title: z.string().min(1).max(160),
+  // Free strings here deliberately keep optional classification nonblocking.
+  // Conversion retains only recognised canonical values; no extra model call.
+  cuisines: z.array(z.string()).nullable(),
   titleSourceIds: refs,
   description: z.string().max(1000).nullable(),
   servings: z
@@ -186,6 +189,10 @@ export const correctionOutputSchema = z.object({
           value: fields.proteinCategory,
         }),
         z.object({
+          field: z.literal("cuisines"),
+          value: z.array(z.string()).nullable(),
+        }),
+        z.object({
           field: z.literal("ingredients"),
           value: rowEdits(fields.ingredients.element),
         }),
@@ -199,7 +206,7 @@ export const correctionOutputSchema = z.object({
         }),
       ]),
     )
-    .max(11),
+    .max(12),
   issues: z.array(importIssueSchema).max(30),
 });
 export type ImportCorrection = z.infer<typeof correctionOutputSchema>;

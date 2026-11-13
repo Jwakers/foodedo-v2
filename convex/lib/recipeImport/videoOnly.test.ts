@@ -85,6 +85,7 @@ it("recovers written ingredients into a draft rather than recording video-only d
             description: null,
             servings: null,
             minimumServings: null,
+            cuisines: null,
             prepMinutes: null,
             cookMinutes: null,
             proteinCategory: "meat-free",

@@ -45,6 +45,7 @@ import {
   getOrCreateCatalogueRecipe,
 } from "./lib/catalogueRecipes";
 import { getCatalogueMeal } from "./lib/catalogue";
+import { culinaryContentChanged } from "../src/lib/domain/catalogue-generation";
 
 export const create = mutation({
   args: {
@@ -279,6 +280,13 @@ export const updateImported = mutation({
       return null;
     }
     const content = prepareRecipeOrThrow(input);
+    // The editor does not expose inferred cuisines. Retain them for cosmetic
+    // edits, but invalidate them when the dish's cooking content changes.
+    const cuisines =
+      content.cuisines ??
+      (culinaryContentChanged(prepareRecipeContent(recipe), content)
+        ? undefined
+        : recipe.cuisines);
     const now = Date.now();
     const source = clearNormalizationWarnings(
       removeEditedMetadataProvenance(recipe.source, [
@@ -305,6 +313,7 @@ export const updateImported = mutation({
       notes: undefined,
       servingScaling: undefined,
       ...content,
+      cuisines,
       ...personalRecipeBrowseKeys(content),
       source,
       contentEditedAt: now,

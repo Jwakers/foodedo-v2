@@ -13,6 +13,7 @@ import {
   type EditorialTags,
 } from "../src/lib/domain/catalogue-generation";
 import { enqueue } from "./catalogueAdmin";
+import { currentCuisineReview } from "./lib/catalogueCuisines";
 
 const unknownTags: EditorialTags = {
   cuisines: [],
@@ -154,12 +155,20 @@ export const start = mutation({
       )
       .unique();
     const now = Date.now();
+    const cuisineReview = await currentCuisineReview(
+      ctx,
+      meal._id,
+      fingerprint,
+    );
+    const tags =
+      metadata?.status === "reviewed" && metadata.fingerprint === fingerprint
+        ? metadata.tags
+        : unknownTags;
     const proposalId = await ctx.db.insert("catalogueProposals", {
       content,
-      tags:
-        metadata?.status === "reviewed" && metadata.fingerprint === fingerprint
-          ? metadata.tags
-          : unknownTags,
+      tags: cuisineReview
+        ? { ...tags, cuisines: cuisineReview.cuisines }
+        : tags,
       sourceMealId: meal._id,
       maintenanceMode: args.mode,
       initialPrompt:

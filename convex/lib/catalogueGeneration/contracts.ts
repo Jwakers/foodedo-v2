@@ -15,6 +15,8 @@ export const statisticsValidator = v.object({
   ingredients: counts,
   ingredientCounts: v.array(v.number()),
   cuisines: counts,
+  cuisineClassified: v.number(),
+  cuisineUnclassified: v.number(),
   mealOccasion: counts,
   methods: counts,
   proteinSources: counts,
@@ -37,6 +39,7 @@ export const analysisMealValidator = v.object({
   key: v.string(),
   content: v.union(recipeContentValidator, schema.doc("catalogueMeals")),
   tags: v.optional(tagsValidator),
+  cuisines: v.optional(v.array(v.string())),
   isCatalogueRevision: v.optional(v.boolean()),
 });
 export const editorialPayloadValidator = v.union(

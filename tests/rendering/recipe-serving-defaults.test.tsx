@@ -19,6 +19,7 @@ vi.mock("@/features/auth/use-foodedo-auth", () => ({
   useFoodedoAuth: () => ({ status: "signedIn", isAuthenticated: true }),
 }));
 vi.mock("@/features/recipes/use-catalogue", () => ({
+  useCurrentCatalogue: () => undefined,
   useCurrentCatalogueMeal: () => meal,
   useCatalogueMeal: () => meal,
 }));

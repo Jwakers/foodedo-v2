@@ -113,6 +113,7 @@ export const costBandValidator = v.union(
 
 export const recipeContentFields = {
   title: v.string(),
+  cuisines: v.optional(v.array(v.string())),
   description: v.optional(v.string()),
   ingredients: v.array(recipeIngredientValidator),
   steps: v.array(recipeStepValidator),

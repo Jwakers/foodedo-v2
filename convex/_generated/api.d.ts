@@ -21,6 +21,7 @@ import type * as lib_activePlan from "../lib/activePlan.js";
 import type * as lib_allergies from "../lib/allergies.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_catalogue from "../lib/catalogue.js";
+import type * as lib_catalogueCuisines from "../lib/catalogueCuisines.js";
 import type * as lib_catalogueGeneration_catalogue from "../lib/catalogueGeneration/catalogue.js";
 import type * as lib_catalogueGeneration_config from "../lib/catalogueGeneration/config.js";
 import type * as lib_catalogueGeneration_contracts from "../lib/catalogueGeneration/contracts.js";
@@ -100,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   "lib/allergies": typeof lib_allergies;
   "lib/auth": typeof lib_auth;
   "lib/catalogue": typeof lib_catalogue;
+  "lib/catalogueCuisines": typeof lib_catalogueCuisines;
   "lib/catalogueGeneration/catalogue": typeof lib_catalogueGeneration_catalogue;
   "lib/catalogueGeneration/config": typeof lib_catalogueGeneration_config;
   "lib/catalogueGeneration/contracts": typeof lib_catalogueGeneration_contracts;

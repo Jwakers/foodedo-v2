@@ -1,5 +1,6 @@
 import { prepareRecipeContent, type RecipeContent } from "./recipes";
 import { canScaleIngredientQuantity } from "./ingredient-scaling";
+import { CUISINES, normaliseCuisines } from "./cuisines";
 
 export type EditorialTags = {
   cuisines: string[];
@@ -21,6 +22,8 @@ export type AnalysisMeal = {
   key: string;
   content: RecipeContent;
   tags?: EditorialTags;
+  // Independently reviewed cuisines, including [] for reviewed uncertainty.
+  cuisines?: string[];
   isCatalogueRevision?: boolean;
 };
 export const timeBand = (minutes: number | undefined) =>
@@ -57,6 +60,24 @@ export function catalogueStatistics(meals: AnalysisMeal[]) {
   const reviewed = meals.flatMap((meal) => (meal.tags ? [meal.tags] : []));
   const known = (values: string[]) =>
     values.filter((value) => value !== "unknown" && value !== "");
+  const cuisineRows = meals.map((meal) => {
+    const values = meal.cuisines ?? meal.tags?.cuisines ?? [];
+    // Older free-text labels are not trusted as new taxonomy categories.
+    return [
+      ...new Set(
+        values.flatMap((value) => {
+          try {
+            return normaliseCuisines([value]);
+          } catch {
+            return [];
+          }
+        }),
+      ),
+    ];
+  });
+  const cuisineCounts = new Map(
+    count(cuisineRows.flat()).map((row) => [row.value, row.count]),
+  );
   return {
     total: meals.length,
     classified: reviewed.length,
@@ -79,7 +100,13 @@ export function catalogueStatistics(meals: AnalysisMeal[]) {
       ]),
     ),
     ingredientCounts: contents.map((r) => r.ingredients.length),
-    cuisines: count(known(reviewed.flatMap((t) => t.cuisines))),
+    cuisines: CUISINES.map((value) => ({
+      value,
+      count: cuisineCounts.get(value) ?? 0,
+    })),
+    cuisineClassified: cuisineRows.filter((values) => values.length > 0).length,
+    cuisineUnclassified: cuisineRows.filter((values) => values.length === 0)
+      .length,
     mealOccasion: count(known(reviewed.map((t) => t.mealOccasion))),
     methods: count(known(reviewed.flatMap((t) => t.cookingMethods))),
     proteinSources: count(known(reviewed.map((t) => t.proteinSource))),
@@ -239,6 +266,7 @@ export function culinaryContentChanged(
         ...input,
         steps: input.steps.map(withoutIngredientMapping),
         title: undefined,
+        cuisines: undefined,
         description: undefined,
         proteinCategory: undefined,
         costBand: undefined,

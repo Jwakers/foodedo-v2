@@ -13,9 +13,10 @@ import {
 import { canScaleIngredientQuantity } from "../../../src/lib/domain/ingredient-scaling";
 import type { EditorialTags } from "../../../src/lib/domain/catalogue-generation";
 import type { Doc } from "../../_generated/dataModel";
+import { CUISINES } from "../../../src/lib/domain/cuisines";
 
 export const tagsSchema = z.object({
-  cuisines: z.array(z.string().max(80)).max(8),
+  cuisines: z.array(z.enum(CUISINES)).max(8),
   mealOccasion: z.enum(["lunch", "dinner", "unknown"]),
   cookingMethods: z.array(z.string().max(80)).max(8),
   proteinSource: z.string().max(120),

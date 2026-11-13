@@ -5,6 +5,7 @@ import {
   recipeFingerprint,
 } from "../../../src/lib/domain/catalogue-generation";
 import { generationConfig } from "./config";
+import { currentCuisineReview } from "../catalogueCuisines";
 
 export async function analysisSnapshot(
   ctx: QueryCtx | MutationCtx,
@@ -49,13 +50,20 @@ export async function analysisSnapshot(
               .eq("catalogueVersion", meal.version),
           )
           .unique();
+        const fingerprint = await recipeFingerprint(meal);
+        const cuisineMetadata = await currentCuisineReview(
+          ctx,
+          meal._id,
+          fingerprint,
+        );
         return {
           key: `catalogue:${meal.catalogueMealId}:${meal.version}`,
           content: meal,
           ...(metadata?.status === "reviewed" &&
-          metadata.fingerprint === (await recipeFingerprint(meal))
+          metadata.fingerprint === fingerprint
             ? { tags: metadata.tags }
             : {}),
+          ...(cuisineMetadata ? { cuisines: cuisineMetadata.cuisines } : {}),
         };
       }),
   );

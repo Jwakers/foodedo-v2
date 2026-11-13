@@ -1,4 +1,9 @@
 import schema from "./schema";
+import { normaliseCuisines } from "../src/lib/domain/cuisines";
+import {
+  currentCuisineReview,
+  saveCuisineReview,
+} from "./lib/catalogueCuisines";
 import {
   overviewValidator,
   proposalViewValidator,
@@ -60,7 +65,7 @@ function validateTags(tags: Doc<"catalogueProposals">["tags"]) {
     fail("Analysis labels must be concise.");
   if (tags.vegan === "yes" && tags.vegetarian !== "yes")
     fail("Vegan recipes must also be vegetarian.");
-  return tags;
+  return { ...tags, cuisines: normaliseCuisines(tags.cuisines) };
 }
 async function editable(
   ctx: MutationCtx,
@@ -495,11 +500,21 @@ export const reviewMetadata = mutation({
         (await recipeFingerprint(meal)) !== row.fingerprint
       )
         fail("Catalogue content changed; enrich it again.");
+      const tags = validateTags(row.tags);
+      const reviewedAt = Date.now();
       await ctx.db.patch(metadata._id, {
-        tags: validateTags(row.tags),
+        tags,
         status: "reviewed",
         reviewedBy: actor,
-        reviewedAt: Date.now(),
+        reviewedAt,
+      });
+      await saveCuisineReview(ctx, {
+        mealId: meal._id,
+        fingerprint: row.fingerprint,
+        cuisines: tags.cuisines,
+        rationale: "Cuisine influences accepted in editorial tag review.",
+        reviewedBy: actor,
+        reviewedAt,
       });
     }
   },
@@ -578,6 +593,38 @@ export const publish = mutation({
       createdAt: now,
       publishedAt: now,
     });
+    // A photograph-only revision retains an independently reviewed cuisine even
+    // when the rest of its analysis metadata has never been reviewed.
+    const cuisineMetadata =
+      source && p.maintenanceMode === "image"
+        ? await currentCuisineReview(ctx, source._id, p.fingerprint)
+        : null;
+    const cuisines = normaliseCuisines(p.tags.cuisines);
+    if (
+      cuisineMetadata &&
+      JSON.stringify(cuisines) === JSON.stringify(cuisineMetadata.cuisines)
+    ) {
+      const { _id, _creationTime, ...values } = cuisineMetadata;
+      void _id;
+      void _creationTime;
+      await ctx.db.insert("catalogueCuisineMetadata", {
+        ...values,
+        mealId: id,
+      });
+    } else if (
+      p.maintenanceMode !== "image" ||
+      cuisineMetadata ||
+      cuisines.length
+    ) {
+      await saveCuisineReview(ctx, {
+        mealId: id,
+        fingerprint: p.fingerprint,
+        cuisines,
+        rationale: "Cuisine influences accepted with catalogue publication.",
+        reviewedBy: actor,
+        reviewedAt: now,
+      });
+    }
     const sourceMetadata =
       source && p.maintenanceMode === "image"
         ? await ctx.db

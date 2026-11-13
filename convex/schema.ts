@@ -172,6 +172,16 @@ export default defineSchema({
     reviewedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_meal_revision", ["catalogueMealId", "catalogueVersion"]),
+  // Independently reviewed cuisine influences; never approves other analysis tags.
+  catalogueCuisineMetadata: defineTable({
+    mealId: v.id("catalogueMeals"),
+    fingerprint: v.string(),
+    cuisines: v.array(v.string()),
+    rationale: v.string(),
+    taxonomyVersion: v.string(),
+    reviewedBy: v.string(),
+    reviewedAt: v.number(),
+  }).index("by_meal", ["mealId"]),
   // Retain only the subject so stale JWTs and webhooks cannot undo deletion.
   deletedUserSubjects: defineTable({
     authSubject: v.string(),

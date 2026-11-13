@@ -62,6 +62,7 @@ export async function generateProposal(
             cookMinutes: m.content.cookMinutes,
             cost: m.content.costBand,
             tags: m.tags,
+            cuisines: m.cuisines ?? m.tags?.cuisines,
             pendingRevision: Boolean(m.isCatalogueRevision),
           })),
         });
@@ -89,6 +90,7 @@ export async function generateProposal(
           title: meal.content.title,
           ingredients: meal.content.ingredients.map((i) => i.name),
           tags: meal.tags,
+          cuisines: meal.cuisines ?? meal.tags?.cuisines,
         }));
   const authored = await client.text(
     "authoring",
