@@ -3,43 +3,66 @@ import { expect, test } from "@playwright/test";
 import {
   persistWelcomeSkip,
   readPersistedWelcomeSkip,
-  shouldPersistWelcomeSkip,
   welcomeSkipStorageKey,
 } from "../../src/lib/platform/welcome-session";
 
-test("persists welcome skip for web builds", () => {
-  expect(shouldPersistWelcomeSkip()).toBe(true);
+function withWindow(value: unknown, run: () => void) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", { configurable: true, value });
+  try {
+    run();
+  } finally {
+    if (original) Object.defineProperty(globalThis, "window", original);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
+}
 
+test("persists welcome skip on this device", () => {
   const store = new Map<string, string>();
-  const previousWindow = globalThis.window;
-
-  Object.defineProperty(globalThis, "window", {
-    configurable: true,
-    value: {
-      sessionStorage: {
-        getItem(key: string) {
-          return store.get(key) ?? null;
-        },
-        setItem(key: string, value: string) {
-          store.set(key, value);
-        },
+  withWindow(
+    {
+      localStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => store.set(key, value),
       },
     },
-  });
+    () => {
+      expect(readPersistedWelcomeSkip()).toBe(false);
+      persistWelcomeSkip();
+      expect(store.get(welcomeSkipStorageKey)).toBe("1");
+      expect(readPersistedWelcomeSkip()).toBe(true);
+    },
+  );
+});
 
-  try {
-    expect(readPersistedWelcomeSkip()).toBe(false);
-    persistWelcomeSkip();
-    expect(store.get(welcomeSkipStorageKey)).toBe("1");
-    expect(readPersistedWelcomeSkip()).toBe(true);
-  } finally {
-    if (previousWindow === undefined) {
-      Reflect.deleteProperty(globalThis, "window");
-    } else {
-      Object.defineProperty(globalThis, "window", {
-        configurable: true,
-        value: previousWindow,
-      });
-    }
-  }
+test("honours an existing web-session dismissal during the upgrade", () => {
+  withWindow(
+    {
+      localStorage: { getItem: () => null },
+      sessionStorage: {
+        getItem: (key: string) =>
+          key === "foodedo.welcome.skipped" ? "1" : null,
+      },
+    },
+    () => {
+      expect(readPersistedWelcomeSkip()).toBe(true);
+    },
+  );
+});
+
+test("blocked storage does not throw when reading or remembering entry", () => {
+  withWindow(
+    {
+      get localStorage() {
+        throw new Error("Storage blocked");
+      },
+      get sessionStorage() {
+        throw new Error("Storage blocked");
+      },
+    },
+    () => {
+      expect(readPersistedWelcomeSkip()).toBe(false);
+      expect(() => persistWelcomeSkip()).not.toThrow();
+    },
+  );
 });

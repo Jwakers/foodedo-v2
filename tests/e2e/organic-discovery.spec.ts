@@ -24,7 +24,7 @@ test("homepage HTML contains useful public content and its own canonical", async
   expect(scripted('[aria-label="Loading Foodedo"]').length).toBe(1);
   expect(scripted("h1").length).toBe(0);
   const $ = load(html, { scriptingEnabled: false });
-  expect($("h1").text()).toBe("Make food decisions easier.");
+  expect($("h1").text()).toBe("Dinner, decided.");
   expect($("link[rel=canonical]")).toHaveLength(1);
   expect($("link[rel=canonical]").attr("href")).toBe(
     "https://www.foodedo.com/",

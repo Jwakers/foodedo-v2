@@ -71,7 +71,7 @@ credential in CI. Use a fresh browser profile and the dedicated V2 development
 Clerk and Convex configuration described in
 [`auth-and-backend-setup.md`](auth-and-backend-setup.md).
 
-1. Run `pnpm dev`, open the app, select **Try Foodedo**, plan a week, then choose **Save my plan**.
+1. Run `pnpm dev`, open the app, select **Plan my week** on the first-visit welcome, generate a week, then choose **Save my plan**. Returning guests go directly to Home; its **Plan my week** action opens the same setup flow.
 2. Complete the enabled Clerk email sign-in flow. Do not use a V1 account or deployment.
 3. Confirm Foodedo reaches the saved-week confirmation and the signed-in **Week** route shows the same dated meals. In Convex, confirm one active plan and its linked Shopping List belong to the signed-in user.
 4. Refresh the browser. Confirm the local guest draft has not produced a second plan or claim, and the same active week remains visible.

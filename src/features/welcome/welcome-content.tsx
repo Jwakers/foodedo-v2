@@ -41,10 +41,10 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
           id="welcome-heading"
           className="font-display text-42 font-semibold tracking-tight text-ink"
         >
-          Make food decisions easier.
+          Dinner, decided.
         </h1>
         <p className="max-w-82.5 text-14 leading-5 text-graphite">
-          Save meal plans, your own recipes and shopping lists in one place.
+          Get dinner ideas for your week, then swap anything that doesn’t suit.
         </p>
       </div>
 
@@ -91,9 +91,6 @@ export function WelcomeContent({ actions }: { actions: ReactNode }) {
       <div className="flex flex-col gap-2.5 px-page-inline pt-5 pb-6.5">
         {actions}
 
-        <p className="text-center text-12 leading-4 text-graphite">
-          Try Foodedo now. Save everything later.
-        </p>
         {process.env.NEXT_PUBLIC_CAPACITOR_BUILD !== "true" ? (
           <nav
             aria-label="Explore Foodedo"

@@ -2,6 +2,14 @@
 
 Foodedo should earn an account request by demonstrating value first. A visitor may try the core decision loop without signing in, but durable personal data belongs to an authenticated account.
 
+The first-visit welcome leads with **Plan my week**, opens `/week/setup` directly,
+and explicitly says no account is needed to try. Sign-in is a secondary text
+action; saving remains the account boundary. Reaching guest planning (or following
+an editorial guest-entry link) stores only a versioned welcome-dismissal flag in local storage on web and iOS, so
+returning guests reach Home without repeating the welcome choice. If storage is
+unavailable, dismissal lasts for the current runtime. This flag does not create an
+identity, persist a plan, or trigger plan generation.
+
 ## Capability boundary
 
 | Capability                                          | Guest                    | Account                    |

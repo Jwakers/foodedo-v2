@@ -39,15 +39,15 @@ test("shows welcome on signed-out cold open without app chrome", async ({
   await page.goto("/");
 
   await expect(page).toHaveTitle("Foodedo · Meal planning and shopping lists");
+  await expect(page.locator("#welcome-heading")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Plan my week" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Try Foodedo" })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Sign in or create account" }),
+    page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("Try Foodedo now. Save everything later."),
+    page.getByText(
+      "No account needed to try. Sign in when you want to save your plan.",
+    ),
   ).toBeVisible();
 
   await expect(page.locator("header")).toHaveCount(0);
@@ -67,9 +67,7 @@ test("Home never presents Welcome while the session SDK is unavailable", async (
     await expect(
       page.getByRole("region", { name: "Loading Foodedo" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Make food decisions easier." }),
-    ).toHaveCount(0);
+    await expect(page.locator("#welcome-heading")).toHaveCount(0);
     await expect(page.locator("header")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
       0,
@@ -115,21 +113,99 @@ test("keeps a signed-out recipe import intact when authentication is dismissed",
   ).toHaveCount(0);
 });
 
+test("keeps welcome visible while the planning route is loading", async ({
+  page,
+}) => {
+  let releaseRoute!: () => void;
+  let routeRequested!: () => void;
+  const pendingRoute = new Promise<void>((resolve) => {
+    releaseRoute = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    routeRequested = resolve;
+  });
+  await page.route("**/week/setup**", async (route) => {
+    routeRequested();
+    await pendingRoute;
+    await route.continue();
+  });
+  try {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Plan my week" }).click();
+    await requested;
+    await expect(page.locator("#welcome-heading")).toBeVisible();
+    await expect(page.locator("header")).toHaveCount(0);
+  } finally {
+    releaseRoute();
+  }
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+});
+
+test("guest entry still works when welcome storage is blocked", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const getItem = Storage.prototype.getItem;
+    const setItem = Storage.prototype.setItem;
+    const isWelcomeKey = (key: string) =>
+      key === "foodedo:welcome-skipped:v1" || key === "foodedo.welcome.skipped";
+    Storage.prototype.getItem = function (key) {
+      if (isWelcomeKey(key)) throw new Error("Storage blocked");
+      return getItem.call(this, key);
+    };
+    Storage.prototype.setItem = function (key, value) {
+      if (isWelcomeKey(key)) throw new Error("Storage blocked");
+      setItem.call(this, key, value);
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("link", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Foodedo", exact: true }).click();
+  await expect(page.locator("#welcome-heading")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+});
+
+test("welcome leads directly to guest planning and asks for an account only on save", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Plan my week" }).click();
+  await expect(page).toHaveURL(/\/week\/setup$/);
+  await expect(
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Plan my week" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Save my plan" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Save this week" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign in to save" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Not now" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your week is ready" }),
+  ).toBeVisible();
+});
+
 test("enters the guest app from welcome and keeps skip across navigation", async ({
   page,
 }) => {
   test.setTimeout(60_000);
   await page.goto("/");
-  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.getByRole("link", { name: "Plan my week" }).click();
 
-  await expect(
-    page.getByRole("heading", { name: "Dinner, decided." }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("7 days · starts tomorrow · serves 4"),
-  ).toHaveCount(0);
-
-  await page.getByRole("button", { name: "Plan my week" }).click();
+  await expect(page).toHaveURL(/\/week\/setup$/);
   await expect(
     page.getByRole("heading", { name: "Plan your week", exact: true }),
   ).toBeVisible();
@@ -328,26 +404,31 @@ test("enters the guest app from welcome and keeps skip across navigation", async
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+  await expect(page.locator("#welcome-heading")).toHaveCount(0);
 });
 
-test("keeps the guest session across refresh on web", async ({ page }) => {
+test("keeps returning guests in the app across reloads and fresh tabs", async ({
+  page,
+  context,
+}) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.getByRole("link", { name: "Plan my week" }).click();
+  await expect(page).toHaveURL(/\/week\/setup$/);
   await expect(
-    page.getByRole("heading", { name: "Dinner, decided." }),
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
   ).toBeVisible();
-
   await page.reload();
-
   await expect(
-    page.getByRole("heading", { name: "Dinner, decided." }),
+    page.getByRole("heading", { name: "Plan your week", exact: true }),
   ).toBeVisible();
+
+  const returningTab = await context.newPage();
+  await returningTab.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+    returningTab.getByRole("heading", { name: "Dinner, decided." }),
+  ).toBeVisible();
+  await expect(returningTab.locator("#welcome-heading")).toHaveCount(0);
+  await returningTab.close();
 });
 
 test("does not intercept public recipe deep links with welcome", async ({
@@ -373,9 +454,7 @@ test("does not intercept public recipe deep links with welcome", async ({
       name: "Recipes",
     }),
   ).toHaveAttribute("aria-current", "page");
-  await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+  await expect(page.locator("#welcome-heading")).toHaveCount(0);
 });
 
 test("exposes valid home-screen metadata and icons", async ({ request }) => {
@@ -474,8 +553,7 @@ test("shows unavailable states for malformed recipe links", async ({
 test("opens a catalogue recipe detail page with shared content chrome", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.goto("/?try=1");
   const firstIdea = page
     .locator('section[aria-labelledby="discovery-heading"] li a')
     .first();
@@ -514,8 +592,7 @@ test("opens a catalogue recipe detail page with shared content chrome", async ({
 });
 
 test("plans a recipe from its detail page as a guest", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Try Foodedo" }).click();
+  await page.goto("/?try=1");
   const firstIdea = page
     .locator('section[aria-labelledby="discovery-heading"] li a')
     .first();

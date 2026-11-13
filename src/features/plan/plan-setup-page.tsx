@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAllergies } from "@/features/allergies/allergy-context";
 import { isAllergyEligible } from "@/lib/domain/allergies";
 import { track } from "@/lib/analytics";
@@ -8,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { AccountConnectionError } from "@/components/account-connection-error";
+import { enterGuestExperience } from "@/components/use-welcome-session";
 import { ButtonLink } from "@/components/ui/button";
 import { useFoodedoAuth } from "@/features/auth/use-foodedo-auth";
 import { useHouseholdSpace } from "@/features/household/household-context";
@@ -54,6 +56,11 @@ export function PlanSetupPage({
   const router = useRouter();
   const allergies = useAllergies();
   const { status, isAuthenticated } = useFoodedoAuth();
+  // Remember entry after navigation commits, so Welcome cannot reveal Home
+  // while the planning route is still loading. This also covers direct links.
+  useEffect(() => {
+    if (status === "guest") enterGuestExperience();
+  }, [status]);
   const { spaceArgs, spaceKey, isHousehold, ready } = useHouseholdSpace();
   const { retire } = useOnboarding();
   const current = useQuery(

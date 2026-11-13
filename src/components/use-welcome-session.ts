@@ -8,8 +8,8 @@ import {
 } from "@/lib/platform/welcome-session";
 
 /**
- * In-memory skip for this JS runtime (Capacitor cold starts reset it;
- * web also writes sessionStorage via persistWelcomeSkip).
+ * In-memory fallback for this JS runtime; web and Capacitor also persist the
+ * welcome dismissal on this device via persistWelcomeSkip.
  */
 let skippedThisRuntime = false;
 const listeners = new Set<() => void>();

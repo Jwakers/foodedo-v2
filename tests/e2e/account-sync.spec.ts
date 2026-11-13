@@ -368,9 +368,7 @@ test("Home keeps one loading presentation through session, account, household an
     );
     await expect(loading).toBeVisible();
     expect(await loading.boundingBox()).toEqual(bounds);
-    await expect(
-      page.getByRole("heading", { name: "Make food decisions easier." }),
-    ).toHaveCount(0);
+    await expect(page.locator("#welcome-heading")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Preparing your Foodedo account" }),
     ).toHaveCount(0);
@@ -466,9 +464,7 @@ for (const stalledStage of ["session", "token", "household", "plan"] as const) {
     await expect(
       page.getByRole("link", { name: "Browse recipes", exact: true }),
     ).toHaveAttribute("href", "/recipes");
-    await expect(
-      page.getByRole("heading", { name: "Make food decisions easier." }),
-    ).toHaveCount(0);
+    await expect(page.locator("#welcome-heading")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Preparing your Foodedo account" }),
     ).toHaveCount(0);
@@ -533,7 +529,7 @@ test("retrying stalled Home reloads without discarding the local draft", async (
   ).toBe(0);
 });
 
-test("Home shows Welcome only after guest resolution and restores the guest app after refresh", async ({
+test("Home offers direct guest planning only after resolving the session", async ({
   page,
 }) => {
   await page.goto("https://account-sync.fixture/?scenario=home");
@@ -543,29 +539,13 @@ test("Home shows Welcome only after guest resolution and restores the guest app 
   await page.evaluate(() =>
     window.accountSyncFixture.update({ isLoaded: true, userId: null }),
   );
-  await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toBeVisible();
+  await expect(page.locator("#welcome-heading")).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(
     0,
   );
-  await page.getByRole("button", { name: "Try Foodedo" }).click();
   await expect(
-    page.getByRole("heading", { name: "Dinner, decided." }),
-  ).toBeVisible();
-  await page.reload();
-  await expect(
-    page.getByRole("region", { name: "Loading Foodedo" }),
-  ).toBeVisible();
-  await page.evaluate(() =>
-    window.accountSyncFixture.update({ isLoaded: true, userId: null }),
-  );
-  await expect(
-    page.getByRole("heading", { name: "Dinner, decided." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+    page.getByRole("link", { name: "Plan my week" }),
+  ).toHaveAttribute("href", "/week/setup");
   expect(
     await page.evaluate(() => window.accountSyncFixture.counts.personalQueries),
   ).toBe(0);

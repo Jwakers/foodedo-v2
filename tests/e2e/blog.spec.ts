@@ -202,9 +202,7 @@ test("blog CTA enters the guest product directly, including a fresh tab", async 
   await expect(
     newTab.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
-  await expect(
-    newTab.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+  await expect(newTab.locator("#welcome-heading")).toHaveCount(0);
   await newTab.close();
   await page
     .getByRole("navigation", { name: "Public navigation" })
@@ -213,9 +211,7 @@ test("blog CTA enters the guest product directly, including a fresh tab", async 
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Make food decisions easier." }),
-  ).toHaveCount(0);
+  await expect(page.locator("#welcome-heading")).toHaveCount(0);
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Dinner, decided." }),
