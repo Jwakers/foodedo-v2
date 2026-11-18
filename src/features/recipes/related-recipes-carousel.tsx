@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useCurrentCatalogue } from "./use-catalogue";
 import {
   RecipeCarousel,
@@ -28,32 +30,58 @@ export function RelatedRecipesCarousel({
   if (recipes.length === 0) return null;
 
   return (
-    <RecipeCarousel
-      headingId="related-recipes-heading"
-      title="More recipes to try"
-      href="/recipes"
-      action="Browse recipes"
-      showSaveButton={false}
-      className="border-t border-mist px-page-inline pt-6 pb-8 sm:px-8"
-    >
-      <RecipeCarouselList>
-        {recipes.map((recipe) => (
-          <RecipeCarouselItem key={recipe.id}>
-            <RecipeCarouselCard
-              meal={recipe}
-              title={recipe.title}
-              imageSrc={recipe.imageSrc}
-              href={catalogueBrowsePath(recipe.slug)}
-              meta={
-                recipe.prepMinutes !== undefined ||
-                recipe.cookMinutes !== undefined
-                  ? `${(recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0)} min`
-                  : undefined
-              }
-            />
-          </RecipeCarouselItem>
-        ))}
-      </RecipeCarouselList>
-    </RecipeCarousel>
+    <>
+      <RecipeCarousel
+        headingId="related-recipes-heading"
+        title="More recipes to try"
+        href="/recipes"
+        action="Browse recipes"
+        showSaveButton={false}
+        className="border-t border-mist px-page-inline pt-6 pb-6 sm:px-8"
+      >
+        <RecipeCarouselList>
+          {recipes.map((recipe) => {
+            const totalMinutes =
+              recipe.prepMinutes !== undefined ||
+              recipe.cookMinutes !== undefined
+                ? (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0)
+                : undefined;
+            const servings =
+              recipe.servings !== undefined
+                ? `Serves ${recipe.servings}`
+                : undefined;
+            const meta =
+              servings && totalMinutes !== undefined
+                ? `${servings} · ${totalMinutes} min`
+                : (servings ??
+                  (totalMinutes !== undefined
+                    ? `${totalMinutes} min`
+                    : undefined));
+            return (
+              <RecipeCarouselItem key={recipe.id}>
+                <RecipeCarouselCard
+                  meal={recipe}
+                  title={recipe.title}
+                  imageSrc={recipe.imageSrc}
+                  href={catalogueBrowsePath(recipe.slug)}
+                  meta={meta}
+                />
+              </RecipeCarouselItem>
+            );
+          })}
+        </RecipeCarouselList>
+      </RecipeCarousel>
+      {process.env.NEXT_PUBLIC_CAPACITOR_BUILD !== "true" && (
+        <p className="px-page-inline pt-2 text-14 leading-6 text-graphite sm:px-8">
+          Planning more than one?{" "}
+          <Link
+            href="/recipe-to-shopping-list"
+            className="underline underline-offset-4 focus-visible:outline-cadmium"
+          >
+            See how three recipes become one shopping list
+          </Link>
+        </p>
+      )}
+    </>
   );
 }
