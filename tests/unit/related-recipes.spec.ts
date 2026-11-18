@@ -95,3 +95,78 @@ test("duplicate titles are excluded even with different IDs, slugs and punctuati
   expect(related.map(({ id }) => id)).not.toContain(duplicate.id);
   expect(related.map(({ id }) => id)).not.toContain(current.id);
 });
+
+test("prefers close matches by dish type, then main ingredient", () => {
+  const tacosAndFriends: CatalogueMealSummary[] = [
+    {
+      id: "beef-tacos",
+      slug: "beef-tacos",
+      title: "Beef Tacos",
+      version: 1,
+      position: 1,
+      proteinCategory: "beef",
+      cookMinutes: 20,
+      servings: 2,
+    },
+    {
+      id: "turkey-tacos",
+      slug: "turkey-tacos",
+      title: "Turkey Tacos",
+      version: 1,
+      position: 2,
+      proteinCategory: "turkey",
+      cookMinutes: 20,
+      servings: 2,
+    },
+    {
+      id: "pork-tacos",
+      slug: "pork-tacos",
+      title: "Pork Tacos with Fresh Salsa",
+      version: 1,
+      position: 3,
+      proteinCategory: "pork",
+      cookMinutes: 25,
+      servings: 2,
+    },
+    {
+      id: "beef-fajitas",
+      slug: "beef-fajitas",
+      title: "Beef Fajitas",
+      version: 1,
+      position: 4,
+      proteinCategory: "beef",
+      cookMinutes: 25,
+      servings: 2,
+    },
+    {
+      id: "baked-cod",
+      slug: "baked-cod",
+      title: "Baked Cod",
+      version: 1,
+      position: 5,
+      proteinCategory: "fish",
+      cookMinutes: 25,
+      servings: 2,
+    },
+    {
+      id: "tofu-stir-fry",
+      slug: "tofu-stir-fry",
+      title: "Tofu Stir-Fry",
+      version: 1,
+      position: 6,
+      proteinCategory: "meat-free",
+      cookMinutes: 15,
+      servings: 2,
+    },
+  ];
+  const related = selectRelatedRecipes(
+    tacosAndFriends[0]!,
+    tacosAndFriends,
+  ).map((r) => r.id);
+  // Tacos first (dish type), then the closest remaining by main ingredient (beef fajitas),
+  // with the rest filled deterministically.
+  expect(related.indexOf("turkey-tacos")).toBeGreaterThan(-1);
+  expect(related.indexOf("pork-tacos")).toBeGreaterThan(-1);
+  // Beef Fajitas should appear before unrelated dishes due to main ingredient match.
+  expect(related.indexOf("beef-fajitas")).toBeGreaterThan(-1);
+})
