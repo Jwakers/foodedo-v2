@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useCurrentCatalogue } from "./use-catalogue";
 import {
   RecipeCarousel,
@@ -40,15 +42,21 @@ export function RelatedRecipesCarousel({
         <RecipeCarouselList>
           {recipes.map((recipe) => {
             const totalMinutes =
-              recipe.prepMinutes !== undefined || recipe.cookMinutes !== undefined
+              recipe.prepMinutes !== undefined ||
+              recipe.cookMinutes !== undefined
                 ? (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0)
                 : undefined;
             const servings =
-              recipe.servings !== undefined ? `Serves ${recipe.servings}` : undefined;
+              recipe.servings !== undefined
+                ? `Serves ${recipe.servings}`
+                : undefined;
             const meta =
               servings && totalMinutes !== undefined
                 ? `${servings} · ${totalMinutes} min`
-                : servings ?? (totalMinutes !== undefined ? `${totalMinutes} min` : undefined);
+                : (servings ??
+                  (totalMinutes !== undefined
+                    ? `${totalMinutes} min`
+                    : undefined));
             return (
               <RecipeCarouselItem key={recipe.id}>
                 <RecipeCarouselCard
@@ -63,15 +71,17 @@ export function RelatedRecipesCarousel({
           })}
         </RecipeCarouselList>
       </RecipeCarousel>
-      <p className="px-page-inline pt-2 text-14 leading-6 text-graphite sm:px-8">
-        Planning more than one?{" "}
-        <a
-          href="/recipe-to-shopping-list"
-          className="underline underline-offset-4 focus-visible:outline-cadmium"
-        >
-          See how three recipes become one shopping list
-        </a>
-      </p>
+      {process.env.NEXT_PUBLIC_CAPACITOR_BUILD !== "true" && (
+        <p className="px-page-inline pt-2 text-14 leading-6 text-graphite sm:px-8">
+          Planning more than one?{" "}
+          <Link
+            href="/recipe-to-shopping-list"
+            className="underline underline-offset-4 focus-visible:outline-cadmium"
+          >
+            See how three recipes become one shopping list
+          </Link>
+        </p>
+      )}
     </>
   );
 }

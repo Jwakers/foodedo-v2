@@ -46,8 +46,10 @@ export const exampleItems = deriveShoppingListItems(
 ).map((item) => ({
   ...item,
   // Reviewed labels for this fixed example; retain the original source details.
-  displayName: item.displayName
-    .replace(/^(\d+) fillets salmon fillets$/, "$1 salmon fillets"),
+  displayName: item.displayName.replace(
+    /^(\d+) fillets salmon fillets$/,
+    "$1 salmon fillets",
+  ),
 }));
 
 const labels = {

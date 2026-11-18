@@ -159,14 +159,16 @@ test("prefers close matches by dish type, then main ingredient", () => {
       servings: 2,
     },
   ];
-  const related = selectRelatedRecipes(
-    tacosAndFriends[0]!,
-    tacosAndFriends,
-  ).map((r) => r.id);
-  // Tacos first (dish type), then the closest remaining by main ingredient (beef fajitas),
-  // with the rest filled deterministically.
-  expect(related.indexOf("turkey-tacos")).toBeGreaterThan(-1);
-  expect(related.indexOf("pork-tacos")).toBeGreaterThan(-1);
-  // Beef Fajitas should appear before unrelated dishes due to main ingredient match.
-  expect(related.indexOf("beef-fajitas")).toBeGreaterThan(-1);
-})
+  // An imported source has no mandatory ring neighbours, so this exercises
+  // affinity ordering independently of the incoming-link guarantee.
+  const current = { ...tacosAndFriends[0]!, id: "imported-beef-tacos" };
+  const related = selectRelatedRecipes(current, [
+    ...tacosAndFriends,
+    ...pool.map((recipe) => ({ ...recipe, proteinCategory: "fish" as const })),
+  ]).map((recipe) => recipe.id);
+  expect(related).toHaveLength(6);
+  expect(new Set(related.slice(0, 2))).toEqual(
+    new Set(["turkey-tacos", "pork-tacos"]),
+  );
+  expect(related[2]).toBe("beef-fajitas");
+});

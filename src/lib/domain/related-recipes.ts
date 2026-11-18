@@ -79,40 +79,26 @@ export function selectRelatedRecipes<T extends Recipe>(
   }
   // Fall back to the previous affinity/variety logic for any remaining slots.
   while (pool.length && selected.length < 6) {
-    pool.sort((a, b) => {
-      // Previous affinity with a light repeat penalty for variety.
-      const affinityA =
-        (a.proteinCategory !== "other" &&
-        a.proteinCategory === current.proteinCategory
+    const score = (recipe: T) => {
+      const affinity =
+        (recipe.proteinCategory !== "other" &&
+        recipe.proteinCategory === current.proteinCategory
           ? 2
           : 0) +
-        (a.costBand && a.costBand === current.costBand ? 0.5 : 0) +
-        (duration(a) !== null && duration(a) === duration(current) ? 0.5 : 0);
-      const repeatsA = selected.filter(
-        (picked) => picked.proteinCategory === a.proteinCategory,
+        (recipe.costBand && recipe.costBand === current.costBand ? 0.5 : 0) +
+        (duration(recipe) !== null && duration(recipe) === duration(current)
+          ? 0.5
+          : 0);
+      const repeats = selected.filter(
+        (picked) => picked.proteinCategory === recipe.proteinCategory,
       ).length;
-      const scoreA =
-        (selected.length < 4 ? affinityA : 0) -
-        repeatsA * 1.5 +
-        (hash(`${catalogueId}:${a.id}`) / 0xffffffff) * 3;
-
-      const affinityB =
-        (b.proteinCategory !== "other" &&
-        b.proteinCategory === current.proteinCategory
-          ? 2
-          : 0) +
-        (b.costBand && b.costBand === current.costBand ? 0.5 : 0) +
-        (duration(b) !== null && duration(b) === duration(current) ? 0.5 : 0);
-      const repeatsB = selected.filter(
-        (picked) => picked.proteinCategory === b.proteinCategory,
-      ).length;
-      const scoreB =
-        (selected.length < 4 ? affinityB : 0) -
-        repeatsB * 1.5 +
-        (hash(`${catalogueId}:${b.id}`) / 0xffffffff) * 3;
-
-      return scoreB - scoreA || a.id.localeCompare(b.id);
-    });
+      return (
+        (selected.length < 4 ? affinity : 0) +
+        (hash(`${catalogueId}:${recipe.id}`) / 0xffffffff) * 3 -
+        repeats * 1.5
+      );
+    };
+    pool.sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id));
     selected.push(pool.shift()!);
   }
   return selected;
@@ -190,21 +176,13 @@ function hash(value: string) {
   return (result ^ (result >>> 13)) >>> 0;
 }
 
-function compareByStableTie<T extends Recipe>(
-  catalogueId: string,
-  a: T,
-  b: T,
-) {
+function compareByStableTie<T extends Recipe>(catalogueId: string, a: T, b: T) {
   const ha = hash(`${catalogueId}:${a.id}`);
   const hb = hash(`${catalogueId}:${b.id}`);
   return hb - ha || a.id.localeCompare(b.id);
 }
 
-function compareByMeta<T extends Recipe>(
-  current: Recipe,
-  a: T,
-  b: T,
-) {
+function compareByMeta<T extends Recipe>(current: Recipe, a: T, b: T) {
   // Prefer total-duration bucket and then cost band matching the current recipe.
   const byDuration =
     (duration(b) === duration(current) ? 1 : 0) -

@@ -18,15 +18,38 @@ export function formatIngredientName(line: RecipeIngredientLine): string {
   const isWholeUnit = unit === "" || unit === "whole" || unit === "piece";
   if (!isWholeUnit) return line.name;
 
-  const q = (line.quantity ?? "").trim();
-  const aboveOne =
-    // Simple integer 2+
-    /^[2-9]\d*/.test(q) ||
-    // Range like 2-3 or 2–3 or 2 to 3
-    /\b\d+\s*(?:–|-|to)\s*([2-9]\d*)\b/.test(q) ||
-    // 1½ / 1 1/2 etc.
-    /^1\s*[¼½¾⅓⅔⅛⅜⅝⅞]/.test(q);
-  return shoppingIngredientDisplayName(line.name, aboveOne ? 2 : 1);
+  const quantities = (line.quantity ?? "")
+    .trim()
+    .split(/\s*(?:[–—-]|\bto\b)\s*/i)
+    .map(parseDisplayQuantity);
+  // Unspecified or ambiguous amounts retain the authored ingredient name.
+  if (quantities.some((quantity) => quantity === null)) return line.name;
+  return shoppingIngredientDisplayName(
+    line.name,
+    Math.max(...quantities.filter((quantity) => quantity !== null)) > 1 ? 2 : 1,
+  );
+}
+
+const displayFractions: Record<string, number> = {
+  "¼": 1 / 4,
+  "½": 1 / 2,
+  "¾": 3 / 4,
+  "⅓": 1 / 3,
+  "⅔": 2 / 3,
+  "⅛": 1 / 8,
+  "⅜": 3 / 8,
+  "⅝": 5 / 8,
+  "⅞": 7 / 8,
+};
+
+/** Interpret display counts only; this does not change scaling or stored amounts. */
+function parseDisplayQuantity(value: string): number | null {
+  if (/^\d+(?:\.\d+)?$/.test(value)) return Number(value);
+  const vulgar = value.match(/^(\d+)?\s*([¼½¾⅓⅔⅛⅜⅝⅞])$/);
+  if (vulgar) return Number(vulgar[1] ?? 0) + displayFractions[vulgar[2]];
+  const fraction = value.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);
+  if (!fraction || Number(fraction[3]) === 0) return null;
+  return Number(fraction[1] ?? 0) + Number(fraction[2]) / Number(fraction[3]);
 }
 
 /** A quieter preparation, handling, or qualifier detail for an ingredient. */

@@ -170,3 +170,85 @@ test("explains inferred import metadata without labelling published values", () 
     }),
   ).toBeUndefined();
 });
+
+for (const quantity of [
+  "2",
+  "10",
+  "12",
+  "100",
+  "1.5",
+  "1 1/2",
+  "1½",
+  "1 ½",
+  "3/2",
+  "1–2",
+  "1 to 12",
+  "2-3",
+]) {
+  test(`pluralises counted ingredients for ${quantity}`, () => {
+    expect(
+      formatIngredientName({
+        id: "tomato",
+        name: "tomatoes",
+        quantity,
+        shoppingCategory: "fruit_and_veg",
+      }),
+    ).toBe("tomatoes");
+  });
+}
+
+for (const quantity of ["1", "0.5", "1/2", "½"]) {
+  test(`uses singular counted ingredients for ${quantity}`, () => {
+    expect(
+      formatIngredientName({
+        id: "tomato",
+        name: "tomatoes",
+        quantity,
+        shoppingCategory: "fruit_and_veg",
+      }),
+    ).toBe("tomato");
+  });
+}
+
+for (const quantity of [undefined, "", "to taste", "a few", "1/0", "1 or 2"]) {
+  test(`preserves authored names for ambiguous quantity ${quantity}`, () => {
+    expect(
+      formatIngredientName({
+        id: "tomato",
+        name: "tomatoes",
+        quantity,
+        shoppingCategory: "fruit_and_veg",
+      }),
+    ).toBe("tomatoes");
+  });
+}
+
+test("measured ingredients preserve their authored names", () => {
+  expect(
+    formatIngredientName({
+      id: "tomato",
+      name: "tomatoes",
+      quantity: "1",
+      unit: "kg",
+      shoppingCategory: "fruit_and_veg",
+    }),
+  ).toBe("tomatoes");
+});
+
+test("renders Unicode fractions and retains garlic clove units", () => {
+  for (const [amountText, expected] of [
+    ["1/2 clove", "½ clove"],
+    ["2 1/2 cloves", "2½ cloves"],
+    ["1/8–3/8 clove", "⅛–⅜ clove"],
+    ["20g / 1 1/2 tbsp", "20g / 1½ tbsp"],
+  ]) {
+    expect(
+      formatIngredientAmount({
+        id: "garlic",
+        name: "garlic",
+        amountText,
+        shoppingCategory: "fruit_and_veg",
+      }),
+    ).toBe(expected);
+  }
+});
