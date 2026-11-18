@@ -175,6 +175,10 @@ export function formatShoppingItemDisplayName<TRecipeId extends string>(
   if (unit === "whole" || unit === "piece" || unit === "") {
     return `${quantityLabel} ${shoppingIngredientDisplayName(name, quantity)}`;
   }
+  // Garlic uses the conventional English order “garlic cloves”.
+  if (normaliseIngredientName(name) === "garlic" && unit === "clove") {
+    return `${quantityLabel} ${shoppingIngredientDisplayName(name)} ${formatUnit(unit, quantity)}`;
+  }
   return `${quantityLabel} ${formatUnit(unit, quantity)} ${shoppingIngredientDisplayName(name)}`;
 }
 

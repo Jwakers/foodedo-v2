@@ -89,9 +89,21 @@ export function normaliseImportedAmountText(value: string) {
     .normalize("NFC")
     .replace(/\s+/g, " ")
     .trim()
+    // Common spaced simple fractions → vulgar fractions.
+    .replace(/\b1\s*\/\s*2\b/g, "½")
+    .replace(/\b1\s*\/\s*4\b/g, "¼")
+    .replace(/\b3\s*\/\s*4\b/g, "¾")
+    .replace(/\b1\s*\/\s*3\b/g, "⅓")
+    .replace(/\b2\s*\/\s*3\b/g, "⅔")
+    .replace(/\b1\s*\/\s*8\b/g, "⅛")
+    .replace(/\b3\s*\/\s*8\b/g, "⅜")
+    .replace(/\b5\s*\/\s*8\b/g, "⅝")
+    .replace(/\b7\s*\/\s*8\b/g, "⅞")
     .replace(/1\s+1\/2/g, "1½")
     .replace(/1\s+1\/4/g, "1¼")
     .replace(/1\s+3\/4/g, "1¾")
+    // Remove accidental space before a following vulgar fraction (e.g. "1 ½" → "1½").
+    .replace(/(\d)\s+(?=[¼½¾⅓⅔⅛⅜⅝⅞])/g, "$1")
     .replace(/\s*[-–—]\s*/g, "–")
     .replace(/\s*\/\s*/g, " / ");
 }
@@ -127,7 +139,7 @@ export function normaliseImportedDisplayAmount(
   // Size words and count nouns describe the ingredient, not its measurement.
   // Remove them only at the end of the isolated amount so genuine units stay.
   const trailingDescriptor =
-    /\s+(?:(?:extra\s+)?(?:small|medium|large)(?:\s+to\s+(?:small|medium|large))?|whole|cloves?)$/i;
+    /\s+(?:(?:extra\s+)?(?:small|medium|large)(?:\s+to\s+(?:small|medium|large))?|whole)$/i;
   while (trailingDescriptor.test(amount)) {
     amount = amount.replace(trailingDescriptor, "").trim();
   }

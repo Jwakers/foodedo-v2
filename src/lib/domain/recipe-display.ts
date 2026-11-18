@@ -4,6 +4,7 @@ import type {
   RecipeSource,
 } from "@/lib/domain/recipes";
 import { normaliseImportedDisplayAmount } from "@/lib/domain/recipe-normalization";
+import { shoppingIngredientDisplayName } from "@/lib/domain/ingredient-names";
 
 /** Left column of an ingredient row: quantity + unit, or an em dash. */
 export function formatIngredientAmount(line: RecipeIngredientLine): string {
@@ -12,7 +13,20 @@ export function formatIngredientAmount(line: RecipeIngredientLine): string {
 
 /** The durable ingredient identity shown prominently in every recipe surface. */
 export function formatIngredientName(line: RecipeIngredientLine): string {
-  return line.name;
+  // Counted fruit/veg pluralise for whole items (no unit or explicit “whole”).
+  const unit = line.unit?.trim().toLowerCase() ?? "";
+  const isWholeUnit = unit === "" || unit === "whole" || unit === "piece";
+  if (!isWholeUnit) return line.name;
+
+  const q = (line.quantity ?? "").trim();
+  const aboveOne =
+    // Simple integer 2+
+    /^[2-9]\d*/.test(q) ||
+    // Range like 2-3 or 2–3 or 2 to 3
+    /\b\d+\s*(?:–|-|to)\s*([2-9]\d*)\b/.test(q) ||
+    // 1½ / 1 1/2 etc.
+    /^1\s*[¼½¾⅓⅔⅛⅜⅝⅞]/.test(q);
+  return shoppingIngredientDisplayName(line.name, aboveOne ? 2 : 1);
 }
 
 /** A quieter preparation, handling, or qualifier detail for an ingredient. */

@@ -84,7 +84,7 @@ test("keeps imported ingredient source text out of the amount column", () => {
       amountText: "3 to 4 cloves garlic, finely minced",
       shoppingCategory: "fruit_and_veg",
     }),
-  ).toBe("3 to 4");
+  ).toBe("3 to 4 cloves");
   expect(
     formatIngredientAmount({
       id: "butter",

@@ -69,7 +69,7 @@ test("highlights literal phrases, deduplicates rows, and shows shared scaled amo
 
 test("source-only ingredients keep authored amounts", () => {
   const html = render({ ...recipe, servingScaling: "source_only" });
-  expect(html).toContain("1 onions");
+  expect(html).toContain("1 onion");
   expect(html).toContain("½ tsp ground coriander");
 });
 
@@ -117,7 +117,7 @@ test("remaining amounts and explicit portions label totals without inventing ari
   ]) {
     const html = render({ ...recipe, steps: [{ id: "add", text }] });
     expect(html.toLowerCase()).toContain("recipe total");
-    expect(html).toContain(text === "Add 1 onion." ? "1 onions" : "2 onions");
+    expect(html).toContain(text === "Add 1 onion." ? "1 onion" : "2 onions");
   }
 });
 

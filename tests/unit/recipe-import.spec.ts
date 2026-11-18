@@ -953,7 +953,7 @@ test("repairs overlong imported amount text without losing compound measures", (
       name: "garlic",
       note: "finely minced",
     }),
-  ).toBe("3 to 4");
+  ).toBe("3 to 4 cloves");
   expect(
     normaliseImportedDisplayAmount({
       amountText: "20g / 1 1/2 tbsp",
